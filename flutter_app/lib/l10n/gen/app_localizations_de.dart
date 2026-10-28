@@ -2120,4 +2120,8 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get freeModeLocked => 'Dieser API-Key nutzt nur Gratis-Modelle.';
+
+  @override
+  String get freeModeLockedExplain =>
+      'Dieser API-Key ist auf „Nur Gratis-Modelle“ gestellt und bleibt daher immer gratis. Für bezahlte Modelle wähle einen anderen Key oder ändere diesen unter API-Keys.';
 }

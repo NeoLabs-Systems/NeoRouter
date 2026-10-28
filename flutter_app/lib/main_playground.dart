@@ -38,6 +38,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
   String _mode = 'chat';
   String? _keyId;
   bool _freeOnly = true;
+  bool _showLockHint = false;
   String _model = 'auto';
   final TextEditingController _system = TextEditingController();
   final TextEditingController _input = TextEditingController();
@@ -247,6 +248,20 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                       ],
                     ),
             ),
+            if (_showLockHint && _keys.where((key) => key.id == _keyId).firstOrNull?.mode == 'free_only')
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    InlineHint(message: t.freeModeLockedExplain, icon: Icons.lock_outline_rounded),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(onPressed: () => widget.controller.go(AppPage.keys), child: Text(t.navKeys)),
+                    ),
+                  ],
+                ),
+              ),
             _Composer(
               input: _input,
               focus: _inputFocus,
@@ -256,11 +271,15 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
               keyName: _keys.where((key) => key.id == _keyId).firstOrNull?.name,
               keys: _keys,
               onModel: (value) => value == '__specific__' ? _pickSpecificModel() : setState(() => _model = value),
-              onKey: (value) => setState(() => _keyId = value),
+              onKey: (value) => setState(() {
+                _keyId = value;
+                _showLockHint = false;
+              }),
               // A free-only key can never leave free mode.
               keyFreeOnly: _keys.where((key) => key.id == _keyId).firstOrNull?.mode == 'free_only',
               freeOnly: _freeOnly,
               onFreeOnly: (value) => setState(() => _freeOnly = value),
+              onLockedTap: () => setState(() => _showLockHint = !_showLockHint),
             ),
           ],
         ),
@@ -361,6 +380,7 @@ class _Composer extends StatelessWidget {
     required this.keyFreeOnly,
     required this.freeOnly,
     required this.onFreeOnly,
+    required this.onLockedTap,
   });
 
   final TextEditingController input;
@@ -375,6 +395,7 @@ class _Composer extends StatelessWidget {
   final bool keyFreeOnly;
   final bool freeOnly;
   final ValueChanged<bool> onFreeOnly;
+  final VoidCallback onLockedTap;
 
   @override
   Widget build(BuildContext context) {
@@ -443,16 +464,27 @@ class _Composer extends StatelessWidget {
               Tooltip(
                 message: keyFreeOnly ? t.freeModeLocked : (freeOnly ? t.freeModeOnHint : t.freeModeOffHint),
                 child: FilterChip(
-                  avatar: Icon(Icons.savings_outlined, size: 15, color: freeOnly || keyFreeOnly ? palette.accent : palette.textMuted),
+                  avatar: Icon(keyFreeOnly ? Icons.lock_outline_rounded : Icons.savings_outlined, size: 15, color: freeOnly || keyFreeOnly ? palette.accent : palette.textMuted),
                   label: Text(t.freeMode),
                   selected: freeOnly || keyFreeOnly,
-                  onSelected: keyFreeOnly ? null : onFreeOnly,
+                  // A free-only key cannot leave free mode; the chip stays
+                  // active and explains that instead of looking disabled.
+                  onSelected: keyFreeOnly ? (_) => onLockedTap() : onFreeOnly,
                   visualDensity: VisualDensity.compact,
                   side: BorderSide(color: freeOnly || keyFreeOnly ? palette.accent.withValues(alpha: 0.5) : palette.border),
                 ),
               ),
-              const Spacer(),
-              Text(t.enterToSend, style: GoogleFonts.geist(fontSize: 11.5, color: palette.textMuted)),
+              // The keyboard hint gives way first when the row gets narrow.
+              Expanded(
+                child: Text(
+                  t.enterToSend,
+                  maxLines: 1,
+                  overflow: TextOverflow.fade,
+                  softWrap: false,
+                  textAlign: TextAlign.end,
+                  style: GoogleFonts.geist(fontSize: 11.5, color: palette.textMuted),
+                ),
+              ),
               const SizedBox(width: 10),
               IconButton.filled(
                 onPressed: sending ? null : () => onSend(),

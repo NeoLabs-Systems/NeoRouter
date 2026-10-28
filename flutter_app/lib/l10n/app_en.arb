@@ -1188,5 +1188,6 @@
   "freeMode": "Free only",
   "freeModeOnHint": "Only free models answer. Turn off to let NeoRouter also use paid models this key may use.",
   "freeModeOffHint": "Paid models may answer too, within this key's budget.",
-  "freeModeLocked": "This API key only uses free models."
+  "freeModeLocked": "This API key only uses free models.",
+  "freeModeLockedExplain": "This API key is set to \"Only free models\", so it always stays free. To allow paid models, pick another key or change this one under API keys."
 }

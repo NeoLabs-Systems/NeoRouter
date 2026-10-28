@@ -3822,6 +3822,12 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'This API key only uses free models.'**
   String get freeModeLocked;
+
+  /// No description provided for @freeModeLockedExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'This API key is set to \"Only free models\", so it always stays free. To allow paid models, pick another key or change this one under API keys.'**
+  String get freeModeLockedExplain;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

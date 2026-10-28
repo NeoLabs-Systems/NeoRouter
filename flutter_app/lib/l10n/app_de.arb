@@ -620,5 +620,6 @@
   "freeMode": "Nur gratis",
   "freeModeOnHint": "Nur Gratis-Modelle antworten. Ausschalten, um auch bezahlte Modelle zu erlauben, die dieser Key nutzen darf.",
   "freeModeOffHint": "Auch bezahlte Modelle dürfen antworten, im Rahmen des Budgets dieses Keys.",
-  "freeModeLocked": "Dieser API-Key nutzt nur Gratis-Modelle."
+  "freeModeLocked": "Dieser API-Key nutzt nur Gratis-Modelle.",
+  "freeModeLockedExplain": "Dieser API-Key ist auf „Nur Gratis-Modelle“ gestellt und bleibt daher immer gratis. Für bezahlte Modelle wähle einen anderen Key oder ändere diesen unter API-Keys."
 }

@@ -660,6 +660,7 @@ S = {
   'freeModeOnHint': ('Only free models answer. Turn off to let NeoRouter also use paid models this key may use.', 'Nur Gratis-Modelle antworten. Ausschalten, um auch bezahlte Modelle zu erlauben, die dieser Key nutzen darf.'),
   'freeModeOffHint': ("Paid models may answer too, within this key's budget.", 'Auch bezahlte Modelle dürfen antworten, im Rahmen des Budgets dieses Keys.'),
   'freeModeLocked': ('This API key only uses free models.', 'Dieser API-Key nutzt nur Gratis-Modelle.'),
+  'freeModeLockedExplain': ('This API key is set to "Only free models", so it always stays free. To allow paid models, pick another key or change this one under API keys.', 'Dieser API-Key ist auf „Nur Gratis-Modelle“ gestellt und bleibt daher immer gratis. Für bezahlte Modelle wähle einen anderen Key oder ändere diesen unter API-Keys.'),
 }
 
 PLACEHOLDER = re.compile(r'\{(\w+)\}')
