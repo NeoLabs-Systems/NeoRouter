@@ -2131,6 +2131,156 @@ abstract class AppL10n {
   /// **'Change password'**
   String get changePassword;
 
+  /// No description provided for @securityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get securityTitle;
+
+  /// No description provided for @twoFactorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-factor authentication'**
+  String get twoFactorTitle;
+
+  /// No description provided for @twoFactorOn.
+  ///
+  /// In en, this message translates to:
+  /// **'2FA on'**
+  String get twoFactorOn;
+
+  /// No description provided for @twoFactorOff.
+  ///
+  /// In en, this message translates to:
+  /// **'2FA off'**
+  String get twoFactorOff;
+
+  /// No description provided for @twoFactorDisabledHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask for a code from an authenticator app at every sign-in.'**
+  String get twoFactorDisabledHint;
+
+  /// No description provided for @twoFactorEnabledHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in asks for an authenticator code. {count} recovery codes left.'**
+  String twoFactorEnabledHint(String count);
+
+  /// No description provided for @twoFactorEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get twoFactorEnable;
+
+  /// No description provided for @twoFactorDisable.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get twoFactorDisable;
+
+  /// No description provided for @twoFactorNewCodes.
+  ///
+  /// In en, this message translates to:
+  /// **'New recovery codes'**
+  String get twoFactorNewCodes;
+
+  /// No description provided for @twoFactorPasswordPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your password to set up two-factor authentication.'**
+  String get twoFactorPasswordPrompt;
+
+  /// No description provided for @twoFactorContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get twoFactorContinue;
+
+  /// No description provided for @twoFactorScanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the QR code with an authenticator app (1Password, Google Authenticator, Authy, …) or enter the key by hand. Then type the 6-digit code it shows.'**
+  String get twoFactorScanHint;
+
+  /// No description provided for @twoFactorManualKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup key'**
+  String get twoFactorManualKey;
+
+  /// No description provided for @twoFactorCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticator code'**
+  String get twoFactorCode;
+
+  /// No description provided for @twoFactorCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'6-digit code or a recovery code'**
+  String get twoFactorCodeHint;
+
+  /// No description provided for @twoFactorCodeOrRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticator or recovery code'**
+  String get twoFactorCodeOrRecovery;
+
+  /// No description provided for @twoFactorVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get twoFactorVerify;
+
+  /// No description provided for @twoFactorCodesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Store these recovery codes somewhere safe. Each one works once if you lose your authenticator. They are shown only now.'**
+  String get twoFactorCodesHint;
+
+  /// No description provided for @twoFactorCodesSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'I saved them'**
+  String get twoFactorCodesSaved;
+
+  /// No description provided for @twoFactorDisablePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password and a current code to turn off two-factor authentication.'**
+  String get twoFactorDisablePrompt;
+
+  /// No description provided for @twoFactorNewCodesPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'New codes replace all old ones. Enter your password and a current code.'**
+  String get twoFactorNewCodesPrompt;
+
+  /// No description provided for @twoFactorDisabledNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-factor authentication is off.'**
+  String get twoFactorDisabledNotice;
+
+  /// No description provided for @twoFactorBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a different account'**
+  String get twoFactorBack;
+
+  /// No description provided for @twoFactorLoginTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-step sign-in'**
+  String get twoFactorLoginTitle;
+
+  /// No description provided for @twoFactorLoginSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code from your authenticator app.'**
+  String get twoFactorLoginSubtitle;
+
   /// No description provided for @currentPassword.
   ///
   /// In en, this message translates to:

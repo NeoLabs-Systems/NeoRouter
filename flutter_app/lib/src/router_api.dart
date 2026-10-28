@@ -17,6 +17,16 @@ class RouterApi {
         '$_base/auth/register',
         <String, Object>{'username': username, 'email': email, 'password': password},
       );
+  Future<Map<String, dynamic>> loginTwoFactor(String challenge, String code) =>
+      client.post('$_base/auth/login/2fa', <String, Object>{'challenge': challenge, 'code': code});
+  Future<Map<String, dynamic>> twoFactorStatus() => client.get('$_base/auth/2fa');
+  Future<Map<String, dynamic>> twoFactorSetup(String currentPassword) =>
+      client.post('$_base/auth/2fa/setup', <String, Object>{'currentPassword': currentPassword});
+  Future<Map<String, dynamic>> twoFactorEnable(String code) => client.post('$_base/auth/2fa/enable', <String, Object>{'code': code});
+  Future<Map<String, dynamic>> twoFactorDisable(String currentPassword, String code) =>
+      client.post('$_base/auth/2fa/disable', <String, Object>{'currentPassword': currentPassword, 'code': code});
+  Future<Map<String, dynamic>> twoFactorRecoveryCodes(String currentPassword, String code) =>
+      client.post('$_base/auth/2fa/recovery-codes', <String, Object>{'currentPassword': currentPassword, 'code': code});
   Future<AppUser> me() async => AppUser(Map<String, dynamic>.from((await client.get('$_base/auth/me'))['user'] as Map));
   Future<void> logout() => client.post('$_base/auth/logout');
   Future<void> changePassword(String current, String next) =>

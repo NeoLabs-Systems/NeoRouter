@@ -623,6 +623,38 @@
   "displayName": "Display name",
   "saveProfileButton": "Save profile",
   "changePassword": "Change password",
+  "securityTitle": "Security",
+  "twoFactorTitle": "Two-factor authentication",
+  "twoFactorOn": "2FA on",
+  "twoFactorOff": "2FA off",
+  "twoFactorDisabledHint": "Ask for a code from an authenticator app at every sign-in.",
+  "twoFactorEnabledHint": "Sign-in asks for an authenticator code. {count} recovery codes left.",
+  "@twoFactorEnabledHint": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "twoFactorEnable": "Turn on",
+  "twoFactorDisable": "Turn off",
+  "twoFactorNewCodes": "New recovery codes",
+  "twoFactorPasswordPrompt": "Confirm your password to set up two-factor authentication.",
+  "twoFactorContinue": "Continue",
+  "twoFactorScanHint": "Scan the QR code with an authenticator app (1Password, Google Authenticator, Authy, …) or enter the key by hand. Then type the 6-digit code it shows.",
+  "twoFactorManualKey": "Setup key",
+  "twoFactorCode": "Authenticator code",
+  "twoFactorCodeHint": "6-digit code or a recovery code",
+  "twoFactorCodeOrRecovery": "Authenticator or recovery code",
+  "twoFactorVerify": "Verify",
+  "twoFactorCodesHint": "Store these recovery codes somewhere safe. Each one works once if you lose your authenticator. They are shown only now.",
+  "twoFactorCodesSaved": "I saved them",
+  "twoFactorDisablePrompt": "Enter your password and a current code to turn off two-factor authentication.",
+  "twoFactorNewCodesPrompt": "New codes replace all old ones. Enter your password and a current code.",
+  "twoFactorDisabledNotice": "Two-factor authentication is off.",
+  "twoFactorBack": "Use a different account",
+  "twoFactorLoginTitle": "Two-step sign-in",
+  "twoFactorLoginSubtitle": "Enter the code from your authenticator app.",
   "currentPassword": "Current password",
   "newPassword": "New password",
   "passwordChanged": "Password changed. Sign in again.",

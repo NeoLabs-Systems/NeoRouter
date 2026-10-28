@@ -35,7 +35,11 @@ class NeoRouterController extends ChangeNotifier {
   String? oauthStatus;
   String? oauthError;
 
+  /// Set between the password step and the authenticator-code step.
+  String? twoFactorChallenge;
+
   bool get hasUser => user != null;
+  bool get awaitingTwoFactor => twoFactorChallenge != null;
 
   Future<void> bootstrap() async {
     final prefs = await SharedPreferences.getInstance();
@@ -103,8 +107,24 @@ class NeoRouterController extends ChangeNotifier {
   }
 
   Future<bool> login(String account, String password) => _authAction(() async {
-        await _completeSession(await api.login(account, password));
+        final result = await api.login(account, password);
+        if (result['twoFactorRequired'] == true) {
+          twoFactorChallenge = result['challenge'] as String;
+          return;
+        }
+        await _completeSession(result);
       });
+
+  Future<bool> completeTwoFactor(String code) => _authAction(() async {
+        await _completeSession(await api.loginTwoFactor(twoFactorChallenge!, code));
+        twoFactorChallenge = null;
+      });
+
+  void cancelTwoFactor() {
+    twoFactorChallenge = null;
+    authError = null;
+    notifyListeners();
+  }
 
   Future<bool> register(String username, String email, String password) => _authAction(() async {
         await _completeSession(await api.register(username, email, password));

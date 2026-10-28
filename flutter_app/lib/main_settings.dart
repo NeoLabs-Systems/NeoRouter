@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
@@ -497,6 +498,8 @@ class _AccountPageState extends State<_AccountPage> {
           ],
         ),
         const SizedBox(height: 28),
+        _TwoFactorSection(controller: widget.controller),
+        const SizedBox(height: 28),
         SettingsCardList(
           children: <Widget>[
             SettingsRow(
@@ -551,6 +554,345 @@ class _AccountPageState extends State<_AccountPage> {
             ),
           ],
         ),
+      ],
+    );
+  }
+}
+
+enum _TwoFactorStep { idle, password, scan, codes, manage }
+
+enum _TwoFactorAction { disable, regenerate }
+
+/// Authenticator-app sign-in: enable with password, scan, confirm a code, then
+/// keep the one-time recovery codes.
+class _TwoFactorSection extends StatefulWidget {
+  const _TwoFactorSection({required this.controller});
+
+  final NeoRouterController controller;
+
+  @override
+  State<_TwoFactorSection> createState() => _TwoFactorSectionState();
+}
+
+class _TwoFactorSectionState extends State<_TwoFactorSection> {
+  final TextEditingController _password = TextEditingController();
+  final TextEditingController _code = TextEditingController();
+  Map<String, dynamic>? _status;
+  _TwoFactorStep _step = _TwoFactorStep.idle;
+  _TwoFactorAction _action = _TwoFactorAction.disable;
+  String? _otpauthUrl;
+  String? _manualKey;
+  List<String> _recoveryCodes = const <String>[];
+  String? _error;
+  bool _busy = false;
+
+  bool get _enabled => _status?['enabled'] == true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _password.dispose();
+    _code.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final status = await widget.controller.api.twoFactorStatus();
+      if (mounted) setState(() => _status = status);
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    }
+  }
+
+  void _reset([_TwoFactorStep step = _TwoFactorStep.idle]) {
+    setState(() {
+      _step = step;
+      _error = null;
+      _password.clear();
+      _code.clear();
+    });
+  }
+
+  Future<void> _run(Future<void> Function() action) async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await action();
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _beginSetup() => _run(() async {
+        final result = await widget.controller.api.twoFactorSetup(_password.text);
+        setState(() {
+          _otpauthUrl = result['otpauthUrl'] as String?;
+          // Groups of four are easier to type into an authenticator app.
+          _manualKey = (result['manualKey'] as String?)?.replaceAllMapped(RegExp(r'.{4}'), (m) => '${m[0]} ').trim();
+          _password.clear();
+          _step = _TwoFactorStep.scan;
+        });
+      });
+
+  Future<void> _enable() => _run(() async {
+        final result = await widget.controller.api.twoFactorEnable(_code.text.trim());
+        setState(() {
+          _recoveryCodes = (result['recoveryCodes'] as List<dynamic>).cast<String>();
+          _status = result['status'] as Map<String, dynamic>?;
+          _code.clear();
+          _otpauthUrl = null;
+          _manualKey = null;
+          _step = _TwoFactorStep.codes;
+        });
+      });
+
+  Future<void> _submitManage() => _run(() async {
+        final api = widget.controller.api;
+        final code = _code.text.trim();
+        if (_action == _TwoFactorAction.disable) {
+          final result = await api.twoFactorDisable(_password.text, code);
+          setState(() => _status = result['status'] as Map<String, dynamic>? ?? <String, dynamic>{'enabled': false});
+          _reset();
+          if (mounted) showSnack(context, AppL10n.of(context).twoFactorDisabledNotice);
+          return;
+        }
+        final result = await api.twoFactorRecoveryCodes(_password.text, code);
+        setState(() {
+          _recoveryCodes = (result['recoveryCodes'] as List<dynamic>).cast<String>();
+          _status = result['status'] as Map<String, dynamic>?;
+          _password.clear();
+          _code.clear();
+          _step = _TwoFactorStep.codes;
+        });
+      });
+
+  Widget _form(List<Widget> fields, List<Widget> actions) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          ...fields,
+          if (_error != null) ...<Widget>[const SizedBox(height: AppSpacing.sm), InlineError(message: _error!)],
+          const SizedBox(height: AppSpacing.md),
+          Wrap(spacing: AppSpacing.sm, runSpacing: AppSpacing.sm, children: actions),
+        ],
+      ),
+    );
+  }
+
+  void _copy(String value) {
+    Clipboard.setData(ClipboardData(text: value));
+    showSnack(context, AppL10n.of(context).copied);
+  }
+
+  Widget _button(String label, Future<void> Function() onPressed) {
+    return FilledButton(
+      onPressed: _busy ? null : onPressed,
+      child: _busy ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)) : Text(label),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final cancel = OutlinedButton(onPressed: _busy ? null : () => _reset(), child: Text(t.cancel));
+    final passwordField = SizedBox(
+      width: 340,
+      child: TextField(controller: _password, obscureText: true, decoration: InputDecoration(labelText: t.currentPassword)),
+    );
+    final remaining = _status?['recoveryCodesRemaining'] as int? ?? 0;
+
+    final rows = <Widget>[
+      SettingsRow(
+        label: t.twoFactorTitle,
+        description: _status == null ? null : (_enabled ? t.twoFactorEnabledHint('$remaining') : t.twoFactorDisabledHint),
+        control: _status == null
+            ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
+            : _step != _TwoFactorStep.idle
+            ? null
+            : _enabled
+            ? Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: <Widget>[
+                  OutlinedButton(
+                    onPressed: () {
+                      _action = _TwoFactorAction.regenerate;
+                      _reset(_TwoFactorStep.manage);
+                    },
+                    child: Text(t.twoFactorNewCodes),
+                  ),
+                  OutlinedButton(
+                    onPressed: () {
+                      _action = _TwoFactorAction.disable;
+                      _reset(_TwoFactorStep.manage);
+                    },
+                    style: OutlinedButton.styleFrom(foregroundColor: palette.error),
+                    child: Text(t.twoFactorDisable),
+                  ),
+                ],
+              )
+            : FilledButton(onPressed: () => _reset(_TwoFactorStep.password), child: Text(t.twoFactorEnable)),
+      ),
+    ];
+
+    switch (_step) {
+      case _TwoFactorStep.idle:
+        if (_error != null && _status == null) {
+          rows.add(Padding(padding: const EdgeInsets.all(20), child: InlineError(message: _error!)));
+        }
+      case _TwoFactorStep.password:
+        rows.add(_form(
+          <Widget>[
+            Text(t.twoFactorPasswordPrompt, style: TextStyle(fontSize: 13, color: palette.textSoft, height: 1.45)),
+            const SizedBox(height: AppSpacing.sm),
+            Align(alignment: Alignment.centerLeft, child: passwordField),
+          ],
+          <Widget>[cancel, _button(t.twoFactorContinue, _beginSetup)],
+        ));
+      case _TwoFactorStep.scan:
+        rows.add(_form(
+          <Widget>[
+            Text(t.twoFactorScanHint, style: TextStyle(fontSize: 13, color: palette.textSoft, height: 1.45)),
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              spacing: 24,
+              runSpacing: AppSpacing.md,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: <Widget>[
+                if (_otpauthUrl != null)
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.card)),
+                    child: QrImageView(data: _otpauthUrl!, size: 168, backgroundColor: Colors.white),
+                  ),
+                SizedBox(
+                  width: 300,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(t.twoFactorManualKey, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: palette.textSoft)),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: <Widget>[
+                          Expanded(child: SelectableText(_manualKey ?? '', style: GoogleFonts.geistMono(fontSize: 13, color: palette.text))),
+                          IconButton(
+                            tooltip: t.copy,
+                            icon: const Icon(Icons.copy, size: 16),
+                            onPressed: () => _copy(_manualKey ?? ''),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        controller: _code,
+                        keyboardType: TextInputType.number,
+                        autofillHints: const <String>[AutofillHints.oneTimeCode],
+                        onSubmitted: (_) => _enable(),
+                        decoration: InputDecoration(labelText: t.twoFactorCode),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+          <Widget>[cancel, _button(t.twoFactorVerify, _enable)],
+        ));
+      case _TwoFactorStep.codes:
+        rows.add(_form(
+          <Widget>[
+            Text(t.twoFactorCodesHint, style: TextStyle(fontSize: 13, color: palette.textSoft, height: 1.45)),
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: palette.surfaceMuted,
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                border: Border.all(color: palette.border),
+              ),
+              child: Wrap(
+                spacing: 24,
+                runSpacing: 8,
+                children: <Widget>[
+                  for (final code in _recoveryCodes)
+                    SizedBox(width: 150, child: SelectableText(code, style: GoogleFonts.geistMono(fontSize: 13.5, color: palette.text))),
+                ],
+              ),
+            ),
+          ],
+          <Widget>[
+            OutlinedButton.icon(
+              onPressed: () => _copy(_recoveryCodes.join('\n')),
+              icon: const Icon(Icons.copy, size: 16),
+              label: Text(t.copy),
+            ),
+            FilledButton(
+              onPressed: () {
+                _recoveryCodes = const <String>[];
+                _reset();
+              },
+              child: Text(t.twoFactorCodesSaved),
+            ),
+          ],
+        ));
+      case _TwoFactorStep.manage:
+        rows.add(_form(
+          <Widget>[
+            Text(
+              _action == _TwoFactorAction.disable ? t.twoFactorDisablePrompt : t.twoFactorNewCodesPrompt,
+              style: TextStyle(fontSize: 13, color: palette.textSoft, height: 1.45),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: <Widget>[
+                passwordField,
+                SizedBox(
+                  width: 340,
+                  child: TextField(
+                    controller: _code,
+                    onSubmitted: (_) => _submitManage(),
+                    decoration: InputDecoration(labelText: t.twoFactorCodeOrRecovery),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          <Widget>[
+            cancel,
+            _button(_action == _TwoFactorAction.disable ? t.twoFactorDisable : t.twoFactorNewCodes, _submitManage),
+          ],
+        ));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SettingsHeading(
+          title: t.securityTitle,
+          trailing: _status == null
+              ? null
+              : MetaPill(
+                  label: _enabled ? t.twoFactorOn : t.twoFactorOff,
+                  tone: _enabled ? PillTone.success : PillTone.neutral,
+                  icon: _enabled ? Icons.verified_user_outlined : Icons.shield_outlined,
+                ),
+        ),
+        SettingsCardList(children: rows),
       ],
     );
   }

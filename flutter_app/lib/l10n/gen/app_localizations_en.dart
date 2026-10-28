@@ -1132,6 +1132,90 @@ class AppL10nEn extends AppL10n {
   String get changePassword => 'Change password';
 
   @override
+  String get securityTitle => 'Security';
+
+  @override
+  String get twoFactorTitle => 'Two-factor authentication';
+
+  @override
+  String get twoFactorOn => '2FA on';
+
+  @override
+  String get twoFactorOff => '2FA off';
+
+  @override
+  String get twoFactorDisabledHint =>
+      'Ask for a code from an authenticator app at every sign-in.';
+
+  @override
+  String twoFactorEnabledHint(String count) {
+    return 'Sign-in asks for an authenticator code. $count recovery codes left.';
+  }
+
+  @override
+  String get twoFactorEnable => 'Turn on';
+
+  @override
+  String get twoFactorDisable => 'Turn off';
+
+  @override
+  String get twoFactorNewCodes => 'New recovery codes';
+
+  @override
+  String get twoFactorPasswordPrompt =>
+      'Confirm your password to set up two-factor authentication.';
+
+  @override
+  String get twoFactorContinue => 'Continue';
+
+  @override
+  String get twoFactorScanHint =>
+      'Scan the QR code with an authenticator app (1Password, Google Authenticator, Authy, …) or enter the key by hand. Then type the 6-digit code it shows.';
+
+  @override
+  String get twoFactorManualKey => 'Setup key';
+
+  @override
+  String get twoFactorCode => 'Authenticator code';
+
+  @override
+  String get twoFactorCodeHint => '6-digit code or a recovery code';
+
+  @override
+  String get twoFactorCodeOrRecovery => 'Authenticator or recovery code';
+
+  @override
+  String get twoFactorVerify => 'Verify';
+
+  @override
+  String get twoFactorCodesHint =>
+      'Store these recovery codes somewhere safe. Each one works once if you lose your authenticator. They are shown only now.';
+
+  @override
+  String get twoFactorCodesSaved => 'I saved them';
+
+  @override
+  String get twoFactorDisablePrompt =>
+      'Enter your password and a current code to turn off two-factor authentication.';
+
+  @override
+  String get twoFactorNewCodesPrompt =>
+      'New codes replace all old ones. Enter your password and a current code.';
+
+  @override
+  String get twoFactorDisabledNotice => 'Two-factor authentication is off.';
+
+  @override
+  String get twoFactorBack => 'Use a different account';
+
+  @override
+  String get twoFactorLoginTitle => 'Two-step sign-in';
+
+  @override
+  String get twoFactorLoginSubtitle =>
+      'Enter the code from your authenticator app.';
+
+  @override
   String get currentPassword => 'Current password';
 
   @override

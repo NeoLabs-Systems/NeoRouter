@@ -6,6 +6,7 @@ const { getConfig } = require('../../config/env');
 const { HttpError } = require('../../middleware/error_handler');
 const { randomToken, sha256, hashPassword, verifyPassword } = require('../../utils/crypto');
 const settings = require('../settings/settings_service');
+const twoFactor = require('./two_factor_service');
 
 const MIN_PASSWORD = 12;
 
@@ -87,8 +88,24 @@ async function login({ account, password }, context = {}) {
   const valid = user ? await verifyPassword(String(password || ''), user.password_hash) : false;
   if (!valid) throw new HttpError(401, 'INVALID_CREDENTIALS', 'Username or password is incorrect.');
   if (user.disabled_at) throw new HttpError(403, 'ACCOUNT_DISABLED', 'This account is disabled.');
-  db.prepare("UPDATE users SET last_login_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?").run(user.id);
+  // With 2FA on, the password only earns a short-lived challenge; the
+  // session is created once the code is verified.
+  if (twoFactor.isEnabled(user.id)) return { twoFactorRequired: true, challenge: twoFactor.createChallenge(user.id) };
+  return completeLogin(user, context);
+}
+
+function completeLogin(user, context) {
+  getDatabase().prepare("UPDATE users SET last_login_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?").run(user.id);
   return { user: publicUser(user), session: createSession(user.id, context) };
+}
+
+async function loginWithTwoFactor({ challenge, code }, context = {}) {
+  const userId = twoFactor.consumeChallenge(challenge);
+  if (!(await twoFactor.verifyCode(userId, code))) throw new HttpError(401, 'INVALID_TWO_FACTOR', 'The code is not valid.');
+  twoFactor.finishChallenge(challenge);
+  const user = getDatabase().prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  if (!user || user.disabled_at) throw new HttpError(403, 'ACCOUNT_DISABLED', 'This account is disabled.');
+  return completeLogin(user, context);
 }
 
 function authenticateToken(token) {
@@ -166,6 +183,7 @@ module.exports = {
   registrationStatus,
   register,
   login,
+  loginWithTwoFactor,
   authenticateToken,
   logout,
   logoutAll,

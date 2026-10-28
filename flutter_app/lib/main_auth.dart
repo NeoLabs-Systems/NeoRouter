@@ -21,6 +21,7 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final TextEditingController _codeController = TextEditingController();
   late bool _registerMode = widget.controller.bootstrapRegistration;
 
   @override
@@ -29,6 +30,7 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
     _passwordController.dispose();
     _emailController.dispose();
     _confirmPasswordController.dispose();
+    _codeController.dispose();
     super.dispose();
   }
 
@@ -82,16 +84,68 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
     );
   }
 
+  Future<void> _submitCode() async {
+    final code = _codeController.text.trim();
+    if (code.isEmpty) return;
+    final ok = await widget.controller.completeTwoFactor(code);
+    if (!ok) _codeController.clear();
+  }
+
+  List<Widget> _twoFactorFields(NeoRouterController controller, AppL10n t) {
+    return <Widget>[
+      TextField(
+        controller: _codeController,
+        autofocus: true,
+        keyboardType: TextInputType.visiblePassword,
+        autofillHints: const <String>[AutofillHints.oneTimeCode],
+        onSubmitted: (_) => _submitCode(),
+        decoration: InputDecoration(
+          labelText: t.twoFactorCode,
+          helperText: t.twoFactorCodeHint,
+        ),
+      ),
+      if (controller.authError != null) ...<Widget>[
+        const SizedBox(height: AppSpacing.sm),
+        InlineError(message: controller.authError!),
+      ],
+      const SizedBox(height: AppSpacing.lg),
+      FilledButton(
+        onPressed: controller.loading ? null : _submitCode,
+        child: controller.loading
+            ? const SizedBox.square(
+                dimension: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Text(t.twoFactorVerify),
+      ),
+      const SizedBox(height: AppSpacing.sm),
+      TextButton(
+        onPressed: controller.loading
+            ? null
+            : () {
+                _codeController.clear();
+                controller.cancelTwoFactor();
+              },
+        child: Text(t.twoFactorBack),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = neoRouterPaletteOf(context);
     final controller = widget.controller;
     final t = AppL10n.of(context);
     final bootstrap = controller.bootstrapRegistration;
-    final title = bootstrap
+    final twoFactor = controller.awaitingTwoFactor;
+    final title = twoFactor
+        ? t.twoFactorLoginTitle
+        : bootstrap
         ? t.authBootstrapTitle
         : (_registerMode ? t.authCreate : t.authWelcome);
-    final subtitle = bootstrap
+    final subtitle = twoFactor
+        ? t.twoFactorLoginSubtitle
+        : bootstrap
         ? t.authBootstrapSubtitle
         : (_registerMode ? t.authRegisterSubtitle : t.authLoginSubtitle);
 
@@ -140,6 +194,9 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
                                       ?.copyWith(color: palette.textSoft),
                                 ),
                                 const SizedBox(height: AppSpacing.lg),
+                                if (controller.awaitingTwoFactor)
+                                  ..._twoFactorFields(controller, t)
+                                else ...<Widget>[
                                 TextField(
                                   controller: _usernameController,
                                   autofillHints: const <String>[
@@ -251,6 +308,7 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
                                         ),
                                     ],
                                   ),
+                                ],
                                 ],
                               ],
                             ),

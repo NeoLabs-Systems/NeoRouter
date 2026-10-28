@@ -85,7 +85,7 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
   <tr>
     <td valign="top"><b>🎟️ Router keys</b><br>Free-only, paid or both. USD budgets per day, month or total, RPM limits and model allow-lists.</td>
     <td valign="top"><b>🔀 Three APIs</b><br>OpenAI Chat Completions, Anthropic Messages and OpenAI Responses, with streaming, tools and vision.</td>
-    <td valign="top"><b>👥 Multi-user</b><br>Provider keys stay private per account. Only request metadata is logged, never prompts.</td>
+    <td valign="top"><b>👥 Multi-user</b><br>Provider keys stay private per account, with optional authenticator 2FA. Only request metadata is logged, never prompts.</td>
   </tr>
 </table>
 
@@ -100,7 +100,7 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
 
 ## 🛠️ CLI
 
-`neorouter install · start · stop · restart · status · doctor · logs · backup · update · env · reset-password · rebuild-web · version`
+`neorouter install · start · stop · restart · status · doctor · logs · backup · update · env · reset-password · reset-2fa · providers import · rebuild-web · version`
 
 ## 🧪 Project status
 

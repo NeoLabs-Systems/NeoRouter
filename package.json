@@ -53,6 +53,7 @@
     "compression": "^1.8.2",
     "dotenv": "^16.6.1",
     "express": "^4.22.3",
+    "otplib": "^13.5.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

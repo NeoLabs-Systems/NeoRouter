@@ -1138,6 +1138,93 @@ class AppL10nDe extends AppL10n {
   String get changePassword => 'Passwort ändern';
 
   @override
+  String get securityTitle => 'Sicherheit';
+
+  @override
+  String get twoFactorTitle => 'Zwei-Faktor-Authentifizierung';
+
+  @override
+  String get twoFactorOn => '2FA aktiv';
+
+  @override
+  String get twoFactorOff => '2FA aus';
+
+  @override
+  String get twoFactorDisabledHint =>
+      'Bei jeder Anmeldung zusätzlich einen Code aus einer Authenticator-App abfragen.';
+
+  @override
+  String twoFactorEnabledHint(String count) {
+    return 'Die Anmeldung fragt nach einem Authenticator-Code. Noch $count Wiederherstellungscodes.';
+  }
+
+  @override
+  String get twoFactorEnable => 'Aktivieren';
+
+  @override
+  String get twoFactorDisable => 'Deaktivieren';
+
+  @override
+  String get twoFactorNewCodes => 'Neue Wiederherstellungscodes';
+
+  @override
+  String get twoFactorPasswordPrompt =>
+      'Bestätige dein Passwort, um die Zwei-Faktor-Authentifizierung einzurichten.';
+
+  @override
+  String get twoFactorContinue => 'Weiter';
+
+  @override
+  String get twoFactorScanHint =>
+      'Scanne den QR-Code mit einer Authenticator-App (1Password, Google Authenticator, Authy, …) oder gib den Schlüssel von Hand ein. Danach den 6-stelligen Code eintragen.';
+
+  @override
+  String get twoFactorManualKey => 'Einrichtungsschlüssel';
+
+  @override
+  String get twoFactorCode => 'Authenticator-Code';
+
+  @override
+  String get twoFactorCodeHint =>
+      '6-stelliger Code oder ein Wiederherstellungscode';
+
+  @override
+  String get twoFactorCodeOrRecovery =>
+      'Authenticator- oder Wiederherstellungscode';
+
+  @override
+  String get twoFactorVerify => 'Bestätigen';
+
+  @override
+  String get twoFactorCodesHint =>
+      'Bewahre diese Wiederherstellungscodes sicher auf. Jeder funktioniert einmal, falls du deinen Authenticator verlierst. Sie werden nur jetzt angezeigt.';
+
+  @override
+  String get twoFactorCodesSaved => 'Gespeichert';
+
+  @override
+  String get twoFactorDisablePrompt =>
+      'Gib dein Passwort und einen aktuellen Code ein, um die Zwei-Faktor-Authentifizierung abzuschalten.';
+
+  @override
+  String get twoFactorNewCodesPrompt =>
+      'Neue Codes ersetzen alle alten. Gib dein Passwort und einen aktuellen Code ein.';
+
+  @override
+  String get twoFactorDisabledNotice =>
+      'Zwei-Faktor-Authentifizierung ist aus.';
+
+  @override
+  String get twoFactorBack => 'Anderes Konto verwenden';
+
+  @override
+  String get twoFactorLoginTitle => 'Anmeldung bestätigen';
+
+  @override
+  String get twoFactorLoginSubtitle =>
+      'Gib den Code aus deiner Authenticator-App ein.';
+
+  @override
   String get currentPassword => 'Aktuelles Passwort';
 
   @override
