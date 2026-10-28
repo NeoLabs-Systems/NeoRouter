@@ -55,8 +55,12 @@ function createApp() {
   app.use(express.json({ limit: '2mb' }));
   app.use('/api/v1', require('./routes'));
 
+  // Flutter web and landing files keep the same names across releases (the
+  // icon font is rebuilt with only the icons in use), so browsers and CDNs
+  // must revalidate them; ETags keep that cheap.
+  const revalidate = (res) => res.setHeader('Cache-Control', 'no-cache');
   const appWebRoot = WEB_CLIENT_DIR;
-  app.use('/app', express.static(appWebRoot, { extensions: ['html'], fallthrough: true }));
+  app.use('/app', express.static(appWebRoot, { extensions: ['html'], fallthrough: true, setHeaders: revalidate }));
   app.use('/app', (req, res, next) => {
     // During development the Flutter app runs on its own dev server.
     if (!hasBundledWebClient(appWebRoot) && config.webDevUrl) return res.redirect(config.webDevUrl);
@@ -64,10 +68,11 @@ function createApp() {
       return next(new HttpError(503, 'WEB_UI_MISSING', 'NeoRouter web UI assets are missing. Run `neorouter rebuild-web`.'));
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    revalidate(res);
     return res.sendFile(path.join(appWebRoot, 'index.html'), (error) => next(error));
   });
 
-  app.use('/', express.static(LANDING_DIR, { extensions: ['html'] }));
+  app.use('/', express.static(LANDING_DIR, { extensions: ['html'], setHeaders: revalidate }));
   app.use(notFound, errorHandler);
   return app;
 }
