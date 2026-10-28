@@ -101,7 +101,6 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
 | Start | Understand | Extend |
 | --- | --- | --- |
 | [Configuration](docs/configuration.md) | [Routing](docs/routing.md) | [Providers](docs/providers.md) |
-| [Privacy & compression](docs/processing.md) | | |
 | [CLI](#-cli) | [Security](SECURITY.md) | [Contributing](CONTRIBUTING.md) |
 
 ## 🛠️ CLI
