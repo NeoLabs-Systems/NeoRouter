@@ -39,7 +39,8 @@ function createMockProvider({ models, prices = {}, port = 0 } = {}) {
     res.set('x-ratelimit-limit-requests', '1000');
     res.set('x-ratelimit-remaining-requests', '990');
     res.set('x-ratelimit-reset-requests', '30s');
-    const usage = { prompt_tokens: 12, completion_tokens: 6, total_tokens: 18 };
+    // "cost-" models report a charge like OpenRouter's usage.cost.
+    const usage = { prompt_tokens: 12, completion_tokens: 6, total_tokens: 18, ...(model.startsWith('cost-') ? { cost: 0.0004 } : {}) };
     if (!stream) {
       return res.json({
         id: 'cmpl-1', object: 'chat.completion', created: 1, model,

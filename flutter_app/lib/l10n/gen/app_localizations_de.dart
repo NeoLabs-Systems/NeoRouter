@@ -580,6 +580,35 @@ class AppL10nDe extends AppL10n {
       'Preis unbekannt – zählt nicht als gratis';
 
   @override
+  String get freeReasonBilledObserved =>
+      'Kostenpflichtig: der Provider hat dafür etwas berechnet';
+
+  @override
+  String get freeReasonNoFreeTier =>
+      'Kostenpflichtig: kein Gratis-Kontingent auf diesem Konto';
+
+  @override
+  String get freeReasonNotInFreeTier =>
+      'Kostenpflichtig: nicht im Gratis-Tarif enthalten';
+
+  @override
+  String get freeReasonBillingActive =>
+      'Kostenpflichtig: Abrechnung auf diesem Konto aktiv';
+
+  @override
+  String get freeReasonBillingUnverified =>
+      'Nicht gratis, bis der Gratis-Tarif bestätigt ist';
+
+  @override
+  String get billingVerifiedFree => 'Gratis-Tarif bestätigt';
+
+  @override
+  String get billingDetectedPaid => 'Abrechnung aktiv';
+
+  @override
+  String get billingUnverified => 'Gratis-Tarif unbestätigt';
+
+  @override
   String get modelSettings => 'Modell-Einstellungen';
 
   @override

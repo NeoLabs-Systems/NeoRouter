@@ -17,6 +17,11 @@ String freeReasonLabel(AppL10n t, String? reason) => switch (reason) {
       'listed_zero_price' => t.freeReasonListedZeroPrice,
       'free_tier_account' => t.freeReasonFreeTierAccount,
       'price_unknown' => t.freeReasonPriceUnknown,
+      'billed_observed' => t.freeReasonBilledObserved,
+      'no_free_tier' => t.freeReasonNoFreeTier,
+      'not_in_free_tier' => t.freeReasonNotInFreeTier,
+      'billing_active' => t.freeReasonBillingActive,
+      'billing_unverified' => t.freeReasonBillingUnverified,
       _ => t.freeReasonPaid,
     };
 

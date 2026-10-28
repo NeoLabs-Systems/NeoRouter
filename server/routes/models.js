@@ -39,6 +39,9 @@ router.patch('/:ref', validate(z.object({
     tools: z.boolean().nullable().optional(),
     vision: z.boolean().nullable().optional(),
     intelligence: z.number().min(0).max(1).nullable().optional(),
+    // Evidence learned from traffic can only be cleared, never set by hand.
+    billedAt: z.null().optional(),
+    noFreeTier: z.null().optional(),
   }).optional(),
 })), (req, res) => res.json({ model: present(catalog.updateModel(req.auth.userId, Number(req.params.ref), req.body)) }));
 

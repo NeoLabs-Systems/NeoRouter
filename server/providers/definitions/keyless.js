@@ -11,7 +11,7 @@ module.exports = [
     adapter: 'openai_compatible',
     baseUrl: 'https://api.kilo.ai/api/gateway/v1',
     keyOptional: true,
-    billing: { defaultMode: 'paid', alwaysFree: [':free$'], note: 'Models priced at 0 or ending in :free are free.' },
+    billing: { defaultMode: 'paid', alwaysFree: [':free$', '^kilo-auto/free$', '^openrouter/free$', '^reflection/beam-free$'], note: 'Models priced at 0 or ending in :free are free; dynamic prices (-1) count as paid.' },
   },
   {
     id: 'llm7',
@@ -23,7 +23,8 @@ module.exports = [
     adapter: 'openai_compatible',
     baseUrl: 'https://api.llm7.io/v1',
     keyOptional: true,
-    billing: { defaultMode: 'free_tier', freeTierAll: true },
+    // Most models are usage-based ("pro"); only the turbo tier is free.
+    billing: { defaultMode: 'free_tier', freeTierModels: ['^codestral-latest$', '^gpt-oss:20b$', '^minimax-m2\\.7$', '^mistral-nemo-instruct-2407$', '^nemotron-3-nano:30b$'], note: 'Only the turbo-tier models are free; the rest are usage-based.', checkedAt: '2026-10-28' },
   },
   {
     id: 'ovh',
@@ -34,7 +35,7 @@ module.exports = [
     adapter: 'openai_compatible',
     baseUrl: 'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1',
     keyOptional: true,
-    billing: { defaultMode: 'free_tier', freeTierAll: true, note: 'Anonymous use is free and rate-limited per model.' },
+    billing: { defaultMode: 'free_tier', freeTierAll: true, keylessOnly: true, note: 'Free only without a key (anonymous, 2 requests a minute). With an API key usage is billed to your Public Cloud project.' },
     limits: { pool: 'model', defaults: { rpm: 2 } },
   },
   {
@@ -48,7 +49,7 @@ module.exports = [
     baseUrl: 'https://gen.pollinations.ai/v1',
     keyOptional: true,
     validate: { path: 'https://gen.pollinations.ai/account/key' },
-    billing: { defaultMode: 'free_tier', freeTierAll: true },
+    billing: { defaultMode: 'free_tier', freeTierAll: true, note: 'Free while the prepaid balance has no paid pollen; paid_only models never are.' },
   },
   {
     id: 'aihorde',

@@ -13,7 +13,7 @@ module.exports = {
   validate: { path: '/key' },
   billing: {
     defaultMode: 'paid',
-    alwaysFree: [':free$'],
+    alwaysFree: [':free$', '^openrouter/free$'],
     note: 'Paid models draw from your credits. :free models share a daily request allowance (higher once 10 USD of credits were bought).',
   },
   limits: {

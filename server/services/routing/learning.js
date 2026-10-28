@@ -3,6 +3,7 @@
 const { KINDS } = require('../../providers/provider_error');
 const stats = require('./stats_store');
 const quota = require('../quota/quota_service');
+const billing = require('../providers/billing_check');
 const { getDatabase } = require('../../db/database');
 
 const SECOND = 1000;
@@ -96,8 +97,12 @@ function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, now = 
     cooldownReason: cooldown?.reason || null,
     escalate: cooldown?.escalate || false,
   }, now);
-  if (error.headers) quota.observeHeaders(entry, error.headers, now);
+  if (error.headers) {
+    quota.observeHeaders(entry, error.headers, now);
+    billing.observeHeaders(entry, error.headers);
+  }
   if (error.learned?.value) quota.learnLimit(entry, error.learned);
+  if (error.kind === KINDS.QUOTA_EXHAUSTED) billing.observeFailure(entry, error);
   if (error.kind === KINDS.QUOTA_EXHAUSTED || error.kind === KINDS.RATE_LIMIT) {
     quota.markExhausted(entry, error.kind === KINDS.QUOTA_EXHAUSTED ? 'rpd' : 'rpm', cooldown?.until || null, now);
   }
@@ -112,7 +117,10 @@ function onSlow(entry, now = Date.now()) {
 
 function onSuccess(entry, measurement, headers, now = Date.now()) {
   stats.recordSuccess(entry.ref, measurement, now);
-  if (headers) quota.observeHeaders(entry, headers, now);
+  if (headers) {
+    quota.observeHeaders(entry, headers, now);
+    billing.observeHeaders(entry, headers);
+  }
 }
 
 module.exports = { onFailure, onSuccess, onSlow, policyFor, QUOTA_LADDER_MS };

@@ -47,8 +47,22 @@ const definitionSchema = z.object({
   billing: z.object({
     defaultMode: z.enum(['free_tier', 'paid']),
     // With billing_mode=free_tier the account has no payment method, so
-    // nothing it can call is ever charged.
+    // nothing it can call is ever charged. freeTierAll covers every model;
+    // freeTierModels (patterns) only the models the free tier includes.
     freeTierAll: z.boolean().default(false),
+    freeTierModels: z.array(z.string()).default([]),
+    // Automatic proof that the account is not billed (services/providers/
+    // billing_check.js). Without it the user's billing mode is trusted.
+    verify: z.discriminatedUnion('type', [
+      z.object({ type: z.literal('ratelimit_headers'), maxFreeRequestsPerDay: z.number().positive(), probeModels: z.array(z.string()).default([]) }),
+      z.object({ type: z.literal('paid_model_probe'), paidOnlyModels: z.array(z.string()).min(1) }),
+    ]).optional(),
+    // The free tier applies only to a loopback/private base URL, or only without a key.
+    localOnly: z.boolean().default(false),
+    keylessOnly: z.boolean().default(false),
+    // Where the free-tier facts were checked, and when (YYYY-MM-DD).
+    source: z.string().optional(),
+    checkedAt: z.string().optional(),
     // Models that are free on this provider regardless of billing mode.
     alwaysFree: z.array(z.string()).default([]),
     // Ignore "price 0" in the listing (some providers report 0 for unpriced models).
@@ -132,7 +146,9 @@ function publicDefinition(definition) {
     fields: definition.fields,
     billing: {
       defaultMode: definition.billing.defaultMode,
-      freeTierAvailable: definition.billing.freeTierAll,
+      freeTierAvailable: definition.billing.freeTierAll || definition.billing.freeTierModels.length > 0,
+      freeTierPartial: !definition.billing.freeTierAll && definition.billing.freeTierModels.length > 0,
+      verified: Boolean(definition.billing.verify),
       hasAlwaysFreeModels: definition.billing.alwaysFree.length > 0,
       note: definition.billing.note,
     },

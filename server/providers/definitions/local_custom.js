@@ -11,7 +11,7 @@ module.exports = [
     baseUrl: 'http://127.0.0.1:11434/v1',
     editableBaseUrl: true,
     keyOptional: true,
-    billing: { defaultMode: 'free_tier', freeTierAll: true, note: 'Local inference costs nothing per request.' },
+    billing: { defaultMode: 'free_tier', freeTierAll: true, localOnly: true, note: 'Free only for a server on this machine or your private network; a public host such as ollama.com may charge.' },
     quirks: { timeoutMs: 600000 },
   },
   {
@@ -24,7 +24,7 @@ module.exports = [
     baseUrl: 'http://127.0.0.1:1234/v1',
     editableBaseUrl: true,
     keyOptional: true,
-    billing: { defaultMode: 'free_tier', freeTierAll: true, note: 'Local inference costs nothing per request.' },
+    billing: { defaultMode: 'free_tier', freeTierAll: true, localOnly: true, note: 'Free only for a server on this machine or your private network; a public host such as ollama.com may charge.' },
     quirks: { timeoutMs: 600000 },
   },
   {

@@ -3,6 +3,7 @@
 const { getConfig } = require('../config/env');
 const accounts = require('../services/providers/account_service');
 const catalog = require('../services/catalog/catalog_service');
+const billing = require('../services/providers/billing_check');
 const metadata = require('../services/catalog/metadata_service');
 const quota = require('../services/quota/quota_service');
 const usage = require('../services/usage/usage_service');
@@ -10,6 +11,7 @@ const { createLogger } = require('../utils/logger');
 
 const logger = createLogger('scheduler');
 const QUOTA_FLUSH_MS = 10_000;
+const BILLING_CHECK_MS = 6 * 60 * 60_000;
 const LOG_RETENTION_DAYS = 90;
 const timers = [];
 
@@ -57,6 +59,7 @@ function start() {
   setInterval(() => quota.flush(), QUOTA_FLUSH_MS).unref();
   if (!config.workersEnabled) return;
   every('validate-keys', config.sync.validateIntervalMs, () => forEachAccount((id) => accounts.validateAccount(id)));
+  every('verify-billing', BILLING_CHECK_MS, () => forEachAccount((id) => billing.verifyAccount(id)), { runAtStart: true });
   every('sync-models', config.sync.modelSyncIntervalMs, () => forEachAccount((id) => catalog.syncAccount(id)));
   if (config.metadataSourcesEnabled) {
     every('refresh-metadata', config.sync.metadataIntervalMs, () => metadata.refreshSources(), { runAtStart: true });

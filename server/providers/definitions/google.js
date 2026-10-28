@@ -11,8 +11,19 @@ module.exports = {
   baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
   billing: {
     defaultMode: 'free_tier',
-    freeTierAll: true,
-    note: 'Free while the Google Cloud project behind the key has no billing account. Some models have no free quota and are learned as unavailable.',
+    // Only these models have a free tier; Pro previews, image, Omni and Lyria
+    // models are paid-only. A model refused with "free_tier … limit: 0" is
+    // learned as not free.
+    freeTierModels: [
+      '^gemini-(2\\.5|3|3\\.\\d)-flash(-lite)?(-preview)?$',
+      '^gemini-flash(-lite)?-latest$',
+      '^gemini-2\\.5-pro$',
+      '^gemma-',
+    ],
+    note: 'Free only while the Google Cloud project behind the key has no billing account; with billing enabled every request is charged. NeoRouter verifies this automatically and only treats models with a free tier as free.',
+    verify: { type: 'paid_model_probe', paidOnlyModels: ['^gemini-\\d+(\\.\\d+)?-pro-preview$', '^gemini-4-argon$', '^gemini-pro-latest$'] },
+    source: 'https://ai.google.dev/gemini-api/docs/pricing',
+    checkedAt: '2026-10-28',
   },
   limits: {
     pool: 'model',

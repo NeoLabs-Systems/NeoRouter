@@ -15,14 +15,14 @@ function community(id, label, baseUrl, extra = {}) {
     adapter: 'openai_compatible',
     baseUrl,
     ...rest,
-    billing: { defaultMode: 'paid', freeTierAll: true, ...billing },
+    billing: { defaultMode: 'paid', ...billing },
   };
 }
 
 module.exports = [
-  community('sealion', 'SEA-LION', 'https://api.sea-lion.ai/v1', { website: 'https://sea-lion.ai', billing: { defaultMode: 'free_tier' } }),
-  community('typhoon', 'Typhoon', 'https://api.opentyphoon.ai/v1', { website: 'https://opentyphoon.ai', billing: { defaultMode: 'free_tier' } }),
-  community('longcat', 'LongCat', 'https://api.longcat.chat/openai/v1', { website: 'https://longcat.chat', billing: { defaultMode: 'free_tier', note: 'Daily free token allowance.' } }),
+  community('sealion', 'SEA-LION', 'https://api.sea-lion.ai/v1', { website: 'https://sea-lion.ai', billing: { defaultMode: 'free_tier', freeTierAll: true, note: 'Trial API key, rate-limited, no billing.' } }),
+  community('typhoon', 'Typhoon', 'https://api.opentyphoon.ai/v1', { website: 'https://opentyphoon.ai', billing: { defaultMode: 'free_tier', freeTierAll: true, note: 'Free for light usage on this endpoint.' } }),
+  community('longcat', 'LongCat', 'https://api.longcat.chat/openai/v1', { website: 'https://longcat.chat', billing: { defaultMode: 'free_tier', freeTierAll: true, note: 'Prepaid only: free while you never top up the balance (requests fail at $0).' } }),
   community('electronhub', 'Electron Hub', 'https://api.electronhub.ai/v1', { validate: { path: '/user/me' }, billing: { alwaysFree: [':free$'] } }),
   community('kenari', 'Kenari', 'https://kenari.id/v1', { validate: { path: '/account/balance' }, billing: { alwaysFree: [':free$'] } }),
   community('bazaarlink', 'BazaarLink', 'https://bazaarlink.ai/api/v1', { billing: { alwaysFree: [':free$'] } }),

@@ -81,6 +81,13 @@ function normalizeUsage(usage) {
   };
 }
 
+// The charge a provider reports in its usage block (OpenRouter, Kilo, …), in
+// USD; null when the provider does not report one.
+function reportedCost(usage) {
+  const value = Number(usage?.cost ?? usage?.total_cost);
+  return Number.isFinite(value) ? value : null;
+}
+
 function buildResponse({ id = completionId(), model, message, finishReason = 'stop', usage = null, created = Math.floor(Date.now() / 1000) }) {
   return {
     id,
@@ -113,6 +120,7 @@ class StreamAccumulator {
     this.toolCalls = [];
     this.finishReason = null;
     this.usage = null;
+    this.reportedCost = null;
     this.chunks = 0;
     this.id = null;
     this.model = null;
@@ -122,7 +130,10 @@ class StreamAccumulator {
     this.chunks += 1;
     this.id = this.id || chunk.id;
     this.model = this.model || chunk.model;
-    if (chunk.usage) this.usage = normalizeUsage(chunk.usage);
+    if (chunk.usage) {
+      this.usage = normalizeUsage(chunk.usage);
+      this.reportedCost = reportedCost(chunk.usage);
+    }
     for (const choice of chunk.choices || []) {
       const delta = choice.delta || {};
       if (typeof delta.content === 'string') this.content += delta.content;
@@ -162,6 +173,7 @@ function invalidToolCalls(toolCalls) {
 
 module.exports = {
   completionId,
+  reportedCost,
   normalizeRequest,
   contentParts,
   textOf,

@@ -3,6 +3,7 @@
 const express = require('express');
 const { z } = require('zod');
 const registry = require('../providers/registry');
+const billing = require('../services/providers/billing_check');
 const accounts = require('../services/providers/account_service');
 const catalog = require('../services/catalog/catalog_service');
 const quota = require('../services/quota/quota_service');
@@ -43,12 +44,14 @@ router.post('/accounts', validate(accountInput), asyncRoute(async (req, res) => 
     sync = { error: error.message };
     logger.warn('Initial model sync failed', { accountId: account.id, error: error.message });
   }
+  await billing.verifyAccount(account.id);
   res.status(201).json({ account: accounts.get(req.auth.userId, account.id), validation, sync });
 }));
 
 router.patch('/accounts/:id', validate(accountInput.omit({ definitionId: true }).extend({ enabled: z.boolean().optional() })), asyncRoute(async (req, res) => {
   const account = await accounts.update(req.auth.userId, req.params.id, req.body);
   catalog.reclassifyAccount(req.params.id);
+  if (req.body.billingMode !== undefined || req.body.secret !== undefined) await billing.verifyAccount(req.params.id);
   res.json({ account: accounts.get(req.auth.userId, account.id) });
 }));
 

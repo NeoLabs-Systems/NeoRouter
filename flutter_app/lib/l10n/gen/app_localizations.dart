@@ -1135,6 +1135,54 @@ abstract class AppL10n {
   /// **'Price unknown – not counted as free'**
   String get freeReasonPriceUnknown;
 
+  /// No description provided for @freeReasonBilledObserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid: the provider reported a charge for it'**
+  String get freeReasonBilledObserved;
+
+  /// No description provided for @freeReasonNoFreeTier.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid: no free quota on this account'**
+  String get freeReasonNoFreeTier;
+
+  /// No description provided for @freeReasonNotInFreeTier.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid: not part of the free tier'**
+  String get freeReasonNotInFreeTier;
+
+  /// No description provided for @freeReasonBillingActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid: billing is active on this account'**
+  String get freeReasonBillingActive;
+
+  /// No description provided for @freeReasonBillingUnverified.
+  ///
+  /// In en, this message translates to:
+  /// **'Not free until the free plan is verified'**
+  String get freeReasonBillingUnverified;
+
+  /// No description provided for @billingVerifiedFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free plan verified'**
+  String get billingVerifiedFree;
+
+  /// No description provided for @billingDetectedPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing active'**
+  String get billingDetectedPaid;
+
+  /// No description provided for @billingUnverified.
+  ///
+  /// In en, this message translates to:
+  /// **'Free plan not verified'**
+  String get billingUnverified;
+
   /// No description provided for @modelSettings.
   ///
   /// In en, this message translates to:

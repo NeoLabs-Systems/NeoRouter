@@ -578,6 +578,33 @@ class AppL10nEn extends AppL10n {
   String get freeReasonPriceUnknown => 'Price unknown – not counted as free';
 
   @override
+  String get freeReasonBilledObserved =>
+      'Paid: the provider reported a charge for it';
+
+  @override
+  String get freeReasonNoFreeTier => 'Paid: no free quota on this account';
+
+  @override
+  String get freeReasonNotInFreeTier => 'Paid: not part of the free tier';
+
+  @override
+  String get freeReasonBillingActive =>
+      'Paid: billing is active on this account';
+
+  @override
+  String get freeReasonBillingUnverified =>
+      'Not free until the free plan is verified';
+
+  @override
+  String get billingVerifiedFree => 'Free plan verified';
+
+  @override
+  String get billingDetectedPaid => 'Billing active';
+
+  @override
+  String get billingUnverified => 'Free plan not verified';
+
+  @override
   String get modelSettings => 'Model settings';
 
   @override

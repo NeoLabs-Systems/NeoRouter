@@ -74,7 +74,7 @@ async function syncAccount(accountId) {
 // recomputed whenever either changes, not only on sync.
 function reclassifyAccount(accountId) {
   const db = getDatabase();
-  const account = db.prepare('SELECT definition_id, billing_mode FROM provider_accounts WHERE id = ?').get(accountId);
+  const account = db.prepare('SELECT definition_id, billing_mode, billing_state, base_url, secret_encrypted FROM provider_accounts WHERE id = ?').get(accountId);
   if (!account) return;
   const definition = registry.get(account.definition_id);
   const rows = db.prepare('SELECT id, model_id, raw_json, overrides_json, price_in, price_out, price_source FROM models WHERE account_id = ?').all(accountId);
@@ -86,6 +86,9 @@ function reclassifyAccount(accountId) {
       const result = classify({
         definition,
         billingMode: account.billing_mode,
+        billingState: account.billing_state,
+        baseUrl: account.base_url,
+        hasSecret: Boolean(account.secret_encrypted),
         modelId: row.model_id,
         listing: { ...listing, priceKnown: listing.priceKnown || row.price_source !== null || overrides.priceIn !== undefined },
         overrides,
@@ -95,7 +98,21 @@ function reclassifyAccount(accountId) {
   })();
 }
 
-const OVERRIDE_KEYS = ['free', 'priceIn', 'priceOut', 'contextWindow', 'tools', 'vision', 'intelligence'];
+// Records evidence from real traffic on a model (e.g. { billedAt } or
+// { noFreeTier }) and reclassifies its account. Returns false when the flag
+// was already set, so callers log each finding once.
+function flagModel(modelRef, flags) {
+  const db = getDatabase();
+  const row = db.prepare('SELECT account_id, overrides_json FROM models WHERE id = ?').get(modelRef);
+  if (!row) return false;
+  const overrides = JSON.parse(row.overrides_json || '{}');
+  if (Object.keys(flags).every((key) => overrides[key])) return false;
+  db.prepare('UPDATE models SET overrides_json = ? WHERE id = ?').run(JSON.stringify({ ...overrides, ...flags }), modelRef);
+  reclassifyAccount(row.account_id);
+  return true;
+}
+
+const OVERRIDE_KEYS = ['free', 'billedAt', 'noFreeTier', 'priceIn', 'priceOut', 'contextWindow', 'tools', 'vision', 'intelligence'];
 
 function updateModel(userId, modelRef, { enabled, overrides }) {
   const db = getDatabase();
@@ -205,4 +222,4 @@ function getModel(userId, modelRef) {
   return toEntry(row);
 }
 
-module.exports = { syncAccount, reclassifyAccount, updateModel, bulkSetEnabled, listForUser, getModel, toEntry };
+module.exports = { syncAccount, reclassifyAccount, flagModel, updateModel, bulkSetEnabled, listForUser, getModel, toEntry };

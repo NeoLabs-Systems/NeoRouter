@@ -12,7 +12,11 @@ module.exports = {
   billing: {
     defaultMode: 'free_tier',
     freeTierAll: true,
-    note: 'Free tier applies while no payment method is on file in the Groq console.',
+    note: 'Free while the Groq organisation is on the Free plan (no payment method). NeoRouter checks the plan limits on every response and stops treating models as free as soon as the account is on a paid plan.',
+    // Free-plan daily request limits are at most 14,400; paid plans are higher.
+    verify: { type: 'ratelimit_headers', maxFreeRequestsPerDay: 14400, probeModels: ['gpt-oss-20b', 'llama', 'prompt-guard'] },
+    source: 'https://console.groq.com/docs/billing-faqs',
+    checkedAt: '2026-10-28',
   },
   limits: {
     pool: 'model',

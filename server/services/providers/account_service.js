@@ -5,6 +5,7 @@ const { getDatabase } = require('../../db/database');
 const { HttpError } = require('../../middleware/error_handler');
 const { encryptString, decryptString } = require('../../utils/crypto');
 const registry = require('../../providers/registry');
+const { hasFreeTier } = require('../catalog/free_classifier');
 const { createLogger } = require('../../utils/logger');
 
 const logger = createLogger('provider-accounts');
@@ -67,6 +68,11 @@ function publicAccount(row) {
     keyPreview: maskSecret(runtime.secret),
     options: runtime.options,
     billingMode: row.billing_mode,
+    billingState: row.billing_state,
+    billingMessage: row.billing_message,
+    billingCheckedAt: row.billing_checked_at,
+    billingNote: definition?.billing.note || null,
+    billingVerifiable: Boolean(definition?.billing.verify),
     enabled: Boolean(row.enabled),
     status: row.status,
     statusMessage: row.status_message,
@@ -139,7 +145,7 @@ async function create(userId, input) {
   const options = { ...(input.options || {}) };
   if (input.headers) options.headers = input.headers;
   validateInput(definition, { secret: input.secret, baseUrl, options });
-  const billingMode = input.billingMode && (input.billingMode === 'paid' || definition.billing.freeTierAll)
+  const billingMode = input.billingMode && (input.billingMode === 'paid' || hasFreeTier(definition.billing))
     ? input.billingMode : definition.billing.defaultMode;
 
   const probe = { secret: input.secret || null, baseUrl, options };
@@ -177,8 +183,8 @@ async function update(userId, accountId, input) {
     const result = await registry.createAdapter(definition, next).validate();
     if (result.status === 'invalid') throw new HttpError(422, 'KEY_REJECTED', `${definition.label} rejected this key: ${result.message}`);
   }
-  if (input.billingMode === 'free_tier' && !definition.billing.freeTierAll) {
-    throw new HttpError(400, 'NO_FREE_TIER', `${definition.label} has no free tier that covers all models.`);
+  if (input.billingMode === 'free_tier' && !hasFreeTier(definition.billing)) {
+    throw new HttpError(400, 'NO_FREE_TIER', `${definition.label} has no free tier.`);
   }
   if (input.slug !== undefined && slugify(input.slug) !== row.slug) {
     const slug = slugify(input.slug);
@@ -189,6 +195,7 @@ async function update(userId, accountId, input) {
   }
   db.prepare(`UPDATE provider_accounts SET label = ?, base_url = ?, secret_encrypted = ?, options_json = ?, billing_mode = ?,
     enabled = ?, auth_failures = CASE WHEN ? THEN 0 ELSE auth_failures END,
+    billing_state = CASE WHEN ? THEN 'unknown' ELSE billing_state END,
     status = CASE WHEN ? THEN 'unknown' ELSE status END WHERE id = ?`)
     .run(
       input.label ?? row.label,
@@ -198,6 +205,7 @@ async function update(userId, accountId, input) {
       input.billingMode ?? row.billing_mode,
       input.enabled === undefined ? row.enabled : (input.enabled ? 1 : 0),
       credentialsChanged || input.enabled === true ? 1 : 0,
+      credentialsChanged || (input.billingMode !== undefined && input.billingMode !== row.billing_mode) ? 1 : 0,
       credentialsChanged || (input.enabled === true && row.status === 'disabled') ? 1 : 0,
       accountId,
     );

@@ -253,6 +253,23 @@ class _AccountCard extends StatelessWidget {
                 tone: account.billingMode == 'free_tier' ? PillTone.success : PillTone.accent,
                 icon: account.billingMode == 'free_tier' ? Icons.savings_outlined : Icons.payments_outlined,
               ),
+              if (account.billingMode == 'free_tier' && account.billingVerifiable)
+                Tooltip(
+                  message: account.billingMessage ?? '',
+                  child: MetaPill(
+                    label: switch (account.billingState) {
+                      'free' => t.billingVerifiedFree,
+                      'paid' => t.billingDetectedPaid,
+                      _ => t.billingUnverified,
+                    },
+                    tone: switch (account.billingState) {
+                      'free' => PillTone.success,
+                      'paid' => PillTone.error,
+                      _ => PillTone.warning,
+                    },
+                    icon: account.billingState == 'free' ? Icons.verified_outlined : Icons.info_outline,
+                  ),
+                ),
               MetaPill(label: t.modelsCount('${account.modelCount}', '${account.freeModelCount}')),
               if (account.keyPreview != null) MetaPill(label: account.keyPreview!, icon: Icons.key_outlined),
             ],

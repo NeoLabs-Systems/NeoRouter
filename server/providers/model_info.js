@@ -46,6 +46,10 @@ function perMillion(value, unitHint) {
 }
 
 function parsePricing(raw) {
+  // Some listings flag models that need a balance regardless of price fields.
+  if (raw.paid_only === true || raw.usage_based_only === true) {
+    return { priceIn: null, priceOut: null, priceKnown: false, freeHint: false };
+  }
   if (raw.price === 'free' || raw.pricing === 'free' || raw.is_free === true || raw.free === true) {
     return { priceIn: 0, priceOut: 0, priceKnown: true, freeHint: true };
   }

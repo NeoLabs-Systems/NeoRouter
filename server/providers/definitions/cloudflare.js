@@ -10,6 +10,6 @@ module.exports = {
   adapter: 'cloudflare',
   baseUrl: 'https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/v1',
   fields: [{ key: 'accountId', label: 'Account ID', required: true, placeholder: '32-character account id' }],
-  billing: { defaultMode: 'free_tier', freeTierAll: true, note: '10,000 neurons per day free on the Workers Free plan.' },
+  billing: { defaultMode: 'free_tier', freeTierAll: true, note: 'Free only on the Workers Free plan (10,000 neurons a day, then requests fail). On Workers Paid the overage is billed: choose paid for such accounts.', source: 'https://developers.cloudflare.com/workers-ai/platform/pricing/', checkedAt: '2026-10-28' },
   limits: { pool: 'account', account: { rpm: 300 } },
 };

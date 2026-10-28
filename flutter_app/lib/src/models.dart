@@ -66,6 +66,9 @@ class ProviderAccount {
   String? get baseUrl => raw['baseUrl'] as String?;
   String? get keyPreview => raw['keyPreview'] as String?;
   String get billingMode => raw['billingMode'] as String;
+  String get billingState => raw['billingState'] as String? ?? 'unknown';
+  String? get billingMessage => raw['billingMessage'] as String?;
+  bool get billingVerifiable => raw['billingVerifiable'] == true;
   bool get enabled => raw['enabled'] == true;
   String get status => raw['status'] as String? ?? 'unknown';
   String? get statusMessage => raw['statusMessage'] as String?;

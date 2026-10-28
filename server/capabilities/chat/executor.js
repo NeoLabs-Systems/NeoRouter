@@ -12,10 +12,11 @@ const loadTracker = require('../../services/routing/load_tracker');
 const quota = require('../../services/quota/quota_service');
 const budget = require('../../services/budget/budget_service');
 const usage = require('../../services/usage/usage_service');
+const billing = require('../../services/providers/billing_check');
 const routerKeys = require('../../services/router_keys/router_key_service');
 const { createLogger } = require('../../utils/logger');
 const {
-  requirements, estimateInputTokens, normalizeUsage, StreamAccumulator, invalidToolCalls, textOf,
+  requirements, estimateInputTokens, normalizeUsage, reportedCost, StreamAccumulator, invalidToolCalls, textOf,
 } = require('./canonical');
 
 const translators = {
@@ -231,6 +232,7 @@ async function execute({ req, res, key, format, body }) {
       };
       const cost = budget.costOf(entry, tokens);
       reservation.settle(cost, requestId);
+      billing.observeCost(entry, reportedCost(result.response.usage));
       quota.recordTokens(entry, tokens.prompt_tokens + tokens.completion_tokens - inputTokens);
       learning.onSuccess(entry, { latencyMs: result.latencyMs, ttftMs: null, outputTokens: tokens.completion_tokens, generationMs: result.latencyMs }, result.headers);
       trail.push(trailItem(entry, 'success', { ms: result.latencyMs }));
@@ -264,6 +266,7 @@ async function execute({ req, res, key, format, body }) {
     const tokens = accumulator.usage || { prompt_tokens: inputTokens, completion_tokens: estimateOutputTokens(accumulator) };
     const cost = budget.costOf(entry, tokens);
     reservation.settle(cost, requestId);
+    billing.observeCost(entry, accumulator.reportedCost);
     quota.recordTokens(entry, tokens.prompt_tokens + tokens.completion_tokens - inputTokens);
     if (streamError) {
       if (streamError.kind !== KINDS.ABORTED) learning.onFailure(entry, streamError, { estimatedTokens: inputTokens });
