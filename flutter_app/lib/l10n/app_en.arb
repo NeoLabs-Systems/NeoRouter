@@ -1184,5 +1184,9 @@
   "styleUseTitle": "Use this style",
   "styleUseHint": "Ask for this model name in any app, or choose the style for an API key.",
   "styleUseRow": "Model name for your apps",
-  "styleWeightsHint": "How much each quality counts when NeoRouter compares models. A model also has to be decent on everything that matters."
+  "styleWeightsHint": "How much each quality counts when NeoRouter compares models. A model also has to be decent on everything that matters.",
+  "freeMode": "Free only",
+  "freeModeOnHint": "Only free models answer. Turn off to let NeoRouter also use paid models this key may use.",
+  "freeModeOffHint": "Paid models may answer too, within this key's budget.",
+  "freeModeLocked": "This API key only uses free models."
 }

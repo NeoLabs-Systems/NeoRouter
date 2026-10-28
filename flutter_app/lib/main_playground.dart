@@ -37,6 +37,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
   List<CapabilitySummary> _modes = <CapabilitySummary>[];
   String _mode = 'chat';
   String? _keyId;
+  bool _freeOnly = true;
   String _model = 'auto';
   final TextEditingController _system = TextEditingController();
   final TextEditingController _input = TextEditingController();
@@ -99,7 +100,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
     ];
     final started = DateTime.now();
     try {
-      final response = await widget.controller.api.playground(<String, Object?>{'keyId': _keyId, 'model': _model, 'messages': history});
+      final response = await widget.controller.api.playground(<String, Object?>{'keyId': _keyId, 'model': _model, 'freeOnly': _freeOnly, 'messages': history});
       final message = (response['choices'] as List).first['message'] as Map;
       final latency = DateTime.now().difference(started).inMilliseconds;
       if (!mounted) return;
@@ -256,6 +257,10 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
               keys: _keys,
               onModel: (value) => value == '__specific__' ? _pickSpecificModel() : setState(() => _model = value),
               onKey: (value) => setState(() => _keyId = value),
+              // A free-only key can never leave free mode.
+              keyFreeOnly: _keys.where((key) => key.id == _keyId).firstOrNull?.mode == 'free_only',
+              freeOnly: _freeOnly,
+              onFreeOnly: (value) => setState(() => _freeOnly = value),
             ),
           ],
         ),
@@ -353,6 +358,9 @@ class _Composer extends StatelessWidget {
     required this.keys,
     required this.onModel,
     required this.onKey,
+    required this.keyFreeOnly,
+    required this.freeOnly,
+    required this.onFreeOnly,
   });
 
   final TextEditingController input;
@@ -364,6 +372,9 @@ class _Composer extends StatelessWidget {
   final List<RouterKey> keys;
   final ValueChanged<String> onModel;
   final ValueChanged<String> onKey;
+  final bool keyFreeOnly;
+  final bool freeOnly;
+  final ValueChanged<bool> onFreeOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -429,6 +440,17 @@ class _Composer extends StatelessWidget {
                   itemBuilder: (_) => <PopupMenuEntry<String>>[for (final key in keys) PopupMenuItem<String>(value: key.id, child: Text(key.name))],
                   child: _ComposerChip(icon: Icons.key_outlined, label: keyName ?? '—'),
                 ),
+              Tooltip(
+                message: keyFreeOnly ? t.freeModeLocked : (freeOnly ? t.freeModeOnHint : t.freeModeOffHint),
+                child: FilterChip(
+                  avatar: Icon(Icons.savings_outlined, size: 15, color: freeOnly || keyFreeOnly ? palette.accent : palette.textMuted),
+                  label: Text(t.freeMode),
+                  selected: freeOnly || keyFreeOnly,
+                  onSelected: keyFreeOnly ? null : onFreeOnly,
+                  visualDensity: VisualDensity.compact,
+                  side: BorderSide(color: freeOnly || keyFreeOnly ? palette.accent.withValues(alpha: 0.5) : palette.border),
+                ),
+              ),
               const Spacer(),
               Text(t.enterToSend, style: GoogleFonts.geist(fontSize: 11.5, color: palette.textMuted)),
               const SizedBox(width: 10),

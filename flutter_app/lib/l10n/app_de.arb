@@ -616,5 +616,9 @@
   "styleUseTitle": "Diesen Stil nutzen",
   "styleUseHint": "Frage in jeder App nach diesem Modellnamen oder wähle den Stil für einen API-Key.",
   "styleUseRow": "Modellname für deine Apps",
-  "styleWeightsHint": "Wie stark jede Eigenschaft beim Vergleich der Modelle zählt. Ein Modell muss zudem in allem, was zählt, ordentlich sein."
+  "styleWeightsHint": "Wie stark jede Eigenschaft beim Vergleich der Modelle zählt. Ein Modell muss zudem in allem, was zählt, ordentlich sein.",
+  "freeMode": "Nur gratis",
+  "freeModeOnHint": "Nur Gratis-Modelle antworten. Ausschalten, um auch bezahlte Modelle zu erlauben, die dieser Key nutzen darf.",
+  "freeModeOffHint": "Auch bezahlte Modelle dürfen antworten, im Rahmen des Budgets dieses Keys.",
+  "freeModeLocked": "Dieser API-Key nutzt nur Gratis-Modelle."
 }

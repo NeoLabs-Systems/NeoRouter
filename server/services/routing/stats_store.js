@@ -81,14 +81,10 @@ function update(ref, mutate, now = Date.now()) {
 
 function recordSuccess(ref, { latencyMs, ttftMs, outputTokens, generationMs }, now = Date.now()) {
   return update(ref, (row) => {
-    // A response far slower than this model's own norm is a soft failure:
-    // it still counts as success but nudges routing elsewhere.
-    const slow = row.samples >= 5 && row.latency_ms && latencyMs > row.latency_ms * 2.5 && latencyMs > 5000;
-    row.successes += slow ? 0.75 : 1;
-    if (slow) {
-      row.failures += 0.25;
-      row.penalty += 0.5;
-    }
+    // Slowness is a speed matter, not a reliability one: a slow answer only
+    // moves the latency average, so styles that do not care about speed
+    // (e.g. "smartest") are not steered away from big, slow models.
+    row.successes += 1;
     row.latency_ms = ewma(row.latency_ms, latencyMs);
     if (Number.isFinite(ttftMs)) row.ttft_ms = ewma(row.ttft_ms, ttftMs);
     if (outputTokens >= 16 && generationMs > 50) row.tps = ewma(row.tps, outputTokens / (generationMs / 1000));
@@ -99,6 +95,14 @@ function recordSuccess(ref, { latencyMs, ttftMs, outputTokens, generationMs }, n
       row.breaker_open_until = 0;
       row.recent_failures_json = '[]';
     }
+  }, now);
+}
+
+// An attempt cancelled because another model answered first took at least
+// this long; it lowers the speed estimate and nothing else.
+function recordSlow(ref, elapsedMs, now = Date.now()) {
+  return update(ref, (row) => {
+    if (Number.isFinite(elapsedMs) && elapsedMs > (row.latency_ms || 0)) row.latency_ms = ewma(row.latency_ms, elapsedMs);
   }, now);
 }
 
@@ -152,4 +156,4 @@ function resetForTests() {
   cache.clear();
 }
 
-module.exports = { snapshot, recordSuccess, recordFailure, raiseMinOutputTokens, clearCooldown, availability, resetForTests, MAX_PENALTY };
+module.exports = { snapshot, recordSuccess, recordSlow, recordFailure, raiseMinOutputTokens, clearCooldown, availability, resetForTests, MAX_PENALTY };

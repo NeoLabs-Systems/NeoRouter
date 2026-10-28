@@ -2088,4 +2088,18 @@ class AppL10nEn extends AppL10n {
   @override
   String get styleWeightsHint =>
       'How much each quality counts when NeoRouter compares models. A model also has to be decent on everything that matters.';
+
+  @override
+  String get freeMode => 'Free only';
+
+  @override
+  String get freeModeOnHint =>
+      'Only free models answer. Turn off to let NeoRouter also use paid models this key may use.';
+
+  @override
+  String get freeModeOffHint =>
+      'Paid models may answer too, within this key\'s budget.';
+
+  @override
+  String get freeModeLocked => 'This API key only uses free models.';
 }

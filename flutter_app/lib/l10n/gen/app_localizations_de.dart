@@ -2106,4 +2106,18 @@ class AppL10nDe extends AppL10n {
   @override
   String get styleWeightsHint =>
       'Wie stark jede Eigenschaft beim Vergleich der Modelle zählt. Ein Modell muss zudem in allem, was zählt, ordentlich sein.';
+
+  @override
+  String get freeMode => 'Nur gratis';
+
+  @override
+  String get freeModeOnHint =>
+      'Nur Gratis-Modelle antworten. Ausschalten, um auch bezahlte Modelle zu erlauben, die dieser Key nutzen darf.';
+
+  @override
+  String get freeModeOffHint =>
+      'Auch bezahlte Modelle dürfen antworten, im Rahmen des Budgets dieses Keys.';
+
+  @override
+  String get freeModeLocked => 'Dieser API-Key nutzt nur Gratis-Modelle.';
 }

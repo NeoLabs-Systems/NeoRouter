@@ -3798,6 +3798,30 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'How much each quality counts when NeoRouter compares models. A model also has to be decent on everything that matters.'**
   String get styleWeightsHint;
+
+  /// No description provided for @freeMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Free only'**
+  String get freeMode;
+
+  /// No description provided for @freeModeOnHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only free models answer. Turn off to let NeoRouter also use paid models this key may use.'**
+  String get freeModeOnHint;
+
+  /// No description provided for @freeModeOffHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid models may answer too, within this key\'s budget.'**
+  String get freeModeOffHint;
+
+  /// No description provided for @freeModeLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'This API key only uses free models.'**
+  String get freeModeLocked;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

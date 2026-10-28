@@ -109,10 +109,11 @@ function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, now = 
   return policy;
 }
 
-// An attempt that lost a hedge race was slower than an alternative: a soft
-// signal that nudges routing elsewhere without opening the circuit breaker.
-function onSlow(entry, now = Date.now()) {
-  stats.recordFailure(entry.ref, { weight: 0.25, penalty: 0.5, message: 'slow: lost a hedge race', countsForBreaker: false }, now);
+// An attempt that lost a hedge race was slower than an alternative. That only
+// says something about speed, so it updates the latency estimate and leaves
+// reliability and penalties alone.
+function onSlow(entry, elapsedMs, now = Date.now()) {
+  stats.recordSlow(entry.ref, elapsedMs, now);
 }
 
 function onSuccess(entry, measurement, headers, now = Date.now()) {

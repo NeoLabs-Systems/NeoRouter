@@ -656,6 +656,10 @@ S = {
   'styleUseHint': ('Ask for this model name in any app, or choose the style for an API key.', 'Frage in jeder App nach diesem Modellnamen oder wähle den Stil für einen API-Key.'),
   'styleUseRow': ('Model name for your apps', 'Modellname für deine Apps'),
   'styleWeightsHint': ('How much each quality counts when NeoRouter compares models. A model also has to be decent on everything that matters.', 'Wie stark jede Eigenschaft beim Vergleich der Modelle zählt. Ein Modell muss zudem in allem, was zählt, ordentlich sein.'),
+  'freeMode': ('Free only', 'Nur gratis'),
+  'freeModeOnHint': ('Only free models answer. Turn off to let NeoRouter also use paid models this key may use.', 'Nur Gratis-Modelle antworten. Ausschalten, um auch bezahlte Modelle zu erlauben, die dieser Key nutzen darf.'),
+  'freeModeOffHint': ("Paid models may answer too, within this key's budget.", 'Auch bezahlte Modelle dürfen antworten, im Rahmen des Budgets dieses Keys.'),
+  'freeModeLocked': ('This API key only uses free models.', 'Dieser API-Key nutzt nur Gratis-Modelle.'),
 }
 
 PLACEHOLDER = re.compile(r'\{(\w+)\}')

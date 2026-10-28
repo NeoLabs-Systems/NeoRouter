@@ -157,7 +157,7 @@ async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs
   return { buffered, rest, accumulator, headers, ttftMs, startedAt, controller };
 }
 
-async function execute({ req, res, key, format, body }) {
+async function execute({ req, res, key, format, body, freeOnly = false }) {
   const translator = translators[format];
   const requestId = req.id || crypto.randomUUID();
   const startedAt = Date.now();
@@ -186,7 +186,7 @@ async function execute({ req, res, key, format, body }) {
   const needs = requirements(canonical);
   const inputTokens = estimateInputTokens(canonical);
   const plan = new RoutingPlan({
-    userId: key.user_id, key, request: canonical, requestedModel, needs, inputTokens, freeOnly: budgetExhausted,
+    userId: key.user_id, key, request: canonical, requestedModel, needs, inputTokens, freeOnly: freeOnly || budgetExhausted,
   });
 
   const config = getConfig();
@@ -392,7 +392,7 @@ async function execute({ req, res, key, format, body }) {
       settle(other);
       other.reservation.release();
       trail.push(trailItem(other.entry, 'hedge_lost', { ms: Date.now() - other.started }));
-      learning.onSlow(other.entry);
+      learning.onSlow(other.entry, Date.now() - other.started);
     }
     running.delete(attempt);
     try {

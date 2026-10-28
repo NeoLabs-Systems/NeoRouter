@@ -136,7 +136,7 @@ test('intelligence uses benchmark data when present and heuristics otherwise', (
   assert.ok(big.intelligence > tiny.intelligence + 0.3, `${big.intelligence} vs ${tiny.intelligence}`);
   assert.equal(big.intelligence_source, 'heuristic');
   assert.equal(bench.intelligence_source, 'artificial_analysis');
-  assert.ok(Math.abs(bench.intelligence - 0.8) < 1e-9);
+  assert.ok(Math.abs(bench.intelligence - 1) < 1e-9, 'the best benchmarked model defines the top of the scale');
   const unknown = metadata.computeCanonical('nothingknown', ['nothing-known']);
   assert.equal(unknown.intelligence_source, 'default');
 });
@@ -176,4 +176,52 @@ test('other routers are their own kind and dynamic prices are unknown, not cheap
   const dynamic = normalizeModel({ id: 'x', pricing: { prompt: '-1', completion: '-1' } });
   assert.equal(dynamic.priceKnown, false);
   assert.equal(dynamic.priceIn, null);
+});
+
+test('guesses are calibrated onto the benchmark scale', () => {
+  const modelsDev = { a: {} };
+  const artificialAnalysis = [];
+  for (let i = 0; i < 16; i += 1) {
+    const id = `family-${i}-${10 * (i + 1)}b`;
+    modelsDev.a[id] = { priceIn: 0.1 * (i + 1), priceOut: 0.4 * (i + 1), releaseDate: '2026-01-01', reasoning: true };
+    artificialAnalysis.push({ slug: id, name: id, intelligenceIndex: 15 + 2.5 * i });
+  }
+  modelsDev.a['unbenchmarked-400b'] = { priceIn: 1.6, priceOut: 6.4, releaseDate: '2026-01-01', reasoning: true };
+  metadata.resetForTests({ modelsDev, artificialAnalysis });
+  const guess = metadata.computeCanonical(canonicalId('unbenchmarked-400b'), ['unbenchmarked-400b']);
+  const strongest = metadata.computeCanonical(canonicalId('family-15-160b'), ['family-15-160b']);
+  assert.equal(guess.intelligence_source, 'calibrated');
+  assert.equal(strongest.intelligence, 1);
+  // Priced and sized like the strongest benchmarked models, so it lands near them, not above 1.
+  assert.ok(guess.intelligence > 0.8 && guess.intelligence <= 0.9, String(guess.intelligence));
+  metadata.resetForTests({});
+});
+
+test('benchmark names match provider ids without borrowing a sibling score', () => {
+  metadata.resetForTests({
+    artificialAnalysis: [
+      { slug: 'nemotron-3-5-super-vl', name: 'Nemotron 3.5 Super VL', intelligenceIndex: 14 },
+      { slug: 'reflection-beam', name: 'Beam 1.0', intelligenceIndex: 18 },
+      { slug: 'deepseek-v4-1-flash-1017', name: 'DeepSeek V4.1 Flash 1017 (Max)', intelligenceIndex: 32 },
+      { slug: 'glm-5-3', name: 'GLM-5.3 (Max)', intelligenceIndex: 31 },
+      { slug: 'glm-5-3-low', name: 'GLM-5.3 (Low)', intelligenceIndex: 23 },
+      { slug: 'qwen3-8-max', name: 'Qwen3.8 Max', intelligenceIndex: 34 },
+      { slug: 'qwen3-8-27b', name: 'Qwen3.8 27B (Xhigh)', intelligenceIndex: 20 },
+      { slug: 'llama-4-70b', name: 'Llama 4 70B', intelligenceIndex: 25 },
+      { slug: 'llama-4-8b', name: 'Llama 4 8B', intelligenceIndex: 10 },
+    ],
+  });
+  const index = (id) => {
+    const record = metadata.computeCanonical(canonicalId(id), [id]);
+    return record.intelligence_source === 'artificial_analysis' ? Math.round(record.intelligence * 34) : null;
+  };
+  assert.equal(index('nvidia/nemotron-3.5-super-vl-120b-a12b'), 14);
+  assert.equal(index('reflection/beam-1.0-501b-a23b:free'), 18);
+  assert.equal(index('deepseek-ai/deepseek-v4.1-flash'), 32);
+  assert.equal(index('z-ai/glm-5.3'), 31, 'the default effort wins over "low"');
+  assert.equal(index('z-ai/glm-5.3-flash'), null, 'a "flash" variant is a different model');
+  assert.equal(index('qwen/qwen3.8-27b'), 20);
+  assert.equal(index('meta/llama-4-8b-instruct'), 10);
+  assert.equal(index('meta/llama-4'), null, 'sizes that collapse onto one name stay ambiguous');
+  metadata.resetForTests({});
 });

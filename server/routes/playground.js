@@ -18,11 +18,13 @@ router.post('/chat', validate(z.object({
   messages: z.array(z.object({ role: z.enum(['system', 'user', 'assistant']), content: z.string().max(200000) })).min(1).max(200),
   max_tokens: z.number().int().positive().max(32000).optional(),
   temperature: z.number().min(0).max(2).optional(),
+  // Restricts this request to free models even if the key may use paid ones.
+  freeOnly: z.boolean().optional(),
 })), asyncRoute(async (req, res) => {
   const key = routerKeys.getRow(req.auth.userId, req.body.keyId);
   if (key.revoked_at) throw new HttpError(400, 'KEY_REVOKED', 'This router key is revoked.');
-  const { keyId, ...body } = req.body;
-  await execute({ req, res, key, format: 'openai_chat', body: { ...body, stream: false } });
+  const { keyId, freeOnly, ...body } = req.body;
+  await execute({ req, res, key, format: 'openai_chat', body: { ...body, stream: false }, freeOnly: freeOnly === true });
 }));
 
 module.exports = router;
