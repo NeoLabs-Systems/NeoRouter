@@ -1,4 +1,5 @@
 import 'backend_client.dart';
+import 'capabilities.dart';
 import 'models.dart';
 
 /// Typed calls against the NeoRouter management API (/api/v1).
@@ -54,7 +55,10 @@ class RouterApi {
   Future<Map<String, dynamic>> probeQuota(String id) => client.post('$_base/providers/accounts/$id/quota');
 
   // ---- catalog ---------------------------------------------------------------
-  Future<List<CatalogModel>> models() async => _list(await client.get('$_base/models'), 'models', CatalogModel.new);
+  Future<List<CatalogModel>> models({String capability = 'chat'}) async =>
+      _list(await client.get('$_base/models?capability=$capability'), 'models', CatalogModel.new);
+  Future<List<CapabilitySummary>> capabilities() async =>
+      sortCapabilities(_list(await client.get('$_base/models/capabilities'), 'capabilities', CapabilitySummary.new));
   Future<CatalogModel> updateModel(int ref, {bool? enabled, Map<String, Object?>? overrides}) async => CatalogModel(Map<String, dynamic>.from(
         (await client.patch('$_base/models/$ref', <String, Object>{
           if (enabled != null) 'enabled': enabled,

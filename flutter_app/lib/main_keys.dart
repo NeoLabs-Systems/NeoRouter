@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
@@ -16,6 +17,12 @@ String keyModeLabel(AppL10n t, String mode) => switch (mode) {
       _ => t.modeBoth,
     };
 
+String keyModeHint(AppL10n t, String mode) => switch (mode) {
+      'free_only' => t.modeFreeOnlyHint,
+      'paid' => t.modePaidHint,
+      _ => t.modeBothHint,
+    };
+
 class KeysScreen extends StatefulWidget {
   const KeysScreen({super.key, required this.controller});
 
@@ -30,6 +37,7 @@ class _KeysScreenState extends State<KeysScreen> {
   List<RoutingProfile> _profiles = <RoutingProfile>[];
   bool _loading = true;
   String? _error;
+  bool _showRevoked = false;
 
   @override
   void initState() {
@@ -53,10 +61,7 @@ class _KeysScreenState extends State<KeysScreen> {
   }
 
   Future<void> _open([RouterKey? key]) async {
-    final secret = await showDialog<String>(
-      context: context,
-      builder: (_) => _KeyForm(controller: widget.controller, profiles: _profiles, existing: key),
-    );
+    final secret = await showDialog<String>(context: context, builder: (_) => _KeyForm(controller: widget.controller, profiles: _profiles, existing: key));
     await _load();
     if (secret != null && mounted) await _showSecret(secret);
   }
@@ -70,32 +75,34 @@ class _KeysScreenState extends State<KeysScreen> {
       builder: (dialogContext) => AlertDialog(
         title: Text(t.keySecretTitle),
         content: SizedBox(
-          width: 520,
+          width: 480,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Text(t.keySecretBody, style: TextStyle(color: palette.warning)),
+              Text(t.keySecretBody, style: TextStyle(color: palette.textSoft, height: 1.45)),
               const SizedBox(height: AppSpacing.md),
               Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(color: palette.surfaceMuted, borderRadius: BorderRadius.circular(AppRadius.card)),
-                child: SelectableText(secret, style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
+                padding: const EdgeInsets.fromLTRB(14, 12, 4, 12),
+                decoration: BoxDecoration(color: palette.surfaceRaised, borderRadius: BorderRadius.circular(AppRadius.control)),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(child: SelectableText(secret, style: GoogleFonts.geistMono(fontSize: 13, color: palette.text))),
+                    IconButton(
+                      tooltip: t.copy,
+                      icon: const Icon(Icons.copy_rounded, size: 17),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: secret));
+                        showSnack(context, t.copied);
+                      },
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
-        actions: <Widget>[
-          OutlinedButton.icon(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: secret));
-              showSnack(context, t.copied);
-            },
-            icon: const Icon(Icons.copy_rounded, size: 16),
-            label: Text(t.copy),
-          ),
-          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(t.close)),
-        ],
+        actions: <Widget>[FilledButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(t.keySecretDone))],
       ),
     );
   }
@@ -119,103 +126,141 @@ class _KeysScreenState extends State<KeysScreen> {
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final active = _keys.where((key) => !key.revoked).toList();
+    final revoked = _keys.where((key) => key.revoked).toList();
+    Widget row(RouterKey key) => _KeyRow(
+          routerKey: key,
+          profiles: _profiles,
+          onAction: (action) => switch (action) {
+            'edit' => _open(key),
+            'revoke' => _revoke(key),
+            _ => _delete(key),
+          },
+        );
     return PageScaffold(
       header: ScreenHeader(
         title: t.keysTitle,
         description: t.keysDescription,
-        trailing: FilledButton.icon(onPressed: _loading ? null : () => _open(), icon: const Icon(Icons.add, size: 18), label: Text(t.createKey)),
+        trailing: FilledButton.icon(onPressed: _loading ? null : () => _open(), icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.createKey)),
       ),
       children: <Widget>[
         AsyncBody(
           loading: _loading,
           error: _error,
           onRetry: _load,
-          child: _keys.isEmpty
-              ? SectionCard(child: EmptyState(icon: Icons.key_outlined, title: t.noKeysTitle, message: t.noKeysMessage))
-              : Column(
-                  children: <Widget>[
-                    for (final key in _keys) ...<Widget>[
-                      _KeyCard(
-                        routerKey: key,
-                        profiles: _profiles,
-                        onEdit: key.revoked ? null : () => _open(key),
-                        onRevoke: key.revoked ? null : () => _revoke(key),
-                        onDelete: () => _delete(key),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                    ],
-                  ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (active.isEmpty)
+                AppCard(
+                  child: EmptyState(
+                    icon: Icons.key_outlined,
+                    title: t.noKeysTitle,
+                    message: t.noKeysMessage,
+                    action: FilledButton.icon(onPressed: () => _open(), icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.createKey)),
+                  ),
+                )
+              else
+                SettingsCardList(children: <Widget>[for (final key in active) row(key)]),
+              if (revoked.isNotEmpty) ...<Widget>[
+                const SizedBox(height: AppSpacing.md),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => setState(() => _showRevoked = !_showRevoked),
+                    icon: Icon(_showRevoked ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
+                    label: Text(t.revokedKeys('${revoked.length}')),
+                  ),
                 ),
+                if (_showRevoked) Opacity(opacity: 0.7, child: SettingsCardList(children: <Widget>[for (final key in revoked) row(key)])),
+              ],
+              const SizedBox(height: AppSpacing.lg),
+              Text(t.keysFooter, style: TextStyle(color: palette.textMuted, fontSize: 13, height: 1.45)),
+            ],
+          ),
         ),
       ],
     );
   }
 }
 
-class _KeyCard extends StatelessWidget {
-  const _KeyCard({required this.routerKey, required this.profiles, required this.onEdit, required this.onRevoke, required this.onDelete});
+class _KeyRow extends StatelessWidget {
+  const _KeyRow({required this.routerKey, required this.profiles, required this.onAction});
 
   final RouterKey routerKey;
   final List<RoutingProfile> profiles;
-  final VoidCallback? onEdit;
-  final VoidCallback? onRevoke;
-  final VoidCallback onDelete;
+  final ValueChanged<String> onAction;
 
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final key = routerKey;
-    final profile = profiles.where((item) => item.id == key.profile).firstOrNull;
     final budget = key.budgetUsd;
-    return SectionCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    final used = key.lastUsedAt == null ? t.keyNeverUsed : t.keyUsed(formatAgo(t, DateTime.parse(key.lastUsedAt!).toLocal()));
+    final subtitle = <String>[
+      if (key.revoked) t.revoked else keyModeLabel(t, key.mode),
+      used,
+    ].join(' · ');
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(color: palette.surfaceRaised, borderRadius: BorderRadius.circular(10)),
+            child: Icon(Icons.key_outlined, size: 18, color: palette.textSoft),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
                   children: <Widget>[
-                    Text(key.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 2),
-                    Text('${key.prefix}_••••', style: TextStyle(color: palette.textMuted, fontFamily: 'monospace', fontSize: 12)),
+                    Flexible(child: Text(key.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: palette.text))),
+                    const SizedBox(width: 10),
+                    Text('${key.prefix}…', style: GoogleFonts.geistMono(fontSize: 12, color: palette.textMuted)),
                   ],
                 ),
-              ),
-              if (onEdit != null) IconButton(tooltip: t.edit, onPressed: onEdit, icon: const Icon(Icons.edit_outlined, size: 18)),
-              if (onRevoke != null) IconButton(tooltip: t.revoke, onPressed: onRevoke, icon: const Icon(Icons.block, size: 18)),
-              IconButton(tooltip: t.delete, onPressed: onDelete, icon: const Icon(Icons.delete_outline, size: 18)),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: <Widget>[
-              if (key.revoked) MetaPill(label: t.revoked, tone: PillTone.error),
-              MetaPill(label: keyModeLabel(t, key.mode), tone: key.mode == 'free_only' ? PillTone.success : PillTone.accent),
-              MetaPill(label: 'auto → ${profile == null ? key.profile : profileLabel(t, profile)}', icon: Icons.alt_route_outlined),
-              if (key.rpmLimit != null) MetaPill(label: '${key.rpmLimit} RPM'),
-              if (key.allowedModels.isNotEmpty) MetaPill(label: key.allowedModels.join(', ')),
-              MetaPill(label: t.lastUsed(key.lastUsedAt == null ? t.never : formatTime(DateTime.parse(key.lastUsedAt!).toLocal()))),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          if (budget != null) ...<Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(child: Text(t.spentOf(formatUsd(key.spentUsd), formatUsd(budget)), style: const TextStyle(fontWeight: FontWeight.w600))),
-                if (key.periodResetsAt != null)
-                  Text(t.resetsAt(formatTime(DateTime.parse(key.periodResetsAt!).toLocal())), style: TextStyle(color: palette.textMuted, fontSize: 12)),
+                const SizedBox(height: 3),
+                Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, color: palette.textMuted)),
+                if (budget != null && !key.revoked) ...<Widget>[
+                  const SizedBox(height: 10),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 360),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Text(
+                          <String>[
+                            t.spentOf(formatUsd(key.spentUsd), formatUsd(budget)),
+                            if (key.periodResetsAt != null) t.resetsAt(formatTime(DateTime.parse(key.periodResetsAt!).toLocal())),
+                          ].join(' · '),
+                          style: TextStyle(fontSize: 12.5, color: palette.textSoft),
+                        ),
+                        const SizedBox(height: 6),
+                        UsageBar(fraction: budget == 0 ? 1 : key.spentUsd / budget, height: 4),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
-            const SizedBox(height: 6),
-            UsageBar(fraction: budget == 0 ? 1 : key.spentUsd / budget),
-          ] else
-            Text(t.spentNoBudget(formatUsd(key.spentUsd)), style: TextStyle(color: palette.textSoft)),
+          ),
+          PopupMenuButton<String>(
+            tooltip: t.moreActions,
+            icon: const Icon(Icons.more_horiz_rounded, size: 20),
+            onSelected: onAction,
+            itemBuilder: (_) => <PopupMenuEntry<String>>[
+              if (!key.revoked) PopupMenuItem<String>(value: 'edit', child: Text(t.edit)),
+              if (!key.revoked) PopupMenuItem<String>(value: 'revoke', child: Text(t.revoke)),
+              PopupMenuItem<String>(value: 'delete', child: Text(t.delete, style: TextStyle(color: palette.error))),
+            ],
+          ),
         ],
       ),
     );
@@ -241,6 +286,7 @@ class _KeyFormState extends State<_KeyForm> {
   late String _mode = widget.existing?.mode ?? 'free_only';
   late String _period = widget.existing?.budgetPeriod ?? 'monthly';
   late String _profile = widget.existing?.profile ?? 'balanced';
+  bool _advanced = false;
   bool _saving = false;
   String? _error;
 
@@ -286,29 +332,31 @@ class _KeyFormState extends State<_KeyForm> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
+    final label = TextStyle(fontWeight: FontWeight.w600, color: palette.text);
     return AlertDialog(
       title: Text(widget.existing == null ? t.createKey : t.editKey),
       content: SizedBox(
-        width: 500,
+        width: 480,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              TextField(controller: _name, autofocus: true, decoration: InputDecoration(labelText: t.keyName)),
-              const SizedBox(height: AppSpacing.md),
-              Text(t.keyMode.toUpperCase(), style: sectionEyebrowStyle(palette)),
-              RadioGroup<String>(
-                groupValue: _mode,
-                onChanged: (value) => setState(() => _mode = value ?? _mode),
-                child: Column(
-                  children: <Widget>[
-                    for (final mode in <String>['free_only', 'paid', 'both'])
-                      RadioListTile<String>(contentPadding: EdgeInsets.zero, value: mode, title: Text(keyModeLabel(t, mode))),
-                  ],
+              TextField(controller: _name, autofocus: true, decoration: InputDecoration(labelText: t.keyName, hintText: t.keyNameHint)),
+              const SizedBox(height: AppSpacing.lg),
+              Text(t.keyAccessTitle, style: label),
+              const SizedBox(height: AppSpacing.xs),
+              for (final mode in <String>['free_only', 'both', 'paid'])
+                _OptionCard(
+                  title: keyModeLabel(t, mode),
+                  description: keyModeHint(t, mode),
+                  selected: _mode == mode,
+                  onTap: () => setState(() => _mode = mode),
                 ),
-              ),
               if (_mode != 'free_only') ...<Widget>[
+                const SizedBox(height: AppSpacing.md),
+                Text(t.keyBudgetTitle, style: label),
+                const SizedBox(height: AppSpacing.xs),
                 Row(
                   children: <Widget>[
                     Expanded(
@@ -319,46 +367,100 @@ class _KeyFormState extends State<_KeyForm> {
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                    DropdownButton<String>(
-                      value: _period,
-                      underline: const SizedBox.shrink(),
-                      items: <DropdownMenuItem<String>>[
-                        DropdownMenuItem<String>(value: 'total', child: Text(t.periodTotal)),
-                        DropdownMenuItem<String>(value: 'monthly', child: Text(t.periodMonthly)),
-                        DropdownMenuItem<String>(value: 'daily', child: Text(t.periodDaily)),
+                    SegmentedButton<String>(
+                      showSelectedIcon: false,
+                      segments: <ButtonSegment<String>>[
+                        ButtonSegment<String>(value: 'daily', label: Text(t.periodDaily)),
+                        ButtonSegment<String>(value: 'monthly', label: Text(t.periodMonthly)),
+                        ButtonSegment<String>(value: 'total', label: Text(t.periodTotal)),
                       ],
-                      onChanged: (value) => setState(() => _period = value ?? _period),
+                      selected: <String>{_period},
+                      onSelectionChanged: (value) => setState(() => _period = value.first),
                     ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.sm),
               ],
-              DropdownButtonFormField<String>(
-                initialValue: widget.profiles.any((item) => item.id == _profile) ? _profile : 'balanced',
-                decoration: InputDecoration(labelText: t.defaultProfile),
-                items: <DropdownMenuItem<String>>[
-                  for (final profile in widget.profiles) DropdownMenuItem<String>(value: profile.id, child: Text(profileLabel(t, profile))),
-                ],
-                onChanged: (value) => setState(() => _profile = value ?? _profile),
-              ),
               const SizedBox(height: AppSpacing.sm),
-              TextField(controller: _rpm, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: t.rpmLimit)),
-              const SizedBox(height: AppSpacing.sm),
-              TextField(
-                controller: _allowed,
-                minLines: 2,
-                maxLines: 5,
-                decoration: InputDecoration(labelText: t.allowedModels, hintText: 'groq/*\nopenrouter/*:free'),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => setState(() => _advanced = !_advanced),
+                  icon: Icon(_advanced ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
+                  label: Text(t.advancedOptions),
+                ),
               ),
+              if (_advanced) ...<Widget>[
+                DropdownButtonFormField<String>(
+                  initialValue: widget.profiles.any((item) => item.id == _profile) ? _profile : 'balanced',
+                  decoration: InputDecoration(labelText: t.defaultProfile),
+                  items: <DropdownMenuItem<String>>[
+                    for (final profile in widget.profiles) DropdownMenuItem<String>(value: profile.id, child: Text(profileLabel(t, profile))),
+                  ],
+                  onChanged: (value) => setState(() => _profile = value ?? _profile),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(controller: _rpm, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: t.rpmLimit)),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(controller: _allowed, minLines: 2, maxLines: 5, decoration: InputDecoration(labelText: t.allowedModels, hintText: 'groq/*\nopenrouter/*:free')),
+              ],
               if (_error != null) ...<Widget>[const SizedBox(height: AppSpacing.sm), InlineError(message: _error!)],
             ],
           ),
         ),
       ),
       actions: <Widget>[
-        OutlinedButton(onPressed: _saving ? null : () => Navigator.of(context).pop(), child: Text(t.cancel)),
-        FilledButton(onPressed: _saving ? null : _submit, child: Text(widget.existing == null ? t.create : t.save)),
+        TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(), child: Text(t.cancel)),
+        FilledButton(onPressed: _saving ? null : _submit, child: Text(widget.existing == null ? t.createKey : t.save)),
       ],
+    );
+  }
+}
+
+/// A selectable choice with a one-line explanation.
+class _OptionCard extends StatelessWidget {
+  const _OptionCard({required this.title, required this.description, required this.selected, required this.onTap});
+
+  final String title;
+  final String description;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = neoRouterPaletteOf(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: selected ? palette.surfaceRaised : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          side: BorderSide(color: selected ? palette.text.withValues(alpha: 0.5) : palette.borderStrong),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Icon(selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded, size: 18, color: selected ? palette.accent : palette.textMuted),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
+                      const SizedBox(height: 2),
+                      Text(description, style: TextStyle(fontSize: 12.5, color: palette.textSoft, height: 1.4)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

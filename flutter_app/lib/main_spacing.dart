@@ -13,10 +13,11 @@ class AppSpacing {
 class AppRadius {
   const AppRadius._();
 
-  static const double tag = 10;
-  static const double card = 16;
-  static const double input = 16;
-  static const double panel = 24;
+  static const double tag = 8;
+  static const double control = 10;
+  static const double card = 14;
+  static const double input = 10;
+  static const double panel = 18;
   static const double pill = 999;
 }
 
@@ -28,13 +29,12 @@ class AppBreakpoints {
   static const double desktop = 1320;
 }
 
+/// Widest the content of a page grows; wider windows center it.
+const double kContentMaxWidth = 1120;
+
 EdgeInsets pagePadding(BuildContext context) {
   final width = MediaQuery.sizeOf(context).width;
-  if (width >= 1280) {
-    return const EdgeInsets.fromLTRB(40, 34, 40, 40);
-  }
-  if (width >= 900) {
-    return const EdgeInsets.fromLTRB(30, 28, 30, 32);
-  }
-  return const EdgeInsets.fromLTRB(20, 20, 20, 28);
+  if (width >= 1280) return const EdgeInsets.fromLTRB(48, 40, 48, 48);
+  if (width >= 900) return const EdgeInsets.fromLTRB(32, 32, 32, 40);
+  return const EdgeInsets.fromLTRB(16, 16, 16, 32);
 }

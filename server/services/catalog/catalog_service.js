@@ -112,6 +112,14 @@ function flagModel(modelRef, flags) {
   return true;
 }
 
+// Models per capability in the user's catalog (chat, embedding, image, …),
+// so the UI can show kinds that are not routable yet.
+function capabilitySummary(userId) {
+  return getDatabase().prepare(`SELECT m.capability, COUNT(*) total, SUM(m.is_free) free FROM models m
+    JOIN provider_accounts a ON a.id = m.account_id WHERE a.user_id = ? AND m.available = 1 AND a.enabled = 1
+    GROUP BY m.capability ORDER BY total DESC`).all(userId).map((row) => ({ id: row.capability, total: row.total, free: row.free || 0 }));
+}
+
 const OVERRIDE_KEYS = ['free', 'billedAt', 'noFreeTier', 'priceIn', 'priceOut', 'contextWindow', 'tools', 'vision', 'intelligence'];
 
 function updateModel(userId, modelRef, { enabled, overrides }) {
@@ -222,4 +230,4 @@ function getModel(userId, modelRef) {
   return toEntry(row);
 }
 
-module.exports = { syncAccount, reclassifyAccount, flagModel, updateModel, bulkSetEnabled, listForUser, getModel, toEntry };
+module.exports = { syncAccount, reclassifyAccount, flagModel, capabilitySummary, updateModel, bulkSetEnabled, listForUser, getModel, toEntry };

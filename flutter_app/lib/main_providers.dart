@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
+import 'main_dashboard.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
@@ -20,6 +22,9 @@ String categoryLabel(AppL10n t, String category) => switch (category) {
       _ => t.categoryCommunity,
     };
 
+enum _ProvidersTab { connected, limits }
+
+/// Connections: the provider accounts NeoRouter may use, and their limits.
 class ProvidersScreen extends StatefulWidget {
   const ProvidersScreen({super.key, required this.controller});
 
@@ -35,6 +40,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
   final Set<String> _busy = <String>{};
   bool _loading = true;
   String? _error;
+  _ProvidersTab _tab = _ProvidersTab.connected;
 
   @override
   void initState() {
@@ -81,10 +87,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
   }
 
   Future<void> _add() async {
-    final definition = await showDialog<ProviderDefinition>(
-      context: context,
-      builder: (_) => _ProviderGallery(definitions: _definitions),
-    );
+    final definition = await showDialog<ProviderDefinition>(context: context, builder: (_) => _ProviderGallery(definitions: _definitions));
     if (definition == null || !mounted) return;
     final added = await showDialog<String>(
       context: context,
@@ -110,6 +113,45 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
     }
   }
 
+  Future<void> _action(ProviderAccount account, _AccountAction action) async {
+    final t = AppL10n.of(context);
+    final api = widget.controller.api;
+    switch (action) {
+      case _AccountAction.check:
+        await _run(account.id, () async {
+          final result = await api.validateAccount(account.id);
+          return (result['validation'] as Map?)?['message'] as String? ?? t.statusHealthy;
+        });
+      case _AccountAction.sync:
+        await _run(account.id, () async {
+          final result = await api.syncAccount(account.id);
+          return t.syncedModels('${(result['sync'] as Map?)?['models'] ?? 0}');
+        });
+      case _AccountAction.balance:
+        await _run(account.id, () async {
+          final items = ((await api.probeQuota(account.id))['quota'] as List).cast<Map>();
+          if (items.isEmpty) return t.quotaProbeEmpty;
+          return items.map((item) => t.quotaProbeResult(metricLabel(t, '${item['metric']}'), '${item['remaining']}')).join(' · ');
+        });
+      case _AccountAction.edit:
+        await _edit(account);
+      case _AccountAction.remove:
+        final confirmed = await confirmAction(
+          context,
+          title: t.removeProvider,
+          message: t.removeProviderConfirm(account.label),
+          confirmLabel: t.removeProvider,
+          cancelLabel: t.cancel,
+        );
+        if (confirmed) {
+          await _run(account.id, () async {
+            await api.deleteAccount(account.id);
+            return null;
+          });
+        }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
@@ -117,197 +159,144 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
       header: ScreenHeader(
         title: t.providersTitle,
         description: t.providersDescription,
-        trailing: FilledButton.icon(
-          onPressed: _definitions.isEmpty ? null : _add,
-          icon: const Icon(Icons.add, size: 18),
-          label: Text(t.addProvider),
-        ),
+        trailing: FilledButton.icon(onPressed: _definitions.isEmpty ? null : _add, icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.addProvider)),
       ),
       children: <Widget>[
-        AsyncBody(
-          loading: _loading,
-          error: _error,
-          onRetry: _load,
-          child: _accounts.isEmpty
-              ? SectionCard(child: EmptyState(icon: Icons.hub_outlined, title: t.noProvidersTitle, message: t.noProvidersMessage))
-              : LayoutBuilder(
-                  builder: (context, constraints) {
-                    final columns = constraints.maxWidth >= 1100 ? 3 : constraints.maxWidth >= 700 ? 2 : 1;
-                    final width = (constraints.maxWidth - (columns - 1) * AppSpacing.md) / columns;
-                    return Wrap(
-                      spacing: AppSpacing.md,
-                      runSpacing: AppSpacing.md,
-                      children: <Widget>[
-                        for (final account in _accounts)
-                          SizedBox(
-                            width: width,
-                            child: _AccountCard(
-                              account: account,
-                              busy: _busy.contains(account.id),
-                              onValidate: () => _run(account.id, () async {
-                                final result = await widget.controller.api.validateAccount(account.id);
-                                return (result['validation'] as Map?)?['message'] as String? ?? t.statusHealthy;
-                              }),
-                              onSync: () => _run(account.id, () async {
-                                final result = await widget.controller.api.syncAccount(account.id);
-                                return t.syncedModels('${(result['sync'] as Map?)?['models'] ?? 0}');
-                              }),
-                              onQuota: () => _run(account.id, () async {
-                                final result = await widget.controller.api.probeQuota(account.id);
-                                final items = (result['quota'] as List).cast<Map>();
-                                if (items.isEmpty) return t.quotaProbeEmpty;
-                                return items.map((item) => t.quotaProbeResult('${item['metric']}', '${item['remaining']}')).join(' · ');
-                              }),
-                              onToggle: (enabled) => _run(account.id, () async {
-                                await widget.controller.api.updateAccount(account.id, <String, Object?>{'enabled': enabled});
-                                return null;
-                              }),
-                              onEdit: () => _edit(account),
-                              onDelete: () async {
-                                final confirmed = await confirmAction(
-                                  context,
-                                  title: t.removeProvider,
-                                  message: t.removeProviderConfirm(account.label),
-                                  confirmLabel: t.delete,
-                                  cancelLabel: t.cancel,
-                                );
-                                if (confirmed) {
-                                  await _run(account.id, () async {
-                                    await widget.controller.api.deleteAccount(account.id);
-                                    return null;
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                      ],
-                    );
-                  },
-                ),
-        ),
+        if (_accounts.isNotEmpty)
+          PageTabs<_ProvidersTab>(
+            tabs: <({_ProvidersTab value, String label, int? count})>[
+              (value: _ProvidersTab.connected, label: t.tabConnected, count: _accounts.length),
+              (value: _ProvidersTab.limits, label: t.tabLimits, count: null),
+            ],
+            selected: _tab,
+            onChanged: (value) => setState(() => _tab = value),
+          ),
+        if (_tab == _ProvidersTab.limits && _accounts.isNotEmpty)
+          _LimitsView(controller: widget.controller)
+        else
+          AsyncBody(
+            loading: _loading,
+            error: _error,
+            onRetry: _load,
+            child: _accounts.isEmpty
+                ? AppCard(
+                    child: EmptyState(
+                      icon: Icons.link_rounded,
+                      title: t.noProvidersTitle,
+                      message: t.noProvidersMessage,
+                      action: FilledButton.icon(onPressed: _definitions.isEmpty ? null : _add, icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.addProvider)),
+                    ),
+                  )
+                : SettingsCardList(
+                    children: <Widget>[
+                      for (final account in _accounts)
+                        _AccountRow(
+                          account: account,
+                          busy: _busy.contains(account.id),
+                          onToggle: (enabled) => _run(account.id, () async {
+                            await widget.controller.api.updateAccount(account.id, <String, Object?>{'enabled': enabled});
+                            return null;
+                          }),
+                          onAction: (action) => _action(account, action),
+                        ),
+                    ],
+                  ),
+          ),
       ],
     );
   }
 }
 
-class _AccountCard extends StatelessWidget {
-  const _AccountCard({
-    required this.account,
-    required this.busy,
-    required this.onValidate,
-    required this.onSync,
-    required this.onQuota,
-    required this.onToggle,
-    required this.onEdit,
-    required this.onDelete,
-  });
+enum _AccountAction { check, sync, balance, edit, remove }
+
+/// One connection: who, how many models, whether it is free and working.
+class _AccountRow extends StatelessWidget {
+  const _AccountRow({required this.account, required this.busy, required this.onToggle, required this.onAction});
 
   final ProviderAccount account;
   final bool busy;
-  final VoidCallback onValidate;
-  final VoidCallback onSync;
-  final VoidCallback onQuota;
   final ValueChanged<bool> onToggle;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final ValueChanged<_AccountAction> onAction;
 
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    final (statusLabel, tone) = switch (account.status) {
-      'healthy' => (t.statusHealthy, PillTone.success),
-      'invalid' => (t.statusInvalid, PillTone.error),
-      'disabled' => (t.statusDisabled, PillTone.error),
-      'error' => (t.statusError, PillTone.warning),
-      _ => (t.statusUnknown, PillTone.neutral),
-    };
-    return SectionCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(account.label, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 2),
-                    Text('${account.slug}/…  ·  ${account.providerLabel}', overflow: TextOverflow.ellipsis, style: TextStyle(color: palette.textMuted, fontSize: 12, fontFamily: 'monospace')),
-                  ],
-                ),
-              ),
-              Switch(value: account.enabled, onChanged: busy ? null : onToggle),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: <Widget>[
-              MetaPill(label: statusLabel, tone: tone),
-              MetaPill(
-                label: account.billingMode == 'free_tier' ? t.free : t.paid,
-                tone: account.billingMode == 'free_tier' ? PillTone.success : PillTone.accent,
-                icon: account.billingMode == 'free_tier' ? Icons.savings_outlined : Icons.payments_outlined,
-              ),
-              if (account.billingMode == 'free_tier' && account.billingVerifiable)
-                Tooltip(
-                  message: account.billingMessage ?? '',
-                  child: MetaPill(
-                    label: switch (account.billingState) {
-                      'free' => t.billingVerifiedFree,
-                      'paid' => t.billingDetectedPaid,
-                      _ => t.billingUnverified,
-                    },
-                    tone: switch (account.billingState) {
-                      'free' => PillTone.success,
-                      'paid' => PillTone.error,
-                      _ => PillTone.warning,
-                    },
-                    icon: account.billingState == 'free' ? Icons.verified_outlined : Icons.info_outline,
+    final (statusText, tone) = accountStatus(t, account);
+    final billing = account.billingMode != 'free_tier'
+        ? t.accountPaidPlan
+        : !account.billingVerifiable
+            ? t.accountFreePlan
+            : switch (account.billingState) {
+                'free' => t.accountFreeVerified,
+                'paid' => t.accountBillingActive,
+                _ => t.accountNotVerified,
+              };
+    final problem = account.enabled && account.status != 'healthy' && account.statusMessage != null ? account.statusMessage : null;
+    return Opacity(
+      opacity: account.enabled ? 1 : 0.6,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
+        child: Row(
+          children: <Widget>[
+            ProviderAvatar(label: account.label, size: 38),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(account.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: palette.text)),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${t.homeModelsLine('${account.modelCount}', '${account.freeModelCount}')} · $billing',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13, color: palette.textMuted),
                   ),
-                ),
-              MetaPill(label: t.modelsCount('${account.modelCount}', '${account.freeModelCount}')),
-              if (account.keyPreview != null) MetaPill(label: account.keyPreview!, icon: Icons.key_outlined),
-            ],
-          ),
-          if (account.statusMessage != null && account.status != 'healthy') ...<Widget>[
-            const SizedBox(height: AppSpacing.sm),
-            Text(account.statusMessage!, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(color: palette.warning, fontSize: 12)),
-          ],
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: <Widget>[
-              if (busy) const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)) else ...<Widget>[
-                _ActionIcon(tooltip: t.revalidate, icon: Icons.verified_user_outlined, onTap: onValidate),
-                _ActionIcon(tooltip: t.syncModels, icon: Icons.sync, onTap: onSync),
-                _ActionIcon(tooltip: t.probeQuota, icon: Icons.account_balance_wallet_outlined, onTap: onQuota),
-                _ActionIcon(tooltip: t.editProvider, icon: Icons.edit_outlined, onTap: onEdit),
+                  if (problem != null) ...<Widget>[
+                    const SizedBox(height: 4),
+                    Text(problem, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: palette.error)),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            if (MediaQuery.sizeOf(context).width >= 700) ...<Widget>[StatusLabel(label: statusText, tone: tone), const SizedBox(width: 16)] else ...<Widget>[ToneDot(tone: tone), const SizedBox(width: 10)],
+            if (busy)
+              const Padding(padding: EdgeInsets.all(14), child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)))
+            else
+              Switch(value: account.enabled, onChanged: onToggle),
+            PopupMenuButton<_AccountAction>(
+              tooltip: t.moreActions,
+              enabled: !busy,
+              icon: const Icon(Icons.more_horiz_rounded, size: 20),
+              onSelected: onAction,
+              itemBuilder: (context) => <PopupMenuEntry<_AccountAction>>[
+                _menuItem(_AccountAction.check, Icons.verified_user_outlined, t.revalidate),
+                _menuItem(_AccountAction.sync, Icons.sync_rounded, t.syncModels),
+                _menuItem(_AccountAction.balance, Icons.account_balance_wallet_outlined, t.probeQuota),
+                _menuItem(_AccountAction.edit, Icons.edit_outlined, t.editProvider),
+                const PopupMenuDivider(),
+                _menuItem(_AccountAction.remove, Icons.delete_outline_rounded, t.removeProvider, destructive: palette.error),
               ],
-              const Spacer(),
-              _ActionIcon(tooltip: t.removeProvider, icon: Icons.delete_outline, onTap: busy ? null : onDelete),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
-}
 
-class _ActionIcon extends StatelessWidget {
-  const _ActionIcon({required this.tooltip, required this.icon, required this.onTap});
-
-  final String tooltip;
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(tooltip: tooltip, visualDensity: VisualDensity.compact, icon: Icon(icon, size: 18), onPressed: onTap);
-  }
+  static PopupMenuItem<_AccountAction> _menuItem(_AccountAction value, IconData icon, String label, {Color? destructive}) => PopupMenuItem<_AccountAction>(
+        value: value,
+        height: 40,
+        child: Row(
+          children: <Widget>[
+            Icon(icon, size: 17, color: destructive),
+            const SizedBox(width: 12),
+            Text(label, style: TextStyle(fontSize: 13.5, color: destructive)),
+          ],
+        ),
+      );
 }
 
 class _ProviderGallery extends StatefulWidget {
@@ -328,63 +317,53 @@ class _ProviderGalleryState extends State<_ProviderGallery> {
     final palette = neoRouterPaletteOf(context);
     final query = _query.toLowerCase();
     final matches = widget.definitions.where((item) => query.isEmpty || item.label.toLowerCase().contains(query) || item.id.contains(query) || item.description.toLowerCase().contains(query));
-    return AlertDialog(
-      title: Text(t.chooseProvider),
-      content: SizedBox(
-        width: 720,
-        height: 560,
+    return Dialog(
+      insetPadding: const EdgeInsets.all(16),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560, maxHeight: 640),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            TextField(
-              autofocus: true,
-              decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: t.searchProviders),
-              onChanged: (value) => setState(() => _query = value),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 22, 12, 0),
+              child: Row(
+                children: <Widget>[
+                  Expanded(child: Text(t.chooseProvider, style: displayTitleStyle(palette, size: 18))),
+                  IconButton(onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close_rounded, size: 20)),
+                ],
+              ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 4, 24, 0),
+              child: Text(t.chooseProviderHint, style: TextStyle(color: palette.textSoft, fontSize: 13.5)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+              child: TextField(
+                autofocus: true,
+                decoration: InputDecoration(prefixIcon: const Icon(Icons.search_rounded, size: 20), hintText: t.searchProviders),
+                onChanged: (value) => setState(() => _query = value),
+              ),
+            ),
             Expanded(
               child: ListView(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
                 children: <Widget>[
                   for (final category in _categoryOrder)
                     if (matches.any((item) => item.category == category)) ...<Widget>[
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+                        padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
                         child: Text(categoryLabel(t, category).toUpperCase(), style: sectionEyebrowStyle(palette)),
                       ),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: <Widget>[
-                          for (final definition in matches.where((item) => item.category == category))
-                            SizedBox(
-                              width: 220,
-                              child: Material(
-                                color: palette.surfaceMuted.withValues(alpha: 0.6),
-                                borderRadius: BorderRadius.circular(AppRadius.card),
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(AppRadius.card),
-                                  onTap: () => Navigator.of(context).pop(definition),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(AppSpacing.sm),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: <Widget>[
-                                        Row(
-                                          children: <Widget>[
-                                            Expanded(child: Text(definition.label, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700))),
-                                            if (definition.freeTierAvailable || definition.hasAlwaysFreeModels) Icon(Icons.savings_outlined, size: 14, color: palette.success),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(definition.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: palette.textSoft, fontSize: 12)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
+                      for (final definition in matches.where((item) => item.category == category))
+                        ListRow(
+                          onTap: () => Navigator.of(context).pop(definition),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          leading: ProviderAvatar(label: definition.label, size: 32),
+                          title: definition.label,
+                          subtitle: definition.description,
+                          trailing: definition.freeTierAvailable || definition.hasAlwaysFreeModels ? MetaPill(label: t.providerFreeTag) : null,
+                        ),
                     ],
                 ],
               ),
@@ -392,7 +371,6 @@ class _ProviderGalleryState extends State<_ProviderGallery> {
           ],
         ),
       ),
-      actions: <Widget>[OutlinedButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.cancel))],
     );
   }
 }
@@ -429,6 +407,7 @@ class _ProviderFormState extends State<_ProviderForm> {
   bool _saving = false;
   bool _probing = false;
   bool _connecting = false;
+  bool _advanced = false;
   Map<String, dynamic>? _probe;
   String? _error;
 
@@ -558,133 +537,125 @@ class _ProviderFormState extends State<_ProviderForm> {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final definition = widget.definition;
+    const gap = SizedBox(height: AppSpacing.sm);
     return AlertDialog(
-      title: Text(_editing ? t.editProvider : definition.label),
+      title: Row(
+        children: <Widget>[
+          ProviderAvatar(label: definition.label, size: 32),
+          const SizedBox(width: 12),
+          Expanded(child: Text(_editing ? widget.account!.label : definition.label)),
+        ],
+      ),
       content: SizedBox(
-        width: 480,
+        width: 460,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              if (definition.description.isNotEmpty) Text(definition.description, style: TextStyle(color: palette.textSoft)),
-              if (definition.keyUrl != null) ...<Widget>[
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    onPressed: () => launchUrl(Uri.parse(definition.keyUrl!)),
-                    icon: const Icon(Icons.open_in_new, size: 16),
-                    label: Text(t.getKey),
-                  ),
-                ),
-              ],
+              if (definition.description.isNotEmpty) Text(definition.description, style: TextStyle(color: palette.textSoft, height: 1.45)),
               if (definition.id == 'openrouter' && !_editing) ...<Widget>[
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.md),
                 FilledButton.icon(
                   onPressed: _connecting ? null : _connectOpenRouter,
-                  icon: _connecting
-                      ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.bolt_rounded, size: 18),
+                  icon: _connecting ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.login_rounded, size: 18),
                   label: Text(t.connectOpenRouter),
                 ),
                 const SizedBox(height: 6),
-                Text(t.connectOpenRouterHint, style: TextStyle(color: palette.textMuted, fontSize: 12)),
-                const SizedBox(height: AppSpacing.sm),
+                Text(t.connectOpenRouterHint, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+                const SizedBox(height: AppSpacing.md),
                 Row(
                   children: <Widget>[
                     Expanded(child: Divider(color: palette.border)),
-                    Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text(t.orManualKey, style: TextStyle(color: palette.textMuted, fontSize: 12))),
+                    Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text(t.orManualKey, style: TextStyle(color: palette.textMuted, fontSize: 12.5))),
                     Expanded(child: Divider(color: palette.border)),
                   ],
                 ),
               ],
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.md),
               TextField(
                 controller: _secret,
                 obscureText: true,
                 autofocus: !_editing && definition.id != 'openrouter',
                 decoration: InputDecoration(labelText: _editing ? t.apiKeyKeep : definition.keyOptional ? t.apiKeyOptional : t.apiKey),
               ),
+              if (definition.keyUrl != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => launchUrl(Uri.parse(definition.keyUrl!)),
+                    icon: const Icon(Icons.open_in_new_rounded, size: 15),
+                    label: Text(t.getKeyAt(definition.label)),
+                  ),
+                ),
               for (final field in definition.fields) ...<Widget>[
-                const SizedBox(height: AppSpacing.sm),
+                gap,
                 TextField(controller: _fields[field.key], decoration: InputDecoration(labelText: field.label, hintText: field.placeholder)),
               ],
-              if (definition.editableBaseUrl) ...<Widget>[
-                const SizedBox(height: AppSpacing.sm),
+              if (_custom) ...<Widget>[
+                gap,
                 TextField(controller: _baseUrl, decoration: InputDecoration(labelText: t.baseUrl, hintText: 'https://…/v1')),
-                const SizedBox(height: AppSpacing.xs),
-                Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                  child: ExpansionTile(
-                    tilePadding: EdgeInsets.zero,
-                    childrenPadding: EdgeInsets.zero,
-                    title: Text(t.advancedOptions, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                    children: <Widget>[
-                      TextField(controller: _authHeader, decoration: InputDecoration(labelText: t.authHeaderLabel, hintText: 'x-api-key')),
-                      const SizedBox(height: AppSpacing.sm),
-                      TextField(controller: _headers, minLines: 1, maxLines: 4, decoration: InputDecoration(labelText: t.customHeaders, hintText: 'X-Org: my-team')),
-                      const SizedBox(height: AppSpacing.sm),
-                      TextField(controller: _modelsPath, decoration: InputDecoration(labelText: t.modelsPathLabel, hintText: '/models')),
-                      const SizedBox(height: AppSpacing.sm),
-                      TextField(
-                        controller: _manualModels,
-                        minLines: 2,
-                        maxLines: 6,
-                        decoration: InputDecoration(labelText: t.manualModels, helperText: t.manualModelsHint, helperMaxLines: 2),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                    ],
-                  ),
-                ),
               ],
-              const SizedBox(height: AppSpacing.sm),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: OutlinedButton.icon(
-                  onPressed: _probing ? null : _runProbe,
-                  icon: _probing
-                      ? const SizedBox.square(dimension: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.travel_explore, size: 16),
-                  label: Text(t.fetchModels),
-                ),
-              ),
-              if (_probe != null) _ProbeResult(result: _probe!),
-              const SizedBox(height: AppSpacing.sm),
-              Row(
-                children: <Widget>[
-                  Expanded(child: TextField(controller: _label, decoration: InputDecoration(labelText: t.displayNameLabel))),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: TextField(
-                      controller: _slug,
-                      onChanged: (_) => setState(() {}),
-                      decoration: InputDecoration(labelText: t.slugLabel, helperText: t.slugHint(_slug.text.isEmpty ? '…' : _slug.text)),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(t.billingMode.toUpperCase(), style: sectionEyebrowStyle(palette)),
+              const SizedBox(height: AppSpacing.lg),
+              Text(t.billingMode, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
               const SizedBox(height: AppSpacing.xs),
-              RadioGroup<String>(
-                groupValue: _billing,
-                onChanged: (value) => setState(() => _billing = value ?? _billing),
-                child: Column(
-                  children: <Widget>[
-                    if (definition.freeTierAvailable)
-                      RadioListTile<String>(contentPadding: EdgeInsets.zero, value: 'free_tier', title: Text(t.billingFree)),
-                    RadioListTile<String>(contentPadding: EdgeInsets.zero, value: 'paid', title: Text(t.billingPaid)),
-                  ],
-                ),
+              SegmentedButton<String>(
+                showSelectedIcon: false,
+                segments: <ButtonSegment<String>>[
+                  if (definition.freeTierAvailable) ButtonSegment<String>(value: 'free_tier', label: Text(t.accountFreePlan)),
+                  ButtonSegment<String>(value: 'paid', label: Text(t.accountPaidPlan)),
+                ],
+                selected: <String>{definition.freeTierAvailable ? _billing : 'paid'},
+                onSelectionChanged: (value) => setState(() => _billing = value.first),
               ),
-              if (_billing == 'free_tier') Text(t.billingFreeWarning, style: TextStyle(color: palette.warning, fontSize: 12, height: 1.4)),
-              if (definition.hasAlwaysFreeModels) ...<Widget>[
-                const SizedBox(height: 6),
-                Text(t.billingAlwaysFreeNote, style: TextStyle(color: palette.success, fontSize: 12)),
-              ],
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                _billing == 'free_tier' && definition.freeTierAvailable ? t.billingFreeWarning : (definition.hasAlwaysFreeModels ? t.billingAlwaysFreeNote : t.billingPaidHint),
+                style: TextStyle(color: palette.textSoft, fontSize: 12.5, height: 1.45),
+              ),
               if (definition.billingNote.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 6),
-                Text(definition.billingNote, style: TextStyle(color: palette.textMuted, fontSize: 12, height: 1.4)),
+                Text(definition.billingNote, style: TextStyle(color: palette.textMuted, fontSize: 12.5, height: 1.45)),
+              ],
+              const SizedBox(height: AppSpacing.md),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => setState(() => _advanced = !_advanced),
+                  icon: Icon(_advanced ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
+                  label: Text(t.advancedOptions),
+                ),
+              ),
+              if (_advanced) ...<Widget>[
+                TextField(controller: _label, decoration: InputDecoration(labelText: t.displayNameLabel)),
+                gap,
+                TextField(
+                  controller: _slug,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(labelText: t.slugLabel, helperText: t.slugHint(_slug.text.isEmpty ? '…' : _slug.text)),
+                ),
+                if (_custom) ...<Widget>[
+                  gap,
+                  TextField(controller: _authHeader, decoration: InputDecoration(labelText: t.authHeaderLabel, hintText: 'x-api-key')),
+                  gap,
+                  TextField(controller: _headers, minLines: 1, maxLines: 4, decoration: InputDecoration(labelText: t.customHeaders, hintText: 'X-Org: my-team')),
+                  gap,
+                  TextField(controller: _modelsPath, decoration: InputDecoration(labelText: t.modelsPathLabel, hintText: '/models')),
+                  gap,
+                  TextField(controller: _manualModels, minLines: 2, maxLines: 6, decoration: InputDecoration(labelText: t.manualModels, helperText: t.manualModelsHint, helperMaxLines: 2)),
+                ],
+              ],
+              if (_custom) ...<Widget>[
+                const SizedBox(height: AppSpacing.sm),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: _probing ? null : _runProbe,
+                    icon: _probing ? const SizedBox.square(dimension: 14, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.wifi_tethering_rounded, size: 16),
+                    label: Text(t.testConnection),
+                  ),
+                ),
+                if (_probe != null) _ProbeResult(result: _probe!),
               ],
               if (_error != null) ...<Widget>[const SizedBox(height: AppSpacing.md), InlineError(message: _error!)],
             ],
@@ -692,12 +663,10 @@ class _ProviderFormState extends State<_ProviderForm> {
         ),
       ),
       actions: <Widget>[
-        OutlinedButton(onPressed: _saving ? null : () => Navigator.of(context).pop(), child: Text(t.cancel)),
+        TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(), child: Text(t.cancel)),
         FilledButton(
           onPressed: _saving ? null : _submit,
-          child: _saving
-              ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
-              : Text(_editing ? t.save : t.checkAndAdd),
+          child: _saving ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)) : Text(_editing ? t.save : t.checkAndAdd),
         ),
       ],
     );
@@ -715,50 +684,163 @@ class _ProbeResult extends StatelessWidget {
     final palette = neoRouterPaletteOf(context);
     final validation = Map<String, dynamic>.from((result['validation'] as Map?) ?? <String, Object>{});
     final models = ((result['models'] as List?) ?? const <Object>[]).cast<Map>();
-    final chat = models.where((model) => model['kind'] == 'chat').toList();
     final status = validation['status'] as String? ?? 'unknown';
-    final (label, tone) = switch (status) {
-      'healthy' => (t.statusHealthy, PillTone.success),
-      'invalid' => (t.statusInvalid, PillTone.error),
-      _ => (t.statusError, PillTone.warning),
-    };
+    final ok = status == 'healthy' && result['modelsError'] == null;
+    final message = ok
+        ? t.probeOk('${models.length}')
+        : result['modelsError'] != null
+            ? t.modelsFetchFailed('${result['modelsError']}')
+            : '${validation['message'] ?? t.statusError}';
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: <Widget>[
-              MetaPill(label: t.keyStatus(label), tone: tone),
-              if (result['modelsError'] == null) MetaPill(label: t.modelsFound('${chat.length}'), tone: PillTone.accent),
-            ],
-          ),
-          if (validation['message'] != null && status != 'healthy') ...<Widget>[
-            const SizedBox(height: 6),
-            Text('${validation['message']}', maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(color: palette.warning, fontSize: 12)),
-          ],
-          if (result['modelsError'] != null) ...<Widget>[
-            const SizedBox(height: 6),
-            Text(t.modelsFetchFailed('${result['modelsError']}'), maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(color: palette.error, fontSize: 12)),
-          ],
-          if (chat.isNotEmpty) ...<Widget>[
-            const SizedBox(height: AppSpacing.sm),
+          ok ? InlineSuccess(message: message) : InlineError(message: message),
+          if (models.isNotEmpty) ...<Widget>[
+            const SizedBox(height: AppSpacing.xs),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 140),
+              constraints: const BoxConstraints(maxHeight: 120),
               child: SingleChildScrollView(
-                child: Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: <Widget>[
-                    for (final model in chat.take(80))
-                      MetaPill(label: '${model['id']}', tone: model['freeHint'] == true ? PillTone.success : PillTone.neutral),
-                  ],
+                child: Text(
+                  models.take(120).map((model) => '${model['id']}').join(', '),
+                  style: GoogleFonts.geistMono(fontSize: 12, color: palette.textMuted, height: 1.5),
                 ),
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+String metricLabel(AppL10n t, String metric) => switch (metric) {
+      'rpm' => t.metricRpm,
+      'rpd' => t.metricRpd,
+      'tpm' => t.metricTpm,
+      'tpd' => t.metricTpd,
+      'balance' || 'credits_usd' => t.balance,
+      _ => metric,
+    };
+
+/// How much of each provider's allowance is used, with reset times.
+class _LimitsView extends StatefulWidget {
+  const _LimitsView({required this.controller});
+
+  final NeoRouterController controller;
+
+  @override
+  State<_LimitsView> createState() => _LimitsViewState();
+}
+
+class _LimitsViewState extends State<_LimitsView> {
+  List<Map<String, dynamic>> _accounts = <Map<String, dynamic>>[];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _error = null);
+    try {
+      final accounts = await widget.controller.api.quotas();
+      setState(() => _accounts = accounts);
+    } catch (error) {
+      setState(() => _error = '$error');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    return AsyncBody(
+      loading: _loading,
+      error: _error,
+      onRetry: _load,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(t.limitsDescription, style: TextStyle(color: neoRouterPaletteOf(context).textSoft, fontSize: 13.5, height: 1.45)),
+          const SizedBox(height: AppSpacing.lg),
+          for (final group in _accounts) ...<Widget>[_AccountLimits(group: group), const SizedBox(height: 28)],
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountLimits extends StatelessWidget {
+  const _AccountLimits({required this.group});
+
+  final Map<String, dynamic> group;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final account = Map<String, dynamic>.from(group['account'] as Map);
+    final pool = (group['pool'] as List).cast<Map>();
+    final probes = (group['probes'] as List).cast<Map>();
+    final models = (group['models'] as List).cast<Map>().where((model) => (model['windows'] as List).isNotEmpty).toList();
+    final rows = <Widget>[
+      for (final probe in probes)
+        SettingsRow(
+          label: metricLabel(t, '${probe['metric']}'),
+          control: Text('${probe['remaining'] ?? '—'}${probe['limit'] == null ? '' : ' / ${probe['limit']}'}', style: TextStyle(color: palette.text)),
+        ),
+      for (final window in pool) _WindowRow(title: metricLabel(t, '${window['metric']}'), window: window),
+      for (final model in models.take(8))
+        for (final window in (model['windows'] as List).cast<Map>())
+          _WindowRow(title: '${shortModelName('${model['id']}')} · ${metricLabel(t, '${window['metric']}')}', window: window),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SettingsHeading(title: '${account['label']}'),
+        if (rows.isEmpty) AppCard(child: Text(t.noQuotaData, style: TextStyle(color: palette.textSoft))) else SettingsCardList(children: rows),
+      ],
+    );
+  }
+}
+
+class _WindowRow extends StatelessWidget {
+  const _WindowRow({required this.title, required this.window});
+
+  final String title;
+  final Map window;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final limit = (window['limit'] as num?)?.toDouble();
+    final remaining = (window['remaining'] as num?)?.toDouble() ?? 0;
+    final used = limit == null ? (window['used'] as num? ?? 0).toDouble() : (limit - remaining).clamp(0, limit).toDouble();
+    final resetAt = window['resetAt'] as num?;
+    final detail = <String>[
+      limit == null ? formatCount(used) : t.usedOf(formatCount(used), formatCount(limit)),
+      if (resetAt != null) t.limitResets(formatTime(DateTime.fromMillisecondsSinceEpoch(resetAt.toInt()))),
+    ].join(' · ');
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13.5, color: palette.text))),
+              Text(detail, style: TextStyle(fontSize: 12.5, color: palette.textMuted)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          UsageBar(fraction: limit == null || limit == 0 ? 0 : used / limit, height: 4),
         ],
       ),
     );

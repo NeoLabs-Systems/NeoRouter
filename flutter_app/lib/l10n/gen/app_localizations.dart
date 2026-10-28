@@ -262,7 +262,7 @@ abstract class AppL10n {
   /// No description provided for @navProviders.
   ///
   /// In en, this message translates to:
-  /// **'Providers'**
+  /// **'Connections'**
   String get navProviders;
 
   /// No description provided for @navModels.
@@ -274,13 +274,13 @@ abstract class AppL10n {
   /// No description provided for @navKeys.
   ///
   /// In en, this message translates to:
-  /// **'Router keys'**
+  /// **'API keys'**
   String get navKeys;
 
   /// No description provided for @navRouting.
   ///
   /// In en, this message translates to:
-  /// **'Auto router'**
+  /// **'Smart routing'**
   String get navRouting;
 
   /// No description provided for @navQuotas.
@@ -544,13 +544,13 @@ abstract class AppL10n {
   /// No description provided for @noTrafficTitle.
   ///
   /// In en, this message translates to:
-  /// **'No traffic yet'**
+  /// **'Nothing here yet'**
   String get noTrafficTitle;
 
   /// No description provided for @noTrafficMessage.
   ///
   /// In en, this message translates to:
-  /// **'Send a request to your endpoint and it shows up here.'**
+  /// **'Once your apps send requests, you will see how much, how fast and which models answered.'**
   String get noTrafficMessage;
 
   /// No description provided for @endpointTitle.
@@ -616,7 +616,7 @@ abstract class AppL10n {
   /// No description provided for @homeProblemHint.
   ///
   /// In en, this message translates to:
-  /// **'Requests skip it until this is fixed. Nothing else is affected.'**
+  /// **'Requests skip it until this is fixed.'**
   String get homeProblemHint;
 
   /// No description provided for @homeFix.
@@ -664,7 +664,7 @@ abstract class AppL10n {
   /// No description provided for @homeNoRequests.
   ///
   /// In en, this message translates to:
-  /// **'No requests yet. Send one from the Playground or your app.'**
+  /// **'No requests yet. Send your first message in the Playground.'**
   String get homeNoRequests;
 
   /// No description provided for @homeQuotaLeft.
@@ -700,25 +700,25 @@ abstract class AppL10n {
   /// No description provided for @providersTitle.
   ///
   /// In en, this message translates to:
-  /// **'Providers'**
+  /// **'Connections'**
   String get providersTitle;
 
   /// No description provided for @providersDescription.
   ///
   /// In en, this message translates to:
-  /// **'Connect any inference API. Keys are verified, encrypted and their models imported automatically.'**
+  /// **'The AI providers NeoRouter can use. Keys are checked when you add them and stored encrypted.'**
   String get providersDescription;
 
   /// No description provided for @addProvider.
   ///
   /// In en, this message translates to:
-  /// **'Add provider'**
+  /// **'Add connection'**
   String get addProvider;
 
   /// No description provided for @chooseProvider.
   ///
   /// In en, this message translates to:
-  /// **'Choose a provider'**
+  /// **'Add a connection'**
   String get chooseProvider;
 
   /// No description provided for @searchProviders.
@@ -730,7 +730,7 @@ abstract class AppL10n {
   /// No description provided for @categoryFree.
   ///
   /// In en, this message translates to:
-  /// **'Free tiers'**
+  /// **'Free to start'**
   String get categoryFree;
 
   /// No description provided for @categoryAggregator.
@@ -826,7 +826,7 @@ abstract class AppL10n {
   /// No description provided for @billingFreeWarning.
   ///
   /// In en, this message translates to:
-  /// **'Only choose the free tier if this account cannot be charged. NeoRouter then treats every model of this account as 100% free.'**
+  /// **'Choose the free plan only if no payment method is on file with this provider. NeoRouter double-checks where it can.'**
   String get billingFreeWarning;
 
   /// No description provided for @billingAlwaysFreeNote.
@@ -844,7 +844,7 @@ abstract class AppL10n {
   /// No description provided for @checkAndAdd.
   ///
   /// In en, this message translates to:
-  /// **'Check key & import models'**
+  /// **'Connect'**
   String get checkAndAdd;
 
   /// No description provided for @providerAdded.
@@ -862,7 +862,7 @@ abstract class AppL10n {
   /// No description provided for @statusHealthy.
   ///
   /// In en, this message translates to:
-  /// **'Healthy'**
+  /// **'Working'**
   String get statusHealthy;
 
   /// No description provided for @statusInvalid.
@@ -874,7 +874,7 @@ abstract class AppL10n {
   /// No description provided for @statusError.
   ///
   /// In en, this message translates to:
-  /// **'Check failed'**
+  /// **'Not reachable'**
   String get statusError;
 
   /// No description provided for @statusUnknown.
@@ -916,19 +916,19 @@ abstract class AppL10n {
   /// No description provided for @removeProvider.
   ///
   /// In en, this message translates to:
-  /// **'Remove provider'**
+  /// **'Remove connection'**
   String get removeProvider;
 
   /// No description provided for @removeProviderConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Remove {name}? Its models disappear from routing; request history is kept.'**
+  /// **'Remove {name}? Its models are no longer used. You can add it again at any time.'**
   String removeProviderConfirm(String name);
 
   /// No description provided for @editProvider.
   ///
   /// In en, this message translates to:
-  /// **'Edit provider'**
+  /// **'Edit'**
   String get editProvider;
 
   /// No description provided for @lastChecked.
@@ -946,13 +946,13 @@ abstract class AppL10n {
   /// No description provided for @noProvidersTitle.
   ///
   /// In en, this message translates to:
-  /// **'No providers yet'**
+  /// **'No connections yet'**
   String get noProvidersTitle;
 
   /// No description provided for @noProvidersMessage.
   ///
   /// In en, this message translates to:
-  /// **'Add your first provider to fill the model catalog.'**
+  /// **'Connect an AI provider and NeoRouter imports all of its models.'**
   String get noProvidersMessage;
 
   /// No description provided for @quotaProbeResult.
@@ -982,7 +982,7 @@ abstract class AppL10n {
   /// No description provided for @modelsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Every chat model your providers expose, with learned speed and reliability.'**
+  /// **'Everything your connections offer. NeoRouter learns how smart, fast and reliable each model is and picks the best one for you.'**
   String get modelsDescription;
 
   /// No description provided for @searchModels.
@@ -1024,31 +1024,31 @@ abstract class AppL10n {
   /// No description provided for @filterIssues.
   ///
   /// In en, this message translates to:
-  /// **'Issues'**
+  /// **'Problems'**
   String get filterIssues;
 
   /// No description provided for @intelligence.
   ///
   /// In en, this message translates to:
-  /// **'Intelligence'**
+  /// **'Smart'**
   String get intelligence;
 
   /// No description provided for @speed.
   ///
   /// In en, this message translates to:
-  /// **'Speed'**
+  /// **'Fast'**
   String get speed;
 
   /// No description provided for @reliability.
   ///
   /// In en, this message translates to:
-  /// **'Reliability'**
+  /// **'Reliable'**
   String get reliability;
 
   /// No description provided for @cost.
   ///
   /// In en, this message translates to:
-  /// **'Cost'**
+  /// **'Cheap'**
   String get cost;
 
   /// No description provided for @price.
@@ -1060,7 +1060,7 @@ abstract class AppL10n {
   /// No description provided for @pricePerMillion.
   ///
   /// In en, this message translates to:
-  /// **'{input} / {output} per 1M'**
+  /// **'{input} / {output} per 1M tokens'**
   String pricePerMillion(String input, String output);
 
   /// No description provided for @priceUnknown.
@@ -1192,7 +1192,7 @@ abstract class AppL10n {
   /// No description provided for @overrideFree.
   ///
   /// In en, this message translates to:
-  /// **'Free status'**
+  /// **'Free or paid'**
   String get overrideFree;
 
   /// No description provided for @overrideAuto.
@@ -1252,31 +1252,31 @@ abstract class AppL10n {
   /// No description provided for @enableAll.
   ///
   /// In en, this message translates to:
-  /// **'Enable all'**
+  /// **'Turn all on'**
   String get enableAll;
 
   /// No description provided for @disableAll.
   ///
   /// In en, this message translates to:
-  /// **'Disable all'**
+  /// **'Turn all off'**
   String get disableAll;
 
   /// No description provided for @enableFreeOnly.
   ///
   /// In en, this message translates to:
-  /// **'Enable only free'**
+  /// **'Use only free models'**
   String get enableFreeOnly;
 
   /// No description provided for @measured.
   ///
   /// In en, this message translates to:
-  /// **'{latency} · {tps} tok/s · {samples} calls'**
+  /// **'{latency} · {tps} tokens/s · {samples} requests'**
   String measured(String latency, String tps, String samples);
 
   /// No description provided for @notMeasured.
   ///
   /// In en, this message translates to:
-  /// **'Not measured yet'**
+  /// **'Not used yet'**
   String get notMeasured;
 
   /// No description provided for @penaltyLabel.
@@ -1294,13 +1294,13 @@ abstract class AppL10n {
   /// No description provided for @noModelsTitle.
   ///
   /// In en, this message translates to:
-  /// **'No models'**
+  /// **'No models found'**
   String get noModelsTitle;
 
   /// No description provided for @noModelsMessage.
   ///
   /// In en, this message translates to:
-  /// **'Add a provider or change the filter.'**
+  /// **'Try another filter or connect another provider.'**
   String get noModelsMessage;
 
   /// No description provided for @modelsShown.
@@ -1318,13 +1318,13 @@ abstract class AppL10n {
   /// No description provided for @keysTitle.
   ///
   /// In en, this message translates to:
-  /// **'Router keys'**
+  /// **'API keys'**
   String get keysTitle;
 
   /// No description provided for @keysDescription.
   ///
   /// In en, this message translates to:
-  /// **'Keys for your apps. Each key has its own mode, budget and limits.'**
+  /// **'Keys let your apps use NeoRouter. Decide per key whether it may use paid models and how much it may spend.'**
   String get keysDescription;
 
   /// No description provided for @createKey.
@@ -1354,25 +1354,25 @@ abstract class AppL10n {
   /// No description provided for @modeFreeOnly.
   ///
   /// In en, this message translates to:
-  /// **'Only 100% free models'**
+  /// **'Only free models'**
   String get modeFreeOnly;
 
   /// No description provided for @modePaid.
   ///
   /// In en, this message translates to:
-  /// **'All models, stop at the budget'**
+  /// **'All models'**
   String get modePaid;
 
   /// No description provided for @modeBoth.
   ///
   /// In en, this message translates to:
-  /// **'All models, then free ones once the budget is used'**
+  /// **'All models, then free ones'**
   String get modeBoth;
 
   /// No description provided for @budget.
   ///
   /// In en, this message translates to:
-  /// **'Budget (USD, empty = no limit)'**
+  /// **'Limit in USD (empty = no limit)'**
   String get budget;
 
   /// No description provided for @budgetPeriod.
@@ -1384,19 +1384,19 @@ abstract class AppL10n {
   /// No description provided for @periodTotal.
   ///
   /// In en, this message translates to:
-  /// **'Total'**
+  /// **'In total'**
   String get periodTotal;
 
   /// No description provided for @periodMonthly.
   ///
   /// In en, this message translates to:
-  /// **'Per month'**
+  /// **'Monthly'**
   String get periodMonthly;
 
   /// No description provided for @periodDaily.
   ///
   /// In en, this message translates to:
-  /// **'Per day'**
+  /// **'Daily'**
   String get periodDaily;
 
   /// No description provided for @rpmLimit.
@@ -1414,19 +1414,19 @@ abstract class AppL10n {
   /// No description provided for @defaultProfile.
   ///
   /// In en, this message translates to:
-  /// **'Routing profile for \"auto\"'**
+  /// **'Routing style for \"auto\"'**
   String get defaultProfile;
 
   /// No description provided for @keySecretTitle.
   ///
   /// In en, this message translates to:
-  /// **'Your new router key'**
+  /// **'Copy your new key'**
   String get keySecretTitle;
 
   /// No description provided for @keySecretBody.
   ///
   /// In en, this message translates to:
-  /// **'Copy it now – it is stored only as a hash and cannot be shown again.'**
+  /// **'For your security it is shown only once. Paste it into your app where it asks for an API key.'**
   String get keySecretBody;
 
   /// No description provided for @revoke.
@@ -1450,7 +1450,7 @@ abstract class AppL10n {
   /// No description provided for @spentOf.
   ///
   /// In en, this message translates to:
-  /// **'{spent} of {budget}'**
+  /// **'{spent} of {budget} spent'**
   String spentOf(String spent, String budget);
 
   /// No description provided for @spentNoBudget.
@@ -1474,13 +1474,13 @@ abstract class AppL10n {
   /// No description provided for @noKeysTitle.
   ///
   /// In en, this message translates to:
-  /// **'No router keys'**
+  /// **'No API keys yet'**
   String get noKeysTitle;
 
   /// No description provided for @noKeysMessage.
   ///
   /// In en, this message translates to:
-  /// **'Create a key to call your endpoint.'**
+  /// **'Create a key and paste it into any app that works with OpenAI or Claude.'**
   String get noKeysMessage;
 
   /// No description provided for @deleteKeyConfirm.
@@ -1498,13 +1498,13 @@ abstract class AppL10n {
   /// No description provided for @routingTitle.
   ///
   /// In en, this message translates to:
-  /// **'Routing'**
+  /// **'Smart routing'**
   String get routingTitle;
 
   /// No description provided for @routingDescription.
   ///
   /// In en, this message translates to:
-  /// **'How \"auto\" picks a model. Scores combine intelligence, measured speed, learned reliability and price; failing or slow models are penalized and load is spread.'**
+  /// **'When an app asks for \"auto\", NeoRouter picks the model for each request. Choose what matters most to you.'**
   String get routingDescription;
 
   /// No description provided for @presetBalanced.
@@ -1534,7 +1534,7 @@ abstract class AppL10n {
   /// No description provided for @presetBest.
   ///
   /// In en, this message translates to:
-  /// **'Best'**
+  /// **'Best overall'**
   String get presetBest;
 
   /// No description provided for @presetCheap.
@@ -1546,7 +1546,7 @@ abstract class AppL10n {
   /// No description provided for @presetCustom.
   ///
   /// In en, this message translates to:
-  /// **'Custom'**
+  /// **'My style'**
   String get presetCustom;
 
   /// No description provided for @presetSlider.
@@ -1576,7 +1576,7 @@ abstract class AppL10n {
   /// No description provided for @profileName.
   ///
   /// In en, this message translates to:
-  /// **'Profile name'**
+  /// **'Name'**
   String get profileName;
 
   /// No description provided for @saveProfile.
@@ -1600,56 +1600,56 @@ abstract class AppL10n {
   /// No description provided for @minIntelligence.
   ///
   /// In en, this message translates to:
-  /// **'Minimum intelligence'**
+  /// **'Minimum quality'**
   String get minIntelligence;
 
   /// No description provided for @maxPriceOut.
   ///
   /// In en, this message translates to:
-  /// **'Max output price (USD / 1M, empty = any)'**
+  /// **'Max price per 1M output tokens (USD, empty = any)'**
   String get maxPriceOut;
 
   /// No description provided for @adaptive.
   ///
   /// In en, this message translates to:
-  /// **'Adapt to request complexity'**
+  /// **'Adapt to the request'**
   String get adaptive;
 
   /// No description provided for @adaptiveHint.
   ///
   /// In en, this message translates to:
-  /// **'Long, code-heavy or tool requests shift weight toward intelligence.'**
+  /// **'Long or code-heavy requests lean towards smarter models.'**
   String get adaptiveHint;
 
   /// No description provided for @exploration.
   ///
   /// In en, this message translates to:
-  /// **'Load spreading'**
+  /// **'Spread load'**
   String get exploration;
 
   /// No description provided for @explorationHint.
   ///
   /// In en, this message translates to:
-  /// **'Higher values spread requests over more good models.'**
+  /// **'Higher values share requests among more good models instead of always using the top one.'**
   String get explorationHint;
 
   /// No description provided for @excludeProviders.
   ///
   /// In en, this message translates to:
-  /// **'Exclude providers (comma separated)'**
+  /// **'Never use these connections (comma separated)'**
   String get excludeProviders;
 
   /// No description provided for @previewTitle.
   ///
   /// In en, this message translates to:
-  /// **'Live preview'**
+  /// **'Try it'**
   String get previewTitle;
 
   /// No description provided for @previewHint.
   ///
   /// In en, this message translates to:
-  /// **'What \"auto\" would choose right now, without sending a request.'**
-  String get previewHint;
+  /// **'Which models \"{style}\" would choose right now – nothing is sent.'**
+  String previewHint(String style);
 
   /// No description provided for @previewPrompt.
   ///
@@ -1660,7 +1660,7 @@ abstract class AppL10n {
   /// No description provided for @previewFreeOnly.
   ///
   /// In en, this message translates to:
-  /// **'Free models only'**
+  /// **'Only free models'**
   String get previewFreeOnly;
 
   /// No description provided for @previewTools.
@@ -1678,7 +1678,7 @@ abstract class AppL10n {
   /// No description provided for @runPreview.
   ///
   /// In en, this message translates to:
-  /// **'Preview'**
+  /// **'Check'**
   String get runPreview;
 
   /// No description provided for @score.
@@ -1822,25 +1822,25 @@ abstract class AppL10n {
   /// No description provided for @metricRpm.
   ///
   /// In en, this message translates to:
-  /// **'requests / min'**
+  /// **'Requests per minute'**
   String get metricRpm;
 
   /// No description provided for @metricRpd.
   ///
   /// In en, this message translates to:
-  /// **'requests / day'**
+  /// **'Requests per day'**
   String get metricRpd;
 
   /// No description provided for @metricTpm.
   ///
   /// In en, this message translates to:
-  /// **'tokens / min'**
+  /// **'Tokens per minute'**
   String get metricTpm;
 
   /// No description provided for @metricTpd.
   ///
   /// In en, this message translates to:
-  /// **'tokens / day'**
+  /// **'Tokens per day'**
   String get metricTpd;
 
   /// No description provided for @usedOf.
@@ -1888,7 +1888,7 @@ abstract class AppL10n {
   /// No description provided for @noQuotaData.
   ///
   /// In en, this message translates to:
-  /// **'No limits known yet. They appear after the first requests.'**
+  /// **'No limits reported yet. They appear after the first requests.'**
   String get noQuotaData;
 
   /// No description provided for @onlyFreeModels.
@@ -1984,7 +1984,7 @@ abstract class AppL10n {
   /// No description provided for @selectKey.
   ///
   /// In en, this message translates to:
-  /// **'Router key'**
+  /// **'API key'**
   String get selectKey;
 
   /// No description provided for @modelField.
@@ -2002,7 +2002,7 @@ abstract class AppL10n {
   /// No description provided for @messageHint.
   ///
   /// In en, this message translates to:
-  /// **'Write a message…'**
+  /// **'Message NeoRouter…'**
   String get messageHint;
 
   /// No description provided for @send.
@@ -2020,13 +2020,13 @@ abstract class AppL10n {
   /// No description provided for @routedTo.
   ///
   /// In en, this message translates to:
-  /// **'via {model} · {latency}'**
+  /// **'{model} · {latency}'**
   String routedTo(String model, String latency);
 
   /// No description provided for @playgroundNeedsKey.
   ///
   /// In en, this message translates to:
-  /// **'Create a router key first.'**
+  /// **'Create an API key first – the Playground uses it just like your apps do.'**
   String get playgroundNeedsKey;
 
   /// No description provided for @settingsTitle.
@@ -2826,6 +2826,906 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Saved when you press Save'**
   String get settingsSavedOnSubmit;
+
+  /// No description provided for @navHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get navHome;
+
+  /// No description provided for @navActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get navActivity;
+
+  /// No description provided for @navSectionServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Server'**
+  String get navSectionServer;
+
+  /// No description provided for @capChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get capChat;
+
+  /// No description provided for @capEmbedding.
+  ///
+  /// In en, this message translates to:
+  /// **'Embeddings'**
+  String get capEmbedding;
+
+  /// No description provided for @capRerank.
+  ///
+  /// In en, this message translates to:
+  /// **'Ranking'**
+  String get capRerank;
+
+  /// No description provided for @capImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Images'**
+  String get capImage;
+
+  /// No description provided for @capAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get capAudio;
+
+  /// No description provided for @capVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get capVideo;
+
+  /// No description provided for @capModeration.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety & classification'**
+  String get capModeration;
+
+  /// No description provided for @capOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get capOther;
+
+  /// No description provided for @capChatHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Text and vision models that answer messages.'**
+  String get capChatHint;
+
+  /// No description provided for @capEmbeddingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn text into vectors for search and memory.'**
+  String get capEmbeddingHint;
+
+  /// No description provided for @capRerankHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort search results by relevance.'**
+  String get capRerankHint;
+
+  /// No description provided for @capImageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Create and edit images.'**
+  String get capImageHint;
+
+  /// No description provided for @capAudioHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech to text, text to speech and music.'**
+  String get capAudioHint;
+
+  /// No description provided for @capVideoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Create and understand video.'**
+  String get capVideoHint;
+
+  /// No description provided for @capModerationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check content and make yes/no decisions.'**
+  String get capModerationHint;
+
+  /// No description provided for @capOtherHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Specialised models such as translation or document parsing.'**
+  String get capOtherHint;
+
+  /// No description provided for @capComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter lists these models already. Routing for {kind} is coming soon – they are not used by \"auto\" yet.'**
+  String capComingSoon(String kind);
+
+  /// No description provided for @capSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Soon'**
+  String get capSoon;
+
+  /// No description provided for @greetMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning, {name}'**
+  String greetMorning(String name);
+
+  /// No description provided for @greetAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon, {name}'**
+  String greetAfternoon(String name);
+
+  /// No description provided for @greetEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening, {name}'**
+  String greetEvening(String name);
+
+  /// No description provided for @homeStatusOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything is running. {count} connections are working.'**
+  String homeStatusOk(String count);
+
+  /// No description provided for @homeStatusIssues.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} connection needs your attention. Requests use the others meanwhile.'**
+  String homeStatusIssues(String count);
+
+  /// No description provided for @homeStatusEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect an AI provider to get started.'**
+  String get homeStatusEmpty;
+
+  /// No description provided for @homeLast7Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 days'**
+  String get homeLast7Days;
+
+  /// No description provided for @metricRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get metricRequests;
+
+  /// No description provided for @metricAnswered.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered'**
+  String get metricAnswered;
+
+  /// No description provided for @metricSpent.
+  ///
+  /// In en, this message translates to:
+  /// **'Spent'**
+  String get metricSpent;
+
+  /// No description provided for @metricFreeShare.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent} % free'**
+  String metricFreeShare(String percent);
+
+  /// No description provided for @metricResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg. response time'**
+  String get metricResponse;
+
+  /// No description provided for @homeSeeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get homeSeeAll;
+
+  /// No description provided for @homeRecentActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent activity'**
+  String get homeRecentActivity;
+
+  /// No description provided for @homeModelsLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{total} models · {free} free'**
+  String homeModelsLine(String total, String free);
+
+  /// No description provided for @homeUseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use NeoRouter in your apps'**
+  String get homeUseTitle;
+
+  /// No description provided for @homeUseBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste this address and one of your API keys into any app that works with OpenAI or Claude.'**
+  String get homeUseBody;
+
+  /// No description provided for @homeGetKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Get an API key'**
+  String get homeGetKey;
+
+  /// No description provided for @homeShowExamples.
+  ///
+  /// In en, this message translates to:
+  /// **'Show code examples'**
+  String get homeShowExamples;
+
+  /// No description provided for @homeHideExamples.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide code examples'**
+  String get homeHideExamples;
+
+  /// No description provided for @setupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish setting up'**
+  String get setupTitle;
+
+  /// No description provided for @setupProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} done'**
+  String setupProgress(String done, String total);
+
+  /// No description provided for @setupStep1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect an AI provider'**
+  String get setupStep1Title;
+
+  /// No description provided for @setupStep1Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a key from Groq, Google, OpenRouter or another provider. NeoRouter finds all its models.'**
+  String get setupStep1Body;
+
+  /// No description provided for @setupStep2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an API key'**
+  String get setupStep2Title;
+
+  /// No description provided for @setupStep2Body.
+  ///
+  /// In en, this message translates to:
+  /// **'One key for your apps, optionally limited to free models or a budget.'**
+  String get setupStep2Body;
+
+  /// No description provided for @setupStep3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Send your first message'**
+  String get setupStep3Title;
+
+  /// No description provided for @setupStep3Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Try it in the Playground.'**
+  String get setupStep3Body;
+
+  /// No description provided for @setupStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get setupStart;
+
+  /// No description provided for @problemTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} needs attention'**
+  String problemTitle(String name);
+
+  /// No description provided for @problemKeyRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'The provider rejected the key. Update it to use this connection again.'**
+  String get problemKeyRejected;
+
+  /// No description provided for @requestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed: {reason}'**
+  String requestFailed(String reason);
+
+  /// No description provided for @agoNow.
+  ///
+  /// In en, this message translates to:
+  /// **'just now'**
+  String get agoNow;
+
+  /// No description provided for @agoMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min ago'**
+  String agoMinutes(String count);
+
+  /// No description provided for @agoHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} h ago'**
+  String agoHours(String count);
+
+  /// No description provided for @activityDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'What your apps asked for and how NeoRouter answered. Only metadata is kept – never your messages.'**
+  String get activityDescription;
+
+  /// No description provided for @tabOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get tabOverview;
+
+  /// No description provided for @tabRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get tabRequests;
+
+  /// No description provided for @metricTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} tokens'**
+  String metricTokens(String count);
+
+  /// No description provided for @metricTypicalResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical response'**
+  String get metricTypicalResponse;
+
+  /// No description provided for @metricSlowest.
+  ///
+  /// In en, this message translates to:
+  /// **'slowest 5 %: {value}'**
+  String metricSlowest(String value);
+
+  /// No description provided for @chartResponseTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Response time'**
+  String get chartResponseTime;
+
+  /// No description provided for @chartTypical.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical'**
+  String get chartTypical;
+
+  /// No description provided for @chartSlowest.
+  ///
+  /// In en, this message translates to:
+  /// **'Slowest 5 %'**
+  String get chartSlowest;
+
+  /// No description provided for @topModelsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Most used models'**
+  String get topModelsTitle;
+
+  /// No description provided for @byConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'By connection'**
+  String get byConnection;
+
+  /// No description provided for @byKey.
+  ///
+  /// In en, this message translates to:
+  /// **'By API key'**
+  String get byKey;
+
+  /// No description provided for @rankingLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} · {latency}'**
+  String rankingLine(String count, String latency);
+
+  /// No description provided for @tooltipRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} requests · {errors} failed'**
+  String tooltipRequests(String count, String errors);
+
+  /// No description provided for @filterAnswered.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered'**
+  String get filterAnswered;
+
+  /// No description provided for @filterFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get filterFailed;
+
+  /// No description provided for @logsPrivacyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter never stores what you or the model wrote – only which model answered, how fast and what it cost.'**
+  String get logsPrivacyHint;
+
+  /// No description provided for @detailRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Asked for'**
+  String get detailRequested;
+
+  /// No description provided for @detailKey.
+  ///
+  /// In en, this message translates to:
+  /// **'API key'**
+  String get detailKey;
+
+  /// No description provided for @detailResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'Response time'**
+  String get detailResponse;
+
+  /// No description provided for @detailFirstToken.
+  ///
+  /// In en, this message translates to:
+  /// **'First words after'**
+  String get detailFirstToken;
+
+  /// No description provided for @detailTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens'**
+  String get detailTokens;
+
+  /// No description provided for @detailCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost'**
+  String get detailCost;
+
+  /// No description provided for @detailFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Interface'**
+  String get detailFormat;
+
+  /// No description provided for @detailTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get detailTime;
+
+  /// No description provided for @detailRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Route'**
+  String get detailRoute;
+
+  /// No description provided for @outcomeAnswered.
+  ///
+  /// In en, this message translates to:
+  /// **'answered'**
+  String get outcomeAnswered;
+
+  /// No description provided for @outcomeSlower.
+  ///
+  /// In en, this message translates to:
+  /// **'was slower – cancelled'**
+  String get outcomeSlower;
+
+  /// No description provided for @outcomeBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'was busy – skipped'**
+  String get outcomeBusy;
+
+  /// No description provided for @outcomeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'failed ({reason})'**
+  String outcomeFailed(String reason);
+
+  /// No description provided for @tabConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get tabConnected;
+
+  /// No description provided for @tabLimits.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage limits'**
+  String get tabLimits;
+
+  /// No description provided for @accountFreePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Free plan'**
+  String get accountFreePlan;
+
+  /// No description provided for @accountPaidPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid account'**
+  String get accountPaidPlan;
+
+  /// No description provided for @accountFreeVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Free plan, verified'**
+  String get accountFreeVerified;
+
+  /// No description provided for @accountBillingActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing is active – nothing counts as free'**
+  String get accountBillingActive;
+
+  /// No description provided for @accountNotVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Free plan, not verified yet'**
+  String get accountNotVerified;
+
+  /// No description provided for @moreActions.
+  ///
+  /// In en, this message translates to:
+  /// **'More actions'**
+  String get moreActions;
+
+  /// No description provided for @chooseProviderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the service you have a key for. Providers marked \"Free models\" can be used without paying.'**
+  String get chooseProviderHint;
+
+  /// No description provided for @providerFreeTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Free models'**
+  String get providerFreeTag;
+
+  /// No description provided for @getKeyAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Get a key at {name}'**
+  String getKeyAt(String name);
+
+  /// No description provided for @billingPaidHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests to paid models are billed by the provider and count against your API keys\' budgets.'**
+  String get billingPaidHint;
+
+  /// No description provided for @testConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Test connection'**
+  String get testConnection;
+
+  /// No description provided for @probeOk.
+  ///
+  /// In en, this message translates to:
+  /// **'The key works – {count} models found.'**
+  String probeOk(String count);
+
+  /// No description provided for @limitsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'How much of each provider\'s allowance is used. Every provider resets its limits on its own schedule; NeoRouter switches to another model before one runs out.'**
+  String get limitsDescription;
+
+  /// No description provided for @limitResets.
+  ///
+  /// In en, this message translates to:
+  /// **'resets {time}'**
+  String limitResets(String time);
+
+  /// No description provided for @filterProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by connection'**
+  String get filterProvider;
+
+  /// No description provided for @allConnections.
+  ///
+  /// In en, this message translates to:
+  /// **'All connections'**
+  String get allConnections;
+
+  /// No description provided for @showMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more ({count} left)'**
+  String showMore(String count);
+
+  /// No description provided for @factWhyFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free or paid'**
+  String get factWhyFree;
+
+  /// No description provided for @factContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Context'**
+  String get factContext;
+
+  /// No description provided for @factMeasured.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured'**
+  String get factMeasured;
+
+  /// No description provided for @modeFreeOnlyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Never costs anything. Recommended.'**
+  String get modeFreeOnlyHint;
+
+  /// No description provided for @modeBothHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses paid models until the budget is used up, then continues with free ones.'**
+  String get modeBothHint;
+
+  /// No description provided for @modePaidHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses the best model regardless of price and stops at the budget.'**
+  String get modePaidHint;
+
+  /// No description provided for @keyAccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What can this key use?'**
+  String get keyAccessTitle;
+
+  /// No description provided for @keyBudgetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Spending limit'**
+  String get keyBudgetTitle;
+
+  /// No description provided for @keyNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Laptop or Home Assistant'**
+  String get keyNameHint;
+
+  /// No description provided for @keySecretDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get keySecretDone;
+
+  /// No description provided for @keyUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'used {time}'**
+  String keyUsed(String time);
+
+  /// No description provided for @keyNeverUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'not used yet'**
+  String get keyNeverUsed;
+
+  /// No description provided for @revokedKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoked keys ({count})'**
+  String revokedKeys(String count);
+
+  /// No description provided for @keysFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Each app should get its own key. If a key leaks, revoke it – your other apps keep working.'**
+  String get keysFooter;
+
+  /// No description provided for @presetBalancedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A good mix of quality, speed and cost. Used when nothing else is set.'**
+  String get presetBalancedHint;
+
+  /// No description provided for @presetFastHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The shortest wait for an answer.'**
+  String get presetFastHint;
+
+  /// No description provided for @presetSmartHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The most capable models, even if they take longer.'**
+  String get presetSmartHint;
+
+  /// No description provided for @presetReliableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Models that almost never fail.'**
+  String get presetReliableHint;
+
+  /// No description provided for @presetBestHint.
+  ///
+  /// In en, this message translates to:
+  /// **'High quality from models that also work reliably.'**
+  String get presetBestHint;
+
+  /// No description provided for @presetCheapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The lowest cost – free models first.'**
+  String get presetCheapHint;
+
+  /// No description provided for @stylesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing styles'**
+  String get stylesTitle;
+
+  /// No description provided for @stylesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a style by asking for its model name, e.g. \"auto:fast\", or choose one per API key.'**
+  String get stylesHint;
+
+  /// No description provided for @customStylesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your own styles'**
+  String get customStylesTitle;
+
+  /// No description provided for @customStylesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Decide yourself how much quality, speed, reliability and cost matter.'**
+  String get customStylesHint;
+
+  /// No description provided for @createStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'New style'**
+  String get createStyle;
+
+  /// No description provided for @editStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit style'**
+  String get editStyle;
+
+  /// No description provided for @weightsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What matters'**
+  String get weightsTitle;
+
+  /// No description provided for @weightsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Move a slider to the right to make it count more.'**
+  String get weightsHint;
+
+  /// No description provided for @previewDefaultPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain quicksort in two sentences.'**
+  String get previewDefaultPrompt;
+
+  /// No description provided for @previewNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No model fits right now. Connect a provider or turn off \"free models only\".'**
+  String get previewNone;
+
+  /// No description provided for @previewSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} models skipped'**
+  String previewSkipped(String count);
+
+  /// No description provided for @previewMostLikely.
+  ///
+  /// In en, this message translates to:
+  /// **'most likely'**
+  String get previewMostLikely;
+
+  /// No description provided for @playgroundEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What would you like to try?'**
+  String get playgroundEmptyTitle;
+
+  /// No description provided for @playgroundEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages go through the real router with your key, so you see which model answers and how fast.'**
+  String get playgroundEmptyHint;
+
+  /// No description provided for @suggestion1.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain how a rainbow forms in two sentences'**
+  String get suggestion1;
+
+  /// No description provided for @suggestion2.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a friendly reminder for a team meeting'**
+  String get suggestion2;
+
+  /// No description provided for @suggestion3.
+  ///
+  /// In en, this message translates to:
+  /// **'Give me three dinner ideas with chickpeas'**
+  String get suggestion3;
+
+  /// No description provided for @newChat.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get newChat;
+
+  /// No description provided for @modelPicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get modelPicker;
+
+  /// No description provided for @modelSpecific.
+  ///
+  /// In en, this message translates to:
+  /// **'Specific model…'**
+  String get modelSpecific;
+
+  /// No description provided for @modelSpecificHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. groq/openai/gpt-oss-120b'**
+  String get modelSpecificHint;
+
+  /// No description provided for @systemPromptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions'**
+  String get systemPromptTitle;
+
+  /// No description provided for @systemPromptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional: how the assistant should behave, e.g. \"Answer briefly and in German.\"'**
+  String get systemPromptHint;
+
+  /// No description provided for @thinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking…'**
+  String get thinking;
+
+  /// No description provided for @enterToSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter to send · Shift+Enter for a new line'**
+  String get enterToSend;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

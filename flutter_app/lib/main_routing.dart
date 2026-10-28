@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
@@ -9,7 +10,7 @@ import 'main_theme.dart';
 import 'src/backend_client.dart';
 import 'src/models.dart';
 
-const List<String> presetOrder = <String>['reliable', 'fast', 'balanced', 'best', 'smart', 'cheap'];
+const List<String> presetOrder = <String>['balanced', 'fast', 'smart', 'reliable', 'best', 'cheap'];
 
 String presetLabel(AppL10n t, String id) => switch (id) {
       'reliable' => t.presetReliable,
@@ -19,6 +20,26 @@ String presetLabel(AppL10n t, String id) => switch (id) {
       'smart' => t.presetSmart,
       'cheap' => t.presetCheap,
       _ => t.presetCustom,
+    };
+
+String presetHint(AppL10n t, String id) => switch (id) {
+      'reliable' => t.presetReliableHint,
+      'fast' => t.presetFastHint,
+      'balanced' => t.presetBalancedHint,
+      'best' => t.presetBestHint,
+      'smart' => t.presetSmartHint,
+      'cheap' => t.presetCheapHint,
+      _ => '',
+    };
+
+IconData presetIcon(String id) => switch (id) {
+      'reliable' => Icons.verified_outlined,
+      'fast' => Icons.bolt_outlined,
+      'balanced' => Icons.tune_rounded,
+      'best' => Icons.workspace_premium_outlined,
+      'smart' => Icons.psychology_outlined,
+      'cheap' => Icons.savings_outlined,
+      _ => Icons.auto_fix_high_outlined,
     };
 
 String profileLabel(AppL10n t, RoutingProfile profile) => profile.preset ? presetLabel(t, profile.id) : profile.name;
@@ -37,20 +58,12 @@ class _RoutingScreenState extends State<RoutingScreen> {
   bool _loading = true;
   String? _error;
   String _selected = 'balanced';
-  RoutingWeights _weights = RoutingWeights(intelligence: 0.3, speed: 0.2, reliability: 0.3, cost: 0.2);
-  final TextEditingController _name = TextEditingController();
-  final TextEditingController _maxPrice = TextEditingController();
-  final TextEditingController _exclude = TextEditingController();
-  double _minIntelligence = 0;
-  double _exploration = 0.08;
-  bool _adaptive = true;
 
-  final TextEditingController _prompt = TextEditingController(text: 'Explain quicksort in two sentences.');
-  bool _previewFree = false;
-  bool _previewTools = false;
-  bool _previewVision = false;
+  final TextEditingController _prompt = TextEditingController();
+  bool _previewFree = true;
   Map<String, dynamic>? _preview;
   bool _previewing = false;
+  bool _showSkipped = false;
 
   @override
   void initState() {
@@ -60,22 +73,18 @@ class _RoutingScreenState extends State<RoutingScreen> {
 
   @override
   void dispose() {
-    _name.dispose();
-    _maxPrice.dispose();
-    _exclude.dispose();
     _prompt.dispose();
     super.dispose();
   }
-
-  RoutingProfile? get _current => _profiles.where((item) => item.id == _selected).firstOrNull;
-  bool get _isCustom => _current == null || !_current!.preset;
 
   Future<void> _load() async {
     setState(() => _error = null);
     try {
       final profiles = await widget.controller.api.profiles();
-      setState(() => _profiles = profiles);
-      _select(_selected);
+      setState(() {
+        _profiles = profiles;
+        if (!profiles.any((item) => item.id == _selected)) _selected = 'balanced';
+      });
       await _runPreview();
     } catch (error) {
       setState(() => _error = '$error');
@@ -85,61 +94,18 @@ class _RoutingScreenState extends State<RoutingScreen> {
   }
 
   void _select(String id) {
-    final profile = _profiles.where((item) => item.id == id).firstOrNull;
-    setState(() {
-      _selected = id;
-      if (profile != null) {
-        _weights = profile.weights;
-        final constraints = profile.constraints;
-        _name.text = profile.preset ? '' : profile.name;
-        _minIntelligence = (constraints['minIntelligence'] as num?)?.toDouble() ?? 0;
-        _exploration = (constraints['exploration'] as num?)?.toDouble() ?? 0.08;
-        _adaptive = constraints['adaptive'] != false;
-        _maxPrice.text = constraints['maxPriceOut']?.toString() ?? '';
-        _exclude.text = ((constraints['excludeProviders'] as List?) ?? const <Object>[]).join(', ');
-      }
-    });
-  }
-
-  Map<String, Object?> _constraints() => <String, Object?>{
-        'minIntelligence': _minIntelligence > 0 ? _minIntelligence : null,
-        'maxPriceOut': double.tryParse(_maxPrice.text.trim().replaceAll(',', '.')),
-        'excludeProviders': _exclude.text.split(',').map((item) => item.trim()).where((item) => item.isNotEmpty).toList(),
-        'adaptive': _adaptive,
-        'exploration': _exploration,
-      };
-
-  Future<void> _saveProfile({required bool asNew}) async {
-    final t = AppL10n.of(context);
-    try {
-      final name = _name.text.trim().isEmpty ? t.presetCustom : _name.text.trim();
-      final profile = asNew || _current == null || _current!.preset
-          ? await widget.controller.api.createProfile(name, _weights, _constraints())
-          : await widget.controller.api.updateProfileWeights(_selected, name: name, weights: _weights, constraints: _constraints());
-      _selected = profile.id;
-      await _load();
-      if (mounted) showSnack(context, t.saved);
-    } on ApiException catch (error) {
-      if (mounted) showSnack(context, error.message);
-    }
-  }
-
-  Future<void> _deleteProfile() async {
-    await widget.controller.api.deleteProfile(_selected);
-    _selected = 'balanced';
-    await _load();
+    setState(() => _selected = id);
+    _runPreview();
   }
 
   Future<void> _runPreview() async {
+    final t = AppL10n.of(context);
     setState(() => _previewing = true);
     try {
-      final usePreset = !_isCustom || _current != null;
       final result = await widget.controller.api.preview(<String, Object?>{
-        'profile': usePreset ? _selected : 'balanced',
+        'profile': _selected,
         'mode': _previewFree ? 'free_only' : 'both',
-        'prompt': _prompt.text,
-        'tools': _previewTools,
-        'vision': _previewVision,
+        'prompt': _prompt.text.trim().isEmpty ? t.previewDefaultPrompt : _prompt.text,
       });
       setState(() => _preview = result);
     } on ApiException catch (error) {
@@ -149,9 +115,21 @@ class _RoutingScreenState extends State<RoutingScreen> {
     }
   }
 
+  Future<void> _editStyle([RoutingProfile? profile]) async {
+    final saved = await showDialog<String>(context: context, builder: (_) => _StyleEditor(controller: widget.controller, profile: profile));
+    if (saved == null) return;
+    if (saved.isNotEmpty) _selected = saved;
+    await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final presets = <RoutingProfile>[
+      for (final id in presetOrder) ..._profiles.where((item) => item.preset && item.id == id),
+    ];
+    final custom = _profiles.where((item) => !item.preset).toList();
     return PageScaffold(
       header: ScreenHeader(title: t.routingTitle, description: t.routingDescription),
       children: <Widget>[
@@ -159,267 +137,357 @@ class _RoutingScreenState extends State<RoutingScreen> {
           loading: _loading,
           error: _error,
           onRetry: _load,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final editor = _editor(context);
-              final preview = _previewCard(context);
-              if (constraints.maxWidth < 1000) return Column(children: <Widget>[editor, const SizedBox(height: AppSpacing.md), preview]);
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Expanded(child: editor),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(child: preview),
-                ],
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _editor(BuildContext context) {
-    final t = AppL10n.of(context);
-    final palette = neoRouterPaletteOf(context);
-    final customProfiles = _profiles.where((item) => !item.preset).toList();
-    final presetIndex = presetOrder.indexOf(_selected);
-    final sliderIndex = presetIndex >= 0 ? presetIndex : presetOrder.length;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SectionCard(
-          title: t.presetSlider,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Slider(
-                value: sliderIndex.toDouble(),
-                min: 0,
-                max: presetOrder.length.toDouble(),
-                divisions: presetOrder.length,
-                label: sliderIndex < presetOrder.length ? presetLabel(t, presetOrder[sliderIndex]) : t.presetCustom,
-                onChanged: (value) {
-                  final index = value.round();
-                  if (index < presetOrder.length) {
-                    _select(presetOrder[index]);
-                  } else {
-                    setState(() => _selected = customProfiles.isNotEmpty ? customProfiles.first.id : '__new__');
-                    if (customProfiles.isNotEmpty) _select(customProfiles.first.id);
-                  }
+              SettingsHeading(title: t.stylesTitle, description: t.stylesHint),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final columns = constraints.maxWidth >= 900 ? 3 : constraints.maxWidth >= 560 ? 2 : 1;
+                  final width = (constraints.maxWidth - (columns - 1) * AppSpacing.sm) / columns;
+                  return Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: <Widget>[
+                      for (final profile in presets)
+                        SizedBox(
+                          width: width,
+                          child: _StyleCard(
+                            icon: presetIcon(profile.id),
+                            title: presetLabel(t, profile.id),
+                            description: presetHint(t, profile.id),
+                            modelName: profile.id == 'balanced' ? 'auto' : 'auto:${profile.id}',
+                            selected: _selected == profile.id,
+                            onTap: () => _select(profile.id),
+                          ),
+                        ),
+                    ],
+                  );
                 },
-                onChangeEnd: (_) => _runPreview(),
               ),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                alignment: WrapAlignment.center,
-                children: <Widget>[
-                  for (var index = 0; index <= presetOrder.length; index++)
-                    ChoiceChip(
-                      label: Text(index < presetOrder.length ? presetLabel(t, presetOrder[index]) : t.presetCustom),
-                      selected: index == sliderIndex,
-                      onSelected: (_) {
-                        if (index < presetOrder.length) {
-                          _select(presetOrder[index]);
-                        } else if (customProfiles.isNotEmpty) {
-                          _select(customProfiles.first.id);
-                        } else {
-                          setState(() => _selected = '__new__');
-                        }
-                        _runPreview();
-                      },
-                    ),
-                ],
+              const SizedBox(height: 28),
+              SettingsHeading(
+                title: t.customStylesTitle,
+                description: t.customStylesHint,
+                trailing: OutlinedButton.icon(onPressed: () => _editStyle(), icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.createStyle)),
               ),
-              if (_isCustom && customProfiles.isNotEmpty) ...<Widget>[
-                const SizedBox(height: AppSpacing.md),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
+              if (custom.isNotEmpty)
+                SettingsCardList(
                   children: <Widget>[
-                    for (final profile in customProfiles)
-                      ChoiceChip(label: Text(profile.name), selected: _selected == profile.id, onSelected: (_) {
-                        _select(profile.id);
-                        _runPreview();
-                      }),
-                    ChoiceChip(label: Text('+ ${t.presetCustom}'), selected: _selected == '__new__', onSelected: (_) => setState(() => _selected = '__new__')),
+                    for (final profile in custom)
+                      ListRow(
+                        onTap: () => _select(profile.id),
+                        leading: Icon(_selected == profile.id ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded, size: 18, color: _selected == profile.id ? palette.accent : palette.textMuted),
+                        title: profile.name,
+                        subtitle: 'auto:${profile.id}',
+                        trailing: TextButton(onPressed: () => _editStyle(profile), child: Text(t.edit)),
+                      ),
                   ],
                 ),
-              ],
-              if (!_isCustom || _current != null) ...<Widget>[
-                const SizedBox(height: AppSpacing.sm),
-                Text(t.profileUsage(_selected), style: TextStyle(color: palette.textMuted, fontSize: 12)),
-              ],
+              const SizedBox(height: 28),
+              _previewSection(context),
             ],
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
-        SectionCard(
-          title: t.weights,
-          child: Column(
-            children: <Widget>[
-              _weightSlider(t.intelligence, _weights.intelligence, (value) => _weights.intelligence = value),
-              _weightSlider(t.speed, _weights.speed, (value) => _weights.speed = value),
-              _weightSlider(t.reliability, _weights.reliability, (value) => _weights.reliability = value),
-              _weightSlider(t.cost, _weights.cost, (value) => _weights.cost = value),
-            ],
-          ),
-        ),
-        if (_isCustom) ...<Widget>[
-          const SizedBox(height: AppSpacing.md),
-          SectionCard(
-            title: t.constraints,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                TextField(controller: _name, decoration: InputDecoration(labelText: t.profileName)),
-                const SizedBox(height: AppSpacing.sm),
-                _labeledSlider(t.minIntelligence, _minIntelligence, (value) => setState(() => _minIntelligence = value), max: 0.9),
-                _labeledSlider(t.exploration, _exploration, (value) => setState(() => _exploration = value), min: 0.01, max: 0.3, hint: t.explorationHint),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: _adaptive,
-                  onChanged: (value) => setState(() => _adaptive = value),
-                  title: Text(t.adaptive),
-                  subtitle: Text(t.adaptiveHint, style: TextStyle(color: palette.textMuted, fontSize: 12)),
-                ),
-                TextField(controller: _maxPrice, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: t.maxPriceOut)),
-                const SizedBox(height: AppSpacing.sm),
-                TextField(controller: _exclude, decoration: InputDecoration(labelText: t.excludeProviders)),
-                const SizedBox(height: AppSpacing.md),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: <Widget>[
-                    if (_current != null && !_current!.preset) ...<Widget>[
-                      FilledButton(onPressed: () => _saveProfile(asNew: false), child: Text(t.updateProfile)),
-                      OutlinedButton(onPressed: () => _saveProfile(asNew: true), child: Text(t.saveProfile)),
-                      TextButton(onPressed: _deleteProfile, child: Text(t.delete)),
-                    ] else
-                      FilledButton(onPressed: () => _saveProfile(asNew: true), child: Text(t.saveProfile)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
       ],
     );
   }
 
-  Widget _weightSlider(String label, double value, ValueChanged<double> assign) {
-    final palette = neoRouterPaletteOf(context);
-    return Row(
-      children: <Widget>[
-        SizedBox(width: 120, child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
-        Expanded(
-          child: Slider(
-            value: value.clamp(0, 1),
-            onChanged: _isCustom ? (next) => setState(() => assign(next)) : null,
-          ),
-        ),
-        SizedBox(width: 40, child: Text('${(value * 100).round()}', textAlign: TextAlign.end, style: TextStyle(color: palette.textSoft, fontSize: 12))),
-      ],
-    );
-  }
-
-  Widget _labeledSlider(String label, double value, ValueChanged<double> onChanged, {double min = 0, double max = 1, String? hint}) {
-    final palette = neoRouterPaletteOf(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            Expanded(child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
-            Text(value.toStringAsFixed(2), style: TextStyle(color: palette.textSoft, fontSize: 12)),
-          ],
-        ),
-        Slider(value: value.clamp(min, max), min: min, max: max, onChanged: onChanged),
-        if (hint != null) Text(hint, style: TextStyle(color: palette.textMuted, fontSize: 12)),
-      ],
-    );
-  }
-
-  Widget _previewCard(BuildContext context) {
+  Widget _previewSection(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final candidates = ((_preview?['candidates'] as List?) ?? const <Object>[]).cast<Map>();
-    return SectionCard(
-      title: t.previewTitle,
-      trailing: _previewing ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)) : null,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(t.previewHint, style: TextStyle(color: palette.textSoft, fontSize: 13)),
-          const SizedBox(height: AppSpacing.sm),
-          TextField(controller: _prompt, minLines: 1, maxLines: 4, decoration: InputDecoration(labelText: t.previewPrompt)),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            crossAxisAlignment: WrapCrossAlignment.center,
+    final chosen = candidates.where((item) => item['rejected'] == null).take(5).toList();
+    final skipped = candidates.where((item) => item['rejected'] != null).toList();
+    final current = _profiles.where((item) => item.id == _selected).firstOrNull;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SettingsHeading(
+          title: t.previewTitle,
+          description: t.previewHint(current == null ? '' : profileLabel(t, current)),
+          trailing: _previewing ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)) : null,
+        ),
+        AppCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              FilterChip(label: Text(t.previewFreeOnly), selected: _previewFree, onSelected: (value) => setState(() => _previewFree = value)),
-              FilterChip(label: Text(t.previewTools), selected: _previewTools, onSelected: (value) => setState(() => _previewTools = value)),
-              FilterChip(label: Text(t.previewVision), selected: _previewVision, onSelected: (value) => setState(() => _previewVision = value)),
-              OutlinedButton.icon(onPressed: _previewing ? null : _runPreview, icon: const Icon(Icons.play_arrow_rounded, size: 18), label: Text(t.runPreview)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: TextField(
+                        controller: _prompt,
+                        onSubmitted: (_) => _runPreview(),
+                        decoration: InputDecoration(hintText: t.previewDefaultPrompt),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    OutlinedButton(onPressed: _previewing ? null : _runPreview, child: Text(t.runPreview)),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 12, 8),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(child: Text(t.previewFreeOnly, style: TextStyle(color: palette.textSoft, fontSize: 13.5))),
+                    Switch(
+                      value: _previewFree,
+                      onChanged: (value) {
+                        setState(() => _previewFree = value);
+                        _runPreview();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 1, color: palette.border),
+              if (chosen.isEmpty)
+                Padding(padding: const EdgeInsets.all(20), child: Text(t.previewNone, style: TextStyle(color: palette.textSoft)))
+              else
+                for (var i = 0; i < chosen.length; i++) ...<Widget>[
+                  if (i > 0) Divider(height: 1, color: palette.border),
+                  _CandidateRow(rank: i + 1, candidate: chosen[i]),
+                ],
+              if (skipped.isNotEmpty) ...<Widget>[
+                Divider(height: 1, color: palette.border),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => setState(() => _showSkipped = !_showSkipped),
+                      icon: Icon(_showSkipped ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
+                      label: Text(t.previewSkipped('${skipped.length}')),
+                    ),
+                  ),
+                ),
+                if (_showSkipped)
+                  for (final candidate in skipped.take(20))
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 2, 20, 8),
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(child: Text(shortModelName('${candidate['id']}'), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, color: palette.textMuted))),
+                          Text(routingReasonLabel(t, candidate['rejected'] as String?), style: TextStyle(fontSize: 12.5, color: palette.textMuted)),
+                        ],
+                      ),
+                    ),
+              ],
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          for (final candidate in candidates) _CandidateRow(candidate: candidate),
-        ],
+        ),
+      ],
+    );
+  }
+}
+
+class _StyleCard extends StatelessWidget {
+  const _StyleCard({required this.icon, required this.title, required this.description, required this.modelName, required this.selected, required this.onTap});
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final String modelName;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = neoRouterPaletteOf(context);
+    final radius = BorderRadius.circular(AppRadius.card);
+    return Material(
+      color: selected ? palette.surfaceRaised : palette.surface,
+      shape: RoundedRectangleBorder(borderRadius: radius, side: BorderSide(color: selected ? palette.text.withValues(alpha: 0.45) : palette.border)),
+      child: InkWell(
+        borderRadius: radius,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Icon(icon, size: 20, color: selected ? palette.accent : palette.textSoft),
+                  const Spacer(),
+                  Text(modelName, style: GoogleFonts.geistMono(fontSize: 11.5, color: palette.textMuted)),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(title, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5, color: palette.text)),
+              const SizedBox(height: 4),
+              Text(description, maxLines: 2, style: TextStyle(fontSize: 13, color: palette.textSoft, height: 1.4)),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
 class _CandidateRow extends StatelessWidget {
-  const _CandidateRow({required this.candidate});
+  const _CandidateRow({required this.rank, required this.candidate});
 
+  final int rank;
   final Map candidate;
 
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    final rejected = candidate['rejected'] as String?;
-    final features = (candidate['features'] as Map?) ?? const <String, Object>{};
-    final score = (candidate['score'] as num?)?.toDouble();
+    final id = '${candidate['id']}';
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Opacity(
-        opacity: rejected == null ? 1 : 0.55,
-        child: Row(
-          children: <Widget>[
-            SizedBox(
-              width: 48,
-              child: Text(
-                score == null ? '—' : score.clamp(0, 9.99).toStringAsFixed(2),
-                style: TextStyle(fontWeight: FontWeight.w800, color: rejected == null ? palette.accentStrong : palette.textMuted),
-              ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Row(
+        children: <Widget>[
+          SizedBox(width: 28, child: Text('$rank', style: TextStyle(color: rank == 1 ? palette.accent : palette.textMuted, fontWeight: FontWeight.w600))),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(shortModelName(id), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: palette.text)),
+                const SizedBox(height: 2),
+                Text(
+                  '${id.split('/').first}${candidate['isFree'] == true ? ' · ${t.free}' : ''}${rank == 1 ? ' · ${t.previewMostLikely}' : ''}',
+                  style: TextStyle(fontSize: 12.5, color: palette.textMuted),
+                ),
+              ],
             ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text('${candidate['id']}', overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'monospace', fontSize: 12.5, fontWeight: FontWeight.w600)),
-                  if (rejected != null)
-                    Text(t.excluded(routingReasonLabel(t, rejected)), style: TextStyle(color: palette.error, fontSize: 12))
-                  else
-                    Text(
-                      '${t.intelligence} ${_pct(features['intelligence'])} · ${t.speed} ${_pct(features['speed'])} · ${t.reliability} ${_pct(features['reliability'])} · ${t.cost} ${_pct(features['cost'])}',
-                      style: TextStyle(color: palette.textMuted, fontSize: 12),
-                    ),
-                ],
-              ),
-            ),
-            if (candidate['isFree'] == true) MetaPill(label: t.free, tone: PillTone.success),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
 
-  String _pct(Object? value) => value is num ? '${(value * 100).round()}' : '—';
+/// Create or edit an own routing style: what matters how much, plus limits.
+class _StyleEditor extends StatefulWidget {
+  const _StyleEditor({required this.controller, this.profile});
+
+  final NeoRouterController controller;
+  final RoutingProfile? profile;
+
+  @override
+  State<_StyleEditor> createState() => _StyleEditorState();
+}
+
+class _StyleEditorState extends State<_StyleEditor> {
+  late final RoutingWeights _weights = widget.profile?.weights.copy() ?? RoutingWeights(intelligence: 0.3, speed: 0.2, reliability: 0.3, cost: 0.2);
+  late final Map<String, dynamic> _constraints = widget.profile?.constraints ?? <String, dynamic>{};
+  late final TextEditingController _name = TextEditingController(text: widget.profile?.name ?? '');
+  late final TextEditingController _maxPrice = TextEditingController(text: _constraints['maxPriceOut']?.toString() ?? '');
+  late final TextEditingController _exclude = TextEditingController(text: ((_constraints['excludeProviders'] as List?) ?? const <Object>[]).join(', '));
+  late double _minIntelligence = (_constraints['minIntelligence'] as num?)?.toDouble() ?? 0;
+  late double _exploration = (_constraints['exploration'] as num?)?.toDouble() ?? 0.08;
+  late bool _adaptive = _constraints['adaptive'] != false;
+  bool _advanced = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _maxPrice.dispose();
+    _exclude.dispose();
+    super.dispose();
+  }
+
+  Map<String, Object?> _constraintBody() => <String, Object?>{
+        'minIntelligence': _minIntelligence > 0 ? _minIntelligence : null,
+        'maxPriceOut': double.tryParse(_maxPrice.text.trim().replaceAll(',', '.')),
+        'excludeProviders': _exclude.text.split(',').map((item) => item.trim()).where((item) => item.isNotEmpty).toList(),
+        'adaptive': _adaptive,
+        'exploration': _exploration,
+      };
+
+  Future<void> _save() async {
+    final t = AppL10n.of(context);
+    final name = _name.text.trim().isEmpty ? t.presetCustom : _name.text.trim();
+    try {
+      final api = widget.controller.api;
+      final profile = widget.profile == null
+          ? await api.createProfile(name, _weights, _constraintBody())
+          : await api.updateProfileWeights(widget.profile!.id, name: name, weights: _weights, constraints: _constraintBody());
+      if (mounted) Navigator.of(context).pop(profile.id);
+    } on ApiException catch (error) {
+      setState(() => _error = error.message);
+    }
+  }
+
+  Future<void> _delete() async {
+    await widget.controller.api.deleteProfile(widget.profile!.id);
+    if (mounted) Navigator.of(context).pop('');
+  }
+
+  Widget _slider(String label, double value, ValueChanged<double> onChanged, {double min = 0, double max = 1}) {
+    final palette = neoRouterPaletteOf(context);
+    return Row(
+      children: <Widget>[
+        SizedBox(width: 110, child: Text(label, style: TextStyle(fontSize: 13.5, color: palette.text))),
+        Expanded(child: Slider(value: value.clamp(min, max), min: min, max: max, onChanged: (next) => setState(() => onChanged(next)))),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    return AlertDialog(
+      title: Text(widget.profile == null ? t.createStyle : t.editStyle),
+      content: SizedBox(
+        width: 460,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              TextField(controller: _name, autofocus: widget.profile == null, decoration: InputDecoration(labelText: t.profileName)),
+              const SizedBox(height: AppSpacing.lg),
+              Text(t.weightsTitle, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
+              const SizedBox(height: 2),
+              Text(t.weightsHint, style: TextStyle(fontSize: 12.5, color: palette.textSoft)),
+              const SizedBox(height: AppSpacing.xs),
+              _slider(t.intelligence, _weights.intelligence, (value) => _weights.intelligence = value),
+              _slider(t.speed, _weights.speed, (value) => _weights.speed = value),
+              _slider(t.reliability, _weights.reliability, (value) => _weights.reliability = value),
+              _slider(t.cost, _weights.cost, (value) => _weights.cost = value),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => setState(() => _advanced = !_advanced),
+                  icon: Icon(_advanced ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
+                  label: Text(t.advancedOptions),
+                ),
+              ),
+              if (_advanced) ...<Widget>[
+                _slider(t.minIntelligence, _minIntelligence, (value) => _minIntelligence = value, max: 0.9),
+                _slider(t.exploration, _exploration, (value) => _exploration = value, min: 0.01, max: 0.3),
+                Text(t.explorationHint, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _adaptive,
+                  onChanged: (value) => setState(() => _adaptive = value),
+                  title: Text(t.adaptive, style: const TextStyle(fontSize: 13.5)),
+                  subtitle: Text(t.adaptiveHint, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+                ),
+                TextField(controller: _maxPrice, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: t.maxPriceOut)),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(controller: _exclude, decoration: InputDecoration(labelText: t.excludeProviders)),
+              ],
+              if (_error != null) ...<Widget>[const SizedBox(height: AppSpacing.sm), InlineError(message: _error!)],
+            ],
+          ),
+        ),
+      ),
+      actions: <Widget>[
+        if (widget.profile != null) TextButton(onPressed: _delete, style: TextButton.styleFrom(foregroundColor: palette.error), child: Text(t.delete)),
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.cancel)),
+        FilledButton(onPressed: _save, child: Text(t.save)),
+      ],
+    );
+  }
 }

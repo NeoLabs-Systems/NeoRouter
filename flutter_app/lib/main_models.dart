@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
@@ -6,9 +7,12 @@ import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
 import 'src/backend_client.dart';
+import 'src/capabilities.dart';
 import 'src/models.dart';
 
-enum _Filter { all, free, enabled, tools, vision, issues }
+enum _Filter { all, free, issues }
+
+const int _pageSize = 60;
 
 String freeReasonLabel(AppL10n t, String? reason) => switch (reason) {
       'manual_free' => t.freeReasonManualFree,
@@ -27,7 +31,7 @@ String freeReasonLabel(AppL10n t, String? reason) => switch (reason) {
 
 String routingReasonLabel(AppL10n t, String? reason) {
   final value = reason ?? '';
-  if (value.startsWith('quota_')) return '${t.reasonQuota} (${value.substring(6)})';
+  if (value.startsWith('quota_')) return t.reasonQuota;
   return switch (value) {
     'not_free' => t.reasonNotFree,
     'no_tools' => t.reasonNoTools,
@@ -45,8 +49,15 @@ String routingReasonLabel(AppL10n t, String? reason) {
     'not_available' => t.reasonNotAvailable,
     'payment_required' => t.reasonPayment,
     'no_free_quota' => t.reasonNoFreeQuota,
-    _ => value,
+    _ => value.replaceAll('_', ' '),
   };
+}
+
+/// "Free" or "$0.15 / $0.60 per 1M tokens".
+String modelPriceLabel(AppL10n t, CatalogModel model) {
+  if (model.isFree) return t.free;
+  if (model.priceIn == null) return t.priceUnknown;
+  return t.pricePerMillion(formatPricePerMillion(model.priceIn), formatPricePerMillion(model.priceOut));
 }
 
 class ModelsScreen extends StatefulWidget {
@@ -59,12 +70,15 @@ class ModelsScreen extends StatefulWidget {
 }
 
 class _ModelsScreenState extends State<ModelsScreen> {
+  List<CapabilitySummary> _capabilities = <CapabilitySummary>[];
+  String _capability = 'chat';
   List<CatalogModel> _models = <CatalogModel>[];
   bool _loading = true;
   String? _error;
   String _query = '';
   _Filter _filter = _Filter.all;
   String? _provider;
+  int _shown = _pageSize;
 
   @override
   void initState() {
@@ -75,13 +89,28 @@ class _ModelsScreenState extends State<ModelsScreen> {
   Future<void> _load() async {
     setState(() => _error = null);
     try {
-      final models = await widget.controller.api.models();
-      setState(() => _models = models);
+      final api = widget.controller.api;
+      final results = await Future.wait(<Future<Object>>[api.capabilities(), api.models(capability: _capability)]);
+      setState(() {
+        _capabilities = results[0] as List<CapabilitySummary>;
+        _models = results[1] as List<CatalogModel>;
+      });
     } catch (error) {
       setState(() => _error = '$error');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  void _selectCapability(String id) {
+    setState(() {
+      _capability = id;
+      _provider = null;
+      _filter = _Filter.all;
+      _shown = _pageSize;
+      _loading = true;
+    });
+    _load();
   }
 
   Iterable<CatalogModel> get _visible {
@@ -92,9 +121,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
       return switch (_filter) {
         _Filter.all => true,
         _Filter.free => model.isFree,
-        _Filter.enabled => model.enabled,
-        _Filter.tools => model.tools == true,
-        _Filter.vision => model.vision == true,
         _Filter.issues => !model.available || model.penalty >= 1,
       };
     });
@@ -119,62 +145,90 @@ class _ModelsScreenState extends State<ModelsScreen> {
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
     final providers = _models.map((model) => model.providerSlug).toSet().toList()..sort();
     final visible = _visible.toList();
+    final current = _capabilities.where((item) => item.id == _capability).firstOrNull;
     return PageScaffold(
       header: ScreenHeader(
         title: t.modelsTitle,
         description: t.modelsDescription,
         trailing: PopupMenuButton<String>(
-          icon: const Icon(Icons.more_horiz),
+          tooltip: t.moreActions,
+          icon: const Icon(Icons.more_horiz_rounded),
           onSelected: (value) => switch (value) {
             'enable' => _bulk(enabled: true),
             'disable' => _bulk(enabled: false),
             _ => _bulk(enabled: true, onlyFree: true),
           },
           itemBuilder: (_) => <PopupMenuEntry<String>>[
+            PopupMenuItem<String>(value: 'free', child: Text(t.enableFreeOnly)),
             PopupMenuItem<String>(value: 'enable', child: Text(t.enableAll)),
             PopupMenuItem<String>(value: 'disable', child: Text(t.disableAll)),
-            PopupMenuItem<String>(value: 'free', child: Text(t.enableFreeOnly)),
           ],
         ),
       ),
       children: <Widget>[
+        if (_capabilities.length > 1)
+          PageTabs<String>(
+            tabs: <({String value, String label, int? count})>[
+              for (final item in _capabilities) (value: item.id, label: item.info.label(t), count: item.total),
+            ],
+            selected: _capability,
+            onChanged: _selectCapability,
+          ),
+        if (current != null && !current.routable) InlineHint(message: t.capComingSoon(current.info.label(t)), icon: Icons.schedule_rounded),
         Wrap(
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: <Widget>[
             SizedBox(
-              width: 280,
+              width: 300,
               child: TextField(
-                decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: t.searchModels, isDense: true),
-                onChanged: (value) => setState(() => _query = value),
+                decoration: InputDecoration(prefixIcon: const Icon(Icons.search_rounded, size: 20), hintText: t.searchModels),
+                onChanged: (value) => setState(() {
+                  _query = value;
+                  _shown = _pageSize;
+                }),
               ),
             ),
-            DropdownButton<String?>(
-              value: _provider,
-              underline: const SizedBox.shrink(),
-              items: <DropdownMenuItem<String?>>[
-                DropdownMenuItem<String?>(value: null, child: Text(t.filterAll)),
-                for (final provider in providers) DropdownMenuItem<String?>(value: provider, child: Text(provider)),
+            PopupMenuButton<String?>(
+              tooltip: t.filterProvider,
+              onSelected: (value) => setState(() {
+                _provider = value == '' ? null : value;
+                _shown = _pageSize;
+              }),
+              itemBuilder: (_) => <PopupMenuEntry<String?>>[
+                PopupMenuItem<String?>(value: '', child: Text(t.allConnections)),
+                for (final provider in providers) PopupMenuItem<String?>(value: provider, child: Text(provider)),
               ],
-              onChanged: (value) => setState(() => _provider = value),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                decoration: BoxDecoration(border: Border.all(color: palette.borderStrong), borderRadius: BorderRadius.circular(AppRadius.control)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(_provider ?? t.allConnections, style: TextStyle(fontSize: 13.5, color: palette.text)),
+                    const SizedBox(width: 6),
+                    Icon(Icons.expand_more_rounded, size: 18, color: palette.textMuted),
+                  ],
+                ),
+              ),
             ),
             for (final filter in _Filter.values)
               ChoiceChip(
                 label: Text(switch (filter) {
                   _Filter.all => t.filterAll,
                   _Filter.free => t.filterFree,
-                  _Filter.enabled => t.filterEnabled,
-                  _Filter.tools => t.filterTools,
-                  _Filter.vision => t.filterVision,
                   _Filter.issues => t.filterIssues,
                 }),
                 selected: _filter == filter,
-                onSelected: (_) => setState(() => _filter = filter),
+                onSelected: (_) => setState(() {
+                  _filter = filter;
+                  _shown = _pageSize;
+                }),
               ),
-            Text(t.modelsShown('${visible.length}'), style: TextStyle(color: neoRouterPaletteOf(context).textMuted, fontSize: 12)),
           ],
         ),
         AsyncBody(
@@ -182,27 +236,42 @@ class _ModelsScreenState extends State<ModelsScreen> {
           error: _error,
           onRetry: _load,
           child: visible.isEmpty
-              ? SectionCard(child: EmptyState(icon: Icons.view_list_outlined, title: t.noModelsTitle, message: t.noModelsMessage))
-              : SectionCard(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-                  child: Column(
-                    children: <Widget>[
-                      for (var index = 0; index < visible.length; index++) ...<Widget>[
-                        if (index > 0) Divider(height: 1, color: neoRouterPaletteOf(context).border),
-                        _ModelRow(
-                          model: visible[index],
-                          onToggle: (value) => _toggle(visible[index], value),
-                          onOpen: () async {
-                            final updated = await showDialog<CatalogModel>(
-                              context: context,
-                              builder: (_) => _ModelDialog(controller: widget.controller, model: visible[index]),
-                            );
-                            if (updated != null) await _load();
-                          },
-                        ),
+              ? AppCard(child: EmptyState(icon: Icons.auto_awesome_outlined, title: t.noModelsTitle, message: t.noModelsMessage))
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(2, 0, 0, 10),
+                      child: Text(t.modelsShown('${visible.length}'), style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+                    ),
+                    SettingsCardList(
+                      children: <Widget>[
+                        for (final model in visible.take(_shown))
+                          _ModelRow(
+                            model: model,
+                            routable: current?.routable ?? true,
+                            onToggle: (value) => _toggle(model, value),
+                            onOpen: () async {
+                              final updated = await showDialog<CatalogModel>(
+                                context: context,
+                                builder: (_) => _ModelDialog(controller: widget.controller, model: model),
+                              );
+                              if (updated != null) await _load();
+                            },
+                          ),
                       ],
-                    ],
-                  ),
+                    ),
+                    if (visible.length > _shown)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.md),
+                        child: Center(
+                          child: OutlinedButton(
+                            onPressed: () => setState(() => _shown += _pageSize * 2),
+                            child: Text(t.showMore('${visible.length - _shown}')),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
         ),
       ],
@@ -211,9 +280,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
 }
 
 class _ModelRow extends StatelessWidget {
-  const _ModelRow({required this.model, required this.onToggle, required this.onOpen});
+  const _ModelRow({required this.model, required this.routable, required this.onToggle, required this.onOpen});
 
   final CatalogModel model;
+  final bool routable;
   final ValueChanged<bool> onToggle;
   final VoidCallback onOpen;
 
@@ -222,59 +292,61 @@ class _ModelRow extends StatelessWidget {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final wide = MediaQuery.sizeOf(context).width >= AppBreakpoints.tablet;
-    final price = model.isFree
-        ? MetaPill(label: t.free, tone: PillTone.success, icon: Icons.savings_outlined)
-        : model.priceIn == null
-            ? MetaPill(label: t.priceUnknown, tone: PillTone.warning)
-            : MetaPill(label: t.pricePerMillion(formatPricePerMillion(model.priceIn), formatPricePerMillion(model.priceOut)), tone: PillTone.accent);
-    final meters = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        ScoreMeter(label: t.intelligence, value: model.intelligence),
-        const SizedBox(width: AppSpacing.sm),
-        ScoreMeter(label: t.speed, value: model.speedScore),
-        const SizedBox(width: AppSpacing.sm),
-        ScoreMeter(label: t.reliability, value: model.reliability),
-      ],
-    );
+    final details = <String>[
+      model.providerSlug,
+      if (model.contextWindow != null) t.contextWindow(formatCount(model.contextWindow!)),
+      modelPriceLabel(t, model),
+    ].join(' · ');
+    final problem = !model.available
+        ? (model.unavailableUntil == null
+            ? routingReasonLabel(t, model.unavailableReason)
+            : t.unavailableUntil(routingReasonLabel(t, model.unavailableReason), formatTime(DateTime.fromMillisecondsSinceEpoch(model.unavailableUntil!))))
+        : null;
     return InkWell(
       onTap: onOpen,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        padding: const EdgeInsets.fromLTRB(20, 13, 12, 13),
         child: Row(
           children: <Widget>[
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(model.name, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, color: model.enabled ? palette.text : palette.textMuted)),
-                  const SizedBox(height: 2),
-                  SelectableText(model.id, style: TextStyle(color: palette.textMuted, fontSize: 12, fontFamily: 'monospace')),
-                  const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
+                  Row(
                     children: <Widget>[
-                      price,
-                      if (model.contextWindow != null) MetaPill(label: t.contextWindow(formatCount(model.contextWindow!))),
-                      if (model.tools == true) MetaPill(label: t.tools, icon: Icons.build_outlined),
-                      if (model.vision == true) MetaPill(label: t.vision, icon: Icons.image_outlined),
-                      if (model.reasoning == true) MetaPill(label: t.reasoning, icon: Icons.psychology_outlined),
-                      if (!model.available)
-                        MetaPill(
-                          label: model.unavailableUntil == null
-                              ? routingReasonLabel(t, model.unavailableReason)
-                              : t.unavailableUntil(routingReasonLabel(t, model.unavailableReason), formatTime(DateTime.fromMillisecondsSinceEpoch(model.unavailableUntil!))),
-                          tone: PillTone.error,
+                      Flexible(
+                        child: Text(
+                          model.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14, color: model.enabled ? palette.text : palette.textMuted),
                         ),
-                      if (model.penalty >= 1) MetaPill(label: t.penaltyLabel(model.penalty.toStringAsFixed(1)), tone: PillTone.warning),
+                      ),
+                      for (final (show, icon, label) in <(bool, IconData, String)>[
+                        (model.tools == true, Icons.build_outlined, t.tools),
+                        (model.vision == true, Icons.image_outlined, t.vision),
+                        (model.reasoning == true, Icons.psychology_outlined, t.reasoning),
+                      ])
+                        if (show) Padding(padding: const EdgeInsets.only(left: 8), child: Tooltip(message: label, child: Icon(icon, size: 14, color: palette.textMuted))),
                     ],
                   ),
-                  if (!wide) ...<Widget>[const SizedBox(height: 8), meters],
+                  const SizedBox(height: 3),
+                  Text(details, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+                  if (problem != null) ...<Widget>[
+                    const SizedBox(height: 3),
+                    Text(problem, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: palette.warning, fontSize: 12.5)),
+                  ],
                 ],
               ),
             ),
-            if (wide) ...<Widget>[meters, const SizedBox(width: AppSpacing.md)],
+            if (wide && routable) ...<Widget>[
+              ScoreMeter(label: t.intelligence, value: model.intelligence),
+              const SizedBox(width: 18),
+              ScoreMeter(label: t.speed, value: model.speedScore),
+              const SizedBox(width: 18),
+              ScoreMeter(label: t.reliability, value: model.reliability),
+              const SizedBox(width: 20),
+            ],
             Switch(value: model.enabled, onChanged: onToggle),
           ],
         ),
@@ -298,6 +370,7 @@ class _ModelDialogState extends State<_ModelDialog> {
   late final TextEditingController _priceIn = TextEditingController(text: '${widget.model.overrides['priceIn'] ?? ''}');
   late final TextEditingController _priceOut = TextEditingController(text: '${widget.model.overrides['priceOut'] ?? ''}');
   late final TextEditingController _intelligence = TextEditingController(text: '${widget.model.overrides['intelligence'] ?? ''}');
+  bool _advanced = false;
   String? _error;
 
   @override
@@ -329,33 +402,49 @@ class _ModelDialogState extends State<_ModelDialog> {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final model = widget.model;
+    final facts = <(String, String)>[
+      (t.price, modelPriceLabel(t, model)),
+      (t.factWhyFree, freeReasonLabel(t, model.freeReason)),
+      if (model.contextWindow != null) (t.factContext, t.contextWindow(formatCount(model.contextWindow!))),
+      (t.factMeasured, model.samples == 0 ? t.notMeasured : t.measured(formatMs(model.latencyMs), model.tps?.toStringAsFixed(0) ?? '—', '${model.samples}')),
+      if (model.intelligenceSource != null) (t.intelligence, t.intelligenceSource(model.intelligenceSource!)),
+    ];
     return AlertDialog(
-      title: Text(model.name),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(model.name),
+          const SizedBox(height: 4),
+          SelectableText(model.id, style: GoogleFonts.geistMono(fontSize: 12.5, color: palette.textMuted)),
+        ],
+      ),
       content: SizedBox(
-        width: 480,
+        width: 460,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              SelectableText(model.id, style: TextStyle(fontFamily: 'monospace', color: palette.textSoft)),
-              const SizedBox(height: AppSpacing.sm),
-              Text(freeReasonLabel(t, model.freeReason), style: TextStyle(color: model.isFree ? palette.success : palette.textSoft)),
-              const SizedBox(height: 4),
-              Text(
-                model.samples == 0 ? t.notMeasured : t.measured(formatMs(model.latencyMs), model.tps?.toStringAsFixed(0) ?? '—', '${model.samples}'),
-                style: TextStyle(color: palette.textMuted, fontSize: 12),
-              ),
-              if (model.intelligenceSource != null)
-                Text(t.intelligenceSource(model.intelligenceSource!), style: TextStyle(color: palette.textMuted, fontSize: 12)),
+              for (final (label, value) in facts)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      SizedBox(width: 130, child: Text(label, style: TextStyle(color: palette.textMuted, fontSize: 13))),
+                      Expanded(child: Text(value, style: TextStyle(color: palette.text, fontSize: 13, height: 1.4))),
+                    ],
+                  ),
+                ),
               if (model.lastError != null) ...<Widget>[
-                const SizedBox(height: 6),
-                Text(model.lastError!, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(color: palette.warning, fontSize: 12)),
+                const SizedBox(height: 4),
+                InlineHint(message: model.lastError!, icon: Icons.warning_amber_rounded),
               ],
               const SizedBox(height: AppSpacing.md),
-              Text(t.modelSettings.toUpperCase(), style: sectionEyebrowStyle(palette)),
-              const SizedBox(height: AppSpacing.sm),
+              Text(t.overrideFree, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
+              const SizedBox(height: AppSpacing.xs),
               SegmentedButton<String>(
+                showSelectedIcon: false,
                 segments: <ButtonSegment<String>>[
                   ButtonSegment<String>(value: 'auto', label: Text(t.overrideAuto)),
                   ButtonSegment<String>(value: 'free', label: Text(t.overrideForceFree)),
@@ -365,32 +454,46 @@ class _ModelDialogState extends State<_ModelDialog> {
                 onSelectionChanged: (value) => setState(() => _free = value.first),
               ),
               const SizedBox(height: AppSpacing.sm),
-              Row(
-                children: <Widget>[
-                  Expanded(child: TextField(controller: _priceIn, decoration: InputDecoration(labelText: t.inputPrice, hintText: formatPricePerMillion(model.priceIn)))),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(child: TextField(controller: _priceOut, decoration: InputDecoration(labelText: t.outputPrice, hintText: formatPricePerMillion(model.priceOut)))),
-                ],
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => setState(() => _advanced = !_advanced),
+                  icon: Icon(_advanced ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
+                  label: Text(t.advancedOptions),
+                ),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              TextField(controller: _intelligence, decoration: InputDecoration(labelText: t.intelligenceOverride, hintText: model.intelligence?.toStringAsFixed(2))),
+              if (_advanced) ...<Widget>[
+                Row(
+                  children: <Widget>[
+                    Expanded(child: TextField(controller: _priceIn, decoration: InputDecoration(labelText: t.inputPrice, hintText: formatPricePerMillion(model.priceIn)))),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(child: TextField(controller: _priceOut, decoration: InputDecoration(labelText: t.outputPrice, hintText: formatPricePerMillion(model.priceOut)))),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(controller: _intelligence, decoration: InputDecoration(labelText: t.intelligenceOverride, hintText: model.intelligence?.toStringAsFixed(2))),
+                const SizedBox(height: AppSpacing.xs),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: () async {
+                      final updated = await widget.controller.api.resetModelHealth(model.ref);
+                      if (context.mounted) {
+                        showSnack(context, t.healthReset);
+                        Navigator.of(context).pop(updated);
+                      }
+                    },
+                    child: Text(t.resetHealth),
+                  ),
+                ),
+              ],
               if (_error != null) ...<Widget>[const SizedBox(height: AppSpacing.sm), InlineError(message: _error!)],
             ],
           ),
         ),
       ),
       actions: <Widget>[
-        TextButton(
-          onPressed: () async {
-            final updated = await widget.controller.api.resetModelHealth(model.ref);
-            if (context.mounted) {
-              showSnack(context, t.healthReset);
-              Navigator.of(context).pop(updated);
-            }
-          },
-          child: Text(t.resetHealth),
-        ),
-        OutlinedButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.cancel)),
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.cancel)),
         FilledButton(onPressed: _save, child: Text(t.save)),
       ],
     );

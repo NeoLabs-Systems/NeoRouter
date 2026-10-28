@@ -7,6 +7,8 @@ const stats = require('../services/routing/stats_store');
 const scoring = require('../services/routing/scoring');
 const { validate } = require('../middleware/validate');
 
+const capabilities = require('../core/capability_registry');
+
 const router = express.Router();
 
 function present(entry) {
@@ -25,6 +27,11 @@ function present(entry) {
 router.get('/', (req, res) => {
   const capability = typeof req.query.capability === 'string' ? req.query.capability : 'chat';
   res.json({ models: catalog.listForUser(req.auth.userId, { capability, includeUnavailable: req.query.all === '1' }).map(present) });
+});
+
+router.get('/capabilities', (req, res) => {
+  const routable = new Set(capabilities.list().map((item) => item.id));
+  res.json({ capabilities: catalog.capabilitySummary(req.auth.userId).map((item) => ({ ...item, routable: routable.has(item.id) })) });
 });
 
 router.get('/:ref', (req, res) => res.json({ model: present(catalog.getModel(req.auth.userId, Number(req.params.ref))) }));

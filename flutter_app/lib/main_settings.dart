@@ -226,7 +226,7 @@ class _SettingsNavItem extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
       child: Material(
-        color: selected ? palette.accentSoft : Colors.transparent,
+        color: selected ? palette.surfaceRaised : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
@@ -342,7 +342,7 @@ class _SettingsPageHeader extends StatelessWidget {
     final status = Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Icon(Icons.check_rounded, size: 15, color: palette.success),
+        Icon(Icons.check_rounded, size: 15, color: palette.textMuted),
         const SizedBox(width: 6),
         Flexible(child: Text(page == _SettingsPage.account ? t.settingsSavedOnSubmit : t.settingsAppliesInstantly, style: TextStyle(color: palette.textMuted, fontSize: 12.5))),
       ],
@@ -934,7 +934,6 @@ class _SettingsChoice<T extends Object> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = neoRouterPaletteOf(context);
     return SegmentedButton<T>(
       segments: <ButtonSegment<T>>[
         for (final (option, label) in options) ButtonSegment<T>(value: option, label: Text(label)),
@@ -942,14 +941,6 @@ class _SettingsChoice<T extends Object> extends StatelessWidget {
       selected: <T>{value},
       showSelectedIcon: false,
       onSelectionChanged: (selection) => onChanged(selection.first),
-      style: SegmentedButton.styleFrom(
-        visualDensity: VisualDensity.compact,
-        selectedBackgroundColor: palette.accentSoft,
-        selectedForegroundColor: palette.text,
-        foregroundColor: palette.textSoft,
-        side: BorderSide(color: palette.borderStrong),
-        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-      ),
     );
   }
 }

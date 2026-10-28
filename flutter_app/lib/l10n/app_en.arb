@@ -27,10 +27,10 @@
   "groupSetup": "Setup",
   "groupRouting": "Routing",
   "navDashboard": "Dashboard",
-  "navProviders": "Providers",
+  "navProviders": "Connections",
   "navModels": "Models",
-  "navKeys": "Router keys",
-  "navRouting": "Auto router",
+  "navKeys": "API keys",
+  "navRouting": "Smart routing",
   "navQuotas": "Free quotas",
   "navLogs": "Request log",
   "navPlayground": "Playground",
@@ -91,8 +91,8 @@
   },
   "trafficTitle": "Traffic",
   "errorsTitle": "Errors",
-  "noTrafficTitle": "No traffic yet",
-  "noTrafficMessage": "Send a request to your endpoint and it shows up here.",
+  "noTrafficTitle": "Nothing here yet",
+  "noTrafficMessage": "Once your apps send requests, you will see how much, how fast and which models answered.",
   "endpointTitle": "Your endpoint",
   "endpointHint": "OpenAI-, Anthropic- and Responses-compatible. Authenticate with a router key.",
   "quickStartTitle": "Get started",
@@ -113,7 +113,7 @@
     }
   },
   "homeOpenPlayground": "Open Playground",
-  "homeProblemHint": "Requests skip it until this is fixed. Nothing else is affected.",
+  "homeProblemHint": "Requests skip it until this is fixed.",
   "homeFix": "Fix",
   "homeConnectTitle": "Connect your app",
   "homeConnectHint": "Works with any OpenAI or Anthropic SDK. Ask for \"auto\" and NeoRouter picks the model.",
@@ -131,7 +131,7 @@
   "homeManage": "Manage",
   "homeRecent": "Recent requests",
   "homeAllActivity": "All activity",
-  "homeNoRequests": "No requests yet. Send one from the Playground or your app.",
+  "homeNoRequests": "No requests yet. Send your first message in the Playground.",
   "homeQuotaLeft": "{percent} % quota left",
   "@homeQuotaLeft": {
     "placeholders": {
@@ -151,12 +151,12 @@
   "homeOk": "OK",
   "homeRetried": "Retried",
   "providersEyebrow": "Setup",
-  "providersTitle": "Providers",
-  "providersDescription": "Connect any inference API. Keys are verified, encrypted and their models imported automatically.",
-  "addProvider": "Add provider",
-  "chooseProvider": "Choose a provider",
+  "providersTitle": "Connections",
+  "providersDescription": "The AI providers NeoRouter can use. Keys are checked when you add them and stored encrypted.",
+  "addProvider": "Add connection",
+  "chooseProvider": "Add a connection",
   "searchProviders": "Search providers…",
-  "categoryFree": "Free tiers",
+  "categoryFree": "Free to start",
   "categoryAggregator": "Aggregators",
   "categoryPaid": "Paid APIs",
   "categoryLocal": "Local",
@@ -179,10 +179,10 @@
   "billingMode": "Billing",
   "billingFree": "Free tier – no payment method",
   "billingPaid": "Paid account",
-  "billingFreeWarning": "Only choose the free tier if this account cannot be charged. NeoRouter then treats every model of this account as 100% free.",
+  "billingFreeWarning": "Choose the free plan only if no payment method is on file with this provider. NeoRouter double-checks where it can.",
   "billingAlwaysFreeNote": "Some models of this provider are always free, independent of billing.",
   "getKey": "Get a key",
-  "checkAndAdd": "Check key & import models",
+  "checkAndAdd": "Connect",
   "providerAdded": "Key verified – {count} models imported.",
   "@providerAdded": {
     "placeholders": {
@@ -199,9 +199,9 @@
       }
     }
   },
-  "statusHealthy": "Healthy",
+  "statusHealthy": "Working",
   "statusInvalid": "Key rejected",
-  "statusError": "Check failed",
+  "statusError": "Not reachable",
   "statusUnknown": "Not checked",
   "statusDisabled": "Disabled",
   "modelsCount": "{total} models · {free} free",
@@ -218,8 +218,8 @@
   "revalidate": "Check key",
   "syncModels": "Refresh models",
   "probeQuota": "Check balance",
-  "removeProvider": "Remove provider",
-  "removeProviderConfirm": "Remove {name}? Its models disappear from routing; request history is kept.",
+  "removeProvider": "Remove connection",
+  "removeProviderConfirm": "Remove {name}? Its models are no longer used. You can add it again at any time.",
   "@removeProviderConfirm": {
     "placeholders": {
       "name": {
@@ -227,7 +227,7 @@
       }
     }
   },
-  "editProvider": "Edit provider",
+  "editProvider": "Edit",
   "lastChecked": "Checked {time}",
   "@lastChecked": {
     "placeholders": {
@@ -244,8 +244,8 @@
       }
     }
   },
-  "noProvidersTitle": "No providers yet",
-  "noProvidersMessage": "Add your first provider to fill the model catalog.",
+  "noProvidersTitle": "No connections yet",
+  "noProvidersMessage": "Connect an AI provider and NeoRouter imports all of its models.",
   "quotaProbeResult": "{metric}: {remaining}",
   "@quotaProbeResult": {
     "placeholders": {
@@ -260,20 +260,20 @@
   "quotaProbeEmpty": "This provider does not report a balance.",
   "modelsEyebrow": "Catalog",
   "modelsTitle": "Models",
-  "modelsDescription": "Every chat model your providers expose, with learned speed and reliability.",
+  "modelsDescription": "Everything your connections offer. NeoRouter learns how smart, fast and reliable each model is and picks the best one for you.",
   "searchModels": "Search models…",
   "filterAll": "All",
   "filterFree": "Free",
   "filterEnabled": "Enabled",
   "filterTools": "Tools",
   "filterVision": "Vision",
-  "filterIssues": "Issues",
-  "intelligence": "Intelligence",
-  "speed": "Speed",
-  "reliability": "Reliability",
-  "cost": "Cost",
+  "filterIssues": "Problems",
+  "intelligence": "Smart",
+  "speed": "Fast",
+  "reliability": "Reliable",
+  "cost": "Cheap",
   "price": "Price",
-  "pricePerMillion": "{input} / {output} per 1M",
+  "pricePerMillion": "{input} / {output} per 1M tokens",
   "@pricePerMillion": {
     "placeholders": {
       "input": {
@@ -312,7 +312,7 @@
   "billingDetectedPaid": "Billing active",
   "billingUnverified": "Free plan not verified",
   "modelSettings": "Model settings",
-  "overrideFree": "Free status",
+  "overrideFree": "Free or paid",
   "overrideAuto": "Automatic",
   "overrideForceFree": "Always free",
   "overrideForcePaid": "Always paid",
@@ -329,10 +329,10 @@
   },
   "resetHealth": "Reset health",
   "healthReset": "Penalties and cooldowns cleared.",
-  "enableAll": "Enable all",
-  "disableAll": "Disable all",
-  "enableFreeOnly": "Enable only free",
-  "measured": "{latency} · {tps} tok/s · {samples} calls",
+  "enableAll": "Turn all on",
+  "disableAll": "Turn all off",
+  "enableFreeOnly": "Use only free models",
+  "measured": "{latency} · {tps} tokens/s · {samples} requests",
   "@measured": {
     "placeholders": {
       "latency": {
@@ -346,7 +346,7 @@
       }
     }
   },
-  "notMeasured": "Not measured yet",
+  "notMeasured": "Not used yet",
   "penaltyLabel": "Penalty {value}",
   "@penaltyLabel": {
     "placeholders": {
@@ -366,8 +366,8 @@
       }
     }
   },
-  "noModelsTitle": "No models",
-  "noModelsMessage": "Add a provider or change the filter.",
+  "noModelsTitle": "No models found",
+  "noModelsMessage": "Try another filter or connect another provider.",
   "modelsShown": "{count} models",
   "@modelsShown": {
     "placeholders": {
@@ -377,25 +377,25 @@
     }
   },
   "keysEyebrow": "Access",
-  "keysTitle": "Router keys",
-  "keysDescription": "Keys for your apps. Each key has its own mode, budget and limits.",
+  "keysTitle": "API keys",
+  "keysDescription": "Keys let your apps use NeoRouter. Decide per key whether it may use paid models and how much it may spend.",
   "createKey": "Create key",
   "editKey": "Edit key",
   "keyName": "Name",
   "keyMode": "Model access",
-  "modeFreeOnly": "Only 100% free models",
-  "modePaid": "All models, stop at the budget",
-  "modeBoth": "All models, then free ones once the budget is used",
-  "budget": "Budget (USD, empty = no limit)",
+  "modeFreeOnly": "Only free models",
+  "modePaid": "All models",
+  "modeBoth": "All models, then free ones",
+  "budget": "Limit in USD (empty = no limit)",
   "budgetPeriod": "Budget period",
-  "periodTotal": "Total",
-  "periodMonthly": "Per month",
-  "periodDaily": "Per day",
+  "periodTotal": "In total",
+  "periodMonthly": "Monthly",
+  "periodDaily": "Daily",
   "rpmLimit": "Requests per minute (empty = no limit)",
   "allowedModels": "Allowed models – glob patterns, one per line (empty = all)",
-  "defaultProfile": "Routing profile for \"auto\"",
-  "keySecretTitle": "Your new router key",
-  "keySecretBody": "Copy it now – it is stored only as a hash and cannot be shown again.",
+  "defaultProfile": "Routing style for \"auto\"",
+  "keySecretTitle": "Copy your new key",
+  "keySecretBody": "For your security it is shown only once. Paste it into your app where it asks for an API key.",
   "revoke": "Revoke",
   "revokeConfirm": "Revoke {name}? Apps using it stop working immediately.",
   "@revokeConfirm": {
@@ -406,7 +406,7 @@
     }
   },
   "revoked": "Revoked",
-  "spentOf": "{spent} of {budget}",
+  "spentOf": "{spent} of {budget} spent",
   "@spentOf": {
     "placeholders": {
       "spent": {
@@ -441,8 +441,8 @@
       }
     }
   },
-  "noKeysTitle": "No router keys",
-  "noKeysMessage": "Create a key to call your endpoint.",
+  "noKeysTitle": "No API keys yet",
+  "noKeysMessage": "Create a key and paste it into any app that works with OpenAI or Claude.",
   "deleteKeyConfirm": "Delete {name} permanently?",
   "@deleteKeyConfirm": {
     "placeholders": {
@@ -452,20 +452,20 @@
     }
   },
   "routingEyebrow": "Auto router",
-  "routingTitle": "Routing",
-  "routingDescription": "How \"auto\" picks a model. Scores combine intelligence, measured speed, learned reliability and price; failing or slow models are penalized and load is spread.",
+  "routingTitle": "Smart routing",
+  "routingDescription": "When an app asks for \"auto\", NeoRouter picks the model for each request. Choose what matters most to you.",
   "presetBalanced": "Balanced",
   "presetReliable": "Most reliable",
   "presetFast": "Fastest",
   "presetSmart": "Smartest",
-  "presetBest": "Best",
+  "presetBest": "Best overall",
   "presetCheap": "Cheapest",
-  "presetCustom": "Custom",
+  "presetCustom": "My style",
   "presetSlider": "Profile",
   "weights": "Weights",
   "constraints": "Constraints",
   "customProfiles": "Custom profiles",
-  "profileName": "Profile name",
+  "profileName": "Name",
   "saveProfile": "Save as profile",
   "updateProfile": "Update profile",
   "profileUsage": "Use it as model \"auto:{id}\" or set it as a key default.",
@@ -476,20 +476,27 @@
       }
     }
   },
-  "minIntelligence": "Minimum intelligence",
-  "maxPriceOut": "Max output price (USD / 1M, empty = any)",
-  "adaptive": "Adapt to request complexity",
-  "adaptiveHint": "Long, code-heavy or tool requests shift weight toward intelligence.",
-  "exploration": "Load spreading",
-  "explorationHint": "Higher values spread requests over more good models.",
-  "excludeProviders": "Exclude providers (comma separated)",
-  "previewTitle": "Live preview",
-  "previewHint": "What \"auto\" would choose right now, without sending a request.",
+  "minIntelligence": "Minimum quality",
+  "maxPriceOut": "Max price per 1M output tokens (USD, empty = any)",
+  "adaptive": "Adapt to the request",
+  "adaptiveHint": "Long or code-heavy requests lean towards smarter models.",
+  "exploration": "Spread load",
+  "explorationHint": "Higher values share requests among more good models instead of always using the top one.",
+  "excludeProviders": "Never use these connections (comma separated)",
+  "previewTitle": "Try it",
+  "previewHint": "Which models \"{style}\" would choose right now – nothing is sent.",
+  "@previewHint": {
+    "placeholders": {
+      "style": {
+        "type": "String"
+      }
+    }
+  },
   "previewPrompt": "Test prompt",
-  "previewFreeOnly": "Free models only",
+  "previewFreeOnly": "Only free models",
   "previewTools": "Needs tools",
   "previewVision": "Needs vision",
-  "runPreview": "Preview",
+  "runPreview": "Check",
   "score": "Score",
   "excluded": "Excluded: {reason}",
   "@excluded": {
@@ -520,10 +527,10 @@
   "quotasDescription": "Usage against each provider’s limits. Limits come from provider headers, documented free tiers or are learned from errors.",
   "sharedLimits": "Shared account limits",
   "perModelLimits": "Per model",
-  "metricRpm": "requests / min",
-  "metricRpd": "requests / day",
-  "metricTpm": "tokens / min",
-  "metricTpd": "tokens / day",
+  "metricRpm": "Requests per minute",
+  "metricRpd": "Requests per day",
+  "metricTpm": "Tokens per minute",
+  "metricTpd": "Tokens per day",
   "usedOf": "{used} of {limit}",
   "@usedOf": {
     "placeholders": {
@@ -541,7 +548,7 @@
   "sourceManual": "manual",
   "sourceError": "observed",
   "balance": "Balance",
-  "noQuotaData": "No limits known yet. They appear after the first requests.",
+  "noQuotaData": "No limits reported yet. They appear after the first requests.",
   "onlyFreeModels": "Free models without known limits: {count}",
   "@onlyFreeModels": {
     "placeholders": {
@@ -588,13 +595,13 @@
   "playgroundEyebrow": "Test",
   "playgroundTitle": "Playground",
   "playgroundDescription": "Chat through the real router with one of your keys.",
-  "selectKey": "Router key",
+  "selectKey": "API key",
   "modelField": "Model (auto, auto:fast, provider/model)",
   "systemPrompt": "System prompt (optional)",
-  "messageHint": "Write a message…",
+  "messageHint": "Message NeoRouter…",
   "send": "Send",
   "clearChat": "Clear",
-  "routedTo": "via {model} · {latency}",
+  "routedTo": "{model} · {latency}",
   "@routedTo": {
     "placeholders": {
       "model": {
@@ -605,7 +612,7 @@
       }
     }
   },
-  "playgroundNeedsKey": "Create a router key first.",
+  "playgroundNeedsKey": "Create an API key first – the Playground uses it just like your apps do.",
   "settingsTitle": "Settings",
   "settingsScopeYou": "You",
   "settingsScopeServer": "This server",
@@ -811,5 +818,342 @@
   "settingsScopeApp": "This app",
   "settingsScopeAppHint": "Applies to this browser",
   "settingsScopeYouHint": "Saved to your account",
-  "settingsSavedOnSubmit": "Saved when you press Save"
+  "settingsSavedOnSubmit": "Saved when you press Save",
+  "navHome": "Home",
+  "navActivity": "Activity",
+  "navSectionServer": "Server",
+  "capChat": "Chat",
+  "capEmbedding": "Embeddings",
+  "capRerank": "Ranking",
+  "capImage": "Images",
+  "capAudio": "Audio",
+  "capVideo": "Video",
+  "capModeration": "Safety & classification",
+  "capOther": "Other",
+  "capChatHint": "Text and vision models that answer messages.",
+  "capEmbeddingHint": "Turn text into vectors for search and memory.",
+  "capRerankHint": "Sort search results by relevance.",
+  "capImageHint": "Create and edit images.",
+  "capAudioHint": "Speech to text, text to speech and music.",
+  "capVideoHint": "Create and understand video.",
+  "capModerationHint": "Check content and make yes/no decisions.",
+  "capOtherHint": "Specialised models such as translation or document parsing.",
+  "capComingSoon": "NeoRouter lists these models already. Routing for {kind} is coming soon – they are not used by \"auto\" yet.",
+  "@capComingSoon": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "capSoon": "Soon",
+  "greetMorning": "Good morning, {name}",
+  "@greetMorning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "greetAfternoon": "Good afternoon, {name}",
+  "@greetAfternoon": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "greetEvening": "Good evening, {name}",
+  "@greetEvening": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeStatusOk": "Everything is running. {count} connections are working.",
+  "@homeStatusOk": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "homeStatusIssues": "{count} connection needs your attention. Requests use the others meanwhile.",
+  "@homeStatusIssues": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "homeStatusEmpty": "Connect an AI provider to get started.",
+  "homeLast7Days": "Last 7 days",
+  "metricRequests": "Requests",
+  "metricAnswered": "Answered",
+  "metricSpent": "Spent",
+  "metricFreeShare": "{percent} % free",
+  "@metricFreeShare": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "metricResponse": "Avg. response time",
+  "homeSeeAll": "See all",
+  "homeRecentActivity": "Recent activity",
+  "homeModelsLine": "{total} models · {free} free",
+  "@homeModelsLine": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "free": {
+        "type": "String"
+      }
+    }
+  },
+  "homeUseTitle": "Use NeoRouter in your apps",
+  "homeUseBody": "Paste this address and one of your API keys into any app that works with OpenAI or Claude.",
+  "homeGetKey": "Get an API key",
+  "homeShowExamples": "Show code examples",
+  "homeHideExamples": "Hide code examples",
+  "setupTitle": "Finish setting up",
+  "setupProgress": "{done} of {total} done",
+  "@setupProgress": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "setupStep1Title": "Connect an AI provider",
+  "setupStep1Body": "Add a key from Groq, Google, OpenRouter or another provider. NeoRouter finds all its models.",
+  "setupStep2Title": "Create an API key",
+  "setupStep2Body": "One key for your apps, optionally limited to free models or a budget.",
+  "setupStep3Title": "Send your first message",
+  "setupStep3Body": "Try it in the Playground.",
+  "setupStart": "Start",
+  "problemTitle": "{name} needs attention",
+  "@problemTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "problemKeyRejected": "The provider rejected the key. Update it to use this connection again.",
+  "requestFailed": "Failed: {reason}",
+  "@requestFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "agoNow": "just now",
+  "agoMinutes": "{count} min ago",
+  "@agoMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "agoHours": "{count} h ago",
+  "@agoHours": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "activityDescription": "What your apps asked for and how NeoRouter answered. Only metadata is kept – never your messages.",
+  "tabOverview": "Overview",
+  "tabRequests": "Requests",
+  "metricTokens": "{count} tokens",
+  "@metricTokens": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "metricTypicalResponse": "Typical response",
+  "metricSlowest": "slowest 5 %: {value}",
+  "@metricSlowest": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "chartResponseTime": "Response time",
+  "chartTypical": "Typical",
+  "chartSlowest": "Slowest 5 %",
+  "topModelsTitle": "Most used models",
+  "byConnection": "By connection",
+  "byKey": "By API key",
+  "rankingLine": "{count} · {latency}",
+  "@rankingLine": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "latency": {
+        "type": "String"
+      }
+    }
+  },
+  "tooltipRequests": "{count} requests · {errors} failed",
+  "@tooltipRequests": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "errors": {
+        "type": "String"
+      }
+    }
+  },
+  "filterAnswered": "Answered",
+  "filterFailed": "Failed",
+  "logsPrivacyHint": "NeoRouter never stores what you or the model wrote – only which model answered, how fast and what it cost.",
+  "detailRequested": "Asked for",
+  "detailKey": "API key",
+  "detailResponse": "Response time",
+  "detailFirstToken": "First words after",
+  "detailTokens": "Tokens",
+  "detailCost": "Cost",
+  "detailFormat": "Interface",
+  "detailTime": "Time",
+  "detailRoute": "Route",
+  "outcomeAnswered": "answered",
+  "outcomeSlower": "was slower – cancelled",
+  "outcomeBusy": "was busy – skipped",
+  "outcomeFailed": "failed ({reason})",
+  "@outcomeFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "tabConnected": "Connected",
+  "tabLimits": "Usage limits",
+  "accountFreePlan": "Free plan",
+  "accountPaidPlan": "Paid account",
+  "accountFreeVerified": "Free plan, verified",
+  "accountBillingActive": "Billing is active – nothing counts as free",
+  "accountNotVerified": "Free plan, not verified yet",
+  "moreActions": "More actions",
+  "chooseProviderHint": "Pick the service you have a key for. Providers marked \"Free models\" can be used without paying.",
+  "providerFreeTag": "Free models",
+  "getKeyAt": "Get a key at {name}",
+  "@getKeyAt": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "billingPaidHint": "Requests to paid models are billed by the provider and count against your API keys' budgets.",
+  "testConnection": "Test connection",
+  "probeOk": "The key works – {count} models found.",
+  "@probeOk": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "limitsDescription": "How much of each provider's allowance is used. Every provider resets its limits on its own schedule; NeoRouter switches to another model before one runs out.",
+  "limitResets": "resets {time}",
+  "@limitResets": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "filterProvider": "Filter by connection",
+  "allConnections": "All connections",
+  "showMore": "Show more ({count} left)",
+  "@showMore": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "factWhyFree": "Free or paid",
+  "factContext": "Context",
+  "factMeasured": "Measured",
+  "modeFreeOnlyHint": "Never costs anything. Recommended.",
+  "modeBothHint": "Uses paid models until the budget is used up, then continues with free ones.",
+  "modePaidHint": "Uses the best model regardless of price and stops at the budget.",
+  "keyAccessTitle": "What can this key use?",
+  "keyBudgetTitle": "Spending limit",
+  "keyNameHint": "e.g. Laptop or Home Assistant",
+  "keySecretDone": "Done",
+  "keyUsed": "used {time}",
+  "@keyUsed": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "keyNeverUsed": "not used yet",
+  "revokedKeys": "Revoked keys ({count})",
+  "@revokedKeys": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "keysFooter": "Each app should get its own key. If a key leaks, revoke it – your other apps keep working.",
+  "presetBalancedHint": "A good mix of quality, speed and cost. Used when nothing else is set.",
+  "presetFastHint": "The shortest wait for an answer.",
+  "presetSmartHint": "The most capable models, even if they take longer.",
+  "presetReliableHint": "Models that almost never fail.",
+  "presetBestHint": "High quality from models that also work reliably.",
+  "presetCheapHint": "The lowest cost – free models first.",
+  "stylesTitle": "Routing styles",
+  "stylesHint": "Use a style by asking for its model name, e.g. \"auto:fast\", or choose one per API key.",
+  "customStylesTitle": "Your own styles",
+  "customStylesHint": "Decide yourself how much quality, speed, reliability and cost matter.",
+  "createStyle": "New style",
+  "editStyle": "Edit style",
+  "weightsTitle": "What matters",
+  "weightsHint": "Move a slider to the right to make it count more.",
+  "previewDefaultPrompt": "Explain quicksort in two sentences.",
+  "previewNone": "No model fits right now. Connect a provider or turn off \"free models only\".",
+  "previewSkipped": "{count} models skipped",
+  "@previewSkipped": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "previewMostLikely": "most likely",
+  "playgroundEmptyTitle": "What would you like to try?",
+  "playgroundEmptyHint": "Messages go through the real router with your key, so you see which model answers and how fast.",
+  "suggestion1": "Explain how a rainbow forms in two sentences",
+  "suggestion2": "Write a friendly reminder for a team meeting",
+  "suggestion3": "Give me three dinner ideas with chickpeas",
+  "newChat": "New chat",
+  "modelPicker": "Model",
+  "modelSpecific": "Specific model…",
+  "modelSpecificHint": "e.g. groq/openai/gpt-oss-120b",
+  "systemPromptTitle": "Instructions",
+  "systemPromptHint": "Optional: how the assistant should behave, e.g. \"Answer briefly and in German.\"",
+  "thinking": "Thinking…",
+  "enterToSend": "Enter to send · Shift+Enter for a new line"
 }

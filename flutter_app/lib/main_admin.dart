@@ -339,15 +339,15 @@ class _AdminTabChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
             borderRadius: radius,
-            color: active ? palette.accentSoft : palette.surfaceRaised,
-            border: Border.all(color: active ? palette.accent.withValues(alpha: 0.3) : palette.border),
+            color: active ? palette.surfaceRaised : Colors.transparent,
+            border: Border.all(color: active ? palette.borderStrong : palette.border),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(icon, size: 15, color: active ? palette.accent : palette.textMuted),
+              Icon(icon, size: 15, color: active ? palette.text : palette.textMuted),
               const SizedBox(width: 7),
-              Text(label, style: GoogleFonts.geist(fontSize: 12.5, fontWeight: FontWeight.w600, color: active ? palette.accentStrong : palette.textSoft)),
+              Text(label, style: GoogleFonts.geist(fontSize: 12.5, fontWeight: FontWeight.w600, color: active ? palette.text : palette.textSoft)),
             ],
           ),
         ),

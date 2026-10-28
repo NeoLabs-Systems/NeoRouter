@@ -5,7 +5,7 @@ import 'src/backend_client.dart';
 import 'src/models.dart';
 import 'src/router_api.dart';
 
-enum AppPage { dashboard, analytics, providers, models, keys, routing, quotas, logs, playground, settings, admin }
+enum AppPage { home, playground, models, providers, keys, activity, routing, settings, admin }
 
 /// Single root state object. Pages own their page-local data and talk to the
 /// API through [api]; the controller holds session, navigation and prefs.
@@ -25,7 +25,7 @@ class NeoRouterController extends ChangeNotifier {
   bool registrationOpen = false;
   bool bootstrapRegistration = false;
   AppUser? user;
-  AppPage page = AppPage.dashboard;
+  AppPage page = AppPage.home;
   ThemeMode themeMode = ThemeMode.system;
   Locale? locale;
   String? endpoint;
@@ -102,7 +102,7 @@ class NeoRouterController extends ChangeNotifier {
     client.setToken(token);
     (await SharedPreferences.getInstance()).setString(_tokenKey, token);
     user = AppUser(Map<String, dynamic>.from(result['user'] as Map));
-    page = AppPage.dashboard;
+    page = AppPage.home;
     await _loadInfo();
   }
 

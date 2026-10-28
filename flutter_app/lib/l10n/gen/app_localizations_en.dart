@@ -90,16 +90,16 @@ class AppL10nEn extends AppL10n {
   String get navDashboard => 'Dashboard';
 
   @override
-  String get navProviders => 'Providers';
+  String get navProviders => 'Connections';
 
   @override
   String get navModels => 'Models';
 
   @override
-  String get navKeys => 'Router keys';
+  String get navKeys => 'API keys';
 
   @override
-  String get navRouting => 'Auto router';
+  String get navRouting => 'Smart routing';
 
   @override
   String get navQuotas => 'Free quotas';
@@ -240,11 +240,11 @@ class AppL10nEn extends AppL10n {
   String get errorsTitle => 'Errors';
 
   @override
-  String get noTrafficTitle => 'No traffic yet';
+  String get noTrafficTitle => 'Nothing here yet';
 
   @override
   String get noTrafficMessage =>
-      'Send a request to your endpoint and it shows up here.';
+      'Once your apps send requests, you will see how much, how fast and which models answered.';
 
   @override
   String get endpointTitle => 'Your endpoint';
@@ -283,8 +283,7 @@ class AppL10nEn extends AppL10n {
   String get homeOpenPlayground => 'Open Playground';
 
   @override
-  String get homeProblemHint =>
-      'Requests skip it until this is fixed. Nothing else is affected.';
+  String get homeProblemHint => 'Requests skip it until this is fixed.';
 
   @override
   String get homeFix => 'Fix';
@@ -312,7 +311,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get homeNoRequests =>
-      'No requests yet. Send one from the Playground or your app.';
+      'No requests yet. Send your first message in the Playground.';
 
   @override
   String homeQuotaLeft(String percent) {
@@ -334,23 +333,23 @@ class AppL10nEn extends AppL10n {
   String get providersEyebrow => 'Setup';
 
   @override
-  String get providersTitle => 'Providers';
+  String get providersTitle => 'Connections';
 
   @override
   String get providersDescription =>
-      'Connect any inference API. Keys are verified, encrypted and their models imported automatically.';
+      'The AI providers NeoRouter can use. Keys are checked when you add them and stored encrypted.';
 
   @override
-  String get addProvider => 'Add provider';
+  String get addProvider => 'Add connection';
 
   @override
-  String get chooseProvider => 'Choose a provider';
+  String get chooseProvider => 'Add a connection';
 
   @override
   String get searchProviders => 'Search providers…';
 
   @override
-  String get categoryFree => 'Free tiers';
+  String get categoryFree => 'Free to start';
 
   @override
   String get categoryAggregator => 'Aggregators';
@@ -401,7 +400,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get billingFreeWarning =>
-      'Only choose the free tier if this account cannot be charged. NeoRouter then treats every model of this account as 100% free.';
+      'Choose the free plan only if no payment method is on file with this provider. NeoRouter double-checks where it can.';
 
   @override
   String get billingAlwaysFreeNote =>
@@ -411,7 +410,7 @@ class AppL10nEn extends AppL10n {
   String get getKey => 'Get a key';
 
   @override
-  String get checkAndAdd => 'Check key & import models';
+  String get checkAndAdd => 'Connect';
 
   @override
   String providerAdded(String count) {
@@ -424,13 +423,13 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get statusHealthy => 'Healthy';
+  String get statusHealthy => 'Working';
 
   @override
   String get statusInvalid => 'Key rejected';
 
   @override
-  String get statusError => 'Check failed';
+  String get statusError => 'Not reachable';
 
   @override
   String get statusUnknown => 'Not checked';
@@ -453,15 +452,15 @@ class AppL10nEn extends AppL10n {
   String get probeQuota => 'Check balance';
 
   @override
-  String get removeProvider => 'Remove provider';
+  String get removeProvider => 'Remove connection';
 
   @override
   String removeProviderConfirm(String name) {
-    return 'Remove $name? Its models disappear from routing; request history is kept.';
+    return 'Remove $name? Its models are no longer used. You can add it again at any time.';
   }
 
   @override
-  String get editProvider => 'Edit provider';
+  String get editProvider => 'Edit';
 
   @override
   String lastChecked(String time) {
@@ -474,11 +473,11 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get noProvidersTitle => 'No providers yet';
+  String get noProvidersTitle => 'No connections yet';
 
   @override
   String get noProvidersMessage =>
-      'Add your first provider to fill the model catalog.';
+      'Connect an AI provider and NeoRouter imports all of its models.';
 
   @override
   String quotaProbeResult(String metric, String remaining) {
@@ -496,7 +495,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get modelsDescription =>
-      'Every chat model your providers expose, with learned speed and reliability.';
+      'Everything your connections offer. NeoRouter learns how smart, fast and reliable each model is and picks the best one for you.';
 
   @override
   String get searchModels => 'Search models…';
@@ -517,26 +516,26 @@ class AppL10nEn extends AppL10n {
   String get filterVision => 'Vision';
 
   @override
-  String get filterIssues => 'Issues';
+  String get filterIssues => 'Problems';
 
   @override
-  String get intelligence => 'Intelligence';
+  String get intelligence => 'Smart';
 
   @override
-  String get speed => 'Speed';
+  String get speed => 'Fast';
 
   @override
-  String get reliability => 'Reliability';
+  String get reliability => 'Reliable';
 
   @override
-  String get cost => 'Cost';
+  String get cost => 'Cheap';
 
   @override
   String get price => 'Price';
 
   @override
   String pricePerMillion(String input, String output) {
-    return '$input / $output per 1M';
+    return '$input / $output per 1M tokens';
   }
 
   @override
@@ -608,7 +607,7 @@ class AppL10nEn extends AppL10n {
   String get modelSettings => 'Model settings';
 
   @override
-  String get overrideFree => 'Free status';
+  String get overrideFree => 'Free or paid';
 
   @override
   String get overrideAuto => 'Automatic';
@@ -641,21 +640,21 @@ class AppL10nEn extends AppL10n {
   String get healthReset => 'Penalties and cooldowns cleared.';
 
   @override
-  String get enableAll => 'Enable all';
+  String get enableAll => 'Turn all on';
 
   @override
-  String get disableAll => 'Disable all';
+  String get disableAll => 'Turn all off';
 
   @override
-  String get enableFreeOnly => 'Enable only free';
+  String get enableFreeOnly => 'Use only free models';
 
   @override
   String measured(String latency, String tps, String samples) {
-    return '$latency · $tps tok/s · $samples calls';
+    return '$latency · $tps tokens/s · $samples requests';
   }
 
   @override
-  String get notMeasured => 'Not measured yet';
+  String get notMeasured => 'Not used yet';
 
   @override
   String penaltyLabel(String value) {
@@ -668,10 +667,11 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get noModelsTitle => 'No models';
+  String get noModelsTitle => 'No models found';
 
   @override
-  String get noModelsMessage => 'Add a provider or change the filter.';
+  String get noModelsMessage =>
+      'Try another filter or connect another provider.';
 
   @override
   String modelsShown(String count) {
@@ -682,11 +682,11 @@ class AppL10nEn extends AppL10n {
   String get keysEyebrow => 'Access';
 
   @override
-  String get keysTitle => 'Router keys';
+  String get keysTitle => 'API keys';
 
   @override
   String get keysDescription =>
-      'Keys for your apps. Each key has its own mode, budget and limits.';
+      'Keys let your apps use NeoRouter. Decide per key whether it may use paid models and how much it may spend.';
 
   @override
   String get createKey => 'Create key';
@@ -701,28 +701,28 @@ class AppL10nEn extends AppL10n {
   String get keyMode => 'Model access';
 
   @override
-  String get modeFreeOnly => 'Only 100% free models';
+  String get modeFreeOnly => 'Only free models';
 
   @override
-  String get modePaid => 'All models, stop at the budget';
+  String get modePaid => 'All models';
 
   @override
-  String get modeBoth => 'All models, then free ones once the budget is used';
+  String get modeBoth => 'All models, then free ones';
 
   @override
-  String get budget => 'Budget (USD, empty = no limit)';
+  String get budget => 'Limit in USD (empty = no limit)';
 
   @override
   String get budgetPeriod => 'Budget period';
 
   @override
-  String get periodTotal => 'Total';
+  String get periodTotal => 'In total';
 
   @override
-  String get periodMonthly => 'Per month';
+  String get periodMonthly => 'Monthly';
 
   @override
-  String get periodDaily => 'Per day';
+  String get periodDaily => 'Daily';
 
   @override
   String get rpmLimit => 'Requests per minute (empty = no limit)';
@@ -732,14 +732,14 @@ class AppL10nEn extends AppL10n {
       'Allowed models – glob patterns, one per line (empty = all)';
 
   @override
-  String get defaultProfile => 'Routing profile for \"auto\"';
+  String get defaultProfile => 'Routing style for \"auto\"';
 
   @override
-  String get keySecretTitle => 'Your new router key';
+  String get keySecretTitle => 'Copy your new key';
 
   @override
   String get keySecretBody =>
-      'Copy it now – it is stored only as a hash and cannot be shown again.';
+      'For your security it is shown only once. Paste it into your app where it asks for an API key.';
 
   @override
   String get revoke => 'Revoke';
@@ -754,7 +754,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String spentOf(String spent, String budget) {
-    return '$spent of $budget';
+    return '$spent of $budget spent';
   }
 
   @override
@@ -773,10 +773,11 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get noKeysTitle => 'No router keys';
+  String get noKeysTitle => 'No API keys yet';
 
   @override
-  String get noKeysMessage => 'Create a key to call your endpoint.';
+  String get noKeysMessage =>
+      'Create a key and paste it into any app that works with OpenAI or Claude.';
 
   @override
   String deleteKeyConfirm(String name) {
@@ -787,11 +788,11 @@ class AppL10nEn extends AppL10n {
   String get routingEyebrow => 'Auto router';
 
   @override
-  String get routingTitle => 'Routing';
+  String get routingTitle => 'Smart routing';
 
   @override
   String get routingDescription =>
-      'How \"auto\" picks a model. Scores combine intelligence, measured speed, learned reliability and price; failing or slow models are penalized and load is spread.';
+      'When an app asks for \"auto\", NeoRouter picks the model for each request. Choose what matters most to you.';
 
   @override
   String get presetBalanced => 'Balanced';
@@ -806,13 +807,13 @@ class AppL10nEn extends AppL10n {
   String get presetSmart => 'Smartest';
 
   @override
-  String get presetBest => 'Best';
+  String get presetBest => 'Best overall';
 
   @override
   String get presetCheap => 'Cheapest';
 
   @override
-  String get presetCustom => 'Custom';
+  String get presetCustom => 'My style';
 
   @override
   String get presetSlider => 'Profile';
@@ -827,7 +828,7 @@ class AppL10nEn extends AppL10n {
   String get customProfiles => 'Custom profiles';
 
   @override
-  String get profileName => 'Profile name';
+  String get profileName => 'Name';
 
   @override
   String get saveProfile => 'Save as profile';
@@ -841,40 +842,42 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get minIntelligence => 'Minimum intelligence';
+  String get minIntelligence => 'Minimum quality';
 
   @override
-  String get maxPriceOut => 'Max output price (USD / 1M, empty = any)';
+  String get maxPriceOut => 'Max price per 1M output tokens (USD, empty = any)';
 
   @override
-  String get adaptive => 'Adapt to request complexity';
+  String get adaptive => 'Adapt to the request';
 
   @override
   String get adaptiveHint =>
-      'Long, code-heavy or tool requests shift weight toward intelligence.';
+      'Long or code-heavy requests lean towards smarter models.';
 
   @override
-  String get exploration => 'Load spreading';
+  String get exploration => 'Spread load';
 
   @override
   String get explorationHint =>
-      'Higher values spread requests over more good models.';
+      'Higher values share requests among more good models instead of always using the top one.';
 
   @override
-  String get excludeProviders => 'Exclude providers (comma separated)';
+  String get excludeProviders =>
+      'Never use these connections (comma separated)';
 
   @override
-  String get previewTitle => 'Live preview';
+  String get previewTitle => 'Try it';
 
   @override
-  String get previewHint =>
-      'What \"auto\" would choose right now, without sending a request.';
+  String previewHint(String style) {
+    return 'Which models \"$style\" would choose right now – nothing is sent.';
+  }
 
   @override
   String get previewPrompt => 'Test prompt';
 
   @override
-  String get previewFreeOnly => 'Free models only';
+  String get previewFreeOnly => 'Only free models';
 
   @override
   String get previewTools => 'Needs tools';
@@ -883,7 +886,7 @@ class AppL10nEn extends AppL10n {
   String get previewVision => 'Needs vision';
 
   @override
-  String get runPreview => 'Preview';
+  String get runPreview => 'Check';
 
   @override
   String get score => 'Score';
@@ -958,16 +961,16 @@ class AppL10nEn extends AppL10n {
   String get perModelLimits => 'Per model';
 
   @override
-  String get metricRpm => 'requests / min';
+  String get metricRpm => 'Requests per minute';
 
   @override
-  String get metricRpd => 'requests / day';
+  String get metricRpd => 'Requests per day';
 
   @override
-  String get metricTpm => 'tokens / min';
+  String get metricTpm => 'Tokens per minute';
 
   @override
-  String get metricTpd => 'tokens / day';
+  String get metricTpd => 'Tokens per day';
 
   @override
   String usedOf(String used, String limit) {
@@ -994,7 +997,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get noQuotaData =>
-      'No limits known yet. They appear after the first requests.';
+      'No limits reported yet. They appear after the first requests.';
 
   @override
   String onlyFreeModels(String count) {
@@ -1053,7 +1056,7 @@ class AppL10nEn extends AppL10n {
       'Chat through the real router with one of your keys.';
 
   @override
-  String get selectKey => 'Router key';
+  String get selectKey => 'API key';
 
   @override
   String get modelField => 'Model (auto, auto:fast, provider/model)';
@@ -1062,7 +1065,7 @@ class AppL10nEn extends AppL10n {
   String get systemPrompt => 'System prompt (optional)';
 
   @override
-  String get messageHint => 'Write a message…';
+  String get messageHint => 'Message NeoRouter…';
 
   @override
   String get send => 'Send';
@@ -1072,11 +1075,12 @@ class AppL10nEn extends AppL10n {
 
   @override
   String routedTo(String model, String latency) {
-    return 'via $model · $latency';
+    return '$model · $latency';
   }
 
   @override
-  String get playgroundNeedsKey => 'Create a router key first.';
+  String get playgroundNeedsKey =>
+      'Create an API key first – the Playground uses it just like your apps do.';
 
   @override
   String get settingsTitle => 'Settings';
@@ -1517,4 +1521,527 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get settingsSavedOnSubmit => 'Saved when you press Save';
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String get navActivity => 'Activity';
+
+  @override
+  String get navSectionServer => 'Server';
+
+  @override
+  String get capChat => 'Chat';
+
+  @override
+  String get capEmbedding => 'Embeddings';
+
+  @override
+  String get capRerank => 'Ranking';
+
+  @override
+  String get capImage => 'Images';
+
+  @override
+  String get capAudio => 'Audio';
+
+  @override
+  String get capVideo => 'Video';
+
+  @override
+  String get capModeration => 'Safety & classification';
+
+  @override
+  String get capOther => 'Other';
+
+  @override
+  String get capChatHint => 'Text and vision models that answer messages.';
+
+  @override
+  String get capEmbeddingHint =>
+      'Turn text into vectors for search and memory.';
+
+  @override
+  String get capRerankHint => 'Sort search results by relevance.';
+
+  @override
+  String get capImageHint => 'Create and edit images.';
+
+  @override
+  String get capAudioHint => 'Speech to text, text to speech and music.';
+
+  @override
+  String get capVideoHint => 'Create and understand video.';
+
+  @override
+  String get capModerationHint => 'Check content and make yes/no decisions.';
+
+  @override
+  String get capOtherHint =>
+      'Specialised models such as translation or document parsing.';
+
+  @override
+  String capComingSoon(String kind) {
+    return 'NeoRouter lists these models already. Routing for $kind is coming soon – they are not used by \"auto\" yet.';
+  }
+
+  @override
+  String get capSoon => 'Soon';
+
+  @override
+  String greetMorning(String name) {
+    return 'Good morning, $name';
+  }
+
+  @override
+  String greetAfternoon(String name) {
+    return 'Good afternoon, $name';
+  }
+
+  @override
+  String greetEvening(String name) {
+    return 'Good evening, $name';
+  }
+
+  @override
+  String homeStatusOk(String count) {
+    return 'Everything is running. $count connections are working.';
+  }
+
+  @override
+  String homeStatusIssues(String count) {
+    return '$count connection needs your attention. Requests use the others meanwhile.';
+  }
+
+  @override
+  String get homeStatusEmpty => 'Connect an AI provider to get started.';
+
+  @override
+  String get homeLast7Days => 'Last 7 days';
+
+  @override
+  String get metricRequests => 'Requests';
+
+  @override
+  String get metricAnswered => 'Answered';
+
+  @override
+  String get metricSpent => 'Spent';
+
+  @override
+  String metricFreeShare(String percent) {
+    return '$percent % free';
+  }
+
+  @override
+  String get metricResponse => 'Avg. response time';
+
+  @override
+  String get homeSeeAll => 'See all';
+
+  @override
+  String get homeRecentActivity => 'Recent activity';
+
+  @override
+  String homeModelsLine(String total, String free) {
+    return '$total models · $free free';
+  }
+
+  @override
+  String get homeUseTitle => 'Use NeoRouter in your apps';
+
+  @override
+  String get homeUseBody =>
+      'Paste this address and one of your API keys into any app that works with OpenAI or Claude.';
+
+  @override
+  String get homeGetKey => 'Get an API key';
+
+  @override
+  String get homeShowExamples => 'Show code examples';
+
+  @override
+  String get homeHideExamples => 'Hide code examples';
+
+  @override
+  String get setupTitle => 'Finish setting up';
+
+  @override
+  String setupProgress(String done, String total) {
+    return '$done of $total done';
+  }
+
+  @override
+  String get setupStep1Title => 'Connect an AI provider';
+
+  @override
+  String get setupStep1Body =>
+      'Add a key from Groq, Google, OpenRouter or another provider. NeoRouter finds all its models.';
+
+  @override
+  String get setupStep2Title => 'Create an API key';
+
+  @override
+  String get setupStep2Body =>
+      'One key for your apps, optionally limited to free models or a budget.';
+
+  @override
+  String get setupStep3Title => 'Send your first message';
+
+  @override
+  String get setupStep3Body => 'Try it in the Playground.';
+
+  @override
+  String get setupStart => 'Start';
+
+  @override
+  String problemTitle(String name) {
+    return '$name needs attention';
+  }
+
+  @override
+  String get problemKeyRejected =>
+      'The provider rejected the key. Update it to use this connection again.';
+
+  @override
+  String requestFailed(String reason) {
+    return 'Failed: $reason';
+  }
+
+  @override
+  String get agoNow => 'just now';
+
+  @override
+  String agoMinutes(String count) {
+    return '$count min ago';
+  }
+
+  @override
+  String agoHours(String count) {
+    return '$count h ago';
+  }
+
+  @override
+  String get activityDescription =>
+      'What your apps asked for and how NeoRouter answered. Only metadata is kept – never your messages.';
+
+  @override
+  String get tabOverview => 'Overview';
+
+  @override
+  String get tabRequests => 'Requests';
+
+  @override
+  String metricTokens(String count) {
+    return '$count tokens';
+  }
+
+  @override
+  String get metricTypicalResponse => 'Typical response';
+
+  @override
+  String metricSlowest(String value) {
+    return 'slowest 5 %: $value';
+  }
+
+  @override
+  String get chartResponseTime => 'Response time';
+
+  @override
+  String get chartTypical => 'Typical';
+
+  @override
+  String get chartSlowest => 'Slowest 5 %';
+
+  @override
+  String get topModelsTitle => 'Most used models';
+
+  @override
+  String get byConnection => 'By connection';
+
+  @override
+  String get byKey => 'By API key';
+
+  @override
+  String rankingLine(String count, String latency) {
+    return '$count · $latency';
+  }
+
+  @override
+  String tooltipRequests(String count, String errors) {
+    return '$count requests · $errors failed';
+  }
+
+  @override
+  String get filterAnswered => 'Answered';
+
+  @override
+  String get filterFailed => 'Failed';
+
+  @override
+  String get logsPrivacyHint =>
+      'NeoRouter never stores what you or the model wrote – only which model answered, how fast and what it cost.';
+
+  @override
+  String get detailRequested => 'Asked for';
+
+  @override
+  String get detailKey => 'API key';
+
+  @override
+  String get detailResponse => 'Response time';
+
+  @override
+  String get detailFirstToken => 'First words after';
+
+  @override
+  String get detailTokens => 'Tokens';
+
+  @override
+  String get detailCost => 'Cost';
+
+  @override
+  String get detailFormat => 'Interface';
+
+  @override
+  String get detailTime => 'Time';
+
+  @override
+  String get detailRoute => 'Route';
+
+  @override
+  String get outcomeAnswered => 'answered';
+
+  @override
+  String get outcomeSlower => 'was slower – cancelled';
+
+  @override
+  String get outcomeBusy => 'was busy – skipped';
+
+  @override
+  String outcomeFailed(String reason) {
+    return 'failed ($reason)';
+  }
+
+  @override
+  String get tabConnected => 'Connected';
+
+  @override
+  String get tabLimits => 'Usage limits';
+
+  @override
+  String get accountFreePlan => 'Free plan';
+
+  @override
+  String get accountPaidPlan => 'Paid account';
+
+  @override
+  String get accountFreeVerified => 'Free plan, verified';
+
+  @override
+  String get accountBillingActive =>
+      'Billing is active – nothing counts as free';
+
+  @override
+  String get accountNotVerified => 'Free plan, not verified yet';
+
+  @override
+  String get moreActions => 'More actions';
+
+  @override
+  String get chooseProviderHint =>
+      'Pick the service you have a key for. Providers marked \"Free models\" can be used without paying.';
+
+  @override
+  String get providerFreeTag => 'Free models';
+
+  @override
+  String getKeyAt(String name) {
+    return 'Get a key at $name';
+  }
+
+  @override
+  String get billingPaidHint =>
+      'Requests to paid models are billed by the provider and count against your API keys\' budgets.';
+
+  @override
+  String get testConnection => 'Test connection';
+
+  @override
+  String probeOk(String count) {
+    return 'The key works – $count models found.';
+  }
+
+  @override
+  String get limitsDescription =>
+      'How much of each provider\'s allowance is used. Every provider resets its limits on its own schedule; NeoRouter switches to another model before one runs out.';
+
+  @override
+  String limitResets(String time) {
+    return 'resets $time';
+  }
+
+  @override
+  String get filterProvider => 'Filter by connection';
+
+  @override
+  String get allConnections => 'All connections';
+
+  @override
+  String showMore(String count) {
+    return 'Show more ($count left)';
+  }
+
+  @override
+  String get factWhyFree => 'Free or paid';
+
+  @override
+  String get factContext => 'Context';
+
+  @override
+  String get factMeasured => 'Measured';
+
+  @override
+  String get modeFreeOnlyHint => 'Never costs anything. Recommended.';
+
+  @override
+  String get modeBothHint =>
+      'Uses paid models until the budget is used up, then continues with free ones.';
+
+  @override
+  String get modePaidHint =>
+      'Uses the best model regardless of price and stops at the budget.';
+
+  @override
+  String get keyAccessTitle => 'What can this key use?';
+
+  @override
+  String get keyBudgetTitle => 'Spending limit';
+
+  @override
+  String get keyNameHint => 'e.g. Laptop or Home Assistant';
+
+  @override
+  String get keySecretDone => 'Done';
+
+  @override
+  String keyUsed(String time) {
+    return 'used $time';
+  }
+
+  @override
+  String get keyNeverUsed => 'not used yet';
+
+  @override
+  String revokedKeys(String count) {
+    return 'Revoked keys ($count)';
+  }
+
+  @override
+  String get keysFooter =>
+      'Each app should get its own key. If a key leaks, revoke it – your other apps keep working.';
+
+  @override
+  String get presetBalancedHint =>
+      'A good mix of quality, speed and cost. Used when nothing else is set.';
+
+  @override
+  String get presetFastHint => 'The shortest wait for an answer.';
+
+  @override
+  String get presetSmartHint =>
+      'The most capable models, even if they take longer.';
+
+  @override
+  String get presetReliableHint => 'Models that almost never fail.';
+
+  @override
+  String get presetBestHint =>
+      'High quality from models that also work reliably.';
+
+  @override
+  String get presetCheapHint => 'The lowest cost – free models first.';
+
+  @override
+  String get stylesTitle => 'Routing styles';
+
+  @override
+  String get stylesHint =>
+      'Use a style by asking for its model name, e.g. \"auto:fast\", or choose one per API key.';
+
+  @override
+  String get customStylesTitle => 'Your own styles';
+
+  @override
+  String get customStylesHint =>
+      'Decide yourself how much quality, speed, reliability and cost matter.';
+
+  @override
+  String get createStyle => 'New style';
+
+  @override
+  String get editStyle => 'Edit style';
+
+  @override
+  String get weightsTitle => 'What matters';
+
+  @override
+  String get weightsHint => 'Move a slider to the right to make it count more.';
+
+  @override
+  String get previewDefaultPrompt => 'Explain quicksort in two sentences.';
+
+  @override
+  String get previewNone =>
+      'No model fits right now. Connect a provider or turn off \"free models only\".';
+
+  @override
+  String previewSkipped(String count) {
+    return '$count models skipped';
+  }
+
+  @override
+  String get previewMostLikely => 'most likely';
+
+  @override
+  String get playgroundEmptyTitle => 'What would you like to try?';
+
+  @override
+  String get playgroundEmptyHint =>
+      'Messages go through the real router with your key, so you see which model answers and how fast.';
+
+  @override
+  String get suggestion1 => 'Explain how a rainbow forms in two sentences';
+
+  @override
+  String get suggestion2 => 'Write a friendly reminder for a team meeting';
+
+  @override
+  String get suggestion3 => 'Give me three dinner ideas with chickpeas';
+
+  @override
+  String get newChat => 'New chat';
+
+  @override
+  String get modelPicker => 'Model';
+
+  @override
+  String get modelSpecific => 'Specific model…';
+
+  @override
+  String get modelSpecificHint => 'e.g. groq/openai/gpt-oss-120b';
+
+  @override
+  String get systemPromptTitle => 'Instructions';
+
+  @override
+  String get systemPromptHint =>
+      'Optional: how the assistant should behave, e.g. \"Answer briefly and in German.\"';
+
+  @override
+  String get thinking => 'Thinking…';
+
+  @override
+  String get enterToSend => 'Enter to send · Shift+Enter for a new line';
 }
