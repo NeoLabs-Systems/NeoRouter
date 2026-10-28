@@ -134,7 +134,11 @@ class _OverviewState extends State<_Overview> {
             (label: t.metricRequests, value: formatCount(requests), caption: t.metricTokens(formatCount(tokens))),
             (label: t.metricAnswered, value: '${(_num(totals['successRate']) * 100).round()} %', caption: null),
             (label: t.metricTypicalResponse, value: formatMs(_maybe(totals['latencyP50'])), caption: t.metricSlowest(formatMs(_maybe(totals['latencyP95'])))),
-            (label: t.metricSpent, value: formatUsd(_num(totals['costUsd'])), caption: t.metricFreeShare('${(_num(totals['freeRequests']) / requests * 100).round()}')),
+            (
+              label: t.metricSaved,
+              value: formatUsd(_num(totals['savedUsd'])),
+              caption: t.metricSavedCaption(formatUsd(_num(totals['costUsd'])), '${(_num(totals['freeRequests']) / requests * 100).round()}'),
+            ),
           ],
         ),
         const SizedBox(height: 28),

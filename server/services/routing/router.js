@@ -18,6 +18,13 @@ const COMPLEXITY_TOKEN_RANGE = [200, 30000];
 const UNKNOWN_CONTEXT_LIMIT = 131072;
 const RELATIVE_FEATURES = ['intelligence', 'speed', 'cost'];
 const RELATIVE_BLEND = 0.5;
+// Profiles that care about quality (intelligence weight at least this share)
+// push candidates that are clearly weaker than the best one down hard, so
+// a tiny model that is merely fast and reliable is not picked for them.
+const QUALITY_PROFILE_SHARE = 0.25;
+const QUALITY_GAP = 0.3;
+const QUALITY_GATE_FACTOR = 0.45;
+const FEATURE_FLOOR = 0.02;
 
 function globToRegExp(pattern) {
   const escaped = String(pattern).replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
@@ -156,6 +163,14 @@ class RoutingPlan {
       span[feature] = { min: Math.min(...values), max: Math.max(...values) };
     }
     const totalWeight = Object.values(this.weights).reduce((sum, value) => sum + value, 0) || 1;
+    const qualityProfile = this.weights.intelligence / totalWeight >= QUALITY_PROFILE_SHARE;
+    let bestIntelligence = 0;
+    for (const item of scored) {
+      const { min, max } = span.intelligence;
+      const value = item.details.features.intelligence;
+      const relative = max > min ? (value - min) / (max - min) : 0.5;
+      bestIntelligence = Math.max(bestIntelligence, (1 - RELATIVE_BLEND) * value + RELATIVE_BLEND * relative);
+    }
     for (const item of scored) {
       const features = { ...item.details.features };
       for (const feature of RELATIVE_FEATURES) {
@@ -163,9 +178,13 @@ class RoutingPlan {
         const relative = max > min ? (features[feature] - min) / (max - min) : 0.5;
         features[feature] = (1 - RELATIVE_BLEND) * features[feature] + RELATIVE_BLEND * relative;
       }
-      const base = Object.entries(this.weights).reduce((sum, [feature, weight]) => sum + weight * features[feature], 0) / totalWeight;
+      // Weighted geometric mean: a model has to be decent on every axis that
+      // matters; one very weak axis cannot be made up by the others.
+      const base = Math.exp(Object.entries(this.weights)
+        .reduce((sum, [feature, weight]) => sum + (weight / totalWeight) * Math.log(Math.max(features[feature], FEATURE_FLOOR)), 0));
       const { quota: quotaFactor, penalty, load } = item.details.factors;
       let value = base * quotaFactor * penalty * load;
+      if (qualityProfile && features.intelligence < bestIntelligence - QUALITY_GAP) value *= QUALITY_GATE_FACTOR;
       if ((this.needs.tools && item.entry.tools === null) || (this.needs.json && item.entry.json === false)) value *= UNKNOWN_CAPABILITY_FACTOR;
       if (this.primaryRefs.has(item.entry.ref)) value += 10;
       item.score = value;

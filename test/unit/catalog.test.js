@@ -169,3 +169,11 @@ test('audited providers: exact free lists, local-only and keyless-only free tier
   assert.equal(normalizeModel({ id: 'x', pricing: { prompt: '-1', completion: '-1' } }).freeHint, false);
   assert.equal(normalizeModel({ id: 'x', pricing: { prompt: '0', completion: '0' }, usage_based_only: true }).freeHint, false);
 });
+
+test('other routers are their own kind and dynamic prices are unknown, not cheap', () => {
+  for (const id of ['openrouter/auto', 'kilo-auto/frontier', 'typesafe/jev-router', 'openrouter/free']) assert.equal(normalizeModel({ id }).kind, 'router', id);
+  assert.equal(normalizeModel({ id: 'meta-llama/llama-3.3-70b-instruct' }).kind, 'chat');
+  const dynamic = normalizeModel({ id: 'x', pricing: { prompt: '-1', completion: '-1' } });
+  assert.equal(dynamic.priceKnown, false);
+  assert.equal(dynamic.priceIn, null);
+});

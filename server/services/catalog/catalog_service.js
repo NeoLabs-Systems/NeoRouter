@@ -38,7 +38,7 @@ async function syncAccount(accountId) {
       if (!model.id || seen.has(model.id)) continue;
       seen.add(model.id);
       const facts = metadata.providerFacts(runtime.definitionId, model.id) || {};
-      const priceFromFacts = !model.priceKnown && Number.isFinite(facts.priceIn) && Number.isFinite(facts.priceOut);
+      const priceFromFacts = !model.priceKnown && Number.isFinite(facts.priceIn) && Number.isFinite(facts.priceOut) && facts.priceIn >= 0 && facts.priceOut >= 0;
       upsert.run({
         account_id: accountId,
         model_id: model.id,

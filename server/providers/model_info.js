@@ -11,6 +11,9 @@ const NON_CHAT_PATTERNS = [
   ['audio', /whisper|tts|speech|transcri|audio|voice|orpheus|playai|lyria|music/i],
   ['image', /dall-e|stable-diffusion|sdxl|flux|imagen|image-gen|gpt-image|kolors|seedream|nano-banana|-image(-|$)/i],
   ['video', /\bvideo\b|veo-|sora|wan2|kling|hailuo/i],
+  // Other routers ("openrouter/auto", "kilo-auto/frontier", Jev Router) pick a
+  // model themselves at an unpredictable price; NeoRouter does the routing.
+  ['router', /(^|\/)auto(-beta)?$|(^|\/)kilo-auto\/|jev-router|(^|\/)openrouter\/free$|(^|\/)router$/i],
   ['moderation', /moderation|llama-guard|shieldgemma|prompt-guard|safeguard|content-safety|nemoguard|safety-guard|topic-control/i],
   // Agents, tool-only and legacy multimodal endpoints that do not accept plain chat.
   ['other', /deep-research|computer-use|robotics|antigravity|deplot|kosmos|fuyu|calibration|reward|embedqa|parse|translat|\bocr\b|-ocr|retriever/i],
@@ -59,6 +62,9 @@ function parsePricing(raw) {
     const unit = pricing.unit === 'token' ? 'token' : undefined;
     const prompt = toNumber(pricing.prompt ?? pricing.input ?? pricing.input_tokens);
     const completion = toNumber(pricing.completion ?? pricing.output ?? pricing.output_tokens);
+    // A negative price ("-1") marks a dynamic price that is only known after
+    // the call: treat it as unknown, never as cheap.
+    if (values.some((value) => value < 0)) return { priceIn: null, priceOut: null, priceKnown: false, freeHint: false };
     if (values.length && prompt !== null && completion !== null) {
       const allZero = values.every((value) => value === 0);
       return {

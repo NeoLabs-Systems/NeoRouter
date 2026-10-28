@@ -147,3 +147,26 @@ test('models that stay missing back off further each time', () => {
   }
   assert.deepEqual(durations, [6 * 3600_000, 24 * 3600_000, 7 * 24 * 3600_000]);
 });
+
+test('a quality profile does not pick a tiny model just because it is fast and reliable', () => {
+  const { RoutingPlan } = require('../../server/services/routing/router');
+  const big = entry();
+  const tiny = entry();
+  db.prepare('UPDATE models SET overrides_json = ? WHERE id = ?').run(JSON.stringify({ intelligence: 0.85 }), big.ref);
+  db.prepare('UPDATE models SET overrides_json = ? WHERE id = ?').run(JSON.stringify({ intelligence: 0.25 }), tiny.ref);
+  for (let index = 0; index < 40; index += 1) learning.onSuccess(tiny, { latencyMs: 150, ttftMs: 50, outputTokens: 200, generationMs: 100 });
+  for (let index = 0; index < 5; index += 1) learning.onSuccess(big, { latencyMs: 4000, ttftMs: 900, outputTokens: 200, generationMs: 3100 });
+  const plan = (profile) => new RoutingPlan({
+    userId: 'u',
+    key: { mode: 'both', profile, allowed_models_json: '[]', budget_usd: null },
+    request: { messages: [{ role: 'user', content: 'hi' }] },
+    requestedModel: 'auto',
+    needs: {},
+    inputTokens: 10,
+    random: fixedRandom,
+  });
+  const order = (profile) => plan(profile).rank({ sample: false }).filter((item) => !item.rejected && [big.ref, tiny.ref].includes(item.entry.ref)).map((item) => item.entry.ref);
+  assert.equal(order('balanced')[0], big.ref);
+  assert.equal(order('smart')[0], big.ref);
+  assert.equal(order('fast')[0], tiny.ref, 'speed-first profiles may still prefer the small model');
+});

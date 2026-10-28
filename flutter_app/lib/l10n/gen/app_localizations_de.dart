@@ -872,7 +872,7 @@ class AppL10nDe extends AppL10n {
       'Diese Verbindungen nie nutzen (mit Komma getrennt)';
 
   @override
-  String get previewTitle => 'Ausprobieren';
+  String get previewTitle => 'Gerade würde es wählen';
 
   @override
   String previewHint(String style) {
@@ -1563,7 +1563,7 @@ class AppL10nDe extends AppL10n {
   String get capVideo => 'Video';
 
   @override
-  String get capModeration => 'Sicherheit & Klassifizierung';
+  String get capModeration => 'System-One-Modelle';
 
   @override
   String get capOther => 'Sonstige';
@@ -1590,15 +1590,15 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get capModerationHint =>
-      'Prüfen Inhalte und treffen Ja/Nein-Entscheidungen.';
+      'Schnelle Entscheidungsmodelle wie Jev: Sie klassifizieren, prüfen und entscheiden in Sekundenbruchteilen, statt lange Antworten zu schreiben.';
 
   @override
   String get capOtherHint =>
       'Spezialmodelle, z. B. für Übersetzung oder Dokumente.';
 
   @override
-  String capComingSoon(String kind) {
-    return 'NeoRouter listet diese Modelle bereits. Routing für $kind kommt bald – „auto“ nutzt sie noch nicht.';
+  String capComingSoon(String count) {
+    return 'NeoRouter hat bereits $count dieser Modelle in deinen Verbindungen gefunden und wird sie in einem kommenden Update routen.';
   }
 
   @override
@@ -2063,4 +2063,47 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get enterToSend => 'Enter zum Senden · Shift+Enter für neue Zeile';
+
+  @override
+  String get groupModels => 'Modelle';
+
+  @override
+  String get groupAccess => 'Zugang';
+
+  @override
+  String capComingSoonTitle(String kind) {
+    return '$kind – kommt bald';
+  }
+
+  @override
+  String get capRouter => 'Andere Router';
+
+  @override
+  String get capRouterHint =>
+      'Dienste wie OpenRouter Auto oder Jev Router, die selbst ein Modell wählen. NeoRouter übernimmt das Routing für dich, daher werden sie nur aufgelistet.';
+
+  @override
+  String get metricSaved => 'Gespart mit Gratis-Modellen';
+
+  @override
+  String metricSavedCaption(String spent, String percent) {
+    return '$spent ausgegeben · $percent % gratis';
+  }
+
+  @override
+  String get styleBuiltIn => 'Fertige Stile';
+
+  @override
+  String get styleUseTitle => 'Diesen Stil nutzen';
+
+  @override
+  String get styleUseHint =>
+      'Frage in jeder App nach diesem Modellnamen oder wähle den Stil für einen API-Key.';
+
+  @override
+  String get styleUseRow => 'Modellname für deine Apps';
+
+  @override
+  String get styleWeightsHint =>
+      'Wie stark jede Eigenschaft beim Vergleich der Modelle zählt. Ein Modell muss zudem in allem, was zählt, ordentlich sein.';
 }

@@ -1642,7 +1642,7 @@ abstract class AppL10n {
   /// No description provided for @previewTitle.
   ///
   /// In en, this message translates to:
-  /// **'Try it'**
+  /// **'Right now it would choose'**
   String get previewTitle;
 
   /// No description provided for @previewHint.
@@ -2884,7 +2884,7 @@ abstract class AppL10n {
   /// No description provided for @capModeration.
   ///
   /// In en, this message translates to:
-  /// **'Safety & classification'**
+  /// **'System One models'**
   String get capModeration;
 
   /// No description provided for @capOther.
@@ -2932,7 +2932,7 @@ abstract class AppL10n {
   /// No description provided for @capModerationHint.
   ///
   /// In en, this message translates to:
-  /// **'Check content and make yes/no decisions.'**
+  /// **'Fast decision models such as Jev: they classify, check and decide in a split second instead of writing long answers.'**
   String get capModerationHint;
 
   /// No description provided for @capOtherHint.
@@ -2944,8 +2944,8 @@ abstract class AppL10n {
   /// No description provided for @capComingSoon.
   ///
   /// In en, this message translates to:
-  /// **'NeoRouter lists these models already. Routing for {kind} is coming soon – they are not used by \"auto\" yet.'**
-  String capComingSoon(String kind);
+  /// **'NeoRouter already found {count} of these models in your connections and will route them in a coming update.'**
+  String capComingSoon(String count);
 
   /// No description provided for @capSoon.
   ///
@@ -3726,6 +3726,78 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Enter to send · Shift+Enter for a new line'**
   String get enterToSend;
+
+  /// No description provided for @groupModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Models'**
+  String get groupModels;
+
+  /// No description provided for @groupAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Access'**
+  String get groupAccess;
+
+  /// No description provided for @capComingSoonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} – coming soon'**
+  String capComingSoonTitle(String kind);
+
+  /// No description provided for @capRouter.
+  ///
+  /// In en, this message translates to:
+  /// **'Other routers'**
+  String get capRouter;
+
+  /// No description provided for @capRouterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Services such as OpenRouter Auto or Jev Router that pick a model themselves. NeoRouter does the routing for you, so they are only listed.'**
+  String get capRouterHint;
+
+  /// No description provided for @metricSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved with free models'**
+  String get metricSaved;
+
+  /// No description provided for @metricSavedCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'{spent} spent · {percent} % free'**
+  String metricSavedCaption(String spent, String percent);
+
+  /// No description provided for @styleBuiltIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in styles'**
+  String get styleBuiltIn;
+
+  /// No description provided for @styleUseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this style'**
+  String get styleUseTitle;
+
+  /// No description provided for @styleUseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask for this model name in any app, or choose the style for an API key.'**
+  String get styleUseHint;
+
+  /// No description provided for @styleUseRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Model name for your apps'**
+  String get styleUseRow;
+
+  /// No description provided for @styleWeightsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How much each quality counts when NeoRouter compares models. A model also has to be decent on everything that matters.'**
+  String get styleWeightsHint;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

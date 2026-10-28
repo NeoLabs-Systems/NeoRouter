@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -172,12 +174,15 @@ class _ModelsScreenState extends State<ModelsScreen> {
         if (_capabilities.length > 1)
           PageTabs<String>(
             tabs: <({String value, String label, int? count})>[
-              for (final item in _capabilities) (value: item.id, label: item.info.label(t), count: item.total),
+              for (final item in _capabilities)
+                (value: item.id, label: item.routable || item.id == 'router' ? item.info.label(t) : '${item.info.label(t)} · ${t.capSoon}', count: item.routable ? item.total : null),
             ],
             selected: _capability,
             onChanged: _selectCapability,
           ),
-        if (current != null && !current.routable) InlineHint(message: t.capComingSoon(current.info.label(t)), icon: Icons.schedule_rounded),
+        if (current != null && !current.routable)
+          _ComingSoon(capability: current, models: _models, loading: _loading)
+        else ...<Widget>[
         Wrap(
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,
@@ -274,7 +279,80 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   ],
                 ),
         ),
+        ],
       ],
+    );
+  }
+}
+
+/// A kind NeoRouter lists but cannot route yet: a blurred glimpse of the
+/// models already found, under a short explanation.
+class _ComingSoon extends StatelessWidget {
+  const _ComingSoon({required this.capability, required this.models, required this.loading});
+
+  final CapabilitySummary capability;
+  final List<CatalogModel> models;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final info = capability.info;
+    return SizedBox(
+      height: 420,
+      child: Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+                child: Opacity(
+                  opacity: 0.55,
+                  child: SingleChildScrollView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    child: SettingsCardList(
+                      children: <Widget>[
+                        for (final model in models.take(7))
+                          ListRow(title: model.name, subtitle: '${model.providerSlug} · ${modelPriceLabel(t, model)}', trailing: Switch(value: model.enabled, onChanged: null)),
+                        if (models.isEmpty && !loading)
+                          for (var i = 0; i < 6; i++) ListRow(title: '—', subtitle: '—'),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: GlassSurface(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(color: palette.accentSoft, shape: BoxShape.circle),
+                      child: Icon(info.icon, size: 22, color: palette.accent),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(capability.id == 'router' ? info.label(t) : t.capComingSoonTitle(info.label(t)), textAlign: TextAlign.center, style: displayTitleStyle(palette, size: 18)),
+                    const SizedBox(height: 8),
+                    Text(info.description(t), textAlign: TextAlign.center, style: TextStyle(color: palette.textSoft, height: 1.45)),
+                    if (capability.id != 'router') ...<Widget>[
+                    const SizedBox(height: 10),
+                    Text(t.capComingSoon('${capability.total}'), textAlign: TextAlign.center, style: TextStyle(color: palette.textMuted, fontSize: 13, height: 1.45)),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

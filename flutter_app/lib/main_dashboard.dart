@@ -279,11 +279,12 @@ class _WeekStrip extends StatelessWidget {
     final cost = (totals['costUsd'] as num?)?.toDouble() ?? 0;
     final free = (totals['freeRequests'] as num?)?.toInt() ?? 0;
     final latency = (totals['avgLatencyMs'] as num?)?.toDouble();
+    final saved = (totals['savedUsd'] as num?)?.toDouble() ?? 0;
     return MetricStrip(
       metrics: <({String label, String value, String? caption})>[
         (label: t.metricRequests, value: formatCount(requests), caption: null),
         (label: t.metricAnswered, value: rate == null ? '—' : '${(rate * 100).round()} %', caption: null),
-        (label: t.metricSpent, value: formatUsd(cost), caption: requests == 0 ? null : t.metricFreeShare('${(free * 100 / requests).round()}')),
+        (label: t.metricSaved, value: formatUsd(saved), caption: t.metricSavedCaption(formatUsd(cost), '${requests == 0 ? 0 : (free * 100 / requests).round()}')),
         (label: t.metricResponse, value: formatMs(latency), caption: null),
       ],
     );

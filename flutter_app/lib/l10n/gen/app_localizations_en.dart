@@ -866,7 +866,7 @@ class AppL10nEn extends AppL10n {
       'Never use these connections (comma separated)';
 
   @override
-  String get previewTitle => 'Try it';
+  String get previewTitle => 'Right now it would choose';
 
   @override
   String previewHint(String style) {
@@ -1550,7 +1550,7 @@ class AppL10nEn extends AppL10n {
   String get capVideo => 'Video';
 
   @override
-  String get capModeration => 'Safety & classification';
+  String get capModeration => 'System One models';
 
   @override
   String get capOther => 'Other';
@@ -1575,15 +1575,16 @@ class AppL10nEn extends AppL10n {
   String get capVideoHint => 'Create and understand video.';
 
   @override
-  String get capModerationHint => 'Check content and make yes/no decisions.';
+  String get capModerationHint =>
+      'Fast decision models such as Jev: they classify, check and decide in a split second instead of writing long answers.';
 
   @override
   String get capOtherHint =>
       'Specialised models such as translation or document parsing.';
 
   @override
-  String capComingSoon(String kind) {
-    return 'NeoRouter lists these models already. Routing for $kind is coming soon – they are not used by \"auto\" yet.';
+  String capComingSoon(String count) {
+    return 'NeoRouter already found $count of these models in your connections and will route them in a coming update.';
   }
 
   @override
@@ -2044,4 +2045,47 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get enterToSend => 'Enter to send · Shift+Enter for a new line';
+
+  @override
+  String get groupModels => 'Models';
+
+  @override
+  String get groupAccess => 'Access';
+
+  @override
+  String capComingSoonTitle(String kind) {
+    return '$kind – coming soon';
+  }
+
+  @override
+  String get capRouter => 'Other routers';
+
+  @override
+  String get capRouterHint =>
+      'Services such as OpenRouter Auto or Jev Router that pick a model themselves. NeoRouter does the routing for you, so they are only listed.';
+
+  @override
+  String get metricSaved => 'Saved with free models';
+
+  @override
+  String metricSavedCaption(String spent, String percent) {
+    return '$spent spent · $percent % free';
+  }
+
+  @override
+  String get styleBuiltIn => 'Built-in styles';
+
+  @override
+  String get styleUseTitle => 'Use this style';
+
+  @override
+  String get styleUseHint =>
+      'Ask for this model name in any app, or choose the style for an API key.';
+
+  @override
+  String get styleUseRow => 'Model name for your apps';
+
+  @override
+  String get styleWeightsHint =>
+      'How much each quality counts when NeoRouter compares models. A model also has to be decent on everything that matters.';
 }

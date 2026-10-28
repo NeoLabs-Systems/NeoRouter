@@ -4,14 +4,25 @@ const { getDatabase } = require('../../db/database');
 
 const RANGES = { '24h': 86_400_000, '7d': 7 * 86_400_000, '30d': 30 * 86_400_000 };
 
+// What a free answer would have cost at the model's market price: the median
+// paid price of the same model across providers (model_metadata).
+function savedUsd(entry) {
+  if (!entry.is_free || entry.status !== 'success' || !entry.model_ref) return 0;
+  const price = getDatabase().prepare(`SELECT md.price_in, md.price_out FROM models m
+    JOIN model_metadata md ON md.canonical_id = m.canonical_id WHERE m.id = ?`).get(entry.model_ref);
+  if (!price) return 0;
+  return ((entry.input_tokens || 0) * (price.price_in || 0) + (entry.output_tokens || 0) * (price.price_out || 0)) / 1e6;
+}
+
 function record(entry) {
   getDatabase().prepare(`INSERT INTO requests (id, user_id, router_key_id, created_at, api_format, requested_model, model_ref, model_label,
       account_id, status, http_status, error_code, error_message, input_tokens, output_tokens, cost_usd, is_free, latency_ms, ttft_ms,
-      attempts, stream, trail_json)
+      attempts, stream, trail_json, saved_usd)
     VALUES (@id, @user_id, @router_key_id, @created_at, @api_format, @requested_model, @model_ref, @model_label, @account_id, @status,
       @http_status, @error_code, @error_message, @input_tokens, @output_tokens, @cost_usd, @is_free, @latency_ms, @ttft_ms, @attempts,
-      @stream, @trail_json)`).run({
+      @stream, @trail_json, @saved_usd)`).run({
     model_ref: null, model_label: null, account_id: null, error_code: null, error_message: null, ttft_ms: null, ...entry,
+    saved_usd: savedUsd(entry),
   });
 }
 
@@ -22,7 +33,7 @@ function rangeStart(range, now = Date.now()) {
 function summary(userId, range = '24h', now = Date.now()) {
   const db = getDatabase();
   const since = rangeStart(range, now);
-  const totals = db.prepare(`SELECT COUNT(*) requests, SUM(status = 'success') successes, SUM(cost_usd) cost,
+  const totals = db.prepare(`SELECT COUNT(*) requests, SUM(status = 'success') successes, SUM(cost_usd) cost, SUM(saved_usd) saved,
       SUM(input_tokens) input_tokens, SUM(output_tokens) output_tokens, SUM(is_free AND status = 'success') free_requests,
       AVG(CASE WHEN status = 'success' THEN latency_ms END) avg_latency, AVG(CASE WHEN status = 'success' THEN ttft_ms END) avg_ttft,
       SUM(attempts > 1) fallbacks
@@ -54,6 +65,7 @@ function summary(userId, range = '24h', now = Date.now()) {
       successes: totals.successes || 0,
       successRate: totals.requests ? (totals.successes || 0) / totals.requests : null,
       costUsd: totals.cost || 0,
+      savedUsd: totals.saved || 0,
       inputTokens: totals.input_tokens || 0,
       outputTokens: totals.output_tokens || 0,
       freeRequests: totals.free_requests || 0,
@@ -76,7 +88,7 @@ function percentile(sorted, p) {
 }
 
 function newGroup() {
-  return { requests: 0, successes: 0, errors: 0, inputTokens: 0, outputTokens: 0, costUsd: 0, freeRequests: 0, fallbacks: 0, latencies: [], ttfts: [] };
+  return { requests: 0, successes: 0, errors: 0, inputTokens: 0, outputTokens: 0, costUsd: 0, savedUsd: 0, freeRequests: 0, fallbacks: 0, latencies: [], ttfts: [] };
 }
 
 function addRow(group, row) {
@@ -86,6 +98,7 @@ function addRow(group, row) {
   group.inputTokens += row.input_tokens;
   group.outputTokens += row.output_tokens;
   group.costUsd += row.cost_usd;
+  group.savedUsd += row.saved_usd || 0;
   if (row.is_free && row.status === 'success') group.freeRequests += 1;
   if (row.attempts > 1) group.fallbacks += 1;
   if (row.status === 'success' && row.latency_ms !== null) group.latencies.push(row.latency_ms);
@@ -122,7 +135,7 @@ function analytics(userId, range = '24h', now = Date.now()) {
   const db = getDatabase();
   const since = rangeStart(range, now);
   const bucketMs = range === '24h' ? 3_600_000 : range === '7d' ? 6 * 3_600_000 : 86_400_000;
-  const rows = db.prepare(`SELECT r.created_at, r.status, r.error_code, r.input_tokens, r.output_tokens, r.cost_usd, r.is_free,
+  const rows = db.prepare(`SELECT r.created_at, r.status, r.error_code, r.input_tokens, r.output_tokens, r.cost_usd, r.saved_usd, r.is_free,
       r.latency_ms, r.ttft_ms, r.attempts, r.stream, r.api_format, r.model_label, r.router_key_id, r.trail_json, k.name key_name
     FROM requests r LEFT JOIN router_keys k ON k.id = r.router_key_id
     WHERE r.user_id = ? AND r.created_at >= ? ORDER BY r.created_at LIMIT ?`).all(userId, since, ANALYTICS_ROW_LIMIT);

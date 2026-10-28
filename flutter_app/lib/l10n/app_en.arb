@@ -483,7 +483,7 @@
   "exploration": "Spread load",
   "explorationHint": "Higher values share requests among more good models instead of always using the top one.",
   "excludeProviders": "Never use these connections (comma separated)",
-  "previewTitle": "Try it",
+  "previewTitle": "Right now it would choose",
   "previewHint": "Which models \"{style}\" would choose right now – nothing is sent.",
   "@previewHint": {
     "placeholders": {
@@ -828,7 +828,7 @@
   "capImage": "Images",
   "capAudio": "Audio",
   "capVideo": "Video",
-  "capModeration": "Safety & classification",
+  "capModeration": "System One models",
   "capOther": "Other",
   "capChatHint": "Text and vision models that answer messages.",
   "capEmbeddingHint": "Turn text into vectors for search and memory.",
@@ -836,12 +836,12 @@
   "capImageHint": "Create and edit images.",
   "capAudioHint": "Speech to text, text to speech and music.",
   "capVideoHint": "Create and understand video.",
-  "capModerationHint": "Check content and make yes/no decisions.",
+  "capModerationHint": "Fast decision models such as Jev: they classify, check and decide in a split second instead of writing long answers.",
   "capOtherHint": "Specialised models such as translation or document parsing.",
-  "capComingSoon": "NeoRouter lists these models already. Routing for {kind} is coming soon – they are not used by \"auto\" yet.",
+  "capComingSoon": "NeoRouter already found {count} of these models in your connections and will route them in a coming update.",
   "@capComingSoon": {
     "placeholders": {
-      "kind": {
+      "count": {
         "type": "String"
       }
     }
@@ -1155,5 +1155,34 @@
   "systemPromptTitle": "Instructions",
   "systemPromptHint": "Optional: how the assistant should behave, e.g. \"Answer briefly and in German.\"",
   "thinking": "Thinking…",
-  "enterToSend": "Enter to send · Shift+Enter for a new line"
+  "enterToSend": "Enter to send · Shift+Enter for a new line",
+  "groupModels": "Models",
+  "groupAccess": "Access",
+  "capComingSoonTitle": "{kind} – coming soon",
+  "@capComingSoonTitle": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "capRouter": "Other routers",
+  "capRouterHint": "Services such as OpenRouter Auto or Jev Router that pick a model themselves. NeoRouter does the routing for you, so they are only listed.",
+  "metricSaved": "Saved with free models",
+  "metricSavedCaption": "{spent} spent · {percent} % free",
+  "@metricSavedCaption": {
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "styleBuiltIn": "Built-in styles",
+  "styleUseTitle": "Use this style",
+  "styleUseHint": "Ask for this model name in any app, or choose the style for an API key.",
+  "styleUseRow": "Model name for your apps",
+  "styleWeightsHint": "How much each quality counts when NeoRouter compares models. A model also has to be decent on everything that matters."
 }
