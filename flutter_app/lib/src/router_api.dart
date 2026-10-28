@@ -102,6 +102,13 @@ class RouterApi {
   Future<void> deleteProfile(String id) => client.delete('$_base/routing/profiles/$id');
   Future<Map<String, dynamic>> preview(Map<String, Object?> body) => client.post('$_base/routing/preview', _clean(body));
 
+  // ---- request processing (privacy shield, compression) ---------------------
+  Future<Map<String, dynamic>> processingSettings() => client.get('$_base/processing/settings');
+  Future<void> saveProcessingSettings(Map<String, Object?> settings) => client.put('$_base/processing/settings', settings);
+  Future<Map<String, dynamic>> processingPreview(String text, Map<String, Object?> settings, {String role = 'user'}) =>
+      client.post('$_base/processing/preview', <String, Object>{'text': text, 'role': role, 'settings': settings});
+  Future<Map<String, dynamic>> processingStats() => client.get('$_base/processing/stats');
+
   // ---- usage ------------------------------------------------------------------
   Future<Map<String, dynamic>> analytics(String range) => client.get('$_base/usage/analytics?range=$range');
   Future<Map<String, dynamic>> summary(String range) => client.get('$_base/usage/summary?range=$range');

@@ -17,11 +17,12 @@ function savedUsd(entry) {
 function record(entry) {
   getDatabase().prepare(`INSERT INTO requests (id, user_id, router_key_id, created_at, api_format, requested_model, model_ref, model_label,
       account_id, status, http_status, error_code, error_message, input_tokens, output_tokens, cost_usd, is_free, latency_ms, ttft_ms,
-      attempts, stream, trail_json, saved_usd)
+      attempts, stream, trail_json, saved_usd, redacted_count, compression_saved_tokens)
     VALUES (@id, @user_id, @router_key_id, @created_at, @api_format, @requested_model, @model_ref, @model_label, @account_id, @status,
       @http_status, @error_code, @error_message, @input_tokens, @output_tokens, @cost_usd, @is_free, @latency_ms, @ttft_ms, @attempts,
-      @stream, @trail_json, @saved_usd)`).run({
-    model_ref: null, model_label: null, account_id: null, error_code: null, error_message: null, ttft_ms: null, ...entry,
+      @stream, @trail_json, @saved_usd, @redacted_count, @compression_saved_tokens)`).run({
+    model_ref: null, model_label: null, account_id: null, error_code: null, error_message: null, ttft_ms: null,
+    redacted_count: 0, compression_saved_tokens: 0, ...entry,
     saved_usd: savedUsd(entry),
   });
 }

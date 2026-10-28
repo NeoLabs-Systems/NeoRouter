@@ -3828,6 +3828,594 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'This API key is set to \"Only free models\", so it always stays free. To allow paid models, pick another key or change this one under API keys.'**
   String get freeModeLockedExplain;
+
+  /// No description provided for @navProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy & compression'**
+  String get navProcessing;
+
+  /// No description provided for @processingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy & compression'**
+  String get processingTitle;
+
+  /// No description provided for @processingDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'What happens to every request before it leaves your server: hide private data from providers and make prompts smaller.'**
+  String get processingDescription;
+
+  /// No description provided for @privacyShield.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy shield'**
+  String get privacyShield;
+
+  /// No description provided for @compressionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Compression'**
+  String get compressionTitle;
+
+  /// No description provided for @privacyHiddenValues.
+  ///
+  /// In en, this message translates to:
+  /// **'Values hidden'**
+  String get privacyHiddenValues;
+
+  /// No description provided for @privacyProtectedRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Protected requests'**
+  String get privacyProtectedRequests;
+
+  /// No description provided for @last30Days.
+  ///
+  /// In en, this message translates to:
+  /// **'last 30 days'**
+  String get last30Days;
+
+  /// No description provided for @ofRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'of {count} requests'**
+  String ofRequests(String count);
+
+  /// No description provided for @privacyHowItWorks.
+  ///
+  /// In en, this message translates to:
+  /// **'Private values are swapped for placeholders like [EMAIL_1] before a request leaves your server. The AI only ever sees the placeholder, and NeoRouter puts the real value back into its answer.'**
+  String get privacyHowItWorks;
+
+  /// No description provided for @privacyEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide private data'**
+  String get privacyEnable;
+
+  /// No description provided for @privacyEnableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to every API key and the Playground.'**
+  String get privacyEnableHint;
+
+  /// No description provided for @privacyWhatToHide.
+  ///
+  /// In en, this message translates to:
+  /// **'What to hide'**
+  String get privacyWhatToHide;
+
+  /// No description provided for @privacyModesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'\"Hide & restore\" puts the value back into the answer. \"Hide only\" keeps it hidden for good – best for passwords and card numbers.'**
+  String get privacyModesHint;
+
+  /// No description provided for @modeOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get modeOff;
+
+  /// No description provided for @modeRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide & restore'**
+  String get modeRestore;
+
+  /// No description provided for @modeHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide only'**
+  String get modeHide;
+
+  /// No description provided for @catEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email addresses'**
+  String get catEmail;
+
+  /// No description provided for @catEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'anna@example.com'**
+  String get catEmailHint;
+
+  /// No description provided for @catPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone numbers'**
+  String get catPhone;
+
+  /// No description provided for @catPhoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'International and local formats.'**
+  String get catPhoneHint;
+
+  /// No description provided for @catIban.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank accounts (IBAN)'**
+  String get catIban;
+
+  /// No description provided for @catIbanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked with the IBAN checksum, so random numbers are left alone.'**
+  String get catIbanHint;
+
+  /// No description provided for @catCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment cards'**
+  String get catCard;
+
+  /// No description provided for @catCardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only real card numbers (issuer and checksum match).'**
+  String get catCardHint;
+
+  /// No description provided for @catIp.
+  ///
+  /// In en, this message translates to:
+  /// **'IP addresses'**
+  String get catIp;
+
+  /// No description provided for @catIpHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Except localhost.'**
+  String get catIpHint;
+
+  /// No description provided for @catSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords & API keys'**
+  String get catSecret;
+
+  /// No description provided for @catSecretHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Known key formats, \"password: …\", passwords in links and random-looking tokens.'**
+  String get catSecretHint;
+
+  /// No description provided for @catCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Your private terms'**
+  String get catCustom;
+
+  /// No description provided for @catCustomHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The words you list below.'**
+  String get catCustomHint;
+
+  /// No description provided for @catPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Names of people'**
+  String get catPerson;
+
+  /// No description provided for @catPersonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Found by AI detection.'**
+  String get catPersonHint;
+
+  /// No description provided for @catAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Addresses'**
+  String get catAddress;
+
+  /// No description provided for @catAddressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Found by AI detection.'**
+  String get catAddressHint;
+
+  /// No description provided for @catOrganization.
+  ///
+  /// In en, this message translates to:
+  /// **'Organizations'**
+  String get catOrganization;
+
+  /// No description provided for @catOrganizationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Employers, clinics, schools – found by AI detection.'**
+  String get catOrganizationHint;
+
+  /// No description provided for @catId.
+  ///
+  /// In en, this message translates to:
+  /// **'ID and account numbers'**
+  String get catId;
+
+  /// No description provided for @catIdHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer, contract, insurance and tax numbers – found by AI detection.'**
+  String get catIdHint;
+
+  /// No description provided for @privacyTermsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your private terms'**
+  String get privacyTermsTitle;
+
+  /// No description provided for @privacyTermsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Names, your company, your street – anything that should never reach a provider. One per line.'**
+  String get privacyTermsHint;
+
+  /// No description provided for @privacyTermsPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Anna Schmidt\nAcme Holding\nHauptstraße 5'**
+  String get privacyTermsPlaceholder;
+
+  /// No description provided for @privacyAiTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI detection'**
+  String get privacyAiTitle;
+
+  /// No description provided for @privacyAiHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Patterns cannot spot names or addresses. A fast AI model can: it reads each new message and points out private details, which are then hidden like everything else.'**
+  String get privacyAiHint;
+
+  /// No description provided for @privacyAiEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Find names, addresses and IDs with AI'**
+  String get privacyAiEnable;
+
+  /// No description provided for @privacyAiEnableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds about a second to new messages; repeated messages are remembered.'**
+  String get privacyAiEnableHint;
+
+  /// No description provided for @privacyAiModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Detection model'**
+  String get privacyAiModel;
+
+  /// No description provided for @privacyAiModelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'\"auto:fast\" picks the fastest model. Use a local model, e.g. \"ollama/…\", if no provider should see the raw text.'**
+  String get privacyAiModelHint;
+
+  /// No description provided for @privacyAiFreeOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Use free models only for detection'**
+  String get privacyAiFreeOnly;
+
+  /// No description provided for @privacyAiWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'The detection model sees the original text of new messages. Pick a provider you trust or a local model.'**
+  String get privacyAiWarning;
+
+  /// No description provided for @privacyTryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a text to see exactly what a provider would receive. Nothing is sent to a model (except AI detection, if it is on).'**
+  String get privacyTryHint;
+
+  /// No description provided for @privacyTrySample.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi, I am Anna Schmidt. Please send the invoice to anna.schmidt@example.de and call me at +49 170 1234567. My IBAN is DE89 3704 0044 0532 0130 00, the server password: hunter2pw.'**
+  String get privacyTrySample;
+
+  /// No description provided for @privacyTryResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} values hidden'**
+  String privacyTryResult(String count);
+
+  /// No description provided for @privacyFootnote.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden values never leave your server and are never written to disk; the mapping lives only for the duration of one request. Detection is a strong safety net, not a guarantee – keep very sensitive data out of prompts.'**
+  String get privacyFootnote;
+
+  /// No description provided for @compressionSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens saved'**
+  String get compressionSaved;
+
+  /// No description provided for @compressionRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Compressed requests'**
+  String get compressionRequests;
+
+  /// No description provided for @compressionLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get compressionLevel;
+
+  /// No description provided for @compressionLevelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Smaller prompts are cheaper, faster and fit more models. Higher levels save more but drop older details.'**
+  String get compressionLevelHint;
+
+  /// No description provided for @levelOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get levelOff;
+
+  /// No description provided for @levelOffHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests are sent exactly as your app wrote them.'**
+  String get levelOffHint;
+
+  /// No description provided for @levelLossless.
+  ///
+  /// In en, this message translates to:
+  /// **'Lossless'**
+  String get levelLossless;
+
+  /// No description provided for @levelLosslessHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Removes extra whitespace, minifies JSON and drops duplicate blocks. The meaning never changes; code is left untouched.'**
+  String get levelLosslessHint;
+
+  /// No description provided for @levelBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get levelBalanced;
+
+  /// No description provided for @levelBalancedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Lossless, plus: repeated log lines are collapsed, JSON lists become compact tables and very long tool outputs keep their start and end. Recommended for agents.'**
+  String get levelBalancedHint;
+
+  /// No description provided for @levelAggressive.
+  ///
+  /// In en, this message translates to:
+  /// **'Aggressive'**
+  String get levelAggressive;
+
+  /// No description provided for @levelAggressiveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced, plus: older tool outputs are hidden and older long messages are shortened. Research shows this keeps agents about as accurate at half the cost. Your latest message is never cut.'**
+  String get levelAggressiveHint;
+
+  /// No description provided for @compressionEngines.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps'**
+  String get compressionEngines;
+
+  /// No description provided for @compressionEnginesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each step only applies when it actually makes the request smaller.'**
+  String get compressionEnginesHint;
+
+  /// No description provided for @compressionLimits.
+  ///
+  /// In en, this message translates to:
+  /// **'When to compress'**
+  String get compressionLimits;
+
+  /// No description provided for @compressionMinTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Start lossy steps from (tokens)'**
+  String get compressionMinTokens;
+
+  /// No description provided for @compressionMinTokensHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shorter requests only get lossless clean-up.'**
+  String get compressionMinTokensHint;
+
+  /// No description provided for @compressionKeepRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent messages kept whole'**
+  String get compressionKeepRecent;
+
+  /// No description provided for @compressionKeepRecentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Older messages may be shortened, these never.'**
+  String get compressionKeepRecentHint;
+
+  /// No description provided for @compressionTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Token target (optional)'**
+  String get compressionTarget;
+
+  /// No description provided for @compressionTargetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'If a request is still larger, the oldest messages are left out until it fits.'**
+  String get compressionTargetHint;
+
+  /// No description provided for @engWhitespace.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean up whitespace'**
+  String get engWhitespace;
+
+  /// No description provided for @engWhitespaceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Trailing spaces and runs of empty lines, outside code.'**
+  String get engWhitespaceHint;
+
+  /// No description provided for @engJsonMinify.
+  ///
+  /// In en, this message translates to:
+  /// **'Minify JSON'**
+  String get engJsonMinify;
+
+  /// No description provided for @engJsonMinifyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Same data without indentation.'**
+  String get engJsonMinifyHint;
+
+  /// No description provided for @engDedupe.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop duplicate blocks'**
+  String get engDedupe;
+
+  /// No description provided for @engDedupeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Large texts sent twice are kept once (the newest).'**
+  String get engDedupeHint;
+
+  /// No description provided for @engRepeatedLines.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse repeated lines'**
+  String get engRepeatedLines;
+
+  /// No description provided for @engRepeatedLinesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'\"line repeated 40 more times\" instead of 40 identical log lines.'**
+  String get engRepeatedLinesHint;
+
+  /// No description provided for @engJsonTables.
+  ///
+  /// In en, this message translates to:
+  /// **'JSON lists as tables'**
+  String get engJsonTables;
+
+  /// No description provided for @engJsonTablesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Lists of objects with the same fields list each field name once.'**
+  String get engJsonTablesHint;
+
+  /// No description provided for @engTrimToolOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Trim long tool output'**
+  String get engTrimToolOutput;
+
+  /// No description provided for @engTrimToolOutputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps the beginning and end, where results and errors usually are.'**
+  String get engTrimToolOutputHint;
+
+  /// No description provided for @engMaskOldToolOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide older tool output'**
+  String get engMaskOldToolOutput;
+
+  /// No description provided for @engMaskOldToolOutputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the last three tool results stay complete.'**
+  String get engMaskOldToolOutputHint;
+
+  /// No description provided for @engCondenseHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Shorten older messages'**
+  String get engCondenseHistory;
+
+  /// No description provided for @engCondenseHistoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Long older messages keep their start and end.'**
+  String get engCondenseHistoryHint;
+
+  /// No description provided for @engTokenTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Enforce the token target'**
+  String get engTokenTarget;
+
+  /// No description provided for @engTokenTargetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaves out the oldest messages if needed.'**
+  String get engTokenTargetHint;
+
+  /// No description provided for @compressionTryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a long text or log to see how much the current level saves.'**
+  String get compressionTryHint;
+
+  /// No description provided for @compressionTryResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{before} → {after} tokens'**
+  String compressionTryResult(String before, String after);
+
+  /// No description provided for @tryItTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Try it'**
+  String get tryItTitle;
+
+  /// No description provided for @tryItRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Show result'**
+  String get tryItRun;
+
+  /// No description provided for @tryItSent.
+  ///
+  /// In en, this message translates to:
+  /// **'What a provider would receive'**
+  String get tryItSent;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

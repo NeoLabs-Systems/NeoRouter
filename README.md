@@ -87,6 +87,11 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
     <td valign="top"><b>🔀 Three APIs</b><br>OpenAI Chat Completions, Anthropic Messages and OpenAI Responses, with streaming, tools and vision.</td>
     <td valign="top"><b>👥 Multi-user</b><br>Provider keys stay private per account, with optional authenticator 2FA. Only request metadata is logged, never prompts.</td>
   </tr>
+  <tr>
+    <td valign="top"><b>🛡️ Privacy shield</b><br>Emails, IBANs, cards, secrets, your own terms and (optionally AI-detected) names become placeholders; answers get the real values back.</td>
+    <td valign="top"><b>🗜️ Prompt compression</b><br>Lossless, balanced or aggressive: minified JSON, trimmed tool output and masked old observations, never touching code or your latest message.</td>
+    <td valign="top"><b>💸 Savings</b><br>See what free models saved you and how many tokens compression removed.</td>
+  </tr>
 </table>
 
 **Providers:** Groq, Google Gemini, Cerebras, Mistral, OpenRouter, NVIDIA NIM, Cloudflare, Cohere, Z.ai, SiliconFlow, Hugging Face, Ollama Cloud, Kilo, OpenAI, Anthropic, xAI, DeepSeek, Together, Fireworks, DeepInfra, Nous, local Ollama and LM Studio, and any OpenAI- or Anthropic-compatible endpoint.
@@ -96,6 +101,7 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
 | Start | Understand | Extend |
 | --- | --- | --- |
 | [Configuration](docs/configuration.md) | [Routing](docs/routing.md) | [Providers](docs/providers.md) |
+| [Privacy & compression](docs/processing.md) | | |
 | [CLI](#-cli) | [Security](SECURITY.md) | [Contributing](CONTRIBUTING.md) |
 
 ## 🛠️ CLI

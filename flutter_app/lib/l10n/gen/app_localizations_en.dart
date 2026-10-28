@@ -2106,4 +2106,339 @@ class AppL10nEn extends AppL10n {
   @override
   String get freeModeLockedExplain =>
       'This API key is set to \"Only free models\", so it always stays free. To allow paid models, pick another key or change this one under API keys.';
+
+  @override
+  String get navProcessing => 'Privacy & compression';
+
+  @override
+  String get processingTitle => 'Privacy & compression';
+
+  @override
+  String get processingDescription =>
+      'What happens to every request before it leaves your server: hide private data from providers and make prompts smaller.';
+
+  @override
+  String get privacyShield => 'Privacy shield';
+
+  @override
+  String get compressionTitle => 'Compression';
+
+  @override
+  String get privacyHiddenValues => 'Values hidden';
+
+  @override
+  String get privacyProtectedRequests => 'Protected requests';
+
+  @override
+  String get last30Days => 'last 30 days';
+
+  @override
+  String ofRequests(String count) {
+    return 'of $count requests';
+  }
+
+  @override
+  String get privacyHowItWorks =>
+      'Private values are swapped for placeholders like [EMAIL_1] before a request leaves your server. The AI only ever sees the placeholder, and NeoRouter puts the real value back into its answer.';
+
+  @override
+  String get privacyEnable => 'Hide private data';
+
+  @override
+  String get privacyEnableHint =>
+      'Applies to every API key and the Playground.';
+
+  @override
+  String get privacyWhatToHide => 'What to hide';
+
+  @override
+  String get privacyModesHint =>
+      '\"Hide & restore\" puts the value back into the answer. \"Hide only\" keeps it hidden for good – best for passwords and card numbers.';
+
+  @override
+  String get modeOff => 'Off';
+
+  @override
+  String get modeRestore => 'Hide & restore';
+
+  @override
+  String get modeHide => 'Hide only';
+
+  @override
+  String get catEmail => 'Email addresses';
+
+  @override
+  String get catEmailHint => 'anna@example.com';
+
+  @override
+  String get catPhone => 'Phone numbers';
+
+  @override
+  String get catPhoneHint => 'International and local formats.';
+
+  @override
+  String get catIban => 'Bank accounts (IBAN)';
+
+  @override
+  String get catIbanHint =>
+      'Checked with the IBAN checksum, so random numbers are left alone.';
+
+  @override
+  String get catCard => 'Payment cards';
+
+  @override
+  String get catCardHint =>
+      'Only real card numbers (issuer and checksum match).';
+
+  @override
+  String get catIp => 'IP addresses';
+
+  @override
+  String get catIpHint => 'Except localhost.';
+
+  @override
+  String get catSecret => 'Passwords & API keys';
+
+  @override
+  String get catSecretHint =>
+      'Known key formats, \"password: …\", passwords in links and random-looking tokens.';
+
+  @override
+  String get catCustom => 'Your private terms';
+
+  @override
+  String get catCustomHint => 'The words you list below.';
+
+  @override
+  String get catPerson => 'Names of people';
+
+  @override
+  String get catPersonHint => 'Found by AI detection.';
+
+  @override
+  String get catAddress => 'Addresses';
+
+  @override
+  String get catAddressHint => 'Found by AI detection.';
+
+  @override
+  String get catOrganization => 'Organizations';
+
+  @override
+  String get catOrganizationHint =>
+      'Employers, clinics, schools – found by AI detection.';
+
+  @override
+  String get catId => 'ID and account numbers';
+
+  @override
+  String get catIdHint =>
+      'Customer, contract, insurance and tax numbers – found by AI detection.';
+
+  @override
+  String get privacyTermsTitle => 'Your private terms';
+
+  @override
+  String get privacyTermsHint =>
+      'Names, your company, your street – anything that should never reach a provider. One per line.';
+
+  @override
+  String get privacyTermsPlaceholder =>
+      'Anna Schmidt\nAcme Holding\nHauptstraße 5';
+
+  @override
+  String get privacyAiTitle => 'AI detection';
+
+  @override
+  String get privacyAiHint =>
+      'Patterns cannot spot names or addresses. A fast AI model can: it reads each new message and points out private details, which are then hidden like everything else.';
+
+  @override
+  String get privacyAiEnable => 'Find names, addresses and IDs with AI';
+
+  @override
+  String get privacyAiEnableHint =>
+      'Adds about a second to new messages; repeated messages are remembered.';
+
+  @override
+  String get privacyAiModel => 'Detection model';
+
+  @override
+  String get privacyAiModelHint =>
+      '\"auto:fast\" picks the fastest model. Use a local model, e.g. \"ollama/…\", if no provider should see the raw text.';
+
+  @override
+  String get privacyAiFreeOnly => 'Use free models only for detection';
+
+  @override
+  String get privacyAiWarning =>
+      'The detection model sees the original text of new messages. Pick a provider you trust or a local model.';
+
+  @override
+  String get privacyTryHint =>
+      'Paste a text to see exactly what a provider would receive. Nothing is sent to a model (except AI detection, if it is on).';
+
+  @override
+  String get privacyTrySample =>
+      'Hi, I am Anna Schmidt. Please send the invoice to anna.schmidt@example.de and call me at +49 170 1234567. My IBAN is DE89 3704 0044 0532 0130 00, the server password: hunter2pw.';
+
+  @override
+  String privacyTryResult(String count) {
+    return '$count values hidden';
+  }
+
+  @override
+  String get privacyFootnote =>
+      'Hidden values never leave your server and are never written to disk; the mapping lives only for the duration of one request. Detection is a strong safety net, not a guarantee – keep very sensitive data out of prompts.';
+
+  @override
+  String get compressionSaved => 'Tokens saved';
+
+  @override
+  String get compressionRequests => 'Compressed requests';
+
+  @override
+  String get compressionLevel => 'Level';
+
+  @override
+  String get compressionLevelHint =>
+      'Smaller prompts are cheaper, faster and fit more models. Higher levels save more but drop older details.';
+
+  @override
+  String get levelOff => 'Off';
+
+  @override
+  String get levelOffHint =>
+      'Requests are sent exactly as your app wrote them.';
+
+  @override
+  String get levelLossless => 'Lossless';
+
+  @override
+  String get levelLosslessHint =>
+      'Removes extra whitespace, minifies JSON and drops duplicate blocks. The meaning never changes; code is left untouched.';
+
+  @override
+  String get levelBalanced => 'Balanced';
+
+  @override
+  String get levelBalancedHint =>
+      'Lossless, plus: repeated log lines are collapsed, JSON lists become compact tables and very long tool outputs keep their start and end. Recommended for agents.';
+
+  @override
+  String get levelAggressive => 'Aggressive';
+
+  @override
+  String get levelAggressiveHint =>
+      'Balanced, plus: older tool outputs are hidden and older long messages are shortened. Research shows this keeps agents about as accurate at half the cost. Your latest message is never cut.';
+
+  @override
+  String get compressionEngines => 'Steps';
+
+  @override
+  String get compressionEnginesHint =>
+      'Each step only applies when it actually makes the request smaller.';
+
+  @override
+  String get compressionLimits => 'When to compress';
+
+  @override
+  String get compressionMinTokens => 'Start lossy steps from (tokens)';
+
+  @override
+  String get compressionMinTokensHint =>
+      'Shorter requests only get lossless clean-up.';
+
+  @override
+  String get compressionKeepRecent => 'Recent messages kept whole';
+
+  @override
+  String get compressionKeepRecentHint =>
+      'Older messages may be shortened, these never.';
+
+  @override
+  String get compressionTarget => 'Token target (optional)';
+
+  @override
+  String get compressionTargetHint =>
+      'If a request is still larger, the oldest messages are left out until it fits.';
+
+  @override
+  String get engWhitespace => 'Clean up whitespace';
+
+  @override
+  String get engWhitespaceHint =>
+      'Trailing spaces and runs of empty lines, outside code.';
+
+  @override
+  String get engJsonMinify => 'Minify JSON';
+
+  @override
+  String get engJsonMinifyHint => 'Same data without indentation.';
+
+  @override
+  String get engDedupe => 'Drop duplicate blocks';
+
+  @override
+  String get engDedupeHint =>
+      'Large texts sent twice are kept once (the newest).';
+
+  @override
+  String get engRepeatedLines => 'Collapse repeated lines';
+
+  @override
+  String get engRepeatedLinesHint =>
+      '\"line repeated 40 more times\" instead of 40 identical log lines.';
+
+  @override
+  String get engJsonTables => 'JSON lists as tables';
+
+  @override
+  String get engJsonTablesHint =>
+      'Lists of objects with the same fields list each field name once.';
+
+  @override
+  String get engTrimToolOutput => 'Trim long tool output';
+
+  @override
+  String get engTrimToolOutputHint =>
+      'Keeps the beginning and end, where results and errors usually are.';
+
+  @override
+  String get engMaskOldToolOutput => 'Hide older tool output';
+
+  @override
+  String get engMaskOldToolOutputHint =>
+      'Only the last three tool results stay complete.';
+
+  @override
+  String get engCondenseHistory => 'Shorten older messages';
+
+  @override
+  String get engCondenseHistoryHint =>
+      'Long older messages keep their start and end.';
+
+  @override
+  String get engTokenTarget => 'Enforce the token target';
+
+  @override
+  String get engTokenTargetHint => 'Leaves out the oldest messages if needed.';
+
+  @override
+  String get compressionTryHint =>
+      'Paste a long text or log to see how much the current level saves.';
+
+  @override
+  String compressionTryResult(String before, String after) {
+    return '$before → $after tokens';
+  }
+
+  @override
+  String get tryItTitle => 'Try it';
+
+  @override
+  String get tryItRun => 'Show result';
+
+  @override
+  String get tryItSent => 'What a provider would receive';
 }

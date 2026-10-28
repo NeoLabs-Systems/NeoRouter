@@ -9,6 +9,7 @@ import 'main_dashboard.dart';
 import 'main_keys.dart';
 import 'main_models.dart';
 import 'main_playground.dart';
+import 'main_processing.dart';
 import 'main_providers.dart';
 import 'main_routing.dart';
 import 'main_settings.dart';
@@ -51,6 +52,7 @@ List<NavGroup> navigationGroups(BuildContext context, NeoRouterController contro
     NavGroup(t.groupAccess, Icons.alt_route_outlined, <NavItem>[
       NavItem(AppPage.routing, t.navRouting, Icons.alt_route_outlined),
       NavItem(AppPage.keys, t.navKeys, Icons.key_outlined),
+      NavItem(AppPage.processing, t.navProcessing, Icons.shield_outlined),
     ]),
     if (controller.user?.isAdmin == true)
       NavGroup(t.navAdmin, Icons.admin_panel_settings_outlined, <NavItem>[
@@ -135,6 +137,7 @@ class _NeoRouterShellState extends State<NeoRouterShell> {
         AppPage.providers => ProvidersScreen(controller: controller),
         AppPage.keys => KeysScreen(controller: controller),
         AppPage.routing => RoutingScreen(controller: controller),
+        AppPage.processing => ProcessingScreen(controller: controller),
         AppPage.settings => SettingsScreen(controller: controller),
         AppPage.admin => controller.user?.isAdmin == true ? AdminScreen(controller: controller) : DashboardScreen(controller: controller),
       };

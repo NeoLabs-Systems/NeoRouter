@@ -13,6 +13,8 @@ const quota = require('../../services/quota/quota_service');
 const budget = require('../../services/budget/budget_service');
 const usage = require('../../services/usage/usage_service');
 const billing = require('../../services/providers/billing_check');
+const requestProcessing = require('../../services/processing/processing_service');
+const { restoreResponse, StreamRestorer } = require('../../services/processing/redaction');
 const routerKeys = require('../../services/router_keys/router_key_service');
 const { createLogger } = require('../../utils/logger');
 const {
@@ -182,6 +184,13 @@ async function execute({ req, res, key, format, body, freeOnly = false }) {
     throw new HttpError(402, 'BUDGET_EXHAUSTED', `This router key has used its ${key.budget_period} budget of ${key.budget_usd} USD.`);
   }
 
+  // Compression and the privacy shield run before routing, so the router sees
+  // the real request size and providers never see hidden values.
+  const processing = await requestProcessing.apply(key.user_id, canonical, { compressionLevel: req.get?.('x-neorouter-compression') || null });
+  canonical = processing.canonical;
+  const { vault } = processing;
+  const processingStats = processing.stats;
+
   const stream = canonical.stream;
   const needs = requirements(canonical);
   const inputTokens = estimateInputTokens(canonical);
@@ -208,6 +217,8 @@ async function execute({ req, res, key, format, body, freeOnly = false }) {
         attempts: Math.max(1, trail.length),
         stream: stream ? 1 : 0,
         trail_json: JSON.stringify(trail),
+        redacted_count: processingStats.redacted,
+        compression_saved_tokens: processingStats.compression.savedTokens,
         latency_ms: Date.now() - startedAt,
         input_tokens: 0,
         output_tokens: 0,
@@ -225,6 +236,8 @@ async function execute({ req, res, key, format, body, freeOnly = false }) {
     const { entry, reservation } = attempt;
     res.set('X-NeoRouter-Model', entry.id);
     res.set('X-NeoRouter-Trail', [...trail.map((item) => item.model), entry.id].join(','));
+    if (processingStats.compression.level !== 'off') res.set('X-NeoRouter-Compression', `${processingStats.compression.level}; saved~=${processingStats.compression.savedTokens}`);
+    if (processingStats.redacted) res.set('X-NeoRouter-Redacted', String(processingStats.redacted));
     if (!stream) {
       const tokens = normalizeUsage(result.response.usage) || {
         prompt_tokens: inputTokens,
@@ -240,19 +253,30 @@ async function execute({ req, res, key, format, body, freeOnly = false }) {
         status: 'success', http_status: 200, model_ref: entry.ref, model_label: entry.id, account_id: entry.accountId,
         input_tokens: tokens.prompt_tokens, output_tokens: tokens.completion_tokens, cost_usd: cost, is_free: entry.isFree ? 1 : 0,
       });
-      res.json(translator.responseFromCanonical({ ...result.response, usage: tokens }, entry.id));
+      const response = vault ? restoreResponse(result.response, vault) : result.response;
+      res.json(translator.responseFromCanonical({ ...response, usage: tokens }, entry.id));
       return;
     }
     res.status(200);
     res.set({ 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
     res.flushHeaders();
     const { accumulator } = result;
+    // Placeholders are put back on the way out; usage accounting keeps the
+    // chunks as the provider sent them.
+    const restorer = vault ? new StreamRestorer(vault) : null;
+    let template = null;
+    const outgoing = (chunk) => {
+      if (chunk?.id) template = { id: chunk.id, object: chunk.object, created: chunk.created, model: chunk.model };
+      return restorer ? restorer.process(chunk) : chunk;
+    };
     async function* replay() {
-      for (const chunk of result.buffered) yield chunk;
+      for (const chunk of result.buffered) yield outgoing(chunk);
       for await (const chunk of result.rest) {
         accumulator.push(chunk);
-        yield chunk;
+        yield outgoing(chunk);
       }
+      const tail = restorer?.flush(template || {});
+      if (tail) yield tail;
     }
     let streamError = null;
     try {

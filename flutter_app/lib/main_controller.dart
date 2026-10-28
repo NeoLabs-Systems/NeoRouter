@@ -5,7 +5,7 @@ import 'src/backend_client.dart';
 import 'src/models.dart';
 import 'src/router_api.dart';
 
-enum AppPage { home, playground, models, providers, keys, activity, routing, settings, admin }
+enum AppPage { home, playground, models, providers, keys, activity, routing, processing, settings, admin }
 
 /// Single root state object. Pages own their page-local data and talk to the
 /// API through [api]; the controller holds session, navigation and prefs.
@@ -60,6 +60,7 @@ class NeoRouterController extends ChangeNotifier {
       }
     }
     _readOAuthResult();
+    _readPageLink();
     await refreshRegistration();
     bootstrapping = false;
     notifyListeners();
@@ -71,6 +72,13 @@ class NeoRouterController extends ChangeNotifier {
     oauthStatus = params['oauth_status'];
     oauthError = params['oauth_error'];
     if (user != null) page = AppPage.providers;
+  }
+
+  /// "?page=keys" opens that page after sign-in, so pages can be bookmarked.
+  void _readPageLink() {
+    final name = Uri.base.queryParameters['page'];
+    final match = AppPage.values.where((item) => item.name == name).firstOrNull;
+    if (match != null && user != null) page = match;
   }
 
   void consumeOAuthResult() {

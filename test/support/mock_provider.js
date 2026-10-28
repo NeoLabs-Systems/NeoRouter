@@ -8,6 +8,7 @@ const express = require('express');
 //   slow-*    answers after 300 ms       tools-*  returns a tool call
 //   hang-*    answers after 5 s          think-*  reasoning only, no answer
 //   trunc-*   spends max_tokens on reasoning (finish_reason length)
+//   echo-*    answers with the last user message (streams it in small pieces)
 function createMockProvider({ models, prices = {}, port = 0 } = {}) {
   const app = express();
   app.use(express.json());
@@ -21,7 +22,7 @@ function createMockProvider({ models, prices = {}, port = 0 } = {}) {
   });
   app.post('/v1/chat/completions', async (req, res) => {
     const { model, stream, tools } = req.body;
-    calls.push({ model, stream: Boolean(stream), at: Date.now() });
+    calls.push({ model, stream: Boolean(stream), at: Date.now(), messages: req.body.messages });
     if (model.startsWith('fail-')) return res.status(500).json({ error: { message: 'upstream exploded' } });
     if (model.startsWith('rl-')) return res.status(429).set('retry-after', '30').json({ error: { message: 'Rate limit reached: limit: 30 requests per minute' } });
     if (model.startsWith('slow-')) await new Promise((resolve) => setTimeout(resolve, 300));
@@ -29,7 +30,8 @@ function createMockProvider({ models, prices = {}, port = 0 } = {}) {
     const toolCall = model.startsWith('tools-') || (tools && model.includes('tool'))
       ? [{ id: 'call_1', type: 'function', function: { name: tools?.[0]?.function?.name || 'lookup', arguments: '{"q":"x"}' } }]
       : null;
-    const content = model.startsWith('empty-') || model.startsWith('think-') ? '' : `hello from ${model}`;
+    const lastUser = [...(req.body.messages || [])].reverse().find((message) => message.role === 'user');
+    const content = model.startsWith('echo-') ? String(lastUser?.content || '') : model.startsWith('empty-') || model.startsWith('think-') ? '' : `hello from ${model}`;
     if (model.startsWith('trunc-') && !stream) {
       return res.json({ id: 'cmpl-1', object: 'chat.completion', created: 1, model, choices: [{ index: 0, message: { role: 'assistant', content: '', reasoning: 'thinking and thinking' }, finish_reason: 'length' }], usage: { prompt_tokens: 5, completion_tokens: 50, total_tokens: 55 } });
     }
@@ -57,7 +59,9 @@ function createMockProvider({ models, prices = {}, port = 0 } = {}) {
       send({ ...base, choices: [{ index: 0, delta: { tool_calls: [{ index: 0, function: { arguments: '{"q":"x"}' } }] }, finish_reason: null }] });
       send({ ...base, choices: [{ index: 0, delta: {}, finish_reason: 'tool_calls' }] });
     } else if (content) {
-      for (const word of content.split(' ')) send({ ...base, choices: [{ index: 0, delta: { content: `${word} ` }, finish_reason: null }] });
+      // echo-* streams in 3-character pieces so placeholders arrive split.
+      const pieces = model.startsWith('echo-') ? content.match(/[\s\S]{1,3}/g) || [] : content.split(' ').map((word) => `${word} `);
+      for (const piece of pieces) send({ ...base, choices: [{ index: 0, delta: { content: piece }, finish_reason: null }] });
       send({ ...base, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] });
     } else {
       send({ ...base, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] });

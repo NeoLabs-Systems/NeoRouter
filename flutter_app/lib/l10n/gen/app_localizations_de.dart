@@ -2124,4 +2124,339 @@ class AppL10nDe extends AppL10n {
   @override
   String get freeModeLockedExplain =>
       'Dieser API-Key ist auf „Nur Gratis-Modelle“ gestellt und bleibt daher immer gratis. Für bezahlte Modelle wähle einen anderen Key oder ändere diesen unter API-Keys.';
+
+  @override
+  String get navProcessing => 'Datenschutz & Kompression';
+
+  @override
+  String get processingTitle => 'Datenschutz & Kompression';
+
+  @override
+  String get processingDescription =>
+      'Was mit jeder Anfrage passiert, bevor sie deinen Server verlässt: private Daten vor Anbietern verbergen und Prompts verkleinern.';
+
+  @override
+  String get privacyShield => 'Datenschutzschild';
+
+  @override
+  String get compressionTitle => 'Kompression';
+
+  @override
+  String get privacyHiddenValues => 'Verborgene Werte';
+
+  @override
+  String get privacyProtectedRequests => 'Geschützte Anfragen';
+
+  @override
+  String get last30Days => 'letzte 30 Tage';
+
+  @override
+  String ofRequests(String count) {
+    return 'von $count Anfragen';
+  }
+
+  @override
+  String get privacyHowItWorks =>
+      'Private Werte werden durch Platzhalter wie [EMAIL_1] ersetzt, bevor eine Anfrage deinen Server verlässt. Die KI sieht nur den Platzhalter, NeoRouter setzt den echten Wert in die Antwort wieder ein.';
+
+  @override
+  String get privacyEnable => 'Private Daten verbergen';
+
+  @override
+  String get privacyEnableHint => 'Gilt für alle API-Keys und den Playground.';
+
+  @override
+  String get privacyWhatToHide => 'Was verborgen wird';
+
+  @override
+  String get privacyModesHint =>
+      '„Verbergen & zurück“ setzt den Wert in der Antwort wieder ein. „Nur verbergen“ lässt ihn dauerhaft verborgen – ideal für Passwörter und Kartennummern.';
+
+  @override
+  String get modeOff => 'Aus';
+
+  @override
+  String get modeRestore => 'Verbergen & zurück';
+
+  @override
+  String get modeHide => 'Nur verbergen';
+
+  @override
+  String get catEmail => 'E-Mail-Adressen';
+
+  @override
+  String get catEmailHint => 'anna@example.com';
+
+  @override
+  String get catPhone => 'Telefonnummern';
+
+  @override
+  String get catPhoneHint => 'Internationale und lokale Formate.';
+
+  @override
+  String get catIban => 'Bankkonten (IBAN)';
+
+  @override
+  String get catIbanHint =>
+      'Mit der IBAN-Prüfsumme geprüft, zufällige Zahlen bleiben unberührt.';
+
+  @override
+  String get catCard => 'Zahlungskarten';
+
+  @override
+  String get catCardHint =>
+      'Nur echte Kartennummern (Herausgeber und Prüfsumme passen).';
+
+  @override
+  String get catIp => 'IP-Adressen';
+
+  @override
+  String get catIpHint => 'Außer localhost.';
+
+  @override
+  String get catSecret => 'Passwörter & API-Keys';
+
+  @override
+  String get catSecretHint =>
+      'Bekannte Key-Formate, „password: …“, Passwörter in Links und zufällig aussehende Tokens.';
+
+  @override
+  String get catCustom => 'Deine privaten Begriffe';
+
+  @override
+  String get catCustomHint => 'Die Begriffe, die du unten einträgst.';
+
+  @override
+  String get catPerson => 'Namen von Personen';
+
+  @override
+  String get catPersonHint => 'Per KI-Erkennung gefunden.';
+
+  @override
+  String get catAddress => 'Adressen';
+
+  @override
+  String get catAddressHint => 'Per KI-Erkennung gefunden.';
+
+  @override
+  String get catOrganization => 'Organisationen';
+
+  @override
+  String get catOrganizationHint =>
+      'Arbeitgeber, Praxen, Schulen – per KI-Erkennung gefunden.';
+
+  @override
+  String get catId => 'Ausweis- und Kundennummern';
+
+  @override
+  String get catIdHint =>
+      'Kunden-, Vertrags-, Versicherungs- und Steuernummern – per KI-Erkennung gefunden.';
+
+  @override
+  String get privacyTermsTitle => 'Deine privaten Begriffe';
+
+  @override
+  String get privacyTermsHint =>
+      'Namen, deine Firma, deine Straße – alles, was nie bei einem Anbieter ankommen soll. Ein Begriff pro Zeile.';
+
+  @override
+  String get privacyTermsPlaceholder =>
+      'Anna Schmidt\nAcme Holding\nHauptstraße 5';
+
+  @override
+  String get privacyAiTitle => 'KI-Erkennung';
+
+  @override
+  String get privacyAiHint =>
+      'Muster erkennen keine Namen oder Adressen. Ein schnelles KI-Modell schon: Es liest jede neue Nachricht und markiert private Angaben, die dann ebenso verborgen werden.';
+
+  @override
+  String get privacyAiEnable => 'Namen, Adressen und Nummern per KI finden';
+
+  @override
+  String get privacyAiEnableHint =>
+      'Kostet bei neuen Nachrichten etwa eine Sekunde; wiederholte Nachrichten werden gemerkt.';
+
+  @override
+  String get privacyAiModel => 'Erkennungsmodell';
+
+  @override
+  String get privacyAiModelHint =>
+      '„auto:fast“ wählt das schnellste Modell. Nimm ein lokales Modell, z. B. „ollama/…“, wenn kein Anbieter den Rohtext sehen soll.';
+
+  @override
+  String get privacyAiFreeOnly => 'Für die Erkennung nur Gratis-Modelle nutzen';
+
+  @override
+  String get privacyAiWarning =>
+      'Das Erkennungsmodell sieht den Originaltext neuer Nachrichten. Wähle einen Anbieter, dem du vertraust, oder ein lokales Modell.';
+
+  @override
+  String get privacyTryHint =>
+      'Füge einen Text ein und sieh genau, was ein Anbieter bekäme. Es wird nichts an ein Modell gesendet (außer der KI-Erkennung, falls aktiv).';
+
+  @override
+  String get privacyTrySample =>
+      'Hallo, ich bin Anna Schmidt. Bitte schick die Rechnung an anna.schmidt@example.de und ruf mich unter +49 170 1234567 an. Meine IBAN ist DE89 3704 0044 0532 0130 00, das Server-Passwort: hunter2pw.';
+
+  @override
+  String privacyTryResult(String count) {
+    return '$count Werte verborgen';
+  }
+
+  @override
+  String get privacyFootnote =>
+      'Verborgene Werte verlassen nie deinen Server und werden nie gespeichert; die Zuordnung existiert nur während einer Anfrage. Die Erkennung ist ein starkes Sicherheitsnetz, aber keine Garantie – halte sehr sensible Daten aus Prompts heraus.';
+
+  @override
+  String get compressionSaved => 'Gesparte Tokens';
+
+  @override
+  String get compressionRequests => 'Komprimierte Anfragen';
+
+  @override
+  String get compressionLevel => 'Stufe';
+
+  @override
+  String get compressionLevelHint =>
+      'Kleinere Prompts sind günstiger, schneller und passen in mehr Modelle. Höhere Stufen sparen mehr, lassen aber ältere Details weg.';
+
+  @override
+  String get levelOff => 'Aus';
+
+  @override
+  String get levelOffHint =>
+      'Anfragen gehen genau so raus, wie deine App sie geschrieben hat.';
+
+  @override
+  String get levelLossless => 'Verlustfrei';
+
+  @override
+  String get levelLosslessHint =>
+      'Entfernt überflüssige Leerzeichen, verkleinert JSON und streicht doppelte Blöcke. Der Inhalt bleibt gleich, Code wird nicht angefasst.';
+
+  @override
+  String get levelBalanced => 'Ausgewogen';
+
+  @override
+  String get levelBalancedHint =>
+      'Verlustfrei und dazu: wiederholte Log-Zeilen werden zusammengefasst, JSON-Listen zu kompakten Tabellen und sehr lange Tool-Ausgaben behalten Anfang und Ende. Empfohlen für Agents.';
+
+  @override
+  String get levelAggressive => 'Aggressiv';
+
+  @override
+  String get levelAggressiveHint =>
+      'Ausgewogen und dazu: ältere Tool-Ausgaben werden ausgeblendet und ältere lange Nachrichten gekürzt. Studien zeigen: Agents bleiben ähnlich genau bei halben Kosten. Deine letzte Nachricht wird nie gekürzt.';
+
+  @override
+  String get compressionEngines => 'Schritte';
+
+  @override
+  String get compressionEnginesHint =>
+      'Jeder Schritt greift nur, wenn er die Anfrage wirklich verkleinert.';
+
+  @override
+  String get compressionLimits => 'Wann komprimiert wird';
+
+  @override
+  String get compressionMinTokens => 'Verlustbehaftete Schritte ab (Tokens)';
+
+  @override
+  String get compressionMinTokensHint =>
+      'Kürzere Anfragen werden nur verlustfrei bereinigt.';
+
+  @override
+  String get compressionKeepRecent => 'Unveränderte letzte Nachrichten';
+
+  @override
+  String get compressionKeepRecentHint =>
+      'Ältere Nachrichten dürfen gekürzt werden, diese nie.';
+
+  @override
+  String get compressionTarget => 'Token-Ziel (optional)';
+
+  @override
+  String get compressionTargetHint =>
+      'Ist eine Anfrage noch größer, werden die ältesten Nachrichten weggelassen, bis sie passt.';
+
+  @override
+  String get engWhitespace => 'Leerzeichen bereinigen';
+
+  @override
+  String get engWhitespaceHint =>
+      'Leerzeichen am Zeilenende und mehrfache Leerzeilen, außerhalb von Code.';
+
+  @override
+  String get engJsonMinify => 'JSON verkleinern';
+
+  @override
+  String get engJsonMinifyHint => 'Gleiche Daten ohne Einrückung.';
+
+  @override
+  String get engDedupe => 'Doppelte Blöcke streichen';
+
+  @override
+  String get engDedupeHint =>
+      'Große, doppelt gesendete Texte bleiben einmal erhalten (der neueste).';
+
+  @override
+  String get engRepeatedLines => 'Wiederholte Zeilen zusammenfassen';
+
+  @override
+  String get engRepeatedLinesHint =>
+      '„Zeile 40-mal wiederholt“ statt 40 gleicher Log-Zeilen.';
+
+  @override
+  String get engJsonTables => 'JSON-Listen als Tabellen';
+
+  @override
+  String get engJsonTablesHint =>
+      'Listen von Objekten mit gleichen Feldern nennen jeden Feldnamen nur einmal.';
+
+  @override
+  String get engTrimToolOutput => 'Lange Tool-Ausgaben kürzen';
+
+  @override
+  String get engTrimToolOutputHint =>
+      'Behält Anfang und Ende, wo meist Ergebnisse und Fehler stehen.';
+
+  @override
+  String get engMaskOldToolOutput => 'Ältere Tool-Ausgaben ausblenden';
+
+  @override
+  String get engMaskOldToolOutputHint =>
+      'Nur die letzten drei Tool-Ergebnisse bleiben vollständig.';
+
+  @override
+  String get engCondenseHistory => 'Ältere Nachrichten kürzen';
+
+  @override
+  String get engCondenseHistoryHint =>
+      'Lange ältere Nachrichten behalten Anfang und Ende.';
+
+  @override
+  String get engTokenTarget => 'Token-Ziel einhalten';
+
+  @override
+  String get engTokenTargetHint =>
+      'Lässt bei Bedarf die ältesten Nachrichten weg.';
+
+  @override
+  String get compressionTryHint =>
+      'Füge einen langen Text oder ein Log ein und sieh, wie viel die aktuelle Stufe spart.';
+
+  @override
+  String compressionTryResult(String before, String after) {
+    return '$before → $after Tokens';
+  }
+
+  @override
+  String get tryItTitle => 'Ausprobieren';
+
+  @override
+  String get tryItRun => 'Ergebnis zeigen';
+
+  @override
+  String get tryItSent => 'Was ein Anbieter bekäme';
 }
