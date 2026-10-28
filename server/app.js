@@ -58,7 +58,7 @@ function createApp() {
   // Flutter web and landing files keep the same names across releases (the
   // icon font is rebuilt with only the icons in use), so browsers and CDNs
   // must revalidate them; ETags keep that cheap.
-  const revalidate = (res) => res.setHeader('Cache-Control', 'no-cache');
+  const revalidate = (res) => res.setHeader('Cache-Control', 'private, no-cache');
   const appWebRoot = WEB_CLIENT_DIR;
   app.use('/app', express.static(appWebRoot, { extensions: ['html'], fallthrough: true, setHeaders: revalidate }));
   app.use('/app', (req, res, next) => {

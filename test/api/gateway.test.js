@@ -274,5 +274,5 @@ test('routing preview ranks candidates without calling providers', async () => {
 
 test('web files are served for revalidation so new releases are picked up', async () => {
   const response = await request(app).get('/');
-  if (response.status === 200) assert.equal(response.headers['cache-control'], 'no-cache');
+  if (response.status === 200) assert.equal(response.headers['cache-control'], 'private, no-cache');
 });
