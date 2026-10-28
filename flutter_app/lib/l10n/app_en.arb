@@ -1,0 +1,775 @@
+{
+  "@@locale": "en",
+  "appName": "NeoRouter",
+  "brandTagline": "INFERENCE ROUTER",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "close": "Close",
+  "create": "Create",
+  "edit": "Edit",
+  "retry": "Try again",
+  "refresh": "Refresh",
+  "copy": "Copy",
+  "copied": "Copied to clipboard.",
+  "saved": "Saved.",
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "never": "never",
+  "unlimited": "Unlimited",
+  "search": "Search",
+  "free": "Free",
+  "paid": "Paid",
+  "unknown": "Unknown",
+  "logout": "Sign out",
+  "serverUnreachable": "The server could not be reached.",
+  "groupOverview": "Overview",
+  "groupSetup": "Setup",
+  "groupRouting": "Routing",
+  "navDashboard": "Dashboard",
+  "navProviders": "Providers",
+  "navModels": "Models",
+  "navKeys": "Router keys",
+  "navRouting": "Auto router",
+  "navQuotas": "Free quotas",
+  "navLogs": "Request log",
+  "navPlayground": "Playground",
+  "navSettings": "Settings",
+  "authWelcome": "Welcome back",
+  "authCreate": "Create your account",
+  "authBootstrapTitle": "Set up NeoRouter",
+  "authLoginSubtitle": "Sign in to continue.",
+  "authRegisterSubtitle": "Self-hosted. Your provider keys stay on your server.",
+  "authBootstrapSubtitle": "The first account becomes the administrator.",
+  "username": "Username",
+  "usernameOrEmail": "Username or email",
+  "email": "Email",
+  "password": "Password",
+  "confirmPassword": "Confirm password",
+  "signIn": "Sign in",
+  "createAccount": "Create account",
+  "toRegister": "Don't have an account? Register",
+  "toLogin": "Already have an account? Sign in",
+  "forgotPassword": "Forgot password?",
+  "forgotPasswordTitle": "Reset password",
+  "forgotPasswordBody": "An administrator can reset it on the server with: neorouter reset-password <user> <new-password>",
+  "passwordsDontMatch": "Passwords do not match.",
+  "passwordTooShort": "Use a password with at least 12 characters.",
+  "registrationClosed": "Registration is closed. Ask an administrator to open it.",
+  "dashboardEyebrow": "Overview",
+  "dashboardTitle": "Dashboard",
+  "dashboardDescription": "Traffic, cost and health across every provider you connected.",
+  "range24h": "24 h",
+  "range7d": "7 days",
+  "range30d": "30 days",
+  "statRequests": "Requests",
+  "statSuccessRate": "Success rate",
+  "statCost": "Spent",
+  "statTokens": "Tokens",
+  "statFreeShare": "Served free",
+  "statLatency": "Avg. latency",
+  "statFallbacks": "With fallback",
+  "statInOut": "{input} in · {output} out",
+  "@statInOut": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      }
+    }
+  },
+  "topModels": "Top models",
+  "requestsShort": "{count} req.",
+  "@requestsShort": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "trafficTitle": "Traffic",
+  "errorsTitle": "Errors",
+  "noTrafficTitle": "No traffic yet",
+  "noTrafficMessage": "Send a request to your endpoint and it shows up here.",
+  "endpointTitle": "Your endpoint",
+  "endpointHint": "OpenAI-, Anthropic- and Responses-compatible. Authenticate with a router key.",
+  "quickStartTitle": "Get started",
+  "quickStartProviders": "Add a provider – the key is checked and all models are imported.",
+  "quickStartKeys": "Create a router key with a budget or free-only mode.",
+  "quickStartUse": "Use model \"auto\" or \"provider/model\" from any OpenAI or Anthropic SDK.",
+  "homeAllGood": "Everything is routing smoothly",
+  "homeNeedsAttention": "A provider needs your attention",
+  "homeHealthyOf": "{healthy} of {total} providers healthy",
+  "@homeHealthyOf": {
+    "placeholders": {
+      "healthy": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "homeOpenPlayground": "Open Playground",
+  "homeProblemHint": "Requests skip it until this is fixed. Nothing else is affected.",
+  "homeFix": "Fix",
+  "homeConnectTitle": "Connect your app",
+  "homeConnectHint": "Works with any OpenAI or Anthropic SDK. Ask for \"auto\" and NeoRouter picks the model.",
+  "homeKeyHint": "Use a router key, e.g. {name} ({prefix}…).",
+  "@homeKeyHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "homeManage": "Manage",
+  "homeRecent": "Recent requests",
+  "homeAllActivity": "All activity",
+  "homeNoRequests": "No requests yet. Send one from the Playground or your app.",
+  "homeQuotaLeft": "{percent} % quota left",
+  "@homeQuotaLeft": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "homeResetsIn": "resets in {time}",
+  "@homeResetsIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "homeOk": "OK",
+  "homeRetried": "Retried",
+  "providersEyebrow": "Setup",
+  "providersTitle": "Providers",
+  "providersDescription": "Connect any inference API. Keys are verified, encrypted and their models imported automatically.",
+  "addProvider": "Add provider",
+  "chooseProvider": "Choose a provider",
+  "searchProviders": "Search providers…",
+  "categoryFree": "Free tiers",
+  "categoryAggregator": "Aggregators",
+  "categoryPaid": "Paid APIs",
+  "categoryLocal": "Local",
+  "categoryCustom": "Custom",
+  "categoryCommunity": "Community",
+  "apiKey": "API key",
+  "apiKeyOptional": "API key (optional)",
+  "apiKeyKeep": "API key (leave empty to keep the current one)",
+  "baseUrl": "Base URL",
+  "displayNameLabel": "Display name",
+  "slugLabel": "Name in model ids",
+  "slugHint": "Models are addressed as {slug}/<model>.",
+  "@slugHint": {
+    "placeholders": {
+      "slug": {
+        "type": "String"
+      }
+    }
+  },
+  "billingMode": "Billing",
+  "billingFree": "Free tier – no payment method",
+  "billingPaid": "Paid account",
+  "billingFreeWarning": "Only choose the free tier if this account cannot be charged. NeoRouter then treats every model of this account as 100% free.",
+  "billingAlwaysFreeNote": "Some models of this provider are always free, independent of billing.",
+  "getKey": "Get a key",
+  "checkAndAdd": "Check key & import models",
+  "providerAdded": "Key verified – {count} models imported.",
+  "@providerAdded": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "providerAddedUnverified": "Saved. The key could not be verified yet: {message}",
+  "@providerAddedUnverified": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "statusHealthy": "Healthy",
+  "statusInvalid": "Key rejected",
+  "statusError": "Check failed",
+  "statusUnknown": "Not checked",
+  "statusDisabled": "Disabled",
+  "modelsCount": "{total} models · {free} free",
+  "@modelsCount": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "free": {
+        "type": "String"
+      }
+    }
+  },
+  "revalidate": "Check key",
+  "syncModels": "Refresh models",
+  "probeQuota": "Check balance",
+  "removeProvider": "Remove provider",
+  "removeProviderConfirm": "Remove {name}? Its models disappear from routing; request history is kept.",
+  "@removeProviderConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "editProvider": "Edit provider",
+  "lastChecked": "Checked {time}",
+  "@lastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "syncedModels": "{count} models synced.",
+  "@syncedModels": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "noProvidersTitle": "No providers yet",
+  "noProvidersMessage": "Add your first provider to fill the model catalog.",
+  "quotaProbeResult": "{metric}: {remaining}",
+  "@quotaProbeResult": {
+    "placeholders": {
+      "metric": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "quotaProbeEmpty": "This provider does not report a balance.",
+  "modelsEyebrow": "Catalog",
+  "modelsTitle": "Models",
+  "modelsDescription": "Every chat model your providers expose, with learned speed and reliability.",
+  "searchModels": "Search models…",
+  "filterAll": "All",
+  "filterFree": "Free",
+  "filterEnabled": "Enabled",
+  "filterTools": "Tools",
+  "filterVision": "Vision",
+  "filterIssues": "Issues",
+  "intelligence": "Intelligence",
+  "speed": "Speed",
+  "reliability": "Reliability",
+  "cost": "Cost",
+  "price": "Price",
+  "pricePerMillion": "{input} / {output} per 1M",
+  "@pricePerMillion": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      }
+    }
+  },
+  "priceUnknown": "Price unknown",
+  "contextWindow": "{tokens} context",
+  "@contextWindow": {
+    "placeholders": {
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
+  "tools": "Tools",
+  "vision": "Vision",
+  "reasoning": "Reasoning",
+  "freeReasonManualFree": "Marked free by you",
+  "freeReasonManualPaid": "Marked paid by you",
+  "freeReasonProviderFreeModel": "Free model of this provider",
+  "freeReasonListedZeroPrice": "Provider lists a price of 0",
+  "freeReasonFreeTierAccount": "Free-tier account",
+  "freeReasonPaid": "Paid",
+  "freeReasonPriceUnknown": "Price unknown – not counted as free",
+  "modelSettings": "Model settings",
+  "overrideFree": "Free status",
+  "overrideAuto": "Automatic",
+  "overrideForceFree": "Always free",
+  "overrideForcePaid": "Always paid",
+  "inputPrice": "Input USD / 1M",
+  "outputPrice": "Output USD / 1M",
+  "intelligenceOverride": "Intelligence override (0–1, empty = automatic)",
+  "intelligenceSource": "Source: {source}",
+  "@intelligenceSource": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "resetHealth": "Reset health",
+  "healthReset": "Penalties and cooldowns cleared.",
+  "enableAll": "Enable all",
+  "disableAll": "Disable all",
+  "enableFreeOnly": "Enable only free",
+  "measured": "{latency} · {tps} tok/s · {samples} calls",
+  "@measured": {
+    "placeholders": {
+      "latency": {
+        "type": "String"
+      },
+      "tps": {
+        "type": "String"
+      },
+      "samples": {
+        "type": "String"
+      }
+    }
+  },
+  "notMeasured": "Not measured yet",
+  "penaltyLabel": "Penalty {value}",
+  "@penaltyLabel": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "unavailableUntil": "{reason} until {time}",
+  "@unavailableUntil": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "noModelsTitle": "No models",
+  "noModelsMessage": "Add a provider or change the filter.",
+  "modelsShown": "{count} models",
+  "@modelsShown": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "keysEyebrow": "Access",
+  "keysTitle": "Router keys",
+  "keysDescription": "Keys for your apps. Each key has its own mode, budget and limits.",
+  "createKey": "Create key",
+  "editKey": "Edit key",
+  "keyName": "Name",
+  "keyMode": "Model access",
+  "modeFreeOnly": "Only 100% free models",
+  "modePaid": "All models, stop at the budget",
+  "modeBoth": "All models, then free ones once the budget is used",
+  "budget": "Budget (USD, empty = no limit)",
+  "budgetPeriod": "Budget period",
+  "periodTotal": "Total",
+  "periodMonthly": "Per month",
+  "periodDaily": "Per day",
+  "rpmLimit": "Requests per minute (empty = no limit)",
+  "allowedModels": "Allowed models – glob patterns, one per line (empty = all)",
+  "defaultProfile": "Routing profile for \"auto\"",
+  "keySecretTitle": "Your new router key",
+  "keySecretBody": "Copy it now – it is stored only as a hash and cannot be shown again.",
+  "revoke": "Revoke",
+  "revokeConfirm": "Revoke {name}? Apps using it stop working immediately.",
+  "@revokeConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "revoked": "Revoked",
+  "spentOf": "{spent} of {budget}",
+  "@spentOf": {
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
+  "spentNoBudget": "{spent} spent",
+  "@spentNoBudget": {
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      }
+    }
+  },
+  "resetsAt": "resets {time}",
+  "@resetsAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "lastUsed": "Last used {time}",
+  "@lastUsed": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "noKeysTitle": "No router keys",
+  "noKeysMessage": "Create a key to call your endpoint.",
+  "deleteKeyConfirm": "Delete {name} permanently?",
+  "@deleteKeyConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "routingEyebrow": "Auto router",
+  "routingTitle": "Routing",
+  "routingDescription": "How \"auto\" picks a model. Scores combine intelligence, measured speed, learned reliability and price; failing or slow models are penalized and load is spread.",
+  "presetBalanced": "Balanced",
+  "presetReliable": "Most reliable",
+  "presetFast": "Fastest",
+  "presetSmart": "Smartest",
+  "presetBest": "Best",
+  "presetCheap": "Cheapest",
+  "presetCustom": "Custom",
+  "presetSlider": "Profile",
+  "weights": "Weights",
+  "constraints": "Constraints",
+  "customProfiles": "Custom profiles",
+  "profileName": "Profile name",
+  "saveProfile": "Save as profile",
+  "updateProfile": "Update profile",
+  "profileUsage": "Use it as model \"auto:{id}\" or set it as a key default.",
+  "@profileUsage": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "minIntelligence": "Minimum intelligence",
+  "maxPriceOut": "Max output price (USD / 1M, empty = any)",
+  "adaptive": "Adapt to request complexity",
+  "adaptiveHint": "Long, code-heavy or tool requests shift weight toward intelligence.",
+  "exploration": "Load spreading",
+  "explorationHint": "Higher values spread requests over more good models.",
+  "excludeProviders": "Exclude providers (comma separated)",
+  "previewTitle": "Live preview",
+  "previewHint": "What \"auto\" would choose right now, without sending a request.",
+  "previewPrompt": "Test prompt",
+  "previewFreeOnly": "Free models only",
+  "previewTools": "Needs tools",
+  "previewVision": "Needs vision",
+  "runPreview": "Preview",
+  "score": "Score",
+  "excluded": "Excluded: {reason}",
+  "@excluded": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "reasonNotFree": "not free",
+  "reasonNoTools": "no tool support",
+  "reasonNoVision": "no vision",
+  "reasonContext": "context too small",
+  "reasonCooldown": "cooling down",
+  "reasonCircuit": "paused after errors",
+  "reasonRateLimited": "rate limited",
+  "reasonQuota": "quota used up",
+  "reasonBudget": "over budget",
+  "reasonPriceUnknown": "price unknown",
+  "reasonDisabled": "disabled",
+  "reasonAccount": "provider unavailable",
+  "reasonAuth": "key rejected",
+  "reasonNotAvailable": "not available",
+  "reasonPayment": "payment required",
+  "reasonNoFreeQuota": "no free quota on this account",
+  "quotasEyebrow": "Limits",
+  "quotasTitle": "Free quotas",
+  "quotasDescription": "Usage against each provider’s limits. Limits come from provider headers, documented free tiers or are learned from errors.",
+  "sharedLimits": "Shared account limits",
+  "perModelLimits": "Per model",
+  "metricRpm": "requests / min",
+  "metricRpd": "requests / day",
+  "metricTpm": "tokens / min",
+  "metricTpd": "tokens / day",
+  "usedOf": "{used} of {limit}",
+  "@usedOf": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceHeader": "from provider",
+  "sourceCurated": "documented",
+  "sourceLearned": "learned",
+  "sourceManual": "manual",
+  "sourceError": "observed",
+  "balance": "Balance",
+  "noQuotaData": "No limits known yet. They appear after the first requests.",
+  "onlyFreeModels": "Free models without known limits: {count}",
+  "@onlyFreeModels": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "logsEyebrow": "Insights",
+  "logsTitle": "Request log",
+  "logsDescription": "Metadata only – prompts and answers are never stored.",
+  "filterErrors": "Errors",
+  "filterSuccess": "Successful",
+  "fallbackTrail": "Fallback trail",
+  "attempts": "{count} attempts",
+  "@attempts": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "tokensInOut": "{input} → {output} tokens",
+  "@tokensInOut": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      }
+    }
+  },
+  "ttft": "TTFT {value}",
+  "@ttft": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "noLogsTitle": "No requests yet",
+  "noLogsMessage": "Requests appear here as soon as your apps call the endpoint.",
+  "playgroundEyebrow": "Test",
+  "playgroundTitle": "Playground",
+  "playgroundDescription": "Chat through the real router with one of your keys.",
+  "selectKey": "Router key",
+  "modelField": "Model (auto, auto:fast, provider/model)",
+  "systemPrompt": "System prompt (optional)",
+  "messageHint": "Write a message…",
+  "send": "Send",
+  "clearChat": "Clear",
+  "routedTo": "via {model} · {latency}",
+  "@routedTo": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      },
+      "latency": {
+        "type": "String"
+      }
+    }
+  },
+  "playgroundNeedsKey": "Create a router key first.",
+  "settingsTitle": "Settings",
+  "settingsScopeYou": "You",
+  "settingsScopeServer": "This server",
+  "settingsAccountDescription": "Your name, email and password.",
+  "settingsAppearanceDescription": "Theme and language of this dashboard.",
+  "settingsConnectDescription": "Ready-to-paste setup for your SDKs and tools.",
+  "settingsServerDescription": "Sign-ups, people and model metadata. Only admins see this page.",
+  "settingsAppliesInstantly": "Changes apply instantly",
+  "serverTitle": "Server",
+  "profileTitle": "Profile",
+  "themeLabel": "Theme",
+  "themeHint": "Follows your device unless you pick one.",
+  "languageHint": "Only the dashboard. The gateway is language-neutral.",
+  "passwordHint": "At least 12 characters. You will be signed out afterwards.",
+  "signOutHint": "Sign out of NeoRouter in this browser.",
+  "appearance": "Appearance",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "language": "Language",
+  "languageSystem": "System",
+  "account": "Account",
+  "displayName": "Display name",
+  "saveProfileButton": "Save profile",
+  "changePassword": "Change password",
+  "currentPassword": "Current password",
+  "newPassword": "New password",
+  "passwordChanged": "Password changed. Sign in again.",
+  "connectApps": "Connect your apps",
+  "connectAppsHint": "Replace nrt_… with one of your router keys.",
+  "registrationOpenLabel": "Allow new registrations",
+  "registrationOpenHint": "When off, only existing accounts can sign in.",
+  "users": "Users",
+  "roleAdmin": "Admin",
+  "roleUser": "User",
+  "you": "you",
+  "disableUser": "Disable",
+  "enableUser": "Enable",
+  "makeAdmin": "Make admin",
+  "makeUser": "Make user",
+  "deleteUserConfirm": "Delete {name} with all providers, keys and logs?",
+  "@deleteUserConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "metadataSources": "Model metadata",
+  "metadataHint": "Prices, context sizes and intelligence estimates come from models.dev and OpenRouter. An Artificial Analysis key adds benchmark-based intelligence scores.",
+  "aaKey": "Artificial Analysis API key (optional)",
+  "aaConfigured": "Artificial Analysis key is configured.",
+  "refreshMetadata": "Refresh metadata now",
+  "metadataRefreshed": "Metadata refreshed.",
+  "lastFetched": "{source}: {time}",
+  "@lastFetched": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "notFetched": "not fetched yet",
+  "navAnalytics": "Analytics",
+  "analyticsEyebrow": "Insights",
+  "analyticsTitle": "Analytics",
+  "analyticsDescription": "How your traffic, latency, cost and providers behave over time.",
+  "chartRequests": "Requests",
+  "chartSuccess": "Successful",
+  "chartErrors": "Errors",
+  "chartLatency": "Latency",
+  "chartP50": "p50",
+  "chartP95": "p95",
+  "chartTokens": "Tokens",
+  "chartInput": "Input",
+  "chartOutput": "Output",
+  "chartCost": "Cost (USD)",
+  "chartFreeShare": "Served free",
+  "providerShare": "Traffic by provider",
+  "modelTable": "Models",
+  "keyUsage": "Router keys",
+  "apiFormats": "API formats",
+  "attemptOutcomes": "Attempt outcomes",
+  "attemptOutcomesHint": "Every upstream attempt, including fallbacks and hedges.",
+  "latencyDistribution": "Latency distribution",
+  "colRequests": "Requests",
+  "colSuccess": "Success",
+  "colLatency": "p50 / p95",
+  "colTokens": "Tokens",
+  "colCost": "Cost",
+  "upTo": "≤ {value}",
+  "@upTo": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "over": "> {value}",
+  "@over": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "analyticsTruncated": "Showing the most recent 100,000 requests of this range.",
+  "fetchModels": "Fetch models",
+  "modelsFound": "{count} models found",
+  "@modelsFound": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "modelsFetchFailed": "Could not list models: {message}",
+  "@modelsFetchFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "manualModels": "Additional model ids (one per line)",
+  "manualModelsHint": "Used when the endpoint has no /models list or misses some models.",
+  "authHeaderLabel": "Key header (empty = Authorization: Bearer)",
+  "customHeaders": "Extra headers (Name: value, one per line)",
+  "modelsPathLabel": "Models path (empty = /models)",
+  "advancedOptions": "Advanced",
+  "keyStatus": "Key: {status}",
+  "@keyStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "connectOpenRouter": "Connect with OpenRouter",
+  "connectOpenRouterHint": "One click: sign in at OpenRouter and the key is created and stored automatically.",
+  "orManualKey": "or paste a key",
+  "openRouterConnected": "OpenRouter connected – models imported.",
+  "openRouterFailed": "OpenRouter connection failed: {message}",
+  "@openRouterFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "navAdmin": "Admin",
+  "adminDescription": "Run this server: accounts, sign-ups, server details and model metadata.",
+  "adminSearchHint": "Search admin settings, e.g. registration",
+  "nothingMatches": "Nothing matches",
+  "registrationTitle": "Sign-ups",
+  "usersCount": "{count} accounts on this server.",
+  "@usersCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "serverInfoHint": "What this NeoRouter instance runs and where apps reach it.",
+  "versionLabel": "Version",
+  "capabilitiesLabel": "Capabilities",
+  "settingsSearchHint": "Search settings",
+  "settingsScopeApp": "This app",
+  "settingsScopeAppHint": "Applies to this browser",
+  "settingsScopeYouHint": "Saved to your account",
+  "settingsSavedOnSubmit": "Saved when you press Save"
+}

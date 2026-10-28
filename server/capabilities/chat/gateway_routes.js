@@ -1,0 +1,94 @@
+'use strict';
+
+const express = require('express');
+const { requireRouterKey } = require('../../middleware/router_key_auth');
+const { execute } = require('./executor');
+const catalog = require('../../services/catalog/catalog_service');
+const { allowedByKey } = require('../../services/routing/router');
+const profiles = require('../../services/routing/profiles');
+const { createLogger } = require('../../utils/logger');
+
+const logger = createLogger('gateway');
+const router = express.Router();
+const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res)).catch(next);
+
+const ANTHROPIC_ERROR_TYPES = { 400: 'invalid_request_error', 401: 'authentication_error', 402: 'billing_error', 403: 'permission_error', 404: 'not_found_error', 429: 'rate_limit_error', 529: 'overloaded_error' };
+
+// Errors use the dialect of the endpoint so SDKs surface them properly.
+function gatewayErrorHandler(format) {
+  return (error, req, res, _next) => {
+    const status = error.status || 500;
+    if (status >= 500 && !error.code) logger.error('Gateway request failed', { requestId: req.id, error });
+    const message = status >= 500 && !error.code ? 'An internal error occurred.' : error.message;
+    if (res.headersSent) return res.end();
+    if (format === 'anthropic_messages') {
+      return res.status(status).json({ type: 'error', error: { type: ANTHROPIC_ERROR_TYPES[status] || 'api_error', message }, request_id: req.id });
+    }
+    return res.status(status).json({
+      error: {
+        message,
+        type: status === 401 ? 'invalid_request_error' : status === 429 ? 'rate_limit_error' : status >= 500 ? 'server_error' : 'invalid_request_error',
+        code: error.code || null,
+        ...(error.details ? { details: error.details } : {}),
+      },
+    });
+  };
+}
+
+function modelsVisibleTo(key) {
+  return catalog.listForUser(key.user_id)
+    .filter((entry) => entry.enabled && entry.accountEnabled && allowedByKey(entry, key) && (key.mode !== 'free_only' || entry.isFree));
+}
+
+router.get('/models', requireRouterKey, (req, res) => {
+  const key = req.routerKey;
+  const entries = modelsVisibleTo(key);
+  const created = Math.floor(Date.now() / 1000);
+  const autos = profiles.list(key.user_id).map((profile) => ({
+    id: profile.id === 'balanced' ? 'auto' : `auto:${profile.id}`,
+    name: `Auto (${profile.name})`,
+  }));
+  if (req.get('anthropic-version')) {
+    const data = [...autos.map((auto) => ({ type: 'model', id: auto.id, display_name: auto.name, created_at: new Date().toISOString() })),
+      ...entries.map((entry) => ({ type: 'model', id: entry.id, display_name: entry.name, created_at: new Date().toISOString() }))];
+    return res.json({ data, has_more: false, first_id: data[0]?.id || null, last_id: data[data.length - 1]?.id || null });
+  }
+  return res.json({
+    object: 'list',
+    data: [
+      ...autos.map((auto) => ({ id: auto.id, object: 'model', created, owned_by: 'neorouter', name: auto.name })),
+      ...entries.map((entry) => ({
+        id: entry.id,
+        object: 'model',
+        created,
+        owned_by: entry.providerSlug,
+        name: entry.name,
+        context_length: entry.contextWindow,
+        pricing: entry.isFree ? { prompt: '0', completion: '0' } : { prompt: entry.priceIn === null ? null : String(entry.priceIn / 1e6), completion: entry.priceOut === null ? null : String(entry.priceOut / 1e6) },
+        neorouter: { free: entry.isFree, intelligence: entry.intelligence, tools: entry.tools, vision: entry.vision },
+      })),
+    ],
+  });
+});
+
+router.get('/models/:model(*)', requireRouterKey, (req, res, next) => {
+  const entry = modelsVisibleTo(req.routerKey).find((item) => item.id === req.params.model);
+  if (!entry) return gatewayErrorHandler('openai_chat')(Object.assign(new Error(`Model ${req.params.model} not found.`), { status: 404, code: 'MODEL_NOT_FOUND' }), req, res, next);
+  return res.json({ id: entry.id, object: 'model', created: Math.floor(Date.now() / 1000), owned_by: entry.providerSlug });
+});
+
+router.post('/chat/completions', requireRouterKey, asyncRoute((req, res) => execute({ req, res, key: req.routerKey, format: 'openai_chat', body: req.body })), gatewayErrorHandler('openai_chat'));
+router.post('/messages', requireRouterKey, asyncRoute((req, res) => execute({ req, res, key: req.routerKey, format: 'anthropic_messages', body: req.body })), gatewayErrorHandler('anthropic_messages'));
+router.post('/responses', requireRouterKey, asyncRoute((req, res) => execute({ req, res, key: req.routerKey, format: 'openai_responses', body: req.body })), gatewayErrorHandler('openai_responses'));
+
+// Anthropic SDKs call count_tokens before large requests; an estimate is
+// better than failing the call.
+router.post('/messages/count_tokens', requireRouterKey, (req, res) => {
+  const { toCanonical } = require('./translators/anthropic_messages');
+  const { estimateInputTokens } = require('./canonical');
+  res.json({ input_tokens: estimateInputTokens(toCanonical(req.body || {})) });
+});
+
+router.use(gatewayErrorHandler('openai_chat'));
+
+module.exports = router;

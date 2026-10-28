@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NeoRouter — Every model. One endpoint.</title>
+  <meta name="description" content="Self-hosted inference router: one OpenAI- and Anthropic-compatible endpoint for every provider, a learning auto-router, budgets and free-tier tracking.">
+  <meta name="theme-color" content="#0e1511" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f4f1e8" media="(prefers-color-scheme: light)">
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,420;0,9..144,560;0,9..144,640;1,9..144,420&family=IBM+Plex+Mono:wght@450;500;600&family=Inter:wght@440;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="nb-tile" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#7A5A2E"></stop>
+        <stop offset="100%" stop-color="#2E5A52"></stop>
+      </linearGradient>
+      <radialGradient id="nb-shine" cx="26%" cy="14%" r="72%">
+        <stop offset="0%" stop-color="#fff" stop-opacity="0.22"></stop>
+        <stop offset="100%" stop-color="#fff" stop-opacity="0"></stop>
+      </radialGradient>
+      <radialGradient id="nb-core" cx="38%" cy="32%" r="75%">
+        <stop offset="0%" stop-color="#fffdf6"></stop>
+        <stop offset="48%" stop-color="#eee3cc"></stop>
+        <stop offset="100%" stop-color="#b5a888"></stop>
+      </radialGradient>
+      <radialGradient id="nb-node" cx="36%" cy="30%" r="80%">
+        <stop offset="0%" stop-color="#f8dca8"></stop>
+        <stop offset="52%" stop-color="#d3a85f"></stop>
+        <stop offset="100%" stop-color="#9b6f2f"></stop>
+      </radialGradient>
+      <linearGradient id="nb-tube" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#fffaf0"></stop>
+        <stop offset="52%" stop-color="#efe7d6"></stop>
+        <stop offset="100%" stop-color="#cabf9f"></stop>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <header class="nav" data-nav>
+    <div class="nav-inner">
+      <a class="brand" href="#top" aria-label="NeoRouter home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 100 100">
+            <rect width="100" height="100" rx="22.5" fill="url(#nb-tile)"></rect>
+            <rect width="100" height="100" rx="22.5" fill="url(#nb-shine)"></rect>
+            <g fill="none" stroke="url(#nb-tube)" stroke-linecap="round">
+              <circle cx="50" cy="50" r="17" stroke-width="5" stroke-dasharray="78 29" stroke-opacity=".92"></circle>
+              <circle cx="50" cy="50" r="30" stroke-width="5" stroke-dasharray="150 39" stroke-opacity=".8"></circle>
+            </g>
+            <circle cx="50" cy="50" r="7" fill="url(#nb-core)"></circle>
+            <circle cx="50" cy="20" r="5.6" fill="url(#nb-node)"></circle>
+          </svg>
+        </span>
+        NeoRouter
+      </a>
+
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#routing">Routing</a>
+        <a href="#setup">Setup</a>
+        <a href="#selfhost">Self-host</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a class="btn btn-ghost signin" href="/app">Sign in</a>
+        <a class="btn btn-primary" href="/app">Open the app</a>
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" data-nav-toggle>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="mobile-menu" data-mobile-menu>
+      <a href="#routing">Routing</a>
+      <a href="#setup">Setup</a>
+      <a href="#selfhost">Self-host</a>
+      <a class="btn btn-primary signin" href="/app">Sign in</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap">
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <p class="hero-kicker reveal"><span class="live-dot" aria-hidden="true"></span>Open source · self-hosted · your keys</p>
+            <h1 class="reveal" data-d="1">Every model.<br><em>One endpoint.</em></h1>
+            <p class="lede reveal" data-d="2">
+              Connect any inference provider, from free tiers to paid APIs and your own servers.
+              NeoRouter checks every key, imports every model and routes each request to the model that fits best right now.
+            </p>
+            <div class="hero-actions reveal" data-d="3">
+              <a class="btn btn-primary btn-lg" href="/app">
+                Open NeoRouter
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </a>
+              <a class="btn btn-secondary btn-lg" href="#routing">How routing works</a>
+            </div>
+            <p class="hero-note reveal" data-d="4">OpenAI Chat · Anthropic Messages · OpenAI Responses</p>
+          </div>
+
+          <div class="hero-demo reveal" data-d="2">
+            <div class="surface-app" data-tilt aria-label="Preview of the NeoRouter auto router">
+              <div class="sa-main">
+                <div class="sa-topbar">
+                  <span class="sa-crumb"><strong>model: "auto:fast"</strong><span class="sep">/</span>live ranking</span>
+                  <span class="sa-status"><i></i>3 providers</span>
+                </div>
+                <div class="sa-thread" style="padding:18px 20px">
+                  <div style="border:1px solid var(--app-line);border-radius:14px;padding:12px 16px;margin-bottom:10px;background:var(--app-well)">
+                    <strong style="display:block;color:var(--app-ink)">0.82 · groq/llama-3.3-70b-versatile</strong>
+                    <span style="color:var(--app-ink-3);font-size:12px">free · 480 tok/s · reliability 98 %</span>
+                  </div>
+                  <div style="border:1px solid var(--app-line);border-radius:14px;padding:12px 16px;margin-bottom:10px;background:var(--app-well)">
+                    <strong style="display:block;color:var(--app-ink)">0.79 · cerebras/gpt-oss-120b</strong>
+                    <span style="color:var(--app-ink-3);font-size:12px">free · 2 in flight · load spread</span>
+                  </div>
+                  <div style="border:1px solid var(--app-line);border-radius:14px;padding:12px 16px;background:var(--app-well);opacity:.55">
+                    <strong style="display:block;color:var(--app-ink)">— · openrouter/…:free</strong>
+                    <span style="color:var(--app-ink-3);font-size:12px">cooling down after 429 · back in 90 s</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-fade" aria-hidden="true"></div>
+    </section>
+
+    <section class="section manifesto" id="routing">
+      <div class="wrap">
+        <div class="manifesto-inner">
+          <p class="big-line reveal">Ask for <code>auto</code> and the router decides.
+            <span class="dim">Nothing is hardcoded:</span> every call teaches it which models are fast, reliable and worth their price.</p>
+          <div class="manifesto-row">
+            <div class="m-item reveal">
+              <span class="m-num">01</span>
+              <h3>Learns</h3>
+              <p>Errors, timeouts, empty answers and slow responses earn penalty points and cooldowns. A circuit breaker pauses broken models, and good behaviour wins them back.</p>
+            </div>
+            <div class="m-item reveal" data-d="1">
+              <span class="m-num">02</span>
+              <h3>Spreads load</h3>
+              <p>Bursts are distributed across the best candidates, by in-flight requests and remaining quota, instead of hammering one model until it hits its limit.</p>
+            </div>
+            <div class="m-item reveal" data-d="2">
+              <span class="m-num">03</span>
+              <h3>Respects money</h3>
+              <p>Keys can be free-only (strictly 100 % free models) or carry a USD budget. The router stops at the limit and tracks every free-tier quota.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="setup">
+      <div class="wrap split">
+        <div class="split-copy reveal">
+          <span class="eyebrow">Setup</span>
+          <h2>Paste a key. Get a catalog.</h2>
+          <p>
+            Over 80 providers are built in, and any OpenAI- or Anthropic-compatible endpoint can be added.
+            Keys are checked on the spot and stored encrypted. Models, prices and limits are imported automatically.
+          </p>
+        </div>
+        <ol class="plainlist reveal" data-d="1">
+          <li>Add providers: Groq, Gemini, OpenRouter, Mistral, your local Ollama, …</li>
+          <li>Create a router key with a mode, budget and routing profile.</li>
+          <li>Point any OpenAI or Anthropic SDK at <code>/v1</code>.</li>
+          <li>Use <code>auto</code>, <code>auto:smart</code> or <code>provider/model</code>.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section" id="selfhost">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <span class="eyebrow">Self-hosted first</span>
+          <h2>Your keys never leave your server.</h2>
+        </div>
+        <p class="lede reveal" style="max-width:640px">
+          One Node.js process with SQLite. The public site is <code>/</code>, the dashboard is <code>/app</code> and the gateway is <code>/v1</code>.
+          Only request metadata is logged, never prompts or answers.
+        </p>
+        <p class="reveal" style="margin-top:24px"><code>npm i -g github:NeoLabs-Systems/NeoRouter &amp;&amp; neorouter install</code></p>
+        <div class="hero-actions reveal" style="margin-top:28px">
+          <a class="btn btn-primary" href="/app">Open the app</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-row">
+      <span>&copy; NeoLabs. AGPL-3.0.</span>
+      <span>A standalone NeoLabs product.</span>
+    </div>
+  </footer>
+
+  <script src="js/surface.js"></script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+{
+  "name": "neorouter",
+  "version": "0.1.0",
+  "description": "Self-hosted inference router for the NeoLabs ecosystem: one OpenAI/Anthropic-compatible endpoint for every provider, with a learning auto-router, budgets and free-tier tracking",
+  "license": "AGPL-3.0-only",
+  "type": "commonjs",
+  "main": "server/index.js",
+  "bin": {
+    "neorouter": "bin/neorouter.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "runtime",
+    "shared",
+    "server",
+    "landing",
+    "flutter_app/build/web",
+    "install.sh",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "GUIDELINES.md",
+    "AGENTS.md",
+    ".env.example"
+  ],
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "NODE_ENV=development node --watch server/index.js",
+    "migrate": "node -e \"require('./server/db/migrate').migrate()\"",
+    "setup": "node bin/neorouter.js setup",
+    "install:service": "node bin/neorouter.js install",
+    "test": "NODE_ENV=test node --test test/unit/*.test.js test/api/*.test.js",
+    "test:unit": "NODE_ENV=test node --test test/unit/*.test.js",
+    "test:api": "NODE_ENV=test node --test test/api/*.test.js",
+    "flutter:test": "cd flutter_app && flutter test",
+    "flutter:analyze": "cd flutter_app && flutter analyze",
+    "build:web": "cd flutter_app && flutter build web --release --base-href /app/",
+    "manage": "node bin/neorouter.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NeoLabs-Systems/NeoRouter.git"
+  },
+  "homepage": "https://github.com/NeoLabs-Systems/NeoRouter",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^12.11.1",
+    "compression": "^1.8.2",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.4"
+  }
+}
