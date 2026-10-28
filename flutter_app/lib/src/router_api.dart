@@ -117,6 +117,10 @@ class RouterApi {
   Future<List<Map<String, dynamic>>> quotas() async =>
       ((await client.get('$_base/usage/quotas'))['accounts'] as List).map((item) => Map<String, dynamic>.from(item as Map)).toList();
   Future<Map<String, dynamic>> playground(Map<String, Object?> body) => client.post('$_base/playground/chat', _clean(body));
+  /// kind: embedding, image, speech, transcription, moderation or video.
+  Future<Map<String, dynamic>> playgroundMedia(String kind, Map<String, Object?> body) => client.post('$_base/playground/media/$kind', _clean(body));
+  Future<Map<String, dynamic>> playgroundVideo(String id) => client.get('$_base/playground/videos/$id');
+  Future<Map<String, dynamic>> playgroundVideoContent(String id) => client.get('$_base/playground/videos/$id/content');
 
   // ---- admin --------------------------------------------------------------------
   Future<List<AppUser>> users() async => _list(await client.get('$_base/admin/users'), 'users', AppUser.new);

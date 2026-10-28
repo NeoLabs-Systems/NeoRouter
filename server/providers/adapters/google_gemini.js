@@ -4,7 +4,7 @@ const crypto = require('node:crypto');
 const { BaseAdapter } = require('./base_adapter');
 const { request, readSse, emptyResponseError } = require('../http');
 const { normalizeModel } = require('../model_info');
-const { classifyHttpError } = require('../provider_error');
+const { classifyHttpError, ProviderError, KINDS } = require('../provider_error');
 const { contentParts, textOf, completionId, buildResponse } = require('../../capabilities/chat/canonical');
 
 const FINISH = { STOP: 'stop', MAX_TOKENS: 'length', SAFETY: 'content_filter', RECITATION: 'content_filter', PROHIBITED_CONTENT: 'content_filter', BLOCKLIST: 'content_filter', SPII: 'content_filter', MALFORMED_FUNCTION_CALL: 'stop' };
@@ -170,8 +170,13 @@ class GoogleGeminiAdapter extends BaseAdapter {
     for (let page = 0; page < 20; page += 1) {
       const { data } = await this.http(`/models?pageSize=1000${token ? `&pageToken=${encodeURIComponent(token)}` : ''}`, { timeoutMs: 30_000 });
       for (const entry of data?.models || []) {
-        if (!(entry.supportedGenerationMethods || []).includes('generateContent')) continue;
+        const methods = entry.supportedGenerationMethods || [];
         const id = String(entry.name || '').replace(/^models\//, '');
+        if (methods.includes('embedContent')) {
+          models.push(normalizeModel({ ...entry, id, name: entry.displayName || id, type: 'embedding' }, { contextWindow: entry.inputTokenLimit || null }));
+          continue;
+        }
+        if (!methods.includes('generateContent')) continue;
         models.push(normalizeModel({ ...entry, id, name: entry.displayName || id }, {
           tools: !/gemma|tts|image|embedding|aqa/i.test(id),
           vision: !/tts|embedding|aqa/i.test(id),
@@ -248,4 +253,104 @@ class GoogleGeminiAdapter extends BaseAdapter {
   }
 }
 
-module.exports = { GoogleGeminiAdapter, sanitizeSchema };
+// Gemini has its own voice names; OpenAI clients send theirs.
+const OPENAI_VOICES = { alloy: 'Kore', echo: 'Puck', fable: 'Fenrir', onyx: 'Charon', nova: 'Aoede', shimmer: 'Leda', ash: 'Orus', coral: 'Callirrhoe', sage: 'Schedar', ballad: 'Achird', verse: 'Zephyr' };
+const GEMINI_VOICES = new Set(['Zephyr', 'Puck', 'Charon', 'Kore', 'Fenrir', 'Leda', 'Orus', 'Aoede', 'Callirrhoe', 'Autonoe', 'Enceladus', 'Iapetus', 'Umbriel', 'Algieba', 'Despina', 'Erinome', 'Algenib', 'Rasalgethi', 'Laomedeia', 'Achernar', 'Alnilam', 'Schedar', 'Gacrux', 'Pulcherrima', 'Achird', 'Zubenelgenubi', 'Vindemiatrix', 'Sadachbia', 'Sadaltager', 'Sulafat']);
+
+function geminiVoice(voice) {
+  const name = String(voice || '');
+  const proper = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  if (GEMINI_VOICES.has(proper)) return proper;
+  return OPENAI_VOICES[name.toLowerCase()] || 'Kore';
+}
+
+// Raw 16-bit PCM ("audio/L16;rate=24000") gets a WAV header so players accept it.
+function wavFromPcm(pcm, mime) {
+  const rate = Number(/rate=(\d+)/.exec(mime)?.[1]) || 24000;
+  const header = Buffer.alloc(44);
+  header.write('RIFF', 0); header.writeUInt32LE(36 + pcm.length, 4); header.write('WAVE', 8);
+  header.write('fmt ', 12); header.writeUInt32LE(16, 16); header.writeUInt16LE(1, 20); header.writeUInt16LE(1, 22);
+  header.writeUInt32LE(rate, 24); header.writeUInt32LE(rate * 2, 28); header.writeUInt16LE(2, 32); header.writeUInt16LE(16, 34);
+  header.write('data', 36); header.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([header, pcm]);
+}
+
+Object.assign(GoogleGeminiAdapter.prototype, {
+  // Gemini transcripts carry no timestamps, so subtitles go elsewhere when possible.
+  transcribeTimestamps: false,
+
+  supports(method) {
+    return ['chat', 'embed', 'speech', 'transcribe', 'generateImage'].includes(method);
+  },
+
+  // Gemini image models ("Nano Banana") answer generateContent with image parts.
+  async generateImage({ prompt, n = 1, size }, { modelId, signal, timeoutMs }) {
+    const ratio = /^(\d+)x(\d+)$/.exec(String(size || ''));
+    const images = [];
+    let headers = null;
+    for (let index = 0; index < Math.min(n, 4); index += 1) {
+      const body = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseModalities: ['TEXT', 'IMAGE'], ...(ratio ? { imageConfig: { aspectRatio: require('./openai_media').aspectRatio(size) } } : {}) },
+      };
+      const result = await this.http(`/models/${encodeURIComponent(modelId)}:generateContent`, { method: 'POST', body, signal, timeoutMs });
+      headers = result.headers;
+      assertCandidate(result.data);
+      for (const part of result.data.candidates?.[0]?.content?.parts || []) {
+        if (part.inlineData?.data && /^image\//.test(part.inlineData.mimeType || '')) images.push({ b64: part.inlineData.data, url: null, mime: part.inlineData.mimeType, revisedPrompt: null });
+      }
+    }
+    if (!images.length) throw new ProviderError(KINDS.EMPTY, 'Gemini returned no image.');
+    return { images, headers };
+  },
+
+  async embed({ input, dimensions, inputType }, { modelId, signal, timeoutMs }) {
+    // Only the first-generation model takes a task type.
+    const taskType = /embedding-001$/.test(modelId) ? (inputType === 'passage' ? 'RETRIEVAL_DOCUMENT' : 'RETRIEVAL_QUERY') : undefined;
+    const requests = input.map((text) => ({
+      model: `models/${modelId}`,
+      content: { parts: [{ text }] },
+      ...(dimensions ? { outputDimensionality: dimensions } : {}),
+      ...(taskType ? { taskType } : {}),
+    }));
+    const { data, headers } = await this.http(`/models/${encodeURIComponent(modelId)}:batchEmbedContents`, { method: 'POST', body: { requests }, signal, timeoutMs });
+    assertCandidate(data);
+    const vectors = (data?.embeddings || []).map((item) => item.values);
+    if (vectors.length !== input.length || !vectors.every(Array.isArray)) throw new ProviderError(KINDS.INVALID_OUTPUT, 'Gemini returned an unexpected embeddings response.');
+    return { vectors, inputTokens: null, headers };
+  },
+
+  async speech({ input, voice }, { modelId, signal, timeoutMs }) {
+    const body = {
+      contents: [{ parts: [{ text: input }] }],
+      generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: geminiVoice(voice) } } } },
+    };
+    const { data, headers } = await this.http(`/models/${encodeURIComponent(modelId)}:generateContent`, { method: 'POST', body, signal, timeoutMs });
+    assertCandidate(data);
+    const part = (data.candidates?.[0]?.content?.parts || []).find((item) => item.inlineData?.data);
+    if (!part) throw emptyResponseError();
+    let audio = Buffer.from(part.inlineData.data, 'base64');
+    let mime = part.inlineData.mimeType || 'audio/wav';
+    if (/l16|pcm/i.test(mime)) { audio = wavFromPcm(audio, mime); mime = 'audio/wav'; }
+    return { audio, mime, outputTokens: data.usageMetadata?.candidatesTokenCount ?? null, headers };
+  },
+
+  // Transcribe models answer with an audioTranscription part; any other
+  // Gemini model with audio input transcribes when asked to.
+  async transcribe({ file, mime, language, prompt, translate = false }, { modelId, signal, timeoutMs }) {
+    const instruction = translate
+      ? 'Translate the speech in this audio into English. Reply with the English text only.'
+      : `Transcribe this audio exactly${language ? ` (language: ${language})` : ''}. Reply with the transcript only.`;
+    const body = {
+      contents: [{ parts: [{ text: prompt ? `${instruction} Context: ${prompt}` : instruction }, { inlineData: { mimeType: mime || 'audio/wav', data: Buffer.from(file).toString('base64') } }] }],
+    };
+    const { data, headers } = await this.http(`/models/${encodeURIComponent(modelId)}:generateContent`, { method: 'POST', body, signal, timeoutMs });
+    assertCandidate(data);
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const text = parts.map((part) => part.audioTranscription?.text ?? part.text ?? '').join('').trim();
+    if (!text) throw emptyResponseError();
+    return { text, language: language || null, duration: null, segments: null, inputTokens: data.usageMetadata?.promptTokenCount ?? null, headers };
+  },
+});
+
+module.exports = { GoogleGeminiAdapter, sanitizeSchema, geminiVoice, wavFromPcm };

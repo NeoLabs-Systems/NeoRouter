@@ -81,7 +81,7 @@ function rejection(entry, ctx, now) {
   if (constraints.maxTtftMs && entry.stats.ttftMs && entry.stats.ttftMs > constraints.maxTtftMs) return 'too_slow';
   if (!entry.isFree) {
     const hasBudget = key.budget_usd !== null && key.budget_usd !== undefined;
-    const maxCost = budget.estimateMaxCost(entry, inputTokens, maxOutputFor(request, entry));
+    const maxCost = ctx.estimateCost ? ctx.estimateCost(entry) : budget.estimateMaxCost(entry, inputTokens, maxOutputFor(request, entry));
     if (hasBudget && maxCost === null) return 'price_unknown';
     if (hasBudget && maxCost > budget.remaining(key, now)) return 'budget_exhausted';
   }
@@ -96,7 +96,10 @@ function rejection(entry, ctx, now) {
 }
 
 class RoutingPlan {
-  constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random }) {
+  constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null }) {
+    this.capability = capability;
+    // Non-chat kinds price per image, second or character; they pass their own estimate.
+    this.estimateCost = estimateCost;
     this.key = key;
     this.request = request;
     this.needs = needs;
@@ -110,7 +113,7 @@ class RoutingPlan {
     if (!this.profile) throw new HttpError(400, 'UNKNOWN_PROFILE', `Unknown routing profile "${profileRef}".`);
     this.complexity = complexityOf(request, inputTokens);
     this.weights = scoring.adaptWeights(this.profile.weights, this.complexity, this.profile.constraints.adaptive !== false);
-    this.entries = catalog.listForUser(userId);
+    this.entries = catalog.listForUser(userId, { capability });
     this.primaryRefs = new Set();
     if (!this.parsed.auto) this.scopeToRequestedModel();
   }
@@ -128,7 +131,7 @@ class RoutingPlan {
     const canonical = primary[0]?.canonicalId || canonicalId(modelPart);
     const sameModel = this.entries.filter((entry) => entry.canonicalId === canonical);
     if (!primary.length && !sameModel.length) {
-      throw new HttpError(404, 'MODEL_NOT_FOUND', `The model "${requested}" is not in your catalog. Use GET /v1/models or "auto".`);
+      throw new HttpError(404, 'MODEL_NOT_FOUND', `The model "${requested}" is not a ${this.capability} model in your catalog. Use GET /v1/models or "auto".`);
     }
     for (const entry of primary) this.primaryRefs.add(entry.ref);
     const refs = new Set([...primary, ...sameModel].map((entry) => entry.ref));
@@ -136,7 +139,7 @@ class RoutingPlan {
   }
 
   context() {
-    return { key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs };
+    return { key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost };
   }
 
   rank({ includeRejected = false, sample = true, now = Date.now() } = {}) {

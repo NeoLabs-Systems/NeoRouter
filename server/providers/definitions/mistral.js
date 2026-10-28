@@ -11,4 +11,5 @@ module.exports = {
   baseUrl: 'https://api.mistral.ai/v1',
   billing: { defaultMode: 'free_tier', freeTierAll: true, note: 'Free on the Experiment plan; the Scale plan is billed.' },
   limits: { pool: 'account', account: { rpm: 60, tpm: 500000 } },
+  media: { embed: '/embeddings', moderate: '/moderations', transcribe: '/audio/transcriptions' },
 };

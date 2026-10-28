@@ -26,6 +26,7 @@ router.use('/keys', require('./keys'));
 router.use('/routing', require('./routing'));
 router.use('/usage', require('./usage'));
 router.use('/playground', require('./playground'));
+router.use('/playground', require('./playground_media'));
 router.use('/processing', require('./processing'));
 
 module.exports = router;

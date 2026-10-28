@@ -24,15 +24,17 @@ async function syncAccount(accountId) {
   const seen = new Set();
   const upsert = db.prepare(`INSERT INTO models
     (account_id, model_id, display_name, canonical_id, capability, context_window, max_output, supports_tools, supports_vision,
-     supports_json, supports_reasoning, price_in, price_out, price_source, is_free, free_reason, available, raw_json, last_seen_at)
+     supports_json, supports_reasoning, price_in, price_out, price_source, is_free, free_reason, available, raw_json, price_unit, price_per_unit, last_seen_at)
     VALUES (@account_id, @model_id, @display_name, @canonical_id, @capability, @context_window, @max_output, @supports_tools,
      @supports_vision, @supports_json, @supports_reasoning, @price_in, @price_out, @price_source, @is_free, @free_reason, 1, @raw_json,
+     @price_unit, @price_per_unit,
      strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     ON CONFLICT(account_id, model_id) DO UPDATE SET display_name = excluded.display_name, canonical_id = excluded.canonical_id,
       capability = excluded.capability, context_window = excluded.context_window, max_output = excluded.max_output,
       supports_tools = excluded.supports_tools, supports_vision = excluded.supports_vision, supports_json = excluded.supports_json,
       supports_reasoning = excluded.supports_reasoning, price_in = excluded.price_in, price_out = excluded.price_out,
-      price_source = excluded.price_source, raw_json = excluded.raw_json, available = 1, last_seen_at = excluded.last_seen_at`);
+      price_source = excluded.price_source, raw_json = excluded.raw_json, price_unit = excluded.price_unit,
+      price_per_unit = excluded.price_per_unit, available = 1, last_seen_at = excluded.last_seen_at`);
   db.transaction(() => {
     for (const model of listed) {
       if (!model.id || seen.has(model.id)) continue;
@@ -57,6 +59,8 @@ async function syncAccount(accountId) {
         is_free: 0,
         free_reason: null,
         raw_json: JSON.stringify({ freeHint: model.freeHint, priceKnown: model.priceKnown }),
+        price_unit: model.priceUnit || null,
+        price_per_unit: model.unitPrice ?? null,
       });
     }
     const existing = db.prepare('SELECT id, model_id FROM models WHERE account_id = ?').all(accountId);
@@ -120,7 +124,7 @@ function capabilitySummary(userId) {
     GROUP BY m.capability ORDER BY total DESC`).all(userId).map((row) => ({ id: row.capability, total: row.total, free: row.free || 0 }));
 }
 
-const OVERRIDE_KEYS = ['free', 'billedAt', 'noFreeTier', 'priceIn', 'priceOut', 'contextWindow', 'tools', 'vision', 'intelligence'];
+const OVERRIDE_KEYS = ['free', 'billedAt', 'noFreeTier', 'priceUnit', 'unitPrice', 'priceIn', 'priceOut', 'contextWindow', 'tools', 'vision', 'intelligence'];
 
 function updateModel(userId, modelRef, { enabled, overrides }) {
   const db = getDatabase();
@@ -190,6 +194,10 @@ function toEntry(row) {
     priceIn: pick(overrides.priceIn, row.price_in, null),
     priceOut: pick(overrides.priceOut, row.price_out, null),
     priceSource: overrides.priceIn !== undefined ? 'manual' : row.price_source,
+    // Media models: USD per image, second (video), minute (audio in) or
+    // million characters (speech).
+    priceUnit: pick(overrides.priceUnit, row.price_unit, null),
+    unitPrice: pick(overrides.unitPrice, row.price_per_unit, null),
     isFree: Boolean(row.is_free),
     freeReason: row.free_reason,
     intelligence: pick(overrides.intelligence, row.intelligence, null),

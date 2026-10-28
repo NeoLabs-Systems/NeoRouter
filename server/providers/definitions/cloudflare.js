@@ -12,4 +12,6 @@ module.exports = {
   fields: [{ key: 'accountId', label: 'Account ID', required: true, placeholder: '32-character account id' }],
   billing: { defaultMode: 'free_tier', freeTierAll: true, note: 'Free only on the Workers Free plan (10,000 neurons a day, then requests fail). On Workers Paid the overage is billed: choose paid for such accounts.', source: 'https://developers.cloudflare.com/workers-ai/platform/pricing/', checkedAt: '2026-10-28' },
   limits: { pool: 'account', account: { rpm: 300 } },
+  // Embeddings use the OpenAI-compatible layer; images and audio /ai/run.
+  media: { embed: '/embeddings', generateImage: true, speech: true, transcribe: true },
 };

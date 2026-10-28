@@ -10,6 +10,10 @@ function combineSignals(signal, timeoutMs) {
   return signals.length === 1 ? signals[0] : AbortSignal.any(signals);
 }
 
+function isRawBody(body) {
+  return body instanceof FormData || body instanceof Uint8Array || body instanceof ArrayBuffer || body instanceof Blob;
+}
+
 async function readBody(response) {
   const text = await response.text();
   if (!text) return null;
@@ -27,8 +31,9 @@ async function request(url, { method = 'GET', headers = {}, body, signal, timeou
   try {
     response = await fetch(url, {
       method,
-      headers: body !== undefined ? { 'Content-Type': 'application/json', ...headers } : headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      // FormData and binary bodies (audio uploads) go out as they are.
+      headers: body !== undefined && !isRawBody(body) ? { 'Content-Type': 'application/json', ...headers } : headers,
+      body: body === undefined ? undefined : isRawBody(body) ? body : JSON.stringify(body),
       signal: combineSignals(signal, timeoutMs),
       redirect: 'follow',
     });

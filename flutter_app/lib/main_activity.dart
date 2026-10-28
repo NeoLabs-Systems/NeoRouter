@@ -10,6 +10,7 @@ import 'main_dashboard.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
+import 'src/capabilities.dart';
 import 'src/models.dart';
 
 double _num(Object? value) => value is num ? value.toDouble() : 0;
@@ -142,7 +143,10 @@ class _OverviewState extends State<_Overview> {
           ],
         ),
         const SizedBox(height: 28),
-        SectionCard(title: t.chartRequests, child: _RequestsChart(series: series, bucketMs: bucketMs)),
+        SectionCard(
+          title: t.chartRequests,
+          child: _RequestsChart(series: series, bucketMs: bucketMs),
+        ),
         const SizedBox(height: 28),
         SectionCard(
           title: t.chartResponseTime,
@@ -160,16 +164,33 @@ class _OverviewState extends State<_Overview> {
             final models = _Ranking(title: t.topModelsTitle, rows: (data['byModel'] as List).cast<Map>(), label: shortModelName);
             final providers = _Ranking(title: t.byConnection, rows: (data['byProvider'] as List).cast<Map>());
             final keys = _Ranking(title: t.byKey, rows: (data['byKey'] as List).cast<Map>());
+            // Shown once more than one kind of model (chat, embeddings, …) was used.
+            final kindRows = ((data['byCapability'] as List?) ?? const <Object>[]).cast<Map>();
+            final kinds = kindRows.length > 1 ? _Ranking(title: t.activityKind, rows: kindRows, label: (id) => capabilityInfo(id).label(t)) : null;
             if (constraints.maxWidth < 860) {
-              return Column(children: <Widget>[models, const SizedBox(height: 28), providers, const SizedBox(height: 28), keys]);
+              return Column(
+                children: <Widget>[
+                  if (kinds != null) ...<Widget>[kinds, const SizedBox(height: 28)],
+                  models,
+                  const SizedBox(height: 28),
+                  providers,
+                  const SizedBox(height: 28),
+                  keys,
+                ],
+              );
             }
             return Column(
               children: <Widget>[
+                if (kinds != null) ...<Widget>[kinds, const SizedBox(height: 28)],
                 models,
                 const SizedBox(height: 28),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[Expanded(child: providers), const SizedBox(width: AppSpacing.lg), Expanded(child: keys)],
+                  children: <Widget>[
+                    Expanded(child: providers),
+                    const SizedBox(width: AppSpacing.lg),
+                    Expanded(child: keys),
+                  ],
                 ),
               ],
             );
@@ -257,7 +278,11 @@ class _Legend extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Container(width: 10, height: 3, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+              Container(
+                width: 10,
+                height: 3,
+                decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+              ),
               const SizedBox(width: 6),
               Text(label, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
             ],
@@ -286,7 +311,10 @@ FlTitlesData _titles(BuildContext context, List<Map> series, int bucketMs, Strin
         reservedSize: 48,
         getTitlesWidget: (value, meta) => value == meta.max || value == 0
             ? const SizedBox.shrink()
-            : Padding(padding: const EdgeInsets.only(right: 8), child: Text(format(value), style: style, textAlign: TextAlign.right)),
+            : Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Text(format(value), style: style, textAlign: TextAlign.right),
+              ),
       ),
     ),
     bottomTitles: AxisTitles(
@@ -297,7 +325,10 @@ FlTitlesData _titles(BuildContext context, List<Map> series, int bucketMs, Strin
         getTitlesWidget: (value, meta) {
           final index = value.toInt();
           if (index < 0 || index >= series.length || index % step != 0) return const SizedBox.shrink();
-          return Padding(padding: const EdgeInsets.only(top: 6), child: Text(_bucketLabel(_num(series[index]['bucket']).toInt(), bucketMs), style: style));
+          return Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(_bucketLabel(_num(series[index]['bucket']).toInt(), bucketMs), style: style),
+          );
         },
       ),
     ),
@@ -480,7 +511,9 @@ class _RequestListState extends State<_RequestList> {
           error: _error,
           onRetry: _load,
           child: _logs.isEmpty
-              ? AppCard(child: EmptyState(icon: Icons.receipt_long_outlined, title: t.noLogsTitle, message: t.noLogsMessage))
+              ? AppCard(
+                  child: EmptyState(icon: Icons.receipt_long_outlined, title: t.noLogsTitle, message: t.noLogsMessage),
+                )
               : SettingsCardList(
                   children: <Widget>[
                     for (final log in _logs)
@@ -516,6 +549,7 @@ class _RequestDetails extends StatelessWidget {
       if (log.ttftMs != null) (t.detailFirstToken, formatMs(log.ttftMs)),
       (t.detailTokens, t.tokensInOut(formatCount(log.inputTokens), formatCount(log.outputTokens))),
       (t.detailCost, log.isFree ? t.free : formatUsd(log.costUsd)),
+      if (log.capability != 'chat') (t.activityKind, capabilityInfo(log.capability).label(t)),
       (t.detailFormat, '${log.apiFormat}${log.stream ? ' · stream' : ''}'),
       (t.detailTime, formatTime(log.createdAt)),
     ];
@@ -561,8 +595,14 @@ class _RequestDetails extends StatelessWidget {
                       child: Text.rich(
                         TextSpan(
                           children: <InlineSpan>[
-                            TextSpan(text: '${step['model']}', style: GoogleFonts.geistMono(fontSize: 12.5, color: palette.text)),
-                            TextSpan(text: '  ${_outcome(t, '${step['outcome']}')}', style: TextStyle(fontSize: 12.5, color: palette.textMuted)),
+                            TextSpan(
+                              text: '${step['model']}',
+                              style: GoogleFonts.geistMono(fontSize: 12.5, color: palette.text),
+                            ),
+                            TextSpan(
+                              text: '  ${_outcome(t, '${step['outcome']}')}',
+                              style: TextStyle(fontSize: 12.5, color: palette.textMuted),
+                            ),
                           ],
                         ),
                         maxLines: 2,
@@ -579,9 +619,9 @@ class _RequestDetails extends StatelessWidget {
   }
 
   static String _outcome(AppL10n t, String outcome) => switch (outcome) {
-        'success' => t.outcomeAnswered,
-        'hedge_lost' => t.outcomeSlower,
-        'rate_limit' || 'quota_exhausted' => t.outcomeBusy,
-        _ => t.outcomeFailed(outcome.replaceAll('_', ' ')),
-      };
+    'success' => t.outcomeAnswered,
+    'hedge_lost' => t.outcomeSlower,
+    'rate_limit' || 'quota_exhausted' => t.outcomeBusy,
+    _ => t.outcomeFailed(outcome.replaceAll('_', ' ')),
+  };
 }

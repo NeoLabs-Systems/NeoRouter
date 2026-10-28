@@ -17,12 +17,12 @@ function savedUsd(entry) {
 function record(entry) {
   getDatabase().prepare(`INSERT INTO requests (id, user_id, router_key_id, created_at, api_format, requested_model, model_ref, model_label,
       account_id, status, http_status, error_code, error_message, input_tokens, output_tokens, cost_usd, is_free, latency_ms, ttft_ms,
-      attempts, stream, trail_json, saved_usd, redacted_count, compression_saved_tokens)
+      attempts, stream, trail_json, saved_usd, redacted_count, compression_saved_tokens, capability, units)
     VALUES (@id, @user_id, @router_key_id, @created_at, @api_format, @requested_model, @model_ref, @model_label, @account_id, @status,
       @http_status, @error_code, @error_message, @input_tokens, @output_tokens, @cost_usd, @is_free, @latency_ms, @ttft_ms, @attempts,
-      @stream, @trail_json, @saved_usd, @redacted_count, @compression_saved_tokens)`).run({
+      @stream, @trail_json, @saved_usd, @redacted_count, @compression_saved_tokens, @capability, @units)`).run({
     model_ref: null, model_label: null, account_id: null, error_code: null, error_message: null, ttft_ms: null,
-    redacted_count: 0, compression_saved_tokens: 0, ...entry,
+    redacted_count: 0, compression_saved_tokens: 0, capability: 'chat', units: 0, ...entry,
     saved_usd: savedUsd(entry),
   });
 }
@@ -137,7 +137,7 @@ function analytics(userId, range = '24h', now = Date.now()) {
   const since = rangeStart(range, now);
   const bucketMs = range === '24h' ? 3_600_000 : range === '7d' ? 6 * 3_600_000 : 86_400_000;
   const rows = db.prepare(`SELECT r.created_at, r.status, r.error_code, r.input_tokens, r.output_tokens, r.cost_usd, r.saved_usd, r.is_free,
-      r.latency_ms, r.ttft_ms, r.attempts, r.stream, r.api_format, r.model_label, r.router_key_id, r.trail_json, k.name key_name
+      r.latency_ms, r.ttft_ms, r.attempts, r.stream, r.api_format, r.model_label, r.router_key_id, r.trail_json, r.capability, k.name key_name
     FROM requests r LEFT JOIN router_keys k ON k.id = r.router_key_id
     WHERE r.user_id = ? AND r.created_at >= ? ORDER BY r.created_at LIMIT ?`).all(userId, since, ANALYTICS_ROW_LIMIT);
 
@@ -166,6 +166,7 @@ function analytics(userId, range = '24h', now = Date.now()) {
     byModel: grouped(rows, (row) => row.model_label, 15),
     byKey: grouped(rows, (row) => row.key_name || row.router_key_id, 20),
     byFormat: grouped(rows, (row) => `${row.api_format}${row.stream ? ' · stream' : ''}`, 10),
+    byCapability: grouped(rows, (row) => row.capability || 'chat', 10),
     errors: grouped(rows.filter((row) => row.status === 'error'), (row) => row.error_code || 'unknown', 10).map(({ key, requests }) => ({ key, count: requests })),
     attemptOutcomes: Object.entries(outcomes).map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count),
     latencyHistogram: histogram,
@@ -198,6 +199,8 @@ function logs(userId, { limit = 100, before = null, keyId = null, status = null 
       attempts: row.attempts,
       stream: Boolean(row.stream),
       trail: JSON.parse(row.trail_json || '[]'),
+      capability: row.capability || 'chat',
+      units: row.units || 0,
     }));
 }
 

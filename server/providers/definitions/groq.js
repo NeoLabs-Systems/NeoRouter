@@ -27,8 +27,14 @@ module.exports = {
       { match: 'gpt-oss', rpm: 30, rpd: 1000, tpm: 8000, tpd: 200000 },
       { match: 'qwen', rpm: 60, rpd: 1000, tpm: 6000, tpd: 500000 },
       { match: 'kimi', rpm: 60, rpd: 1000, tpm: 10000, tpd: 300000 },
+      { match: 'whisper', rpm: 20, rpd: 2000 },
+      { match: 'orpheus', rpm: 10, rpd: 100, tpm: 1200, tpd: 3600 },
+      { match: 'prompt-guard', rpm: 30, rpd: 14400, tpm: 15000, tpd: 500000 },
     ],
   },
+  media: { transcribe: '/audio/transcriptions', speech: '/audio/speech' },
+  // Orpheus voices; the model refuses OpenAI voice names.
+  quirks: { defaultVoice: 'troy', voices: ['autumn', 'diana', 'hannah', 'austin', 'daniel', 'troy'], speechFormats: ['wav'] },
   // Groq reports requests per day and tokens per minute in the plain headers.
   quota: { headerPeriods: { requests: 'day', tokens: 'minute' } },
 };

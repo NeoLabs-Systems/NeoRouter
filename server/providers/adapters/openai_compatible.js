@@ -73,8 +73,17 @@ class OpenAICompatibleAdapter extends BaseAdapter {
     } catch (error) {
       if (!manual.length) throw error;
     }
-    const known = new Set(listed.map((model) => model.id));
-    return [...listed, ...manual.filter((model) => !known.has(model.id))];
+    for (const extraPath of spec.extraPaths || []) {
+      try {
+        const { data } = await this.http(extraPath, { timeoutMs: 30_000 });
+        listed.push(...modelList(data).map((entry) => normalizeModel(entry)).filter((model) => model.id));
+      } catch {
+        // A missing secondary listing must not hide the chat models.
+      }
+    }
+    listed.push(...(this.definition.extraModels || []).map((entry) => normalizeModel(entry)));
+    const known = new Set();
+    return [...listed, ...manual].filter((model) => !known.has(model.id) && known.add(model.id));
   }
 
   async chat(canonical, { modelId, signal, timeoutMs }) {
@@ -140,5 +149,7 @@ function* completionAsChunks(data) {
   yield { ...base, choices: [{ index: 0, delta, finish_reason: null }] };
   yield { ...base, choices: [{ index: 0, delta: {}, finish_reason: choice.finish_reason || 'stop' }], ...(data.usage ? { usage: data.usage } : {}) };
 }
+
+require('./openai_media').installOpenAIMedia(OpenAICompatibleAdapter);
 
 module.exports = { OpenAICompatibleAdapter, completionAsChunks, stripSchemaKeys, modelList };

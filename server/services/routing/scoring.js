@@ -53,10 +53,17 @@ function reliability(snapshot, { sample = true, random } = {}) {
   return sample ? sampleBeta(alpha, beta, random) : alpha / (alpha + beta);
 }
 
+const LATENCY_RANGE = [200, 120_000];
+// Cheap to expensive, in USD per unit.
+const UNIT_PRICE_RANGES = { image: [0.002, 0.2], second: [0.01, 0.5], minute: [0.001, 0.1], mchar: [1, 100] };
+
 function speed(entry, snapshot) {
   const tps = logScale(snapshot.tps ?? entry.speedPriorTps, TPS_RANGE);
   const ttft = snapshot.ttft_ms ? 1 - logScale(snapshot.ttft_ms, TTFT_RANGE) : null;
-  if (tps === null && ttft === null) return 0.5;
+  if (tps === null && ttft === null) {
+    // Media calls (embeddings, images, audio) have no token stream: total latency it is.
+    return snapshot.latency_ms ? 1 - (logScale(snapshot.latency_ms, LATENCY_RANGE) ?? 0) : 0.5;
+  }
   if (tps === null) return ttft;
   if (ttft === null) return tps;
   return 0.6 * tps + 0.4 * ttft;
@@ -69,6 +76,10 @@ function blendedPrice(entry) {
 }
 
 function cost(entry) {
+  // Media models priced per image, second, minute or million characters.
+  if (!entry.isFree && entry.priceUnit && UNIT_PRICE_RANGES[entry.priceUnit] && entry.unitPrice !== null && entry.unitPrice !== undefined) {
+    return entry.unitPrice === 0 ? 1 : 1 - (logScale(entry.unitPrice, UNIT_PRICE_RANGES[entry.priceUnit]) ?? 0);
+  }
   const price = blendedPrice(entry);
   if (price === 0) return 1;
   if (price === null) return UNKNOWN_PRICE_COST;

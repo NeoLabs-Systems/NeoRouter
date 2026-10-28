@@ -86,6 +86,11 @@ function classifyHttpError(status, body, headers) {
   if (CONTEXT_PATTERNS.some((pattern) => pattern.test(message)) && (status === 400 || status === 413 || status === 422)) {
     return new ProviderError(KINDS.CONTEXT_LENGTH, message, options);
   }
+  // A model this account may not use yet (Groq: "requires terms acceptance")
+  // will keep failing the same way: treat it as unavailable, not as a bad request.
+  if ((status === 400 || status === 403) && /terms acceptance|accept the terms|requires? (you to )?accept/i.test(message)) {
+    return new ProviderError(KINDS.NOT_FOUND, message, options);
+  }
   if (status === 401 || status === 403) {
     if (status === 403 && /region|country|location|not available in your|not (yet )?available to you|being rolled out|no access to (this )?model/i.test(message)) {
       return new ProviderError(KINDS.NOT_FOUND, message, options);

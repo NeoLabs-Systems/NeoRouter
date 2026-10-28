@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
+import 'main_playground_media.dart';
 import 'main_routing.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
@@ -21,8 +22,8 @@ class _ChatMessage {
   final bool error;
 }
 
-/// Try NeoRouter with one of your keys. One mode per routable capability;
-/// today only chat is routable, so the mode switcher stays hidden.
+/// Try NeoRouter with one of your keys. One mode per kind of model the
+/// user's connections offer (chat, embeddings, images, speech, …).
 class PlaygroundScreen extends StatefulWidget {
   const PlaygroundScreen({super.key, required this.controller});
 
@@ -71,7 +72,10 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
       setState(() {
         _keys = keys;
         _keyId = keys.isEmpty ? null : keys.first.id;
-        _modes = (results[1] as List<CapabilitySummary>).where((item) => item.routable).toList();
+        _modes = sortCapabilities((results[1] as List<CapabilitySummary>).where((item) => item.routable && item.total > 0).toList());
+        // ?page=playground&mode=image opens a mode directly.
+        final linked = Uri.base.queryParameters['mode'];
+        if (linked != null && _modes.any((mode) => mode.id == linked)) _mode = linked;
       });
     } catch (_) {
       // Without capabilities the chat mode still works.
@@ -105,11 +109,15 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
       final message = (response['choices'] as List).first['message'] as Map;
       final latency = DateTime.now().difference(started).inMilliseconds;
       if (!mounted) return;
-      setState(() => _messages.add(_ChatMessage(
+      setState(
+        () => _messages.add(
+          _ChatMessage(
             'assistant',
             (message['content'] as String?) ?? '',
             meta: AppL10n.of(context).routedTo(shortModelName('${response['model']}'), formatMs(latency)),
-          )));
+          ),
+        ),
+      );
     } on ApiException catch (error) {
       setState(() => _messages.add(_ChatMessage('assistant', error.message, error: true)));
     } finally {
@@ -153,12 +161,39 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
         title: Text(t.systemPromptTitle),
         content: SizedBox(
           width: 480,
-          child: TextField(controller: _system, autofocus: true, minLines: 4, maxLines: 10, decoration: InputDecoration(hintText: t.systemPromptHint)),
+          child: TextField(
+            controller: _system,
+            autofocus: true,
+            minLines: 4,
+            maxLines: 10,
+            decoration: InputDecoration(hintText: t.systemPromptHint),
+          ),
         ),
         actions: <Widget>[FilledButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(t.close))],
       ),
     );
     setState(() {});
+  }
+
+  Widget _routingChips(BuildContext context, {bool wrap = false}) {
+    final t = AppL10n.of(context);
+    final key = _keys.where((item) => item.id == _keyId).firstOrNull;
+    return _RoutingChips(
+      wrap: wrap,
+      modelLabel: _modelLabel(t),
+      keyName: key?.name,
+      keys: _keys,
+      onModel: (value) => value == '__specific__' ? _pickSpecificModel() : setState(() => _model = value),
+      onKey: (value) => setState(() {
+        _keyId = value;
+        _showLockHint = false;
+      }),
+      // A free-only key can never leave free mode.
+      keyFreeOnly: key?.mode == 'free_only',
+      freeOnly: _freeOnly,
+      onFreeOnly: (value) => setState(() => _freeOnly = value),
+      onLockedTap: () => setState(() => _showLockHint = !_showLockHint),
+    );
   }
 
   String _modelLabel(AppL10n t) {
@@ -181,7 +216,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
           Row(
             children: <Widget>[
               Expanded(child: Text(t.playgroundTitle, style: displayTitleStyle(palette, size: 24))),
-              if (_keys.isNotEmpty) ...<Widget>[
+              if (_keys.isNotEmpty && _mode == 'chat') ...<Widget>[
                 if (_messages.isNotEmpty)
                   TextButton.icon(onPressed: () => setState(_messages.clear), icon: const Icon(Icons.add_comment_outlined, size: 17), label: Text(t.newChat)),
                 IconButton(
@@ -197,7 +232,11 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
             PageTabs<String>(
               tabs: <({String value, String label, int? count})>[for (final mode in _modes) (value: mode.id, label: mode.info.label(t), count: null)],
               selected: _mode,
-              onChanged: (value) => setState(() => _mode = value),
+              onChanged: (value) => setState(() {
+                _mode = value;
+                // A specific model belongs to one kind; each mode starts on auto.
+                if (!_model.startsWith('auto')) _model = 'auto';
+              }),
             ),
           ],
           const SizedBox(height: AppSpacing.md),
@@ -211,7 +250,15 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                       action: FilledButton(onPressed: () => widget.controller.go(AppPage.keys), child: Text(t.createKey)),
                     ),
                   )
-                : _chat(context),
+                : _mode == 'chat'
+                ? _chat(context)
+                : MediaPlayground(
+                    controller: widget.controller,
+                    kind: _mode,
+                    hasModels: _modes.any((mode) => mode.id == _mode),
+                    routing: () => <String, Object?>{'keyId': _keyId, 'model': _model, 'freeOnly': _freeOnly},
+                    controls: _routingChips(context, wrap: true),
+                  ),
           ),
         ],
       ),
@@ -262,25 +309,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                   ],
                 ),
               ),
-            _Composer(
-              input: _input,
-              focus: _inputFocus,
-              sending: _sending,
-              onSend: _send,
-              modelLabel: _modelLabel(t),
-              keyName: _keys.where((key) => key.id == _keyId).firstOrNull?.name,
-              keys: _keys,
-              onModel: (value) => value == '__specific__' ? _pickSpecificModel() : setState(() => _model = value),
-              onKey: (value) => setState(() {
-                _keyId = value;
-                _showLockHint = false;
-              }),
-              // A free-only key can never leave free mode.
-              keyFreeOnly: _keys.where((key) => key.id == _keyId).firstOrNull?.mode == 'free_only',
-              freeOnly: _freeOnly,
-              onFreeOnly: (value) => setState(() => _freeOnly = value),
-              onLockedTap: () => setState(() => _showLockHint = !_showLockHint),
-            ),
+            _Composer(input: _input, focus: _inputFocus, sending: _sending, onSend: _send, chips: _routingChips(context)),
           ],
         ),
       ),
@@ -309,7 +338,11 @@ class _Welcome extends StatelessWidget {
             const SizedBox(height: 8),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 460),
-              child: Text(t.playgroundEmptyHint, textAlign: TextAlign.center, style: TextStyle(color: palette.textSoft, height: 1.45)),
+              child: Text(
+                t.playgroundEmptyHint,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: palette.textSoft, height: 1.45),
+              ),
             ),
             const SizedBox(height: 24),
             Wrap(
@@ -334,10 +367,7 @@ class _Bubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = neoRouterPaletteOf(context);
     final user = message.role == 'user';
-    final text = SelectableText(
-      message.content,
-      style: TextStyle(color: message.error ? palette.error : palette.text, fontSize: 14.5, height: 1.55),
-    );
+    final text = SelectableText(message.content, style: TextStyle(color: message.error ? palette.error : palette.text, fontSize: 14.5, height: 1.55));
     if (user) {
       return Align(
         alignment: Alignment.centerRight,
@@ -356,10 +386,7 @@ class _Bubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           text,
-          if (message.meta != null) ...<Widget>[
-            const SizedBox(height: 8),
-            Text(message.meta!, style: TextStyle(color: palette.textMuted, fontSize: 12)),
-          ],
+          if (message.meta != null) ...<Widget>[const SizedBox(height: 8), Text(message.meta!, style: TextStyle(color: palette.textMuted, fontSize: 12))],
         ],
       ),
     );
@@ -367,35 +394,13 @@ class _Bubble extends StatelessWidget {
 }
 
 class _Composer extends StatelessWidget {
-  const _Composer({
-    required this.input,
-    required this.focus,
-    required this.sending,
-    required this.onSend,
-    required this.modelLabel,
-    required this.keyName,
-    required this.keys,
-    required this.onModel,
-    required this.onKey,
-    required this.keyFreeOnly,
-    required this.freeOnly,
-    required this.onFreeOnly,
-    required this.onLockedTap,
-  });
+  const _Composer({required this.input, required this.focus, required this.sending, required this.onSend, required this.chips});
 
   final TextEditingController input;
   final FocusNode focus;
   final bool sending;
   final Future<void> Function([String?]) onSend;
-  final String modelLabel;
-  final String? keyName;
-  final List<RouterKey> keys;
-  final ValueChanged<String> onModel;
-  final ValueChanged<String> onKey;
-  final bool keyFreeOnly;
-  final bool freeOnly;
-  final ValueChanged<bool> onFreeOnly;
-  final VoidCallback onLockedTap;
+  final Widget chips;
 
   @override
   Widget build(BuildContext context) {
@@ -434,46 +439,7 @@ class _Composer extends StatelessWidget {
           ),
           Row(
             children: <Widget>[
-              PopupMenuButton<String>(
-                tooltip: t.modelPicker,
-                onSelected: onModel,
-                itemBuilder: (_) => <PopupMenuEntry<String>>[
-                  for (final id in presetOrder)
-                    PopupMenuItem<String>(
-                      value: id == 'balanced' ? 'auto' : 'auto:$id',
-                      child: Row(
-                        children: <Widget>[
-                          Icon(presetIcon(id), size: 17, color: palette.textSoft),
-                          const SizedBox(width: 12),
-                          Text(presetLabel(t, id)),
-                        ],
-                      ),
-                    ),
-                  const PopupMenuDivider(),
-                  PopupMenuItem<String>(value: '__specific__', child: Text(t.modelSpecific)),
-                ],
-                child: _ComposerChip(icon: Icons.auto_awesome_outlined, label: modelLabel),
-              ),
-              if (keys.length > 1)
-                PopupMenuButton<String>(
-                  tooltip: t.selectKey,
-                  onSelected: onKey,
-                  itemBuilder: (_) => <PopupMenuEntry<String>>[for (final key in keys) PopupMenuItem<String>(value: key.id, child: Text(key.name))],
-                  child: _ComposerChip(icon: Icons.key_outlined, label: keyName ?? '—'),
-                ),
-              Tooltip(
-                message: keyFreeOnly ? t.freeModeLocked : (freeOnly ? t.freeModeOnHint : t.freeModeOffHint),
-                child: FilterChip(
-                  avatar: Icon(keyFreeOnly ? Icons.lock_outline_rounded : Icons.savings_outlined, size: 15, color: freeOnly || keyFreeOnly ? palette.accent : palette.textMuted),
-                  label: Text(t.freeMode),
-                  selected: freeOnly || keyFreeOnly,
-                  // A free-only key cannot leave free mode; the chip stays
-                  // active and explains that instead of looking disabled.
-                  onSelected: keyFreeOnly ? (_) => onLockedTap() : onFreeOnly,
-                  visualDensity: VisualDensity.compact,
-                  side: BorderSide(color: freeOnly || keyFreeOnly ? palette.accent.withValues(alpha: 0.5) : palette.border),
-                ),
-              ),
+              chips,
               // The keyboard hint gives way first when the row gets narrow.
               Expanded(
                 child: Text(
@@ -499,6 +465,87 @@ class _Composer extends StatelessWidget {
   }
 }
 
+/// Model, key and free-mode chips, shared by chat and the media modes.
+class _RoutingChips extends StatelessWidget {
+  const _RoutingChips({
+    required this.modelLabel,
+    required this.keyName,
+    required this.keys,
+    required this.onModel,
+    required this.onKey,
+    required this.keyFreeOnly,
+    required this.freeOnly,
+    required this.onFreeOnly,
+    required this.onLockedTap,
+    this.wrap = false,
+  });
+
+  final String modelLabel;
+  final String? keyName;
+  final List<RouterKey> keys;
+  final ValueChanged<String> onModel;
+  final ValueChanged<String> onKey;
+  final bool keyFreeOnly;
+  final bool freeOnly;
+  final ValueChanged<bool> onFreeOnly;
+  final VoidCallback onLockedTap;
+  final bool wrap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final children = <Widget>[
+      PopupMenuButton<String>(
+        tooltip: t.modelPicker,
+        onSelected: onModel,
+        itemBuilder: (_) => <PopupMenuEntry<String>>[
+          for (final id in presetOrder)
+            PopupMenuItem<String>(
+              value: id == 'balanced' ? 'auto' : 'auto:$id',
+              child: Row(
+                children: <Widget>[
+                  Icon(presetIcon(id), size: 17, color: palette.textSoft),
+                  const SizedBox(width: 12),
+                  Text(presetLabel(t, id)),
+                ],
+              ),
+            ),
+          const PopupMenuDivider(),
+          PopupMenuItem<String>(value: '__specific__', child: Text(t.modelSpecific)),
+        ],
+        child: _ComposerChip(icon: Icons.auto_awesome_outlined, label: modelLabel),
+      ),
+      if (keys.length > 1)
+        PopupMenuButton<String>(
+          tooltip: t.selectKey,
+          onSelected: onKey,
+          itemBuilder: (_) => <PopupMenuEntry<String>>[for (final key in keys) PopupMenuItem<String>(value: key.id, child: Text(key.name))],
+          child: _ComposerChip(icon: Icons.key_outlined, label: keyName ?? '—'),
+        ),
+      Tooltip(
+        message: keyFreeOnly ? t.freeModeLocked : (freeOnly ? t.freeModeOnHint : t.freeModeOffHint),
+        child: FilterChip(
+          avatar: Icon(
+            keyFreeOnly ? Icons.lock_outline_rounded : Icons.savings_outlined,
+            size: 15,
+            color: freeOnly || keyFreeOnly ? palette.accent : palette.textMuted,
+          ),
+          label: Text(t.freeMode),
+          selected: freeOnly || keyFreeOnly,
+          // A free-only key cannot leave free mode; the chip stays
+          // active and explains that instead of looking disabled.
+          onSelected: keyFreeOnly ? (_) => onLockedTap() : onFreeOnly,
+          visualDensity: VisualDensity.compact,
+          side: BorderSide(color: freeOnly || keyFreeOnly ? palette.accent.withValues(alpha: 0.5) : palette.border),
+        ),
+      ),
+    ];
+    if (wrap) return Wrap(crossAxisAlignment: WrapCrossAlignment.center, runSpacing: 6, children: children);
+    return Row(mainAxisSize: MainAxisSize.min, children: children);
+  }
+}
+
 class _ComposerChip extends StatelessWidget {
   const _ComposerChip({required this.icon, required this.label});
 
@@ -519,7 +566,12 @@ class _ComposerChip extends StatelessWidget {
           const SizedBox(width: 6),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 180),
-            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: palette.text)),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12.5, color: palette.text),
+            ),
           ),
           const SizedBox(width: 2),
           Icon(Icons.expand_more_rounded, size: 16, color: palette.textMuted),

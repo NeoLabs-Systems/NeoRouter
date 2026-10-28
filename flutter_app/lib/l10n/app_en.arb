@@ -827,6 +827,8 @@
   "capRerank": "Ranking",
   "capImage": "Images",
   "capAudio": "Audio",
+  "capSpeech": "Speech",
+  "capTranscription": "Transcription",
   "capVideo": "Video",
   "capModeration": "System One models",
   "capOther": "Other",
@@ -835,7 +837,9 @@
   "capRerankHint": "Sort search results by relevance.",
   "capImageHint": "Create and edit images.",
   "capAudioHint": "Speech to text, text to speech and music.",
-  "capVideoHint": "Create and understand video.",
+  "capSpeechHint": "Read text aloud in a natural voice.",
+  "capTranscriptionHint": "Turn recordings into text and subtitles.",
+  "capVideoHint": "Create short videos from a description.",
   "capModerationHint": "Fast decision models such as Jev: they classify, check and decide in a split second instead of writing long answers.",
   "capOtherHint": "Specialised models such as translation or document parsing.",
   "capComingSoon": "NeoRouter already found {count} of these models in your connections and will route them in a coming update.",
@@ -1311,5 +1315,86 @@
   },
   "tryItTitle": "Try it",
   "tryItRun": "Show result",
-  "tryItSent": "What a provider would receive"
+  "tryItSent": "What a provider would receive",
+  "pgEmbedHint": "One text per line. NeoRouter turns each into a vector and shows how similar they are.",
+  "pgEmbedRun": "Create vectors",
+  "pgEmbedResult": "{count} vectors with {dims} numbers each",
+  "@pgEmbedResult": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "dims": {
+        "type": "String"
+      }
+    }
+  },
+  "pgSimilarity": "Similarity",
+  "pgPinned": "This key now always uses {model} for embeddings, so your vectors stay comparable.",
+  "@pgPinned": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "pgImageHint": "Describe the picture you want.",
+  "pgImageRun": "Create image",
+  "pgSize": "Size",
+  "pgSpeechHint": "Type what should be read aloud.",
+  "pgSpeechRun": "Read aloud",
+  "pgVoice": "Voice",
+  "pgVoiceDefault": "Default voice",
+  "pgPlay": "Play",
+  "pgStop": "Stop",
+  "pgDownload": "Download",
+  "pgTranscribeHint": "Choose a recording (up to 25 MB) and NeoRouter turns it into text.",
+  "pgChooseFile": "Choose audio file",
+  "pgUseSpeech": "Use the spoken text",
+  "pgTranscribeRun": "Transcribe",
+  "pgTranslate": "Translate to English",
+  "pgCheckHint": "Paste a message. A System One model decides in a split second whether it is safe.",
+  "pgCheckRun": "Check",
+  "pgSafe": "Looks safe",
+  "pgCheckSafety": "Harmful content",
+  "pgCheckInjection": "Prompt attacks",
+  "pgFlagged": "Flagged",
+  "pgVideoHint": "Describe a short scene. Videos take a few minutes and are never free.",
+  "pgVideoRun": "Create video",
+  "pgSeconds": "{count} seconds",
+  "@pgSeconds": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "pgVideoStatus": "Status: {status}",
+  "@pgVideoStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "pgNoModels": "None of your connections offers this kind of model yet.",
+  "pgAddProvider": "Add a provider",
+  "unitPrice": "Price per unit (USD)",
+  "unitImage": "per image",
+  "unitSecond": "per second",
+  "unitMinute": "per minute of audio",
+  "unitMchar": "per million characters",
+  "activityKind": "Kind",
+  "unitPriceLabel": "{price} {unit}",
+  "@unitPriceLabel": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "unitKind": "Billed"
 }

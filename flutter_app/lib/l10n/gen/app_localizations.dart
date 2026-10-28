@@ -2875,6 +2875,18 @@ abstract class AppL10n {
   /// **'Audio'**
   String get capAudio;
 
+  /// No description provided for @capSpeech.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech'**
+  String get capSpeech;
+
+  /// No description provided for @capTranscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcription'**
+  String get capTranscription;
+
   /// No description provided for @capVideo.
   ///
   /// In en, this message translates to:
@@ -2923,10 +2935,22 @@ abstract class AppL10n {
   /// **'Speech to text, text to speech and music.'**
   String get capAudioHint;
 
+  /// No description provided for @capSpeechHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Read text aloud in a natural voice.'**
+  String get capSpeechHint;
+
+  /// No description provided for @capTranscriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn recordings into text and subtitles.'**
+  String get capTranscriptionHint;
+
   /// No description provided for @capVideoHint.
   ///
   /// In en, this message translates to:
-  /// **'Create and understand video.'**
+  /// **'Create short videos from a description.'**
   String get capVideoHint;
 
   /// No description provided for @capModerationHint.
@@ -4416,6 +4440,246 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'What a provider would receive'**
   String get tryItSent;
+
+  /// No description provided for @pgEmbedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'One text per line. NeoRouter turns each into a vector and shows how similar they are.'**
+  String get pgEmbedHint;
+
+  /// No description provided for @pgEmbedRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Create vectors'**
+  String get pgEmbedRun;
+
+  /// No description provided for @pgEmbedResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} vectors with {dims} numbers each'**
+  String pgEmbedResult(String count, String dims);
+
+  /// No description provided for @pgSimilarity.
+  ///
+  /// In en, this message translates to:
+  /// **'Similarity'**
+  String get pgSimilarity;
+
+  /// No description provided for @pgPinned.
+  ///
+  /// In en, this message translates to:
+  /// **'This key now always uses {model} for embeddings, so your vectors stay comparable.'**
+  String pgPinned(String model);
+
+  /// No description provided for @pgImageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the picture you want.'**
+  String get pgImageHint;
+
+  /// No description provided for @pgImageRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Create image'**
+  String get pgImageRun;
+
+  /// No description provided for @pgSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get pgSize;
+
+  /// No description provided for @pgSpeechHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type what should be read aloud.'**
+  String get pgSpeechHint;
+
+  /// No description provided for @pgSpeechRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Read aloud'**
+  String get pgSpeechRun;
+
+  /// No description provided for @pgVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get pgVoice;
+
+  /// No description provided for @pgVoiceDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default voice'**
+  String get pgVoiceDefault;
+
+  /// No description provided for @pgPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get pgPlay;
+
+  /// No description provided for @pgStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get pgStop;
+
+  /// No description provided for @pgDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get pgDownload;
+
+  /// No description provided for @pgTranscribeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a recording (up to 25 MB) and NeoRouter turns it into text.'**
+  String get pgTranscribeHint;
+
+  /// No description provided for @pgChooseFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose audio file'**
+  String get pgChooseFile;
+
+  /// No description provided for @pgUseSpeech.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the spoken text'**
+  String get pgUseSpeech;
+
+  /// No description provided for @pgTranscribeRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribe'**
+  String get pgTranscribeRun;
+
+  /// No description provided for @pgTranslate.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate to English'**
+  String get pgTranslate;
+
+  /// No description provided for @pgCheckHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a message. A System One model decides in a split second whether it is safe.'**
+  String get pgCheckHint;
+
+  /// No description provided for @pgCheckRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Check'**
+  String get pgCheckRun;
+
+  /// No description provided for @pgSafe.
+  ///
+  /// In en, this message translates to:
+  /// **'Looks safe'**
+  String get pgSafe;
+
+  /// No description provided for @pgCheckSafety.
+  ///
+  /// In en, this message translates to:
+  /// **'Harmful content'**
+  String get pgCheckSafety;
+
+  /// No description provided for @pgCheckInjection.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt attacks'**
+  String get pgCheckInjection;
+
+  /// No description provided for @pgFlagged.
+  ///
+  /// In en, this message translates to:
+  /// **'Flagged'**
+  String get pgFlagged;
+
+  /// No description provided for @pgVideoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe a short scene. Videos take a few minutes and are never free.'**
+  String get pgVideoHint;
+
+  /// No description provided for @pgVideoRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Create video'**
+  String get pgVideoRun;
+
+  /// No description provided for @pgSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} seconds'**
+  String pgSeconds(String count);
+
+  /// No description provided for @pgVideoStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status: {status}'**
+  String pgVideoStatus(String status);
+
+  /// No description provided for @pgNoModels.
+  ///
+  /// In en, this message translates to:
+  /// **'None of your connections offers this kind of model yet.'**
+  String get pgNoModels;
+
+  /// No description provided for @pgAddProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a provider'**
+  String get pgAddProvider;
+
+  /// No description provided for @unitPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Price per unit (USD)'**
+  String get unitPrice;
+
+  /// No description provided for @unitImage.
+  ///
+  /// In en, this message translates to:
+  /// **'per image'**
+  String get unitImage;
+
+  /// No description provided for @unitSecond.
+  ///
+  /// In en, this message translates to:
+  /// **'per second'**
+  String get unitSecond;
+
+  /// No description provided for @unitMinute.
+  ///
+  /// In en, this message translates to:
+  /// **'per minute of audio'**
+  String get unitMinute;
+
+  /// No description provided for @unitMchar.
+  ///
+  /// In en, this message translates to:
+  /// **'per million characters'**
+  String get unitMchar;
+
+  /// No description provided for @activityKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Kind'**
+  String get activityKind;
+
+  /// No description provided for @unitPriceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} {unit}'**
+  String unitPriceLabel(String price, String unit);
+
+  /// No description provided for @unitKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Billed'**
+  String get unitKind;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

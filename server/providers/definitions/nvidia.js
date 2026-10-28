@@ -19,5 +19,11 @@ module.exports = {
     checkedAt: '2026-10-28',
   },
   limits: { pool: 'account', account: { rpm: 40 } },
-  quirks: { singleToolCall: true },
+  // Embeddings and FLUX are listed separately: retrieval embedders need
+  // input_type, and FLUX runs on the genai host, not in /v1/models.
+  media: { embed: '/embeddings', generateImage: 'https://ai.api.nvidia.com/v1/genai/{model}' },
+  extraModels: [
+    { id: 'black-forest-labs/flux.2-klein-4b', name: 'FLUX.2 [klein] 4B', type: 'image' },
+  ],
+  quirks: { singleToolCall: true, embeddingInputType: true, imageApi: 'nvidia_genai' },
 };

@@ -31,6 +31,17 @@ const definitionSchema = z.object({
   keyUrl: z.string().url().optional(),
   adapter: z.enum(Object.keys(ADAPTERS)),
   capabilities: z.array(z.enum(['chat'])).default(['chat']),
+  // Non-chat endpoints this provider offers, as adapter method → path
+  // (OpenAI-compatible adapters) or `true` (adapters with their own dialect).
+  media: z.object({
+    embed: z.union([z.string(), z.literal(true)]).optional(),
+    generateImage: z.union([z.string(), z.literal(true)]).optional(),
+    speech: z.union([z.string(), z.literal(true)]).optional(),
+    transcribe: z.union([z.string(), z.literal(true)]).optional(),
+    moderate: z.union([z.string(), z.literal(true)]).optional(),
+    classify: z.union([z.string(), z.literal(true)]).optional(),
+    createVideo: z.union([z.string(), z.literal(true)]).optional(),
+  }).default({}),
   baseUrl: z.string().default(''),
   editableBaseUrl: z.boolean().default(false),
   auth: z.object({
@@ -42,7 +53,10 @@ const definitionSchema = z.object({
   fields: z.array(z.object({ key: z.string(), label: z.string(), required: z.boolean().default(true), placeholder: z.string().optional() })).default([]),
   headers: z.record(z.string()).default({}),
   chatPath: z.string().optional(),
-  models: z.object({ path: z.string().optional(), static: z.array(z.any()).optional() }).default({}),
+  // extraPaths: further listings, e.g. OpenRouter's /embeddings/models.
+  models: z.object({ path: z.string().optional(), static: z.array(z.any()).optional(), extraPaths: z.array(z.string()).default([]) }).default({}),
+  // Models a provider serves but does not list (NVIDIA's FLUX endpoints).
+  extraModels: z.array(z.object({ id: z.string(), name: z.string().optional(), type: z.string().optional() })).default([]),
   validate: z.union([z.literal(false), z.object({ path: z.string().optional(), chatProbe: z.boolean().optional() })]).optional(),
   billing: z.object({
     defaultMode: z.enum(['free_tier', 'paid']),
@@ -91,6 +105,14 @@ const definitionSchema = z.object({
     dropFields: z.array(z.string()).optional(),
     stripSchemaKeys: z.array(z.string()).optional(),
     streamUsage: z.boolean().optional(),
+    // Media dialect details (see adapters/openai_media.js).
+    embeddingInputType: z.boolean().optional(),
+    imageApi: z.enum(['openai', 'nvidia_genai']).optional(),
+    noImageResponseFormat: z.boolean().optional(),
+    defaultVoice: z.string().optional(),
+    voices: z.array(z.string()).optional(),
+    speechFormats: z.array(z.string()).optional(),
+    transcriptionJson: z.boolean().optional(),
   }).default({}),
 });
 

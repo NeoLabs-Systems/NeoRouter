@@ -35,14 +35,18 @@ function gatewayErrorHandler(format) {
   };
 }
 
-function modelsVisibleTo(key) {
-  return catalog.listForUser(key.user_id)
+const KINDS = new Set(require('../../core/capability_registry').list().map((item) => item.id));
+
+function modelsVisibleTo(key, capability = 'chat') {
+  return catalog.listForUser(key.user_id, { capability })
     .filter((entry) => entry.enabled && entry.accountEnabled && allowedByKey(entry, key) && (key.mode !== 'free_only' || entry.isFree));
 }
 
 router.get('/models', requireRouterKey, (req, res) => {
   const key = req.routerKey;
-  const entries = modelsVisibleTo(key);
+  // ?type=embedding (or image, speech, transcription, moderation, video) lists another kind.
+  const kind = KINDS.has(req.query.type) ? req.query.type : 'chat';
+  const entries = modelsVisibleTo(key, kind);
   const created = Math.floor(Date.now() / 1000);
   const autos = profiles.list(key.user_id).map((profile) => ({
     id: profile.id === 'balanced' ? 'auto' : `auto:${profile.id}`,
@@ -65,7 +69,7 @@ router.get('/models', requireRouterKey, (req, res) => {
         name: entry.name,
         context_length: entry.contextWindow,
         pricing: entry.isFree ? { prompt: '0', completion: '0' } : { prompt: entry.priceIn === null ? null : String(entry.priceIn / 1e6), completion: entry.priceOut === null ? null : String(entry.priceOut / 1e6) },
-        neorouter: { free: entry.isFree, intelligence: entry.intelligence, tools: entry.tools, vision: entry.vision },
+        neorouter: { kind, free: entry.isFree, intelligence: entry.intelligence, tools: entry.tools, vision: entry.vision, ...(entry.priceUnit ? { unit_price: entry.unitPrice, price_unit: entry.priceUnit } : {}) },
       })),
     ],
   });
@@ -92,3 +96,4 @@ router.post('/messages/count_tokens', requireRouterKey, (req, res) => {
 router.use(gatewayErrorHandler('openai_chat'));
 
 module.exports = router;
+module.exports.gatewayErrorHandler = gatewayErrorHandler;

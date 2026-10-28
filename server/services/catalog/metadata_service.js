@@ -12,6 +12,7 @@ const { createLogger } = require('../../utils/logger');
 const modelsDev = require('./metadata/models_dev');
 const openrouterPublic = require('./metadata/openrouter_public');
 const artificialAnalysis = require('./metadata/artificial_analysis');
+const artificialAnalysisMedia = require('./metadata/artificial_analysis_media');
 
 const logger = createLogger('metadata');
 const AA_SETTING = 'artificial_analysis_key';
@@ -42,7 +43,7 @@ function loadState() {
   try {
     state = JSON.parse(fs.readFileSync(cacheFile(), 'utf8'));
   } catch {
-    state = { modelsDev: {}, openrouter: [], artificialAnalysis: [], fetchedAt: {} };
+    state = { modelsDev: {}, openrouter: [], artificialAnalysis: [], artificialAnalysisMedia: {}, fetchedAt: {} };
   }
   buildIndexes();
   return state;
@@ -75,7 +76,7 @@ function buildIndexes() {
     for (const key of [canonicalId(record.slug), canonicalId(record.name)]) if (key && !aa.has(key)) aa.set(key, record);
   }
   const aaMax = Math.max(0, ...(state.artificialAnalysis || []).map((record) => record.intelligenceIndex || 0));
-  indexes = { byCanonical, aa, aaScale: aaMax > 0 ? aaMax : AA_INDEX_SCALE, calibration: null, benchmark: buildBenchmarkKeys(state.artificialAnalysis || []) };
+  indexes = { byCanonical, aa, aaScale: aaMax > 0 ? aaMax : AA_INDEX_SCALE, calibration: null, benchmark: buildBenchmarkKeys(state.artificialAnalysis || []), media: artificialAnalysisMedia.buildIndexes(state.artificialAnalysisMedia) };
   indexes.calibration = fitCalibration();
 }
 
@@ -188,6 +189,24 @@ function heuristicIntelligence(records, sampleModelIds = [], aa = null) {
   return { value: total + HEURISTIC_PRIOR * (1 - weightSum), weightSum };
 }
 
+// Parameter ranges (billions) from small to large within each kind.
+const KIND_PARAMS = { embedding: [0.1, 10], moderation: [0.02, 20], transcription: [0.05, 5], speech: [0.05, 5], image: [1, 30], video: [1, 30] };
+
+function kindHeuristic(capability, params, releaseDate) {
+  const signals = [
+    [0.6, logScale(params, KIND_PARAMS[capability] || PARAMS_RANGE)],
+    [0.4, releaseDate ? Math.min(1, Math.max(0, (Date.parse(releaseDate) - RECENCY_START) / (Date.now() - RECENCY_START))) : null],
+  ];
+  let weightSum = 0;
+  let total = 0;
+  for (const [weight, value] of signals) {
+    if (value === null || Number.isNaN(value)) continue;
+    weightSum += weight;
+    total += weight * value;
+  }
+  return { value: Math.min(0.85, Math.max(0.1, total + 0.5 * (1 - weightSum))), weightSum };
+}
+
 function getArtificialAnalysisKey() {
   const value = settings.getGlobal(AA_SETTING);
   return value ? decryptString(value) : null;
@@ -205,7 +224,10 @@ async function refreshSources() {
     ['openrouter', () => openrouterPublic.fetchSource()],
   ];
   const aaKey = getArtificialAnalysisKey();
-  if (aaKey) tasks.push(['artificialAnalysis', () => artificialAnalysis.fetchSource({ apiKey: aaKey })]);
+  if (aaKey) {
+    tasks.push(['artificialAnalysis', () => artificialAnalysis.fetchSource({ apiKey: aaKey })]);
+    tasks.push(['artificialAnalysisMedia', () => artificialAnalysisMedia.fetchSource({ apiKey: aaKey })]);
+  }
   const results = {};
   for (const [key, run] of tasks) {
     try {
@@ -242,10 +264,12 @@ function firstTruthy(records, field) {
 }
 
 // Combines every known source into one canonical metadata record.
-function computeCanonical(canonical, sampleModelIds = []) {
+function computeCanonical(canonical, sampleModelIds = [], capability = 'chat') {
   loadState();
   const records = indexes.byCanonical.get(canonical) || [];
-  const aa = lookupBenchmark(canonical, sampleModelIds);
+  // Media models are scored by their arena ELO, never by the chat index.
+  const arena = capability !== 'chat' ? artificialAnalysisMedia.lookup(indexes.media, capability, sampleModelIds) : null;
+  const aa = capability === 'chat' ? lookupBenchmark(canonical, sampleModelIds) : null;
   const paidPrices = records.map((record) => record.priceOut).filter((price) => Number.isFinite(price) && price > 0);
   const marketPrice = median(paidPrices);
   const params = parameterCount(sampleModelIds[0] || '') ?? sampleModelIds.map(parameterCount).find(Boolean) ?? null;
@@ -255,7 +279,18 @@ function computeCanonical(canonical, sampleModelIds = []) {
   let intelligence;
   let source;
   let confidence;
-  if (aa?.intelligenceIndex) {
+  if (arena) {
+    intelligence = arena.score;
+    source = 'artificial_analysis_arena';
+    confidence = 0.85;
+  } else if (capability !== 'chat') {
+    // Without arena data, size and age within the kind are the best guide;
+    // the chat calibration means nothing for embedders or guards.
+    const guess = kindHeuristic(capability, params, releaseDate);
+    intelligence = guess.value;
+    source = guess.weightSum ? 'heuristic' : 'default';
+    confidence = Math.min(0.5, guess.weightSum * 0.5);
+  } else if (aa?.intelligenceIndex) {
     intelligence = Math.min(1, aa.intelligenceIndex / (indexes.aaScale || AA_INDEX_SCALE));
     source = 'artificial_analysis';
     confidence = 0.9;
@@ -281,9 +316,9 @@ function computeCanonical(canonical, sampleModelIds = []) {
     supports_tools: toFlag(firstTruthy(records, 'tools')),
     supports_vision: toFlag(firstTruthy(records, 'vision')),
     supports_reasoning: toFlag(reasoning),
-    release_date: releaseDate || null,
+    release_date: releaseDate || arena?.releaseDate || null,
     params_b: params,
-    sources_json: JSON.stringify([...new Set([...records.map((record) => record.source), ...(aa ? ['artificial_analysis'] : [])])]),
+    sources_json: JSON.stringify([...new Set([...records.map((record) => record.source), ...(aa ? ['artificial_analysis'] : []), ...(arena ? ['artificial_analysis_arena'] : [])])]),
   };
 }
 
@@ -307,8 +342,8 @@ function upsertCanonical(record) {
 }
 
 function recomputeCanonical(canonical) {
-  const samples = getDatabase().prepare('SELECT model_id FROM models WHERE canonical_id = ? LIMIT 5').all(canonical).map((row) => row.model_id);
-  upsertCanonical(computeCanonical(canonical, samples));
+  const rows = getDatabase().prepare('SELECT model_id, capability FROM models WHERE canonical_id = ? LIMIT 5').all(canonical);
+  upsertCanonical(computeCanonical(canonical, rows.map((row) => row.model_id), rows[0]?.capability || 'chat'));
 }
 
 function recomputeAll() {
@@ -337,7 +372,7 @@ function status() {
 }
 
 function resetForTests(seed) {
-  state = { modelsDev: {}, openrouter: [], artificialAnalysis: [], fetchedAt: {}, ...seed };
+  state = { modelsDev: {}, openrouter: [], artificialAnalysis: [], artificialAnalysisMedia: {}, fetchedAt: {}, ...seed };
   buildIndexes();
 }
 

@@ -11,6 +11,10 @@ module.exports = {
   baseUrl: 'https://openrouter.ai/api/v1',
   headers: { 'HTTP-Referer': 'https://github.com/NeoLabs-Systems/NeoRouter', 'X-Title': 'NeoRouter' },
   validate: { path: '/key' },
+  // Embedding, image and video models live in their own listings.
+  models: { extraPaths: ['/embeddings/models', '/images/models', '/videos/models'] },
+  media: { embed: '/embeddings', generateImage: '/images', speech: '/audio/speech', transcribe: '/audio/transcriptions', createVideo: '/videos' },
+  quirks: { transcriptionJson: true, noImageResponseFormat: true },
   billing: {
     defaultMode: 'paid',
     alwaysFree: [':free$', '^openrouter/free$'],

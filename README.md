@@ -92,6 +92,11 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
     <td valign="top"><b>🗜️ Prompt compression</b><br>Lossless, balanced or aggressive: minified JSON, trimmed tool output and masked old observations, never touching code or your latest message.</td>
     <td valign="top"><b>💸 Savings</b><br>See what free models saved you and how many tokens compression removed.</td>
   </tr>
+  <tr>
+    <td valign="top"><b>🧬 Embeddings</b><br><code>/v1/embeddings</code> across providers. "auto" pins each key to one model so vectors stay comparable.</td>
+    <td valign="top"><b>🎨 Images, speech, video</b><br>Image generation, text to speech, transcription with subtitles and video jobs, all routed with fallback.</td>
+    <td valign="top"><b>⚡ System One models</b><br>Fast guard models (Llama Guard, NemoGuard, gpt-oss-safeguard, Prompt Guard) behind one <code>/v1/moderations</code>.</td>
+  </tr>
 </table>
 
 **Providers:** Groq, Google Gemini, Cerebras, Mistral, OpenRouter, NVIDIA NIM, Cloudflare, Cohere, Z.ai, SiliconFlow, Hugging Face, Ollama Cloud, Kilo, OpenAI, Anthropic, xAI, DeepSeek, Together, Fireworks, DeepInfra, Nous, local Ollama and LM Studio, and any OpenAI- or Anthropic-compatible endpoint.

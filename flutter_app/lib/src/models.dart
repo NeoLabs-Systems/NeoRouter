@@ -99,6 +99,12 @@ class CatalogModel {
   bool? get reasoning => _bool(raw['reasoning']);
   double? get priceIn => _double(raw['priceIn']);
   double? get priceOut => _double(raw['priceOut']);
+  String get capability => raw['capability'] as String? ?? 'chat';
+
+  /// Media models: USD per image, second (video), minute (audio in) or
+  /// million characters (speech).
+  String? get priceUnit => raw['priceUnit'] as String?;
+  double? get unitPrice => _double(raw['unitPrice']);
   String? get priceSource => raw['priceSource'] as String?;
   double? get intelligence => _double(raw['intelligence']);
   String? get intelligenceSource => raw['intelligenceSource'] as String?;
@@ -186,6 +192,7 @@ class RequestLog {
   String get apiFormat => raw['apiFormat'] as String? ?? '';
   String get requestedModel => raw['requestedModel'] as String? ?? '';
   String? get model => raw['model'] as String?;
+  String get capability => raw['capability'] as String? ?? 'chat';
   bool get success => raw['status'] == 'success';
   int? get httpStatus => _int(raw['httpStatus']);
   String? get errorCode => raw['errorCode'] as String?;

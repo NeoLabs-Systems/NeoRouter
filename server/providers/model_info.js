@@ -8,9 +8,14 @@
 const NON_CHAT_PATTERNS = [
   ['embedding', /embed|bge-|e5-|gte-|nomic-embed|text-similarity/i],
   ['rerank', /rerank/i],
-  ['audio', /whisper|tts|speech|transcri|audio|voice|orpheus|playai|lyria|music/i],
+  // Audio is split by direction: speech-to-text and text-to-speech.
+  ['transcription', /whisper|transcri|(^|[-_/])asr([-_]|$)|parakeet|canary-/i],
+  ['speech', /tts|text-to-speech|orpheus|playai|melotts|kokoro|voice-design/i],
+  ['other', /lyria|music|audio|native-audio|live|realtime/i],
+  // Editing models need an input video, which /v1/videos does not take.
+  ['other', /video-(edit|upscale)|(^|\/)aleph|detector/i],
   ['image', /dall-e|stable-diffusion|sdxl|flux|imagen|image-gen|gpt-image|kolors|seedream|nano-banana|-image(-|$)/i],
-  ['video', /\bvideo\b|veo-|sora|wan2|kling|hailuo/i],
+  ['video', /\bvideo\b|veo-|sora|wan2|(^|[/-])kling|hailuo/i],
   // Other routers ("openrouter/auto", "kilo-auto/frontier", Jev Router) pick a
   // model themselves at an unpredictable price; NeoRouter does the routing.
   ['router', /(^|\/)auto(-beta)?$|(^|\/)kilo-auto\/|jev-router|(^|\/)openrouter\/free$|(^|\/)router$/i],
@@ -23,9 +28,12 @@ function detectKind(id, raw = {}) {
   const declared = String(raw.type || raw.object_type || raw.task || '').toLowerCase();
   if (/embed/.test(declared)) return 'embedding';
   if (/image/.test(declared) && !/text/.test(declared)) return 'image';
+  if (raw.supported_durations || raw.supported_resolutions) return 'video';
   const outputs = raw.architecture?.output_modalities;
   if (Array.isArray(outputs) && outputs.length && !outputs.includes('text')) {
-    return outputs.includes('image') ? 'image' : outputs.includes('audio') ? 'audio' : 'other';
+    if (outputs.includes('embeddings') || outputs.includes('embedding')) return 'embedding';
+    if (outputs.includes('video')) return 'video';
+    return outputs.includes('image') ? 'image' : outputs.includes('audio') ? 'speech' : 'other';
   }
   for (const [kind, pattern] of NON_CHAT_PATTERNS) {
     if (pattern.test(id)) return kind;
@@ -78,6 +86,23 @@ function parsePricing(raw) {
   return { priceIn: null, priceOut: null, priceKnown: false, freeHint: false };
 }
 
+// Unit prices for media listings, in USD: OpenRouter's video SKUs are cents
+// per output second per resolution; the cheapest resolution is the floor.
+function parseUnitPricing(raw) {
+  const skus = raw.pricing_skus && typeof raw.pricing_skus === 'object' ? raw.pricing_skus : null;
+  if (skus) {
+    // Either "cents_per_video_output_second_720p" (cents) or "duration_seconds_720p" (USD).
+    const seconds = Object.entries(skus)
+      .filter(([name]) => /second/.test(name) && !/reference|input/.test(name))
+      .map(([name, value]) => (toNumber(value) ?? -1) / (/^cents/.test(name) ? 100 : 1))
+      .filter((value) => value >= 0);
+    if (seconds.length) return { priceUnit: 'second', unitPrice: Math.min(...seconds) };
+  }
+  const perImage = toNumber(raw.price_per_image ?? raw.pricing?.per_image);
+  if (perImage !== null && perImage >= 0) return { priceUnit: 'image', unitPrice: perImage };
+  return { priceUnit: null, unitPrice: null };
+}
+
 function supportedParameters(raw) {
   return Array.isArray(raw.supported_parameters) ? raw.supported_parameters : null;
 }
@@ -105,6 +130,7 @@ function normalizeModel(raw, overrides = {}) {
     contextWindow: contextWindow && contextWindow > 0 ? Math.round(contextWindow) : null,
     maxOutput: maxOutput && maxOutput > 0 ? Math.round(maxOutput) : null,
     ...pricing,
+    ...parseUnitPricing(raw),
     tools: params ? params.includes('tools') : flag(raw.supports_tools ?? raw.capabilities?.function_calling ?? raw.capabilities?.tools),
     vision: Array.isArray(inputs) ? inputs.includes('image') : flag(raw.supports_vision ?? raw.capabilities?.vision),
     json: params ? params.includes('response_format') || params.includes('structured_outputs') : null,
@@ -114,4 +140,4 @@ function normalizeModel(raw, overrides = {}) {
   };
 }
 
-module.exports = { normalizeModel, detectKind, parsePricing, toNumber };
+module.exports = { normalizeModel, detectKind, parsePricing, parseUnitPricing, toNumber };

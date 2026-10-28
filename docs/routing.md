@@ -49,3 +49,30 @@ OpenRouter (prices, context, capabilities, release dates) and, if an admin
 configured a key, Artificial Analysis (benchmark index, measured speed).
 Without a benchmark the score is a heuristic of market price, parameter count,
 recency and reasoning support. Users can override it per model.
+
+## Other kinds
+
+Embeddings, images, speech, transcription, System One (moderation) and video
+use the same plan, learning, quotas and budgets
+(`server/capabilities/shared/run_capability.js`); only the adapter method and
+the price unit differ. Endpoints follow the OpenAI API: `/v1/embeddings`,
+`/v1/images/generations`, `/v1/audio/speech`, `/v1/audio/transcriptions`
+(and `/translations`), `/v1/moderations` and `/v1/videos`. `GET
+/v1/models?type=embedding` lists a kind.
+
+- **Embeddings:** "auto" pins a key to the first model and size it used, since
+  vectors of different models cannot be compared; fallback then only moves
+  between hosts of that model. `DELETE /v1/embeddings/pin` resets it.
+- **Transcription:** subtitles (`srt`, `vtt`, `verbose_json`) prefer models
+  that return timestamps.
+- **System One:** guard models answer in their own formats (a probability,
+  `unsafe\nS9`, JSON verdicts); `server/capabilities/media/system_one.js` maps
+  them to OpenAI moderation results. `check` picks `safety` (default),
+  `prompt_injection` or `topic` (with a `policy`).
+- **Video:** jobs stay bound to the provider that accepted them and are polled
+  on `GET /v1/videos/:id`.
+- **Quality:** image, speech and video models are scored by Artificial
+  Analysis arena ELO; other kinds by size and age within their kind.
+- **Prices:** per image, per second of video, per minute of audio or per
+  million characters (`price_unit`), or per token where the provider bills
+  that way.

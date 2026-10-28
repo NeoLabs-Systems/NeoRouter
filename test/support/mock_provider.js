@@ -9,6 +9,9 @@ const express = require('express');
 //   hang-*    answers after 5 s          think-*  reasoning only, no answer
 //   trunc-*   spends max_tokens on reasoning (finish_reason length)
 //   echo-*    answers with the last user message (streams it in small pieces)
+//   *guard*   answers like Llama Guard ("unsafe\nS9" when the text mentions a bomb)
+// Media endpoints (embeddings, images, speech, transcriptions, videos) fail
+// for models starting with fail-, like chat.
 function createMockProvider({ models, prices = {}, port = 0 } = {}) {
   const app = express();
   app.use(express.json());
@@ -31,7 +34,9 @@ function createMockProvider({ models, prices = {}, port = 0 } = {}) {
       ? [{ id: 'call_1', type: 'function', function: { name: tools?.[0]?.function?.name || 'lookup', arguments: '{"q":"x"}' } }]
       : null;
     const lastUser = [...(req.body.messages || [])].reverse().find((message) => message.role === 'user');
-    const content = model.startsWith('echo-') ? String(lastUser?.content || '') : model.startsWith('empty-') || model.startsWith('think-') ? '' : `hello from ${model}`;
+    const guard = model.includes('guard') ? (/bomb/i.test(String(lastUser?.content)) ? 'unsafe\nS9' : 'safe') : null;
+    const plain = model.startsWith('echo-') ? String(lastUser?.content || '') : model.startsWith('empty-') || model.startsWith('think-') ? '' : `hello from ${model}`;
+    const content = guard ?? plain;
     if (model.startsWith('trunc-') && !stream) {
       return res.json({ id: 'cmpl-1', object: 'chat.completion', created: 1, model, choices: [{ index: 0, message: { role: 'assistant', content: '', reasoning: 'thinking and thinking' }, finish_reason: 'length' }], usage: { prompt_tokens: 5, completion_tokens: 50, total_tokens: 55 } });
     }
@@ -70,6 +75,44 @@ function createMockProvider({ models, prices = {}, port = 0 } = {}) {
     res.write('data: [DONE]\n\n');
     return res.end();
   });
+  const media = (name) => (req, res, next) => {
+    calls.push({ model: req.body?.model, kind: name, at: Date.now(), body: req.body });
+    if (String(req.body?.model || '').startsWith('fail-')) return res.status(500).json({ error: { message: 'upstream exploded' } });
+    return next();
+  };
+  app.post('/v1/embeddings', media('embed'), (req, res) => {
+    const inputs = Array.isArray(req.body.input) ? req.body.input : [req.body.input];
+    const size = req.body.dimensions || 8;
+    res.json({ object: 'list', model: req.body.model, data: inputs.map((text, index) => ({ object: 'embedding', index, embedding: Array.from({ length: size }, (_, i) => (text.length + i) / 100) })), usage: { prompt_tokens: 3 * inputs.length, total_tokens: 3 * inputs.length } });
+  });
+  const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+  app.post('/v1/images/generations', media('image'), (req, res) => {
+    res.json({ created: 1, data: Array.from({ length: req.body.n || 1 }, () => ({ b64_json: PNG })) });
+  });
+  app.post('/v1/audio/speech', media('speech'), (req, res) => {
+    res.set('content-type', 'audio/mpeg').send(Buffer.from(`ID3fake-mp3:${req.body.voice}:${req.body.input}`));
+  });
+  app.post('/v1/audio/transcriptions', express.raw({ type: 'multipart/form-data', limit: '30mb' }), async (req, res) => {
+    const form = await new Request('http://x/', { method: 'POST', headers: { 'content-type': req.get('content-type') }, body: req.body }).formData();
+    const model = form.get('model');
+    const file = form.get('file');
+    calls.push({ model, kind: 'transcribe', at: Date.now(), bytes: file?.size, responseFormat: form.get('response_format') });
+    if (String(model).startsWith('fail-')) return res.status(500).json({ error: { message: 'upstream exploded' } });
+    return res.json({ task: 'transcribe', language: 'english', duration: 2.5, text: 'hello world', segments: [{ id: 0, start: 0, end: 1.2, text: ' hello' }, { id: 1, start: 1.2, end: 2.5, text: ' world' }] });
+  });
+  const videos = new Map();
+  app.post('/v1/videos', media('video'), (req, res) => {
+    const id = `vid_${videos.size + 1}`;
+    videos.set(id, { polls: 0 });
+    res.json({ id, object: 'video', status: 'queued', progress: 0 });
+  });
+  app.get('/v1/videos/:id', (req, res) => {
+    const video = videos.get(req.params.id);
+    if (!video) return res.status(404).json({ error: { message: 'no such video' } });
+    video.polls += 1;
+    return res.json({ id: req.params.id, status: video.polls >= 2 ? 'completed' : 'in_progress', progress: video.polls >= 2 ? 100 : 50 });
+  });
+  app.get('/v1/videos/:id/content', (req, res) => res.set('content-type', 'video/mp4').send(Buffer.from('fake-mp4')));
   return new Promise((resolve) => {
     const server = app.listen(port, '127.0.0.1', () => {
       resolve({ url: `http://127.0.0.1:${server.address().port}/v1`, calls, close: () => new Promise((done) => server.close(done)) });

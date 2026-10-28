@@ -1,14 +1,23 @@
 'use strict';
 
-// Each capability (chat today; search, image, audio, video later) mounts its
-// own gateway routes under /v1. Routing, quota, budget and catalog services
-// are capability-agnostic and keyed by the model's `capability` column.
+// Each routable kind of model and its gateway routes under /v1. Routing,
+// quota, budget and catalog services are capability-agnostic and keyed by
+// the model's `capability` column; the non-chat kinds share one router.
+const chatRoutes = () => require('../capabilities/chat/gateway_routes');
+const mediaRoutes = () => require('../capabilities/media/gateway_routes');
+
 const CAPABILITIES = [
-  { id: 'chat', label: 'Chat', routes: () => require('../capabilities/chat/gateway_routes') },
+  { id: 'chat', label: 'Chat', routes: chatRoutes },
+  { id: 'embedding', label: 'Embeddings', routes: mediaRoutes },
+  { id: 'image', label: 'Images', routes: mediaRoutes },
+  { id: 'speech', label: 'Speech', routes: mediaRoutes },
+  { id: 'transcription', label: 'Transcription', routes: mediaRoutes },
+  { id: 'moderation', label: 'System One', routes: mediaRoutes },
+  { id: 'video', label: 'Video', routes: mediaRoutes },
 ];
 
 function mount(router) {
-  for (const capability of CAPABILITIES) router.use(capability.routes());
+  for (const routes of new Set(CAPABILITIES.map((capability) => capability.routes))) router.use(routes());
 }
 
 function list() {

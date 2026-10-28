@@ -83,6 +83,11 @@ class BaseAdapter {
     return [];
   }
 
+  // Whether this account can serve an adapter method (chat, embed, speech, …).
+  supports(method) {
+    return method === 'chat' || typeof this[method] === 'function';
+  }
+
   async fetchQuota() {
     return null;
   }

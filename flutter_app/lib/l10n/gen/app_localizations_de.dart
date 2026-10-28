@@ -1560,6 +1560,12 @@ class AppL10nDe extends AppL10n {
   String get capAudio => 'Audio';
 
   @override
+  String get capSpeech => 'Sprachausgabe';
+
+  @override
+  String get capTranscription => 'Transkription';
+
+  @override
   String get capVideo => 'Video';
 
   @override
@@ -1586,7 +1592,14 @@ class AppL10nDe extends AppL10n {
   String get capAudioHint => 'Sprache zu Text, Text zu Sprache und Musik.';
 
   @override
-  String get capVideoHint => 'Erstellen und verstehen Videos.';
+  String get capSpeechHint => 'Lesen Text mit natürlicher Stimme vor.';
+
+  @override
+  String get capTranscriptionHint =>
+      'Machen aus Aufnahmen Text und Untertitel.';
+
+  @override
+  String get capVideoHint => 'Erstellen kurze Videos aus einer Beschreibung.';
 
   @override
   String get capModerationHint =>
@@ -2459,4 +2472,139 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get tryItSent => 'Was ein Anbieter bekäme';
+
+  @override
+  String get pgEmbedHint =>
+      'Ein Text pro Zeile. NeoRouter macht aus jedem einen Vektor und zeigt, wie ähnlich sie sich sind.';
+
+  @override
+  String get pgEmbedRun => 'Vektoren erstellen';
+
+  @override
+  String pgEmbedResult(String count, String dims) {
+    return '$count Vektoren mit je $dims Zahlen';
+  }
+
+  @override
+  String get pgSimilarity => 'Ähnlichkeit';
+
+  @override
+  String pgPinned(String model) {
+    return 'Dieser Key nutzt für Embeddings jetzt immer $model, damit deine Vektoren vergleichbar bleiben.';
+  }
+
+  @override
+  String get pgImageHint => 'Beschreibe das Bild, das du möchtest.';
+
+  @override
+  String get pgImageRun => 'Bild erstellen';
+
+  @override
+  String get pgSize => 'Größe';
+
+  @override
+  String get pgSpeechHint => 'Schreibe, was vorgelesen werden soll.';
+
+  @override
+  String get pgSpeechRun => 'Vorlesen';
+
+  @override
+  String get pgVoice => 'Stimme';
+
+  @override
+  String get pgVoiceDefault => 'Standardstimme';
+
+  @override
+  String get pgPlay => 'Abspielen';
+
+  @override
+  String get pgStop => 'Stopp';
+
+  @override
+  String get pgDownload => 'Herunterladen';
+
+  @override
+  String get pgTranscribeHint =>
+      'Wähle eine Aufnahme (bis 25 MB) und NeoRouter macht Text daraus.';
+
+  @override
+  String get pgChooseFile => 'Audiodatei wählen';
+
+  @override
+  String get pgUseSpeech => 'Vorgelesenen Text nehmen';
+
+  @override
+  String get pgTranscribeRun => 'Transkribieren';
+
+  @override
+  String get pgTranslate => 'Ins Englische übersetzen';
+
+  @override
+  String get pgCheckHint =>
+      'Füge eine Nachricht ein. Ein System-One-Modell entscheidet in Sekundenbruchteilen, ob sie unbedenklich ist.';
+
+  @override
+  String get pgCheckRun => 'Prüfen';
+
+  @override
+  String get pgSafe => 'Unbedenklich';
+
+  @override
+  String get pgCheckSafety => 'Schädliche Inhalte';
+
+  @override
+  String get pgCheckInjection => 'Prompt-Angriffe';
+
+  @override
+  String get pgFlagged => 'Markiert';
+
+  @override
+  String get pgVideoHint =>
+      'Beschreibe eine kurze Szene. Videos dauern einige Minuten und sind nie gratis.';
+
+  @override
+  String get pgVideoRun => 'Video erstellen';
+
+  @override
+  String pgSeconds(String count) {
+    return '$count Sekunden';
+  }
+
+  @override
+  String pgVideoStatus(String status) {
+    return 'Status: $status';
+  }
+
+  @override
+  String get pgNoModels =>
+      'Noch keine deiner Verbindungen bietet diese Art von Modell an.';
+
+  @override
+  String get pgAddProvider => 'Anbieter hinzufügen';
+
+  @override
+  String get unitPrice => 'Preis pro Einheit (USD)';
+
+  @override
+  String get unitImage => 'pro Bild';
+
+  @override
+  String get unitSecond => 'pro Sekunde';
+
+  @override
+  String get unitMinute => 'pro Audiominute';
+
+  @override
+  String get unitMchar => 'pro Million Zeichen';
+
+  @override
+  String get activityKind => 'Art';
+
+  @override
+  String unitPriceLabel(String price, String unit) {
+    return '$price $unit';
+  }
+
+  @override
+  String get unitKind => 'Abrechnung';
 }

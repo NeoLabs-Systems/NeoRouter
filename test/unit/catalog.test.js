@@ -107,7 +107,15 @@ test('pricing parser handles per-token and per-million prices', () => {
 
 test('model kinds separate chat from embeddings, audio and images', () => {
   assert.equal(normalizeModel({ id: 'text-embedding-3-small' }).kind, 'embedding');
-  assert.equal(normalizeModel({ id: 'whisper-large-v3' }).kind, 'audio');
+  assert.equal(normalizeModel({ id: 'whisper-large-v3' }).kind, 'transcription');
+  assert.equal(normalizeModel({ id: 'gemini-3.5-transcribe' }).kind, 'transcription');
+  assert.equal(normalizeModel({ id: 'canopylabs/orpheus-v1-english' }).kind, 'speech');
+  assert.equal(normalizeModel({ id: 'gemini-3.8-flash-tts' }).kind, 'speech');
+  assert.equal(normalizeModel({ id: 'black-forest-labs/flux.2-klein-4b' }).kind, 'image');
+  assert.equal(normalizeModel({ id: 'gpt-realtime' }).kind, 'other');
+  assert.equal(normalizeModel({ id: 'nvidia/nemotron-3.5-embed-1b', architecture: { output_modalities: ['embeddings'] } }).kind, 'embedding');
+  assert.equal(normalizeModel({ id: 'x-ai/grok-imagine-video-1.5-lite', supported_durations: [4, 8] }).kind, 'video');
+  assert.equal(normalizeModel({ id: 'prompt-guard-2-86m' }).kind, 'moderation');
   assert.equal(normalizeModel({ id: 'llama-guard-4-12b' }).kind, 'moderation');
   assert.equal(normalizeModel({ id: 'llama-3.3-70b-versatile' }).kind, 'chat');
   assert.equal(normalizeModel({ id: 'nvidia/riva-translate-4b-instruct-v2' }).kind, 'other');
