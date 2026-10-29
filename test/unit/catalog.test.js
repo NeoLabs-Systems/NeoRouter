@@ -233,3 +233,10 @@ test('benchmark names match provider ids without borrowing a sibling score', () 
   assert.equal(index('meta/llama-4'), null, 'sizes that collapse onto one name stay ambiguous');
   metadata.resetForTests({});
 });
+
+test('Artificial Analysis records keep their individual benchmark scores', () => {
+  const { toRecord } = require('../../server/services/catalog/metadata/artificial_analysis');
+  const record = toRecord({ slug: 'old-model', name: 'Old', evaluations: { artificial_analysis_intelligence_index: null, gpqa: 0.7, hle: 0.1, mmlu_pro: null } });
+  assert.equal(record.intelligenceIndex, null);
+  assert.deepEqual(record.benchmarks, { gpqa: 0.7, hle: 0.1 });
+});

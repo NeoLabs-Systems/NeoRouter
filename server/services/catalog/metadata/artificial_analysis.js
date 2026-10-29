@@ -14,15 +14,20 @@ async function fetchSource({ apiKey, signal } = {}) {
   });
   if (!response.ok) throw new Error(`Artificial Analysis returned HTTP ${response.status}`);
   const data = await response.json();
-  return (data?.data || []).map((model) => ({
+  return (data?.data || []).map(toRecord);
+}
+
+function toRecord(model) {
+  const evaluations = model.evaluations || {};
+  return {
     slug: model.slug || model.name,
     name: model.name,
-    intelligenceIndex: Number(model.evaluations?.artificial_analysis_intelligence_index) || null,
-    benchmarks: Object.fromEntries(BENCHMARKS.map((name) => [name, Number(model.evaluations?.[name])]).filter(([, value]) => Number.isFinite(value) && model.evaluations?.[name] !== null)),
+    intelligenceIndex: Number(evaluations.artificial_analysis_intelligence_index) || null,
+    benchmarks: Object.fromEntries(BENCHMARKS.filter((name) => evaluations[name] !== null && evaluations[name] !== undefined && Number.isFinite(Number(evaluations[name]))).map((name) => [name, Number(evaluations[name])])),
     outputTps: Number(model.median_output_tokens_per_second) || null,
     ttftSeconds: Number(model.median_time_to_first_token_seconds) || null,
     releaseDate: model.release_date || null,
-  }));
+  };
 }
 
-module.exports = { name: 'artificial_analysis', fetchSource, BENCHMARKS };
+module.exports = { name: 'artificial_analysis', fetchSource, toRecord, BENCHMARKS };
