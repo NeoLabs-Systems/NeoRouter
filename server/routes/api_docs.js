@@ -7,6 +7,7 @@ const express = require('express');
 const { getConfig } = require('../config/env');
 const capabilities = require('../core/capability_registry');
 const profiles = require('../services/routing/profiles');
+const { TASK_KINDS } = require('../services/routing/task/classifier');
 
 const router = express.Router();
 
@@ -18,6 +19,7 @@ function reference(origin, { placeholder = false } = {}) {
   const wsBase = origin.replace(/^http/i, 'ws');
   const kinds = capabilities.list().map(({ id, label }) => `\`${id}\` (${label})`).join(', ');
   const presets = Object.keys(profiles.PRESETS).map((slug) => `\`${slug}\``).join(', ');
+  const taskKinds = TASK_KINDS.map((kind) => `\`${kind}\``).join(', ');
   const aliases = Object.entries(profiles.ALIASES).map(([alias, slug]) => `\`${alias}\` → \`${slug}\``).join(', ');
   return `# NeoRouter API
 
@@ -104,6 +106,7 @@ and learns from every outcome.
 | \`X-Request-Id\` | Id of this request. Send your own \`X-Request-Id\` to set it. |
 | \`X-NeoRouter-Model\` | The model that answered (\`provider-slug/model-id\`). |
 | \`X-NeoRouter-Trail\` | Every model tried, in order, comma-separated. More than one means a fallback happened. |
+| \`X-NeoRouter-Task\` | Chat only: the kind of task the router saw and how hard it judged it, e.g. \`coding; difficulty=0.62\` (0 easy to 1 hard). Easy requests can go to smaller models that suffice. |
 | \`X-NeoRouter-Budget-Pace\` | For keys with a daily or monthly budget: \`ahead\`, \`on_track\`, \`tight\` or \`over\`. |
 | \`X-NeoRouter-Redacted\` | How many values the privacy shield hid from the provider (restored in the answer). |
 | \`X-NeoRouter-Compression\` | Prompt compression level and estimated tokens saved, when enabled. |
@@ -114,6 +117,9 @@ and learns from every outcome.
 
 Optional request header: \`X-NeoRouter-Compression: off | lossless | balanced | aggressive\`
 lowers the owner's prompt compression level for this request (it can never raise it).
+
+Optional request header for chat: \`X-NeoRouter-Task: <kind>\` names the task when you
+know it better than the prompt shows. Kinds: ${taskKinds}. Unknown kinds are ignored.
 
 ## Chat
 
