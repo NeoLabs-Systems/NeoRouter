@@ -3,6 +3,7 @@
 const { KINDS } = require('../../providers/provider_error');
 const stats = require('./stats_store');
 const concurrency = require('./concurrency');
+const plans = require('./plans');
 const quota = require('../quota/quota_service');
 const billing = require('../providers/billing_check');
 const { getDatabase } = require('../../db/database');
@@ -105,6 +106,7 @@ function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, now = 
   if (error.headers) {
     quota.observeHeaders(entry, error.headers, now);
     billing.observeHeaders(entry, error.headers);
+    plans.observeHeaders(entry, error.headers, now);
   }
   if (error.learned?.value) quota.learnLimit(entry, error.learned);
   if (error.kind === KINDS.QUOTA_EXHAUSTED) billing.observeFailure(entry, error);
@@ -127,6 +129,7 @@ function onSuccess(entry, measurement, headers, now = Date.now()) {
   if (headers) {
     quota.observeHeaders(entry, headers, now);
     billing.observeHeaders(entry, headers);
+    plans.observeHeaders(entry, headers, now);
   }
 }
 

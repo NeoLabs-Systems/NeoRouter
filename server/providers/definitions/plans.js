@@ -26,6 +26,26 @@ function minimaxWindows(data) {
 
 module.exports = [
   {
+    id: 'chatgpt',
+    label: 'ChatGPT',
+    description: 'Your ChatGPT plan (Plus, Pro) through the Codex sign-in.',
+    category: 'plan',
+    website: 'https://chatgpt.com/codex',
+    adapter: 'codex',
+    connect: 'codex_device',
+    keyOptional: true,
+    // Overridable for tests only.
+    baseUrl: process.env.NEOROUTER_CODEX_BASE_URL || 'https://chatgpt.com/backend-api/codex',
+    billing: {
+      defaultMode: 'plan',
+      plan: { note: 'Uses your ChatGPT plan: a 5-hour and a weekly window, which ChatGPT reports with every answer.' },
+      note: 'Signs in the way Codex, OpenClaw and OpenCode do. Meant for your own plan: Team, Business and Enterprise workspaces follow their admins\' rules, and sharing one plan between people is against the terms.',
+      source: 'https://developers.openai.com/codex/auth',
+      checkedAt: '2026-10-29',
+    },
+    quirks: { timeoutMs: 300000 },
+  },
+  {
     id: 'synthetic',
     label: 'Synthetic',
     description: 'Open models on a flat subscription, for any OpenAI-compatible tool.',

@@ -11,6 +11,10 @@ const router = express.Router();
 const keyInput = z.object({
   name: z.string().min(1).max(80),
   mode: z.enum(['free_only', 'paid', 'both']).optional(),
+  // The three kinds of models, chosen independently (preferred over mode).
+  allowFree: z.boolean().optional(),
+  allowPlan: z.boolean().optional(),
+  allowPaid: z.boolean().optional(),
   budgetUsd: z.number().min(0).nullable().optional(),
   budgetPeriod: z.enum(['total', 'monthly', 'daily']).optional(),
   rpmLimit: z.number().int().positive().nullable().optional(),

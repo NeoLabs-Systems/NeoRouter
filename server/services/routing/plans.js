@@ -69,8 +69,24 @@ function factor(entry, now = Date.now()) {
   return left && left.share < LOW_SHARE ? LOW_FACTOR : PREFERENCE;
 }
 
+// ChatGPT (Codex) reports its plan windows on every response:
+// x-codex-primary-used-percent, -window-minutes, -reset-at (Unix seconds),
+// and the same for "secondary" (usually 5 hours and a week).
+function observeHeaders(entry, headers, now = Date.now()) {
+  if (!headers?.get) return;
+  for (const slot of ['primary', 'secondary']) {
+    const raw = headers.get(`x-codex-${slot}-used-percent`);
+    const used = raw === null || raw === '' ? NaN : Number(raw);
+    if (!Number.isFinite(used)) continue;
+    const minutes = Number(headers.get(`x-codex-${slot}-window-minutes`));
+    const resetAt = Number(headers.get(`x-codex-${slot}-reset-at`)) * 1000 || null;
+    const metric = !Number.isFinite(minutes) || minutes <= 6 * 60 ? 'plan_5h' : minutes <= 8 * 24 * 60 ? 'plan_week' : 'plan_month';
+    quota.setState(`a:${entry.accountId}`, metric, { limit: 100, remaining: Math.max(0, 100 - used), resetAt }, 'headers', now);
+  }
+}
+
 function resetForTests() {
   sent.clear();
 }
 
-module.exports = { room, onSent, effective, rejection, factor, PLAN_METRICS, resetForTests };
+module.exports = { room, onSent, effective, rejection, factor, observeHeaders, PLAN_METRICS, resetForTests };

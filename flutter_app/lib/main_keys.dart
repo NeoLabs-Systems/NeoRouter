@@ -11,17 +11,9 @@ import 'main_theme.dart';
 import 'src/backend_client.dart';
 import 'src/models.dart';
 
-String keyModeLabel(AppL10n t, String mode) => switch (mode) {
-  'free_only' => t.modeFreeOnly,
-  'paid' => t.modePaid,
-  _ => t.modeBoth,
-};
-
-String keyModeHint(AppL10n t, String mode) => switch (mode) {
-  'free_only' => t.modeFreeOnlyHint,
-  'paid' => t.modePaidHint,
-  _ => t.modeBothHint,
-};
+/// "Free · Plans · Paid" for the kinds of models a key may use.
+String keyKindsLabel(AppL10n t, RouterKey key) =>
+    <String>[if (key.allowFree) t.kindFreeShort, if (key.allowPlan) t.kindPlanShort, if (key.allowPaid) t.kindPaidShort].join(' · ');
 
 class KeysScreen extends StatefulWidget {
   const KeysScreen({super.key, required this.controller});
@@ -223,7 +215,7 @@ class _KeyRow extends StatelessWidget {
     final key = routerKey;
     final budget = key.budgetUsd;
     final used = key.lastUsedAt == null ? t.keyNeverUsed : t.keyUsed(formatAgo(t, DateTime.parse(key.lastUsedAt!).toLocal()));
-    final subtitle = <String>[if (key.revoked) t.revoked else keyModeLabel(t, key.mode), used, if (showCreator) createdByLabel(t, key.createdBy)].join(' · ');
+    final subtitle = <String>[if (key.revoked) t.revoked else keyKindsLabel(t, key), used, if (showCreator) createdByLabel(t, key.createdBy)].join(' · ');
     final actions = <PopupMenuEntry<String>>[
       if (!key.revoked && canEdit) PopupMenuItem<String>(value: 'edit', child: Text(t.edit)),
       if (!key.revoked && canEdit) PopupMenuItem<String>(value: 'revoke', child: Text(t.revoke)),
@@ -329,7 +321,9 @@ class _KeyFormState extends State<_KeyForm> {
   late final TextEditingController _budget = TextEditingController(text: widget.existing?.budgetUsd?.toString() ?? '');
   late final TextEditingController _rpm = TextEditingController(text: widget.existing?.rpmLimit?.toString() ?? '');
   late final TextEditingController _allowed = TextEditingController(text: widget.existing?.allowedModels.join('\n') ?? '');
-  late String _mode = widget.existing?.mode ?? 'free_only';
+  late bool _free = widget.existing?.allowFree ?? true;
+  late bool _plan = widget.existing?.allowPlan ?? true;
+  late bool _paid = widget.existing?.allowPaid ?? false;
   late String _period = widget.existing?.budgetPeriod ?? 'monthly';
   late String _profile = widget.existing?.profile ?? 'balanced';
   bool _advanced = false;
@@ -346,14 +340,20 @@ class _KeyFormState extends State<_KeyForm> {
   }
 
   Future<void> _submit() async {
+    if (!_free && !_plan && !_paid) {
+      setState(() => _error = AppL10n.of(context).pickOneKind);
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;
     });
     final body = <String, Object?>{
       'name': _name.text.trim(),
-      'mode': _mode,
-      'budgetUsd': double.tryParse(_budget.text.trim().replaceAll(',', '.')),
+      'allowFree': _free,
+      'allowPlan': _plan,
+      'allowPaid': _paid,
+      'budgetUsd': _paid ? double.tryParse(_budget.text.trim().replaceAll(',', '.')) : null,
       'budgetPeriod': _period,
       'rpmLimit': int.tryParse(_rpm.text.trim()),
       'allowedModels': _allowed.text.split('\n').map((line) => line.trim()).where((line) => line.isNotEmpty).toList(),
@@ -396,45 +396,42 @@ class _KeyFormState extends State<_KeyForm> {
               const SizedBox(height: AppSpacing.lg),
               Text(t.keyAccessTitle, style: label),
               const SizedBox(height: AppSpacing.xs),
-              for (final mode in <String>['free_only', 'both', 'paid'])
-                OptionCard(title: keyModeLabel(t, mode), description: keyModeHint(t, mode), selected: _mode == mode, onTap: () => setState(() => _mode = mode)),
-              if (_mode != 'free_only') ...<Widget>[
+              _KindCheck(title: t.kindFree, description: t.kindFreeHint, value: _free, onChanged: (value) => setState(() => _free = value)),
+              _KindCheck(title: t.kindPlan, description: t.kindPlanHint, value: _plan, onChanged: (value) => setState(() => _plan = value)),
+              _KindCheck(title: t.kindPaid, description: t.kindPaidHint, value: _paid, onChanged: (value) => setState(() => _paid = value)),
+              if (_paid) ...<Widget>[
                 const SizedBox(height: AppSpacing.md),
                 Text(t.keyBudgetTitle, style: label),
                 const SizedBox(height: AppSpacing.xs),
                 Row(
                   children: <Widget>[
-                    Expanded(
+                    SizedBox(
+                      width: 140,
                       child: TextField(
                         controller: _budget,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: InputDecoration(labelText: t.budget, prefixText: r'$ '),
+                        decoration: const InputDecoration(prefixText: r'$ ', isDense: true),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Row(
-                  children: <Widget>[
-                    Text(t.budgetResets, style: TextStyle(fontSize: 13, color: neoRouterPaletteOf(context).textSoft)),
+                    Text(t.spendingLimitPer, style: TextStyle(color: neoRouterPaletteOf(context).textSoft)),
                     const SizedBox(width: AppSpacing.sm),
-                    SegmentedButton<String>(
-                      showSelectedIcon: false,
-                      segments: <ButtonSegment<String>>[
-                        ButtonSegment<String>(value: 'daily', label: Text(t.periodDaily)),
-                        ButtonSegment<String>(value: 'monthly', label: Text(t.periodMonthly)),
-                        ButtonSegment<String>(value: 'total', label: Text(t.periodTotal)),
+                    DropdownButton<String>(
+                      value: _period,
+                      onChanged: (value) => setState(() => _period = value ?? _period),
+                      items: <DropdownMenuItem<String>>[
+                        DropdownMenuItem<String>(value: 'daily', child: Text(t.periodDaily)),
+                        DropdownMenuItem<String>(value: 'monthly', child: Text(t.periodMonthly)),
+                        DropdownMenuItem<String>(value: 'total', child: Text(t.periodTotal)),
                       ],
-                      selected: <String>{_period},
-                      onSelectionChanged: (value) => setState(() => _period = value.first),
                     ),
                   ],
                 ),
-                if (_period == 'total') ...<Widget>[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(t.budgetResetsHint, style: TextStyle(fontSize: 12, color: neoRouterPaletteOf(context).textMuted, height: 1.4)),
-                ],
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  _free || _plan ? t.budgetFallsBack : t.budgetStops,
+                  style: TextStyle(fontSize: 12, color: neoRouterPaletteOf(context).textMuted, height: 1.4),
+                ),
               ],
               const SizedBox(height: AppSpacing.sm),
               Align(
@@ -490,3 +487,54 @@ String? _paceText(AppL10n t, RouterKey key) => switch (key.paceState) {
   'over' => t.paceOver,
   _ => null,
 };
+
+/// One kind of model a key may use: a checkbox card.
+class _KindCheck extends StatelessWidget {
+  const _KindCheck({required this.title, required this.description, required this.value, required this.onChanged});
+
+  final String title;
+  final String description;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = neoRouterPaletteOf(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: value ? palette.accentSoft : palette.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          side: BorderSide(color: value ? palette.accent.withValues(alpha: 0.5) : palette.border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => onChanged(!value),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 10, 14, 10),
+            child: Row(
+              children: <Widget>[
+                Checkbox(value: value, onChanged: (next) => onChanged(next ?? false)),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        title,
+                        style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(description, style: TextStyle(fontSize: 12.5, color: palette.textSoft, height: 1.35)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

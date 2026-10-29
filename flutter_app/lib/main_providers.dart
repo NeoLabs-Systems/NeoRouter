@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -484,6 +487,9 @@ class _ProviderFormState extends State<_ProviderForm> {
   bool _saving = false;
   bool _probing = false;
   bool _connecting = false;
+  // ChatGPT device sign-in in progress: the code to show and the poll timer.
+  Map<String, dynamic>? _deviceLogin;
+  Timer? _devicePoll;
   bool _advanced = false;
   Map<String, dynamic>? _probe;
   String? _error;
@@ -496,7 +502,65 @@ class _ProviderFormState extends State<_ProviderForm> {
     for (final controller in <TextEditingController>[_label, _slug, _secret, _baseUrl, _authHeader, _modelsPath, _manualModels, _headers, ..._fields.values]) {
       controller.dispose();
     }
+    _devicePoll?.cancel();
     super.dispose();
+  }
+
+  bool get _signInOnly => widget.definition.connect == 'codex_device';
+
+  Future<void> _startChatgptSignIn() async {
+    final t = AppL10n.of(context);
+    setState(() {
+      _connecting = true;
+      _error = null;
+    });
+    try {
+      final login = await widget.controller.api.chatgptLoginStart(accountId: widget.account?.id, billingMode: _billing);
+      if (!mounted) return;
+      setState(() => _deviceLogin = login);
+      await launchUrl(Uri.parse('${login['verificationUrl']}'));
+      final seconds = ((login['interval'] as num?) ?? 5).toInt().clamp(2, 30);
+      _devicePoll = Timer.periodic(Duration(seconds: seconds), (_) => _pollChatgptSignIn());
+    } on ApiException catch (error) {
+      setState(() => _error = error.message);
+    } catch (_) {
+      setState(() => _error = t.serverUnreachable);
+    } finally {
+      if (mounted) setState(() => _connecting = false);
+    }
+  }
+
+  bool _polling = false;
+
+  Future<void> _pollChatgptSignIn() async {
+    final login = _deviceLogin;
+    if (login == null || _polling) return;
+    _polling = true;
+    final t = AppL10n.of(context);
+    try {
+      final result = await widget.controller.api.chatgptLoginPoll('${login['loginId']}');
+      if (!mounted) return;
+      if (result['status'] == 'done') {
+        _devicePoll?.cancel();
+        Navigator.of(context).pop(_editing ? t.saved : t.chatgptConnected);
+      } else if (result['status'] == 'expired') {
+        _devicePoll?.cancel();
+        setState(() {
+          _deviceLogin = null;
+          _error = t.chatgptExpired;
+        });
+      }
+    } on ApiException catch (error) {
+      _devicePoll?.cancel();
+      if (mounted) {
+        setState(() {
+          _deviceLogin = null;
+          _error = error.message;
+        });
+      }
+    } finally {
+      _polling = false;
+    }
   }
 
   Map<String, Object> _options() {
@@ -656,28 +720,79 @@ class _ProviderFormState extends State<_ProviderForm> {
                   ],
                 ),
               ],
-              const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: _secret,
-                obscureText: true,
-                autofocus: !_editing && definition.id != 'openrouter',
-                decoration: InputDecoration(
-                  labelText: _editing
-                      ? t.apiKeyKeep
-                      : definition.keyOptional
-                      ? t.apiKeyOptional
-                      : t.apiKey,
-                ),
-              ),
-              if (definition.keyUrl != null)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    onPressed: () => launchUrl(Uri.parse(definition.keyUrl!)),
-                    icon: const Icon(Icons.open_in_new_rounded, size: 15),
-                    label: Text(t.getKeyAt(definition.label)),
+              if (_signInOnly) ...<Widget>[
+                const SizedBox(height: AppSpacing.md),
+                if (_deviceLogin == null) ...<Widget>[
+                  FilledButton.icon(
+                    onPressed: _connecting ? null : _startChatgptSignIn,
+                    icon: _connecting
+                        ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.login_rounded, size: 18),
+                    label: Text(_editing ? t.chatgptSignInAgain : t.chatgptSignIn),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(t.chatgptSignInHint, style: TextStyle(color: palette.textMuted, fontSize: 12.5, height: 1.4)),
+                ] else
+                  AppCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(t.chatgptEnterCode, style: TextStyle(color: palette.textSoft, fontSize: 13)),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: <Widget>[
+                            SelectableText(
+                              '${_deviceLogin!['userCode']}',
+                              style: GoogleFonts.geistMono(fontSize: 24, fontWeight: FontWeight.w600, letterSpacing: 2),
+                            ),
+                            IconButton(
+                              tooltip: t.copy,
+                              onPressed: () => Clipboard.setData(ClipboardData(text: '${_deviceLogin!['userCode']}')),
+                              icon: const Icon(Icons.copy_rounded, size: 18),
+                            ),
+                          ],
+                        ),
+                        TextButton.icon(
+                          onPressed: () => launchUrl(Uri.parse('${_deviceLogin!['verificationUrl']}')),
+                          icon: const Icon(Icons.open_in_new_rounded, size: 15),
+                          label: Text(t.chatgptOpenPage),
+                        ),
+                        Row(
+                          children: <Widget>[
+                            const SizedBox.square(dimension: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                            const SizedBox(width: 10),
+                            Text(t.chatgptWaiting, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+              if (!_signInOnly) ...<Widget>[
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  controller: _secret,
+                  obscureText: true,
+                  autofocus: !_editing && definition.id != 'openrouter',
+                  decoration: InputDecoration(
+                    labelText: _editing
+                        ? t.apiKeyKeep
+                        : definition.keyOptional
+                        ? t.apiKeyOptional
+                        : t.apiKey,
                   ),
                 ),
+                if (definition.keyUrl != null)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => launchUrl(Uri.parse(definition.keyUrl!)),
+                      icon: const Icon(Icons.open_in_new_rounded, size: 15),
+                      label: Text(t.getKeyAt(definition.label)),
+                    ),
+                  ),
+              ],
               for (final field in definition.fields) ...<Widget>[
                 gap,
                 TextField(
@@ -784,10 +899,11 @@ class _ProviderFormState extends State<_ProviderForm> {
       ),
       actions: <Widget>[
         TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(), child: Text(t.cancel)),
-        FilledButton(
-          onPressed: _saving ? null : _submit,
-          child: _saving ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)) : Text(_editing ? t.save : t.checkAndAdd),
-        ),
+        if (!_signInOnly || _editing)
+          FilledButton(
+            onPressed: _saving ? null : _submit,
+            child: _saving ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)) : Text(_editing ? t.save : t.checkAndAdd),
+          ),
       ],
     );
   }

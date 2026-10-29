@@ -374,6 +374,74 @@ class AppL10nDe extends AppL10n {
   String get categoryPlan => 'Abos';
 
   @override
+  String get kindFree => 'Gratis-Modelle';
+
+  @override
+  String get kindFreeHint => 'Kosten nie etwas.';
+
+  @override
+  String get kindPlan => 'Vorausbezahlte Pläne';
+
+  @override
+  String get kindPlanHint =>
+      'Nutzen das Kontingent von Plänen, die du schon bezahlst, z. B. ChatGPT.';
+
+  @override
+  String get kindPaid => 'Bezahl-Modelle';
+
+  @override
+  String get kindPaidHint =>
+      'Werden nach Verbrauch abgerechnet, innerhalb des Ausgabenlimits unten.';
+
+  @override
+  String get kindFreeShort => 'Gratis';
+
+  @override
+  String get kindPlanShort => 'Pläne';
+
+  @override
+  String get kindPaidShort => 'Bezahlt';
+
+  @override
+  String get pickOneKind => 'Wähle mindestens eine Art von Modellen.';
+
+  @override
+  String get spendingLimitPer => 'pro';
+
+  @override
+  String get budgetFallsBack =>
+      'Leer heißt kein Limit. Ist es aufgebraucht, macht der Key mit Gratis-Modellen und Plänen weiter.';
+
+  @override
+  String get budgetStops =>
+      'Leer heißt kein Limit. Ist es aufgebraucht, stoppt der Key bis zum Reset.';
+
+  @override
+  String get chatgptSignIn => 'Mit ChatGPT anmelden';
+
+  @override
+  String get chatgptSignInAgain => 'Neu anmelden';
+
+  @override
+  String get chatgptSignInHint =>
+      'NeoRouter zeigt einen Code. Gib ihn auf der OpenAI-Seite mit dem Konto ein, das deinen ChatGPT-Plan hat.';
+
+  @override
+  String get chatgptEnterCode => 'Gib diesen Code bei OpenAI ein';
+
+  @override
+  String get chatgptOpenPage => 'OpenAI-Seite öffnen';
+
+  @override
+  String get chatgptWaiting => 'Warte auf deine Bestätigung…';
+
+  @override
+  String get chatgptExpired => 'Der Code ist abgelaufen. Starte neu.';
+
+  @override
+  String get chatgptConnected => 'ChatGPT verbunden';
+
+  @override
   String get apiKey => 'API-Key';
 
   @override
@@ -712,28 +780,19 @@ class AppL10nDe extends AppL10n {
   String get keyMode => 'Modellzugriff';
 
   @override
-  String get modeFreeOnly => 'Nur Gratis-Modelle';
-
-  @override
-  String get modePaid => 'Alle Modelle';
-
-  @override
-  String get modeBoth => 'Alle Modelle, dann gratis';
-
-  @override
   String get budget => 'Limit in USD (leer = kein Limit)';
 
   @override
   String get budgetPeriod => 'Budget-Zeitraum';
 
   @override
-  String get periodTotal => 'Einmalig';
+  String get periodTotal => 'einmalig';
 
   @override
-  String get periodMonthly => 'Pro Monat';
+  String get periodMonthly => 'Monat';
 
   @override
-  String get periodDaily => 'Pro Tag';
+  String get periodDaily => 'Tag';
 
   @override
   String get budgetResets => 'Budget gilt';
@@ -2033,18 +2092,6 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get factMeasured => 'Gemessen';
-
-  @override
-  String get modeFreeOnlyHint =>
-      'Kostet nie extra: Gratis-Modelle und Pläne, die du schon bezahlst. Empfohlen.';
-
-  @override
-  String get modeBothHint =>
-      'Nutzt bezahlte Modelle, bis das Budget aufgebraucht ist, und macht dann mit Gratis-Modellen weiter.';
-
-  @override
-  String get modePaidHint =>
-      'Nutzt das beste Modell unabhängig vom Preis und stoppt beim Budget.';
 
   @override
   String get keyAccessTitle => 'Was darf dieser Key nutzen?';

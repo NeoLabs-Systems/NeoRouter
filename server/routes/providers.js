@@ -5,6 +5,7 @@ const { z } = require('zod');
 const registry = require('../providers/registry');
 const billing = require('../services/providers/billing_check');
 const accounts = require('../services/providers/account_service');
+const codexOAuth = require('../services/providers/codex_oauth');
 const catalog = require('../services/catalog/catalog_service');
 const { validate } = require('../middleware/validate');
 const { requirePermission } = require('../middleware/space');
@@ -33,6 +34,42 @@ const accountInput = z.object({
   // 'plan': a prepaid subscription; 'plan_paid': the plan, then pay per use.
   billingMode: z.enum(['free_tier', 'paid', 'plan', 'plan_paid']).optional(),
 });
+
+// ChatGPT (Codex) sign-in with a device code: start, then poll until the
+// user approved it at auth.openai.com/codex/device. Pending sign-ins belong to
+// the space that started them. With accountId, an existing connection is
+// signed in again instead of a new one being created.
+const chatgptLogins = new Map();
+
+router.post('/chatgpt/login', requirePermission('providers.manage'), asyncRoute(async (req, res) => {
+  const login = await codexOAuth.startDeviceLogin();
+  const billingMode = ['plan', 'plan_paid', 'paid'].includes(req.body?.billingMode) ? req.body.billingMode : 'plan';
+  chatgptLogins.set(login.loginId, { ownerId: req.space.ownerId, actorId: req.space.actorId, accountId: req.body?.accountId || null, billingMode });
+  res.json(login);
+}));
+
+router.post('/chatgpt/login/:loginId', requirePermission('providers.manage'), asyncRoute(async (req, res) => {
+  const pending = chatgptLogins.get(req.params.loginId);
+  if (!pending || pending.ownerId !== req.space.ownerId) return res.status(404).json({ error: { code: 'LOGIN_NOT_FOUND', message: 'This sign-in expired. Start again.' } });
+  const result = await codexOAuth.pollDeviceLogin(req.params.loginId);
+  if (result.status !== 'done') {
+    if (result.status === 'expired') chatgptLogins.delete(req.params.loginId);
+    return res.json({ status: result.status });
+  }
+  chatgptLogins.delete(req.params.loginId);
+  let account;
+  if (pending.accountId) {
+    account = await accounts.update(pending.ownerId, pending.accountId, { secret: result.secret });
+  } else {
+    ({ account } = await accounts.create(pending.ownerId, { definitionId: 'chatgpt', secret: result.secret, billingMode: pending.billingMode }, pending.actorId));
+  }
+  try {
+    await catalog.syncAccount(account.id);
+  } catch (error) {
+    logger.warn('ChatGPT model sync failed', { accountId: account.id, error: error.message });
+  }
+  return res.json({ status: 'done', plan: result.plan, account: accounts.get(pending.ownerId, account.id) });
+}));
 
 router.post('/probe', requirePermission('providers.manage'), validate(accountInput), asyncRoute(async (req, res) => res.json(await accounts.probe(req.body))));
 

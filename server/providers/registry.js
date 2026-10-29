@@ -10,6 +10,7 @@ const { CloudflareAdapter } = require('./adapters/cloudflare');
 const { SearchAdapter } = require('./adapters/search_engines');
 const { DeepgramAdapter } = require('./adapters/deepgram');
 const { ElevenLabsAdapter } = require('./adapters/elevenlabs');
+const { CodexAdapter } = require('./adapters/codex');
 
 const ADAPTERS = {
   openai_compatible: OpenAICompatibleAdapter,
@@ -19,6 +20,7 @@ const ADAPTERS = {
   search: SearchAdapter,
   deepgram: DeepgramAdapter,
   elevenlabs: ElevenLabsAdapter,
+  codex: CodexAdapter,
 };
 
 const limitSchema = z.object({
@@ -36,6 +38,8 @@ const definitionSchema = z.object({
   description: z.string().default(''),
   category: z.enum(['free', 'paid', 'aggregator', 'plan', 'local', 'custom', 'community', 'search']),
   // Web search engines: which dialect the search adapter speaks.
+  // Connected by signing in instead of pasting a key.
+  connect: z.enum(['codex_device']).optional(),
   search: z.object({ engine: z.enum(['tavily', 'exa', 'linkup', 'parallel', 'firecrawl', 'serper', 'brave', 'jina', 'searxng']) }).optional(),
   website: z.string().url().optional(),
   keyUrl: z.string().url().optional(),
@@ -179,6 +183,7 @@ function publicDefinition(definition) {
     editableBaseUrl: definition.editableBaseUrl,
     keyOptional: definition.keyOptional,
     fields: definition.fields,
+    connect: definition.connect || null,
     billing: {
       defaultMode: definition.billing.defaultMode,
       freeTierAvailable: definition.billing.freeTierAll || definition.billing.freeTierModels.length > 0,

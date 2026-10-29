@@ -69,8 +69,8 @@ function rejection(entry, ctx, now) {
   if (!entry.available) return 'model_unavailable';
   if (!entry.accountEnabled || entry.accountStatus === 'disabled' || entry.accountStatus === 'invalid') return 'account_unavailable';
   if (!allowedByKey(entry, key)) return 'not_allowed_for_key';
-  // Free-only means "never costs extra": a prepaid plan's allowance qualifies.
-  if ((freeOnly || key.mode === 'free_only') && !entry.isFree && !entry.isPlan) return 'not_free';
+  const kind = kindAllowed(entry, key, freeOnly);
+  if (kind) return kind;
   if (needs.tools && entry.tools === false) return 'no_tools';
   if (needs.vision && entry.vision !== true) return 'no_vision';
   const reserve = Math.max(MIN_OUTPUT_RESERVE, Math.min(request.max_tokens || MIN_OUTPUT_RESERVE, 32000));
@@ -144,6 +144,17 @@ function spreadAcrossAccounts(scored) {
       item.details = { ...item.details, factors: { ...item.details.factors, sibling: factor } };
     }
   }
+}
+
+/**
+ * Free, plan and paid models are three switches on a key. freeOnly (a
+ * used-up budget, the playground toggle) shuts paid models out on top.
+ * Returns the rejection reason or null.
+ */
+function kindAllowed(entry, key, freeOnly = false) {
+  if (entry.isFree) return key.allow_free === 0 ? 'not_allowed_for_key' : null;
+  if (entry.isPlan) return key.allow_plan === 0 ? 'not_allowed_for_key' : null;
+  return freeOnly || key.mode === 'free_only' ? 'not_free' : null;
 }
 
 class RoutingPlan {
@@ -320,4 +331,4 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
   };
 }
 
-module.exports = { RoutingPlan, preview, parseModel, allowedByKey, globToRegExp, rejection, maxOutputFor };
+module.exports = { RoutingPlan, preview, parseModel, allowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor };

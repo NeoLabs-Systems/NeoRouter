@@ -775,6 +775,132 @@ abstract class AppL10n {
   /// **'Subscriptions'**
   String get categoryPlan;
 
+  /// No description provided for @kindFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free models'**
+  String get kindFree;
+
+  /// No description provided for @kindFreeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Never cost anything.'**
+  String get kindFreeHint;
+
+  /// No description provided for @kindPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepaid plans'**
+  String get kindPlan;
+
+  /// No description provided for @kindPlanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the allowance of plans you already pay for, like ChatGPT.'**
+  String get kindPlanHint;
+
+  /// No description provided for @kindPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid models'**
+  String get kindPaid;
+
+  /// No description provided for @kindPaidHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Billed per use, within the spending limit below.'**
+  String get kindPaidHint;
+
+  /// No description provided for @kindFreeShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get kindFreeShort;
+
+  /// No description provided for @kindPlanShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Plans'**
+  String get kindPlanShort;
+
+  /// No description provided for @kindPaidShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get kindPaidShort;
+
+  /// No description provided for @pickOneKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick at least one kind of model.'**
+  String get pickOneKind;
+
+  /// No description provided for @spendingLimitPer.
+  ///
+  /// In en, this message translates to:
+  /// **'per'**
+  String get spendingLimitPer;
+
+  /// No description provided for @budgetFallsBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty means no limit. Once it is used up, the key keeps going with free models and plans.'**
+  String get budgetFallsBack;
+
+  /// No description provided for @budgetStops.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty means no limit. Once it is used up, the key stops until the reset.'**
+  String get budgetStops;
+
+  /// No description provided for @chatgptSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with ChatGPT'**
+  String get chatgptSignIn;
+
+  /// No description provided for @chatgptSignInAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again'**
+  String get chatgptSignInAgain;
+
+  /// No description provided for @chatgptSignInHint.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter shows a code. Enter it on the OpenAI page with the account that has your ChatGPT plan.'**
+  String get chatgptSignInHint;
+
+  /// No description provided for @chatgptEnterCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter this code at OpenAI'**
+  String get chatgptEnterCode;
+
+  /// No description provided for @chatgptOpenPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the OpenAI page'**
+  String get chatgptOpenPage;
+
+  /// No description provided for @chatgptWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for you to confirm…'**
+  String get chatgptWaiting;
+
+  /// No description provided for @chatgptExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'The code expired. Start again.'**
+  String get chatgptExpired;
+
+  /// No description provided for @chatgptConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'ChatGPT connected'**
+  String get chatgptConnected;
+
   /// No description provided for @apiKey.
   ///
   /// In en, this message translates to:
@@ -1363,24 +1489,6 @@ abstract class AppL10n {
   /// **'Model access'**
   String get keyMode;
 
-  /// No description provided for @modeFreeOnly.
-  ///
-  /// In en, this message translates to:
-  /// **'Only free models'**
-  String get modeFreeOnly;
-
-  /// No description provided for @modePaid.
-  ///
-  /// In en, this message translates to:
-  /// **'All models'**
-  String get modePaid;
-
-  /// No description provided for @modeBoth.
-  ///
-  /// In en, this message translates to:
-  /// **'All models, then free ones'**
-  String get modeBoth;
-
   /// No description provided for @budget.
   ///
   /// In en, this message translates to:
@@ -1396,19 +1504,19 @@ abstract class AppL10n {
   /// No description provided for @periodTotal.
   ///
   /// In en, this message translates to:
-  /// **'One-time'**
+  /// **'one-time'**
   String get periodTotal;
 
   /// No description provided for @periodMonthly.
   ///
   /// In en, this message translates to:
-  /// **'Per month'**
+  /// **'month'**
   String get periodMonthly;
 
   /// No description provided for @periodDaily.
   ///
   /// In en, this message translates to:
-  /// **'Per day'**
+  /// **'day'**
   String get periodDaily;
 
   /// No description provided for @budgetResets.
@@ -3678,24 +3786,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Measured'**
   String get factMeasured;
-
-  /// No description provided for @modeFreeOnlyHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Never costs anything extra: free models and plans you already pay for. Recommended.'**
-  String get modeFreeOnlyHint;
-
-  /// No description provided for @modeBothHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Uses paid models until the budget is used up, then continues with free ones.'**
-  String get modeBothHint;
-
-  /// No description provided for @modePaidHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Uses the best model regardless of price and stops at the budget.'**
-  String get modePaidHint;
 
   /// No description provided for @keyAccessTitle.
   ///

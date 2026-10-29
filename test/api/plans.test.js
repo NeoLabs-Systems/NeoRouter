@@ -64,3 +64,24 @@ test('a plan-only account stops at the limit instead of billing', async () => {
   assert.equal(response.status, 503, JSON.stringify(response.body));
   assert.equal(response.body.error.details.rejected.plan_used_up, 1);
 });
+
+test('keys choose free, plan and paid models independently', async () => {
+  // The plan account is plan-only again; reset its allowance.
+  quota.setState(`a:${planAccount.id}`, 'plan_requests', { limit: 100, remaining: 50, resetAt: Date.now() + 3_600_000 }, 'probe');
+  const planOnly = await api('post', '/keys').send({ name: 'plans', allowFree: false, allowPlan: true, allowPaid: false });
+  assert.equal(planOnly.status, 201, JSON.stringify(planOnly.body));
+  assert.deepEqual([planOnly.body.key.allowFree, planOnly.body.key.allowPlan, planOnly.body.key.allowPaid], [false, true, false]);
+  assert.equal((await chat(planOnly.body.secret)).status, 200);
+
+  const noPlans = await api('post', '/keys').send({ name: 'free', allowFree: true, allowPlan: false, allowPaid: false });
+  const refused = await chat(noPlans.body.secret);
+  assert.equal(refused.status, 503);
+  assert.equal(refused.body.error.details.rejected.not_allowed_for_key, 1);
+
+  const nothing = await api('post', '/keys').send({ name: 'none', allowFree: false, allowPlan: false, allowPaid: false });
+  assert.equal(nothing.status, 400);
+  assert.equal(nothing.body.error.code, 'NO_MODELS_ALLOWED');
+
+  const updated = await api('patch', `/keys/${noPlans.body.key.id}`).send({ allowPaid: true });
+  assert.equal(updated.body.key.mode, 'both', 'free and paid: falls back to free when the budget is used up');
+});

@@ -4,7 +4,7 @@ const express = require('express');
 const { requireRouterKey } = require('../../middleware/router_key_auth');
 const { execute } = require('./executor');
 const catalog = require('../../services/catalog/catalog_service');
-const { allowedByKey } = require('../../services/routing/router');
+const { allowedByKey, kindAllowed } = require('../../services/routing/router');
 const profiles = require('../../services/routing/profiles');
 const { createLogger } = require('../../utils/logger');
 
@@ -39,7 +39,7 @@ const KINDS = new Set(require('../../core/capability_registry').list().map((item
 
 function modelsVisibleTo(key, capability = 'chat') {
   return catalog.listForUser(key.user_id, { capability })
-    .filter((entry) => entry.enabled && entry.accountEnabled && allowedByKey(entry, key) && (key.mode !== 'free_only' || entry.isFree || entry.isPlan));
+    .filter((entry) => entry.enabled && entry.accountEnabled && allowedByKey(entry, key) && !kindAllowed(entry, key));
 }
 
 router.get('/models', requireRouterKey, (req, res) => {

@@ -95,6 +95,8 @@ class ProviderDefinition {
   String get baseUrl => raw['baseUrl'] as String? ?? '';
   bool get editableBaseUrl => raw['editableBaseUrl'] == true;
   bool get keyOptional => raw['keyOptional'] == true;
+  // How the connection is made when it is not an API key (e.g. codex_device).
+  String? get connect => raw['connect'] as String?;
   List<ProviderField> get fields => (raw['fields'] as List? ?? const <Object>[]).map((item) => ProviderField(_map(item))).toList();
   Map<String, dynamic> get billing => _map(raw['billing']);
   String get defaultBillingMode => billing['defaultMode'] as String? ?? 'paid';
@@ -187,6 +189,9 @@ class RouterKey {
   String get name => raw['name'] as String;
   String get prefix => raw['prefix'] as String;
   String get mode => raw['mode'] as String;
+  bool get allowFree => raw['allowFree'] != false;
+  bool get allowPlan => raw['allowPlan'] != false;
+  bool get allowPaid => raw['allowPaid'] == true || (raw['allowPaid'] == null && mode != 'free_only');
   double? get budgetUsd => _double(raw['budgetUsd']);
   String get budgetPeriod => raw['budgetPeriod'] as String? ?? 'total';
   double get spentUsd => _double(raw['spentUsd']) ?? 0;

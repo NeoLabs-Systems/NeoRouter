@@ -14,10 +14,8 @@ class RouterApi {
   Future<Map<String, dynamic>> registrationStatus() => client.get('$_base/auth/registration');
   Future<Map<String, dynamic>> login(String account, String password) =>
       client.post('$_base/auth/login', <String, Object>{'account': account, 'password': password});
-  Future<Map<String, dynamic>> register(String username, String email, String password) => client.post(
-        '$_base/auth/register',
-        <String, Object>{'username': username, 'email': email, 'password': password},
-      );
+  Future<Map<String, dynamic>> register(String username, String email, String password) =>
+      client.post('$_base/auth/register', <String, Object>{'username': username, 'email': email, 'password': password});
   Future<Map<String, dynamic>> loginTwoFactor(String challenge, String code) =>
       client.post('$_base/auth/login/2fa', <String, Object>{'challenge': challenge, 'code': code});
   Future<Map<String, dynamic>> twoFactorStatus() => client.get('$_base/auth/2fa');
@@ -32,12 +30,15 @@ class RouterApi {
   Future<void> logout() => client.post('$_base/auth/logout');
   Future<void> changePassword(String current, String next) =>
       client.put('$_base/auth/password', <String, Object>{'currentPassword': current, 'newPassword': next});
-  Future<AppUser> updateProfile({String? displayName, String? email}) async => AppUser(Map<String, dynamic>.from(
-        (await client.patch('$_base/auth/profile', <String, Object>{
-          if (displayName != null) 'displayName': displayName,
-          if (email != null) 'email': email,
-        }))['user'] as Map,
-      ));
+  Future<AppUser> updateProfile({String? displayName, String? email}) async => AppUser(
+    Map<String, dynamic>.from(
+      (await client.patch('$_base/auth/profile', <String, Object>{
+            if (displayName != null) 'displayName': displayName,
+            if (email != null) 'email': email,
+          }))['user']
+          as Map,
+    ),
+  );
   Future<Map<String, dynamic>> info() => client.get('$_base/info');
 
   // ---- providers ------------------------------------------------------------
@@ -54,23 +55,29 @@ class RouterApi {
   Future<Map<String, dynamic>> syncAccount(String id) => client.post('$_base/providers/accounts/$id/sync');
   Future<Map<String, dynamic>> probeQuota(String id) => client.post('$_base/providers/accounts/$id/quota');
 
+  /// ChatGPT (Codex) device sign-in: start, then poll until approved.
+  Future<Map<String, dynamic>> chatgptLoginStart({String? accountId, String? billingMode}) =>
+      client.post('$_base/providers/chatgpt/login', _clean(<String, Object?>{'accountId': accountId, 'billingMode': billingMode}));
+  Future<Map<String, dynamic>> chatgptLoginPoll(String loginId) => client.post('$_base/providers/chatgpt/login/$loginId');
+
   // ---- catalog ---------------------------------------------------------------
   Future<List<CatalogModel>> models({String capability = 'chat'}) async =>
       _list(await client.get('$_base/models?capability=$capability'), 'models', CatalogModel.new);
   Future<List<CapabilitySummary>> capabilities() async =>
       sortCapabilities(_list(await client.get('$_base/models/capabilities'), 'capabilities', CapabilitySummary.new));
-  Future<CatalogModel> updateModel(int ref, {bool? enabled, Map<String, Object?>? overrides}) async => CatalogModel(Map<String, dynamic>.from(
-        (await client.patch('$_base/models/$ref', <String, Object>{
-          if (enabled != null) 'enabled': enabled,
-          if (overrides != null) 'overrides': overrides,
-        }))['model'] as Map,
-      ));
+  Future<CatalogModel> updateModel(int ref, {bool? enabled, Map<String, Object?>? overrides}) async => CatalogModel(
+    Map<String, dynamic>.from(
+      (await client.patch('$_base/models/$ref', <String, Object>{
+            if (enabled != null) 'enabled': enabled,
+            if (overrides != null) 'overrides': overrides,
+          }))['model']
+          as Map,
+    ),
+  );
   Future<CatalogModel> resetModelHealth(int ref) async =>
       CatalogModel(Map<String, dynamic>.from((await client.post('$_base/models/$ref/reset-health'))['model'] as Map));
-  Future<void> bulkEnable({String? accountId, required bool enabled, bool onlyFree = false}) => client.post(
-        '$_base/models/bulk',
-        <String, Object>{if (accountId != null) 'accountId': accountId, 'enabled': enabled, 'onlyFree': onlyFree},
-      );
+  Future<void> bulkEnable({String? accountId, required bool enabled, bool onlyFree = false}) =>
+      client.post('$_base/models/bulk', <String, Object>{if (accountId != null) 'accountId': accountId, 'enabled': enabled, 'onlyFree': onlyFree});
 
   // ---- router keys ----------------------------------------------------------
   Future<List<RouterKey>> keys() async => _list(await client.get('$_base/keys'), 'keys', RouterKey.new);
@@ -87,18 +94,21 @@ class RouterApi {
   // ---- routing ----------------------------------------------------------------
   Future<List<RoutingProfile>> profiles() async => _list(await client.get('$_base/routing/profiles'), 'profiles', RoutingProfile.new);
   Future<RoutingProfile> createProfile(String name, RoutingWeights weights, Map<String, Object?> constraints) async => RoutingProfile(
-        Map<String, dynamic>.from((await client.post('$_base/routing/profiles', <String, Object>{
-          'name': name,
-          'weights': weights.toJson(),
-          'constraints': _clean(constraints),
-        }))['profile'] as Map),
-      );
-  Future<RoutingProfile> updateProfileWeights(String id, {String? name, RoutingWeights? weights, Map<String, Object?>? constraints}) async =>
-      RoutingProfile(Map<String, dynamic>.from((await client.patch('$_base/routing/profiles/$id', <String, Object>{
-        if (name != null) 'name': name,
-        if (weights != null) 'weights': weights.toJson(),
-        if (constraints != null) 'constraints': _clean(constraints),
-      }))['profile'] as Map));
+    Map<String, dynamic>.from(
+      (await client.post('$_base/routing/profiles', <String, Object>{'name': name, 'weights': weights.toJson(), 'constraints': _clean(constraints)}))['profile']
+          as Map,
+    ),
+  );
+  Future<RoutingProfile> updateProfileWeights(String id, {String? name, RoutingWeights? weights, Map<String, Object?>? constraints}) async => RoutingProfile(
+    Map<String, dynamic>.from(
+      (await client.patch('$_base/routing/profiles/$id', <String, Object>{
+            if (name != null) 'name': name,
+            if (weights != null) 'weights': weights.toJson(),
+            if (constraints != null) 'constraints': _clean(constraints),
+          }))['profile']
+          as Map,
+    ),
+  );
   Future<void> deleteProfile(String id) => client.delete('$_base/routing/profiles/$id');
   Future<Map<String, dynamic>> preview(Map<String, Object?> body) => client.post('$_base/routing/preview', _clean(body));
 
@@ -117,6 +127,7 @@ class RouterApi {
   Future<List<Map<String, dynamic>>> quotas() async =>
       ((await client.get('$_base/usage/quotas'))['accounts'] as List).map((item) => Map<String, dynamic>.from(item as Map)).toList();
   Future<Map<String, dynamic>> playground(Map<String, Object?> body) => client.post('$_base/playground/chat', _clean(body));
+
   /// kind: embedding, image, speech, transcription, moderation or video.
   Future<Map<String, dynamic>> playgroundMedia(String kind, Map<String, Object?> body) => client.post('$_base/playground/media/$kind', _clean(body));
   Future<Map<String, dynamic>> playgroundVideo(String id) => client.get('$_base/playground/videos/$id');
@@ -128,11 +139,12 @@ class RouterApi {
   Future<TeamSummary> redeemInvite(String link) async => TeamSummary(await client.post('$_base/teams/invites/redeem', <String, Object>{'link': link}));
   Future<String> createInvite({required String label, required List<String> permissions, int? expiresInHours, required bool singleUse}) async =>
       (await client.post('$_base/teams/invites', <String, Object?>{
-        'label': label,
-        'permissions': permissions,
-        'expiresInHours': expiresInHours,
-        'singleUse': singleUse,
-      }))['link'] as String;
+            'label': label,
+            'permissions': permissions,
+            'expiresInHours': expiresInHours,
+            'singleUse': singleUse,
+          }))['link']
+          as String;
   Future<TeamSummary> revokeInvite(String id) async => TeamSummary(await client.deleteJson('$_base/teams/invites/$id'));
   Future<TeamSummary> setMemberPermissions(String userId, List<String> permissions) async =>
       TeamSummary(await client.putJson('$_base/teams/members/$userId/permissions', <String, Object>{'permissions': permissions}));
@@ -143,10 +155,8 @@ class RouterApi {
 
   // ---- admin --------------------------------------------------------------------
   Future<List<AppUser>> users() async => _list(await client.get('$_base/admin/users'), 'users', AppUser.new);
-  Future<void> updateUser(String id, {bool? disabled, String? role}) => client.patch(
-        '$_base/admin/users/$id',
-        <String, Object>{if (disabled != null) 'disabled': disabled, if (role != null) 'role': role},
-      );
+  Future<void> updateUser(String id, {bool? disabled, String? role}) =>
+      client.patch('$_base/admin/users/$id', <String, Object>{if (disabled != null) 'disabled': disabled, if (role != null) 'role': role});
   Future<void> deleteUser(String id) => client.delete('$_base/admin/users/$id');
   Future<Map<String, dynamic>> adminSettings() => client.get('$_base/admin/settings');
   Future<Map<String, dynamic>> updateAdminSettings(Map<String, Object?> body) => client.patch('$_base/admin/settings', body);
@@ -156,7 +166,7 @@ class RouterApi {
       (payload[key] as List? ?? const <Object>[]).map((item) => build(Map<String, dynamic>.from(item as Map))).toList();
 
   static Map<String, Object> _clean(Map<String, Object?> body) => <String, Object>{
-        for (final entry in body.entries)
-          if (entry.value != null) entry.key: entry.value!,
-      };
+    for (final entry in body.entries)
+      if (entry.value != null) entry.key: entry.value!,
+  };
 }

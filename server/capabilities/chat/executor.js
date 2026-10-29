@@ -200,7 +200,8 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   }
   const remaining = budget.remaining(key);
   const budgetExhausted = remaining !== null && remaining <= 0;
-  if (budgetExhausted && key.mode === 'paid') {
+  // A used-up budget stops a key only when it has nothing free to fall back on.
+  if (budgetExhausted && key.mode === 'paid' && key.allow_plan === 0) {
     throw new HttpError(402, 'BUDGET_EXHAUSTED', `This router key has used its ${key.budget_period} budget of ${key.budget_usd} USD.`);
   }
 

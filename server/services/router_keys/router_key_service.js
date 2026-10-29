@@ -14,6 +14,22 @@ const rpmWindows = new Map();
 
 const pick = (value, fields) => (value ? Object.fromEntries(fields.map((field) => [field, typeof value[field] === 'number' ? Number(value[field].toFixed(6)) : value[field]])) : null);
 
+// Free, plan and paid switches → the stored mode and flags. With paid and
+// free both allowed, a used-up budget falls back to free models ("both");
+// paid without free stops there ("paid").
+function kinds(input, row = null) {
+  const current = row ? { free: row.allow_free !== 0, plan: row.allow_plan !== 0, paid: row.mode !== 'free_only' } : { free: true, plan: true, paid: false };
+  if (input.allowFree === undefined && input.allowPlan === undefined && input.allowPaid === undefined) {
+    const mode = input.mode ?? row?.mode ?? 'both';
+    return { mode, allowFree: current.free ? 1 : 0, allowPlan: current.plan ? 1 : 0 };
+  }
+  const free = input.allowFree ?? current.free;
+  const plan = input.allowPlan ?? current.plan;
+  const paid = input.allowPaid ?? (input.mode ? input.mode !== 'free_only' : current.paid);
+  if (!free && !plan && !paid) throw new HttpError(400, 'NO_MODELS_ALLOWED', 'Allow at least one kind of model: free, prepaid plans or paid.');
+  return { mode: paid ? (free ? 'both' : 'paid') : 'free_only', allowFree: free ? 1 : 0, allowPlan: plan ? 1 : 0 };
+}
+
 function publicKey(row) {
   const spent = budget.spent(row);
   return {
@@ -21,6 +37,9 @@ function publicKey(row) {
     name: row.name,
     prefix: `${PREFIX}_${row.prefix}`,
     mode: row.mode,
+    allowFree: row.allow_free !== 0,
+    allowPlan: row.allow_plan !== 0,
+    allowPaid: row.mode !== 'free_only',
     budgetUsd: row.budget_usd,
     budgetPeriod: row.budget_period,
     spentUsd: Number(spent.toFixed(6)),
@@ -48,12 +67,13 @@ function create(userId, input, createdBy = userId) {
   const id = crypto.randomUUID();
   const prefix = crypto.randomBytes(4).toString('hex');
   const secret = `${PREFIX}_${prefix}_${randomToken(32)}`;
+  const allowed = kinds(input);
   getDatabase().prepare(`INSERT INTO router_keys
-    (id, user_id, name, prefix, key_hash, mode, budget_usd, budget_period, rpm_limit, allowed_models_json, profile, expires_at, created_by_user_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .run(id, userId, input.name, prefix, sha256(secret), input.mode || 'both', input.budgetUsd ?? null,
+    (id, user_id, name, prefix, key_hash, mode, budget_usd, budget_period, rpm_limit, allowed_models_json, profile, expires_at, created_by_user_id, allow_free, allow_plan)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(id, userId, input.name, prefix, sha256(secret), allowed.mode, input.budgetUsd ?? null,
       input.budgetPeriod || 'total', input.rpmLimit ?? null, JSON.stringify(input.allowedModels || []),
-      input.profile || 'balanced', input.expiresAt || null, createdBy);
+      input.profile || 'balanced', input.expiresAt || null, createdBy, allowed.allowFree, allowed.allowPlan);
   return { key: get(userId, id), secret };
 }
 
@@ -74,17 +94,20 @@ function list(userId) {
 function update(userId, id, input) {
   const row = getRow(userId, id);
   assertProfile(userId, input.profile);
+  const allowed = kinds(input, row);
   getDatabase().prepare(`UPDATE router_keys SET name = ?, mode = ?, budget_usd = ?, budget_period = ?, rpm_limit = ?,
-    allowed_models_json = ?, profile = ?, expires_at = ? WHERE id = ?`)
+    allowed_models_json = ?, profile = ?, expires_at = ?, allow_free = ?, allow_plan = ? WHERE id = ?`)
     .run(
       input.name ?? row.name,
-      input.mode ?? row.mode,
+      allowed.mode,
       input.budgetUsd !== undefined ? input.budgetUsd : row.budget_usd,
       input.budgetPeriod ?? row.budget_period,
       input.rpmLimit !== undefined ? input.rpmLimit : row.rpm_limit,
       input.allowedModels !== undefined ? JSON.stringify(input.allowedModels) : row.allowed_models_json,
       input.profile ?? row.profile,
       input.expiresAt !== undefined ? input.expiresAt : row.expires_at,
+      allowed.allowFree,
+      allowed.allowPlan,
       id,
     );
   return get(userId, id);
