@@ -118,7 +118,9 @@ const KINDS = [
 
 // Words that make any request harder, whatever its kind.
 const HARD_WORDS = words('prove', 'rigorous', 'optimi[sz]e', 'architecture', 'design a', 'edge cases', 'complex', 'from scratch', 'production', 'scal(e|able)',
-  'multi-?step', 'thorough', 'in depth', 'beweise', 'optimier', 'architektur', 'komplex', 'gründlich', 'ausführlich', 'von grund auf');
+  'multi-?step', 'thorough', 'in depth', 'trade-?offs?', 'step[- ]by[- ]step', 'think (carefully|hard|deeply)', 'failure modes?', 'distributed',
+  'concurren(t|cy)', 'race conditions?', 'beweise', 'optimier', 'architektur', 'komplex', 'gründlich', 'ausführlich', 'von grund auf',
+  'abwägung', 'schritt für schritt', 'nebenläufig');
 
 // Below this many tokens, a message that matches no kind is small talk.
 const SHORT_MESSAGE_TOKENS = 12;

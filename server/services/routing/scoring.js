@@ -3,7 +3,7 @@
 const stats = require('./stats_store');
 const loadTracker = require('./load_tracker');
 const concurrency = require('./concurrency');
-const { taskIntelligence } = require('./task/skills');
+const { taskIntelligence, enoughIntelligence } = require('./task/skills');
 const experience = require('./task/experience');
 
 // Feature scaling ranges (log scale). Centralized so they can be tuned.
@@ -125,17 +125,19 @@ function adaptWeights(weights, difficulty, adaptive) {
 
 // `task` (classifier.js) makes intelligence task-aware (benchmark skills and
 // feedback) and reliability lean on the model's track record for this kind
-// of task.
-function score(entry, { weights, quotaFactor = 1, random, sample = true, now = Date.now(), task = null }) {
+// of task. `need` is the intelligence the task calls for (skills.js): above
+// it, more intelligence counts only as much as the style weighs it.
+function score(entry, { weights, quotaFactor = 1, random, sample = true, now = Date.now(), task = null, need = null }) {
   const snapshot = stats.snapshot(entry.ref, now);
   const learned = experience.adjust(task ? entry.ref : null, task?.primary, reliability(snapshot, { sample, random }), now);
+  const totalWeight = weights.intelligence + weights.speed + weights.reliability + weights.cost;
+  const capability = Math.min(1, taskIntelligence(entry.intelligence ?? DEFAULT_INTELLIGENCE, entry.skills, task?.skills) * learned.quality);
   const features = {
-    intelligence: Math.min(1, taskIntelligence(entry.intelligence ?? DEFAULT_INTELLIGENCE, entry.skills, task?.skills) * learned.quality),
+    intelligence: enoughIntelligence(capability, need, weights.intelligence / totalWeight),
     speed: speed(entry, snapshot),
     reliability: learned.reliability,
     cost: cost(entry),
   };
-  const totalWeight = weights.intelligence + weights.speed + weights.reliability + weights.cost;
   const base = (weights.intelligence * features.intelligence + weights.speed * features.speed
     + weights.reliability * features.reliability + weights.cost * features.cost) / totalWeight;
   const penaltyFactor = 1 - PENALTY_IMPACT * Math.min(snapshot.penalty, MAX_PENALTY) / MAX_PENALTY;

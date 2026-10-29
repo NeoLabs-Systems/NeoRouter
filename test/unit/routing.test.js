@@ -157,6 +157,18 @@ test('models that stay missing back off further each time', () => {
   assert.deepEqual(durations, [6 * 3600_000, 24 * 3600_000, 7 * 24 * 3600_000]);
 });
 
+test('above what a task needs, more intelligence counts only as much as the style weighs it', () => {
+  const { neededIntelligence, enoughIntelligence } = require('../../server/services/routing/task/skills');
+  const frontier = entry({ intelligence: 0.95, priceIn: 5, priceOut: 20 });
+  const decent = entry({ intelligence: 0.6, priceIn: 0.1, priceOut: 0.4 });
+  const score = (item, need) => scoring.score(item, { weights: profiles.PRESETS.balanced.weights, need, sample: false, random: fixedRandom }).score;
+  assert.ok(score(frontier, null) > score(decent, null), 'without a prompt to judge, the smarter model leads');
+  assert.ok(score(decent, neededIntelligence(0.1)) > score(frontier, neededIntelligence(0.1)), 'an easy prompt goes to the good-enough cheaper model');
+  assert.ok(score(frontier, neededIntelligence(0.9)) > score(decent, neededIntelligence(0.9)), 'a hard one to the smarter model');
+  assert.equal(enoughIntelligence(0.7, 0.5, 1), 0.7, 'a style that weighs only intelligence keeps the full scale');
+  assert.equal(neededIntelligence(null), null);
+});
+
 test('a quality profile does not pick a tiny model just because it is fast and reliable', () => {
   const { RoutingPlan } = require('../../server/services/routing/router');
   const big = entry();
@@ -168,7 +180,7 @@ test('a quality profile does not pick a tiny model just because it is fast and r
   const plan = (profile) => new RoutingPlan({
     userId: 'u',
     key: { mode: 'both', profile, allowed_models_json: '[]', budget_usd: null },
-    request: { messages: [{ role: 'user', content: 'hi' }] },
+    request: { messages: [{ role: 'user', content: 'How do vaccines train the immune system?' }] },
     requestedModel: 'auto',
     needs: {},
     inputTokens: 10,

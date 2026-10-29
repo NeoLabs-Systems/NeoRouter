@@ -85,3 +85,26 @@ test('keys choose free, plan and paid models independently', async () => {
   const updated = await api('patch', `/keys/${noPlans.body.key.id}`).send({ allowPaid: true });
   assert.equal(updated.body.key.mode, 'both', 'free and paid: falls back to free when the budget is used up');
 });
+
+test('a pay-per-use copy of a subscription model does not ride on its score', async () => {
+  quota.setState(`a:${planAccount.id}`, 'plan_requests', { limit: 100, remaining: 80, resetAt: Date.now() + 3_600_000 }, 'probe');
+  const reseller = await createMockProvider({ models: ['ok-planned'], prices: { 'ok-planned': { prompt: '0.00002', completion: '0.00008' } } });
+  try {
+    const created = await api('post', '/providers/accounts').send({ definitionId: 'custom_openai', slug: 'resell', baseUrl: reseller.url, secret: 'good-key', billingMode: 'paid' });
+    assert.equal(created.status, 201, JSON.stringify(created.body));
+    const both = (await api('post', '/keys').send({ name: 'both', allowFree: true, allowPlan: true, allowPaid: true, budgetUsd: 10, budgetPeriod: 'monthly' })).body.secret;
+    const used = new Set();
+    for (let index = 0; index < 8; index += 1) {
+      const response = await chat(both);
+      assert.equal(response.status, 200, JSON.stringify(response.body));
+      used.add(response.headers['x-neorouter-model']);
+    }
+    assert.deepEqual([...used], ['plan/ok-planned'], 'the same model at a price only answers once the subscription cannot');
+    // Spreading load evens out copies of one model at one price, not a paid copy and the subscription.
+    const preview = (await api('post', '/routing/preview').send({ prompt: 'hi' })).body.candidates;
+    const scoreOf = (id) => preview.find((item) => item.id === id).score;
+    assert.ok(scoreOf('resell/ok-planned') < scoreOf('plan/ok-planned'), JSON.stringify(preview));
+  } finally {
+    await reseller.close();
+  }
+});

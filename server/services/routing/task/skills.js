@@ -60,4 +60,26 @@ function taskIntelligence(general, modelSkills, taskSkills) {
   return (1 - share) * general + share * (sum / covered);
 }
 
-module.exports = { SKILLS, BENCHMARK_SKILLS, skillsFromBenchmarks, taskIntelligence };
+// How capable a model has to be for a task, on the intelligence scale, from
+// its difficulty: a greeting needs little, a hard proof a frontier model.
+const NEEDED_RANGE = [0.3, 0.95];
+
+function neededIntelligence(difficulty) {
+  if (!Number.isFinite(difficulty)) return null;
+  const [low, high] = NEEDED_RANGE;
+  return low + (high - low) * Math.min(1, Math.max(0, difficulty));
+}
+
+/**
+ * Intelligence as the router weighs it: full credit up to what the task
+ * needs, and beyond that only as far as the style cares about intelligence
+ * (`headroom`, 0 to 1). Models that are good enough then compete on price,
+ * speed and reliability, as in Azure's model router and RouteLLM.
+ */
+function enoughIntelligence(intelligence, need, headroom) {
+  if (!need) return intelligence;
+  const share = Math.min(1, Math.max(0, headroom));
+  return (1 - share) * (Math.min(intelligence, need) / need) + share * intelligence;
+}
+
+module.exports = { SKILLS, BENCHMARK_SKILLS, skillsFromBenchmarks, taskIntelligence, neededIntelligence, enoughIntelligence };

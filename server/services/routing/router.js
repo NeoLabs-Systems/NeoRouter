@@ -12,6 +12,7 @@ const budget = require('../budget/budget_service');
 const pacing = require('../budget/pacing');
 const plans = require('./plans');
 const { classify } = require('./task/classifier');
+const { neededIntelligence } = require('./task/skills');
 const { getConfig } = require('../../config/env');
 const { HttpError } = require('../../middleware/error_handler');
 
@@ -115,8 +116,10 @@ function rejection(entry, ctx, now) {
 
 // The same model on several accounts (two Groq keys, say): prefer the copy
 // with more allowance left and more free capacity, so accounts wear evenly
-// and a busy one hands work to its siblings. Only copies of one model are
-// compared, so this never changes which model is chosen.
+// and a busy one hands work to its siblings. Only copies of one model at the
+// same kind and price are compared (a paid copy of a subscription model, or
+// its pricier "fast" variant, is not a sibling), so this never changes which
+// model is chosen.
 const SIBLING_FLOOR = 0.55;
 // Budget pacing (services/budget/pacing.js).
 const PACED_COST_FLOOR = 0.1;
@@ -134,8 +137,9 @@ function freeCapacity(entry) {
 function spreadAcrossAccounts(scored) {
   const groups = new Map();
   for (const item of scored) {
-    if (!groups.has(item.entry.canonicalId)) groups.set(item.entry.canonicalId, []);
-    groups.get(item.entry.canonicalId).push(item);
+    const copy = `${item.entry.canonicalId}|${modelKind(item.entry)}|${item.ownCost.toFixed(2)}`;
+    if (!groups.has(copy)) groups.set(copy, []);
+    groups.get(copy).push(item);
   }
   for (const group of groups.values()) {
     if (new Set(group.map((item) => item.entry.accountId)).size < 2) continue;
@@ -256,7 +260,10 @@ class RoutingPlan {
     // capabilities have no prompt to read.
     this.task = capability === 'chat' && request?.messages?.length ? classify(request, { inputTokens, hint: taskHint }) : null;
     this.complexity = this.task?.difficulty ?? null;
-    this.weights = scoring.adaptWeights(this.profile.weights, this.complexity, this.profile.constraints.adaptive !== false);
+    const adaptive = this.profile.constraints.adaptive !== false;
+    this.weights = scoring.adaptWeights(this.profile.weights, this.complexity, adaptive);
+    // Models above what the task needs compete on price, speed and reliability.
+    this.need = adaptive ? neededIntelligence(this.complexity) : null;
     // A budget that would run out before the period ends shifts weight to
     // cost; one with plenty left lets quality and speed count for more.
     this.pacing = freeOnly ? null : pacing.pacing(key);
@@ -306,7 +313,7 @@ class RoutingPlan {
         continue;
       }
       const quotaState = quota.evaluate(entry, this.inputTokens, now);
-      const result = scoring.score(entry, { weights: this.weights, quotaFactor: quotaState.factor, random: this.random, sample, now, task: this.task });
+      const result = scoring.score(entry, { weights: this.weights, quotaFactor: quotaState.factor, random: this.random, sample, now, task: this.task, need: this.need });
       ranked.push({ entry, details: result, quota: quotaState });
     }
     // Absolute intelligence, speed and cost estimates sit close together for
@@ -362,8 +369,8 @@ class RoutingPlan {
       item.details = { ...item.details, base, features };
     }
     const kinds = this.profile.constraints.kinds;
-    preferCheaperEquals(scored, kinds ? (entry) => kindWeight(kinds, entry) : undefined);
     spreadAcrossAccounts(scored);
+    preferCheaperEquals(scored, kinds ? (entry) => kindWeight(kinds, entry) : undefined);
     // The model (or account) the client asked for comes first.
     for (const item of scored) if (this.primaryRefs.has(item.entry.ref)) item.score += 10;
     ranked.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
@@ -423,6 +430,7 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
     weights: plan.weights,
     complexity: plan.complexity,
     task: plan.task,
+    need: plan.need,
     candidates: ranked.slice(0, limit * 3).map((item) => ({
       id: item.entry.id,
       ref: item.entry.ref,
