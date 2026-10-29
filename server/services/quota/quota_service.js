@@ -248,6 +248,7 @@ function resetForTests() {
 
 module.exports = {
   scopesFor,
+  effectiveLimits,
   usageOf,
   evaluate,
   recordRequest,

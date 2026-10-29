@@ -245,3 +245,20 @@ test('Artificial Analysis records keep their individual benchmark scores', () =>
   assert.equal(record.intelligenceIndex, null);
   assert.deepEqual(record.benchmarks, { gpqa: 0.7, hle: 0.1 });
 });
+
+test('providers with free models offer "Free", and a free connection skips models that need credits', () => {
+  require('../../server/db/migrate').migrate();
+  const { rejection } = require('../../server/services/routing/router');
+  for (const id of ['nous', 'kilo', 'anyapi']) assert.equal(registry.publicDefinition(registry.get(id)).billing.freeTierAvailable, true, id);
+  const nous = registry.get('nous');
+  assert.deepEqual(classify({ definition: nous, billingMode: 'free_tier', modelId: 'hermes-5:free' }).isFree, true);
+  const paid = classify({ definition: nous, billingMode: 'free_tier', modelId: 'hermes-5-405b', listing: { priceKnown: true } });
+  assert.equal(paid.isFree, false);
+  const entry = (free, billingMode, reason) => ({
+    enabled: true, available: true, accountEnabled: true, accountStatus: 'healthy', isFree: free, isPlan: false, billingMode, freeReason: reason,
+    id: 'nous/x', providerSlug: 'nous', definitionId: 'nous', stats: {}, intelligence: 0.5,
+  });
+  const ctx = { key: { mode: 'both', allow_free: 1, allow_plan: 1, allowed_models_json: '[]' }, needs: {}, inputTokens: 10, request: { messages: [] }, constraints: {}, freeOnly: false };
+  assert.equal(rejection(entry(false, 'free_tier', paid.reason), ctx, Date.now()), 'needs_credits');
+  assert.notEqual(rejection(entry(false, 'paid', paid.reason), ctx, Date.now()), 'needs_credits', 'a paid connection still uses it');
+});

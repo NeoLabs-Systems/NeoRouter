@@ -102,6 +102,8 @@ class ProviderDefinition {
   String get defaultBillingMode => billing['defaultMode'] as String? ?? 'paid';
   bool get freeTierAvailable => billing['freeTierAvailable'] == true;
   bool get hasAlwaysFreeModels => billing['hasAlwaysFreeModels'] == true;
+  /// Only some models are free (a partial free tier or ":free" models).
+  bool get freeTierPartial => billing['freeTierPartial'] == true;
   bool get planAvailable => billing['planAvailable'] == true;
   String? get planNote => billing['planNote'] as String?;
   String get billingNote => billing['note'] as String? ?? '';
@@ -130,6 +132,9 @@ class ProviderAccount {
   String? get lastSyncedAt => raw['lastSyncedAt'] as String?;
   int get modelCount => _int(_map(raw['models'])['total']) ?? 0;
   int get freeModelCount => _int(_map(raw['models'])['free']) ?? 0;
+  /// "Free models only" can be chosen (the provider or its listing has free models).
+  bool get freeAvailable => raw['freeAvailable'] == true;
+  bool get freeTierAll => raw['freeTierAll'] == true;
   int get enabledModelCount => _int(_map(raw['models'])['enabled']) ?? 0;
   TeamUser? get createdBy => TeamUser.from(raw['createdBy']);
 }

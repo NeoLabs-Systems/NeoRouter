@@ -25,6 +25,9 @@ router.get('/logs', (req, res) => res.json({
   }),
 }));
 
+// What the free models could take around the clock (home screen).
+router.get('/capacity', (req, res) => res.json(require('../services/quota/capacity').freeCapacity(req.space.ownerId)));
+
 // Quota overview: per provider account, shared pool windows plus every model
 // that has a known limit, with usage, remaining and the limit's source.
 router.get('/quotas', (req, res) => {

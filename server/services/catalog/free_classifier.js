@@ -37,6 +37,13 @@ function hasFreeTier(billing) {
   return billing.freeTierAll === true || Boolean(billing.freeTierModels?.length);
 }
 
+// Whether the provider is known to have free models: a free tier, or models
+// that are always free (":free"). An account can also turn out to have free
+// models from its listing (zero prices), see account_service.offersFree.
+function declaresFreeModels(billing) {
+  return hasFreeTier(billing) || Boolean(billing.alwaysFree?.length);
+}
+
 // Loopback and private-network hosts (RFC 1918, link-local, .local).
 function isPrivateUrl(url) {
   let host;
@@ -65,4 +72,4 @@ function classify({ definition, billingMode, billingState = 'unknown', modelId, 
   return { isFree: false, reason: listing.priceKnown ? REASONS.PAID : REASONS.PRICE_UNKNOWN };
 }
 
-module.exports = { classify, hasFreeTier, isPrivateUrl, REASONS };
+module.exports = { classify, hasFreeTier, declaresFreeModels, isPrivateUrl, REASONS };

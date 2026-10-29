@@ -5,7 +5,7 @@ const { getDatabase } = require('../../db/database');
 const { HttpError } = require('../../middleware/error_handler');
 const { encryptString, decryptString } = require('../../utils/crypto');
 const registry = require('../../providers/registry');
-const { hasFreeTier } = require('../catalog/free_classifier');
+const { declaresFreeModels } = require('../catalog/free_classifier');
 const { createLogger } = require('../../utils/logger');
 const teamMembers = require('../teams/members');
 
@@ -92,7 +92,18 @@ function publicAccount(row) {
     createdAt: row.created_at,
     createdBy: teamMembers.publicUser(row.created_by_user_id),
     models: { total: counts.total || 0, free: counts.free || 0, enabled: counts.enabled || 0 },
+    // "Free" (free models only, no credits) can be chosen for this account.
+    freeAvailable: Boolean(definition && (declaresFreeModels(definition.billing) || counts.free > 0)),
+    // On "Free": every model is in the free tier, or only some are.
+    freeTierAll: Boolean(definition?.billing.freeTierAll),
   };
+}
+
+// Free models known from the provider's rules, or found in this account's
+// synced listing (zero prices).
+function offersFree(definition, row) {
+  if (declaresFreeModels(definition.billing)) return true;
+  return getDatabase().prepare('SELECT COUNT(*) n FROM models WHERE account_id = ? AND is_free = 1').get(row.id).n > 0;
 }
 
 function getRow(userId, accountId) {
@@ -157,7 +168,7 @@ async function create(userId, input, createdBy = userId) {
   const options = { ...(input.options || {}) };
   if (input.headers) options.headers = input.headers;
   validateInput(definition, { secret: input.secret, baseUrl, options });
-  const requestedMode = input.billingMode && (input.billingMode !== 'free_tier' || hasFreeTier(definition.billing))
+  const requestedMode = input.billingMode && (input.billingMode !== 'free_tier' || declaresFreeModels(definition.billing) || definition.billing.trustListingFree)
     ? input.billingMode : definition.billing.defaultMode;
   const { billing: billingMode, prepaid } = storedBilling(requestedMode);
 
@@ -199,8 +210,8 @@ async function update(userId, accountId, input) {
     const result = await registry.createAdapter(definition, next).validate();
     if (result.status === 'invalid') throw new HttpError(422, 'KEY_REJECTED', `${definition.label} rejected this key: ${result.message}`);
   }
-  if (input.billingMode === 'free_tier' && !hasFreeTier(definition.billing)) {
-    throw new HttpError(400, 'NO_FREE_TIER', `${definition.label} has no free tier.`);
+  if (input.billingMode === 'free_tier' && !offersFree(definition, row)) {
+    throw new HttpError(400, 'NO_FREE_TIER', `${definition.label} has no free models.`);
   }
   if (input.slug !== undefined && slugify(input.slug) !== row.slug) {
     const slug = slugify(input.slug);

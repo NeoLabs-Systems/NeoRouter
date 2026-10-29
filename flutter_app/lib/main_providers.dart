@@ -279,9 +279,9 @@ class _AccountRow extends StatelessWidget {
         : account.billingMode == 'plan_paid'
         ? t.accountPlanThenPaid
         : account.billingMode != 'free_tier'
-        ? t.accountPaidPlan
+        ? (account.freeModelCount > 0 ? t.accountPaidWithFree('${account.freeModelCount}') : t.accountPaidPlan)
         : !account.billingVerifiable
-        ? t.accountFreePlan
+        ? (account.freeTierAll ? t.accountFreePlan : t.accountFreeModelsOnly)
         : switch (account.billingState) {
             'free' => t.accountFreeVerified,
             'paid' => t.accountBillingActive,
@@ -814,13 +814,15 @@ class _ProviderFormState extends State<_ProviderForm> {
               ),
               const SizedBox(height: AppSpacing.xs),
               for (final (mode, title, hint) in <(String, String, String)>[
-                if (definition.freeTierAvailable) ('free_tier', t.billingOptionFree, t.billingOptionFreeHint),
+                // A full free tier, or just free models (declared or found in the listing).
+                if (definition.freeTierAvailable && !definition.freeTierPartial) ('free_tier', t.billingOptionFree, t.billingOptionFreeHint)
+                else if (definition.freeTierAvailable || (widget.account?.freeAvailable ?? false)) ('free_tier', t.billingOptionFreeModels, t.billingOptionFreeModelsHint),
                 if (definition.planAvailable) ('plan', t.billingOptionPlan, definition.planNote ?? t.billingOptionPlanHint),
                 if (definition.planAvailable) ('plan_paid', t.billingOptionPlanPaid, t.billingOptionPlanPaidHint),
                 ('paid', t.billingOptionPaid, t.billingOptionPaidHint),
               ])
                 OptionCard(title: title, description: hint, selected: _billing == mode, onTap: () => setState(() => _billing = mode)),
-              if (_billing == 'free_tier' && definition.freeTierAvailable) ...<Widget>[
+              if (_billing == 'free_tier' && definition.freeTierAvailable && !definition.freeTierPartial) ...<Widget>[
                 const SizedBox(height: AppSpacing.xs),
                 Text(t.billingFreeWarning, style: TextStyle(color: palette.textSoft, fontSize: 12.5, height: 1.45)),
               ] else if (definition.hasAlwaysFreeModels) ...<Widget>[

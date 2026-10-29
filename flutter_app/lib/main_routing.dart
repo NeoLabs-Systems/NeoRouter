@@ -450,44 +450,75 @@ class _StyleEditor extends StatefulWidget {
   State<_StyleEditor> createState() => _StyleEditorState();
 }
 
+// Plain-language steps for the fine-tuning sliders, mapped to the values the
+// router uses.
+const List<double> _qualityFloors = <double>[0, 0.3, 0.5, 0.7];
+const List<double?> _priceCaps = <double?>[null, 20, 5, 1, 0.3];
+const List<double> _varietySteps = <double>[0.02, 0.08, 0.2];
+// "Prefer", "If needed", "Never" for a kind of model.
+const List<double> _kindSteps = <double>[1, 0.25, 0];
+
+int _nearest(List<double?> steps, double? value) {
+  if (value == null) return steps.contains(null) ? steps.indexOf(null) : 0;
+  var best = 0;
+  for (var index = 0; index < steps.length; index++) {
+    final step = steps[index];
+    if (step == null) continue;
+    final current = steps[best];
+    if (current == null || (step - value).abs() < (current - value).abs()) best = index;
+  }
+  return best;
+}
+
 class _StyleEditorState extends State<_StyleEditor> {
-  late final RoutingWeights _weights = widget.profile?.weights.copy() ?? RoutingWeights(intelligence: 0.3, speed: 0.2, reliability: 0.3, cost: 0.2);
+  late final RoutingWeights _weights = widget.profile?.weights.copy() ?? RoutingWeights(intelligence: 0.6, speed: 0.4, reliability: 0.6, cost: 0.4);
   late final Map<String, dynamic> _constraints = widget.profile?.constraints ?? <String, dynamic>{};
   late final TextEditingController _name = TextEditingController(text: widget.profile?.name ?? '');
-  late final TextEditingController _maxPrice = TextEditingController(text: _constraints['maxPriceOut']?.toString() ?? '');
-  late final TextEditingController _exclude = TextEditingController(text: ((_constraints['excludeProviders'] as List?) ?? const <Object>[]).join(', '));
-  late double _minIntelligence = (_constraints['minIntelligence'] as num?)?.toDouble() ?? 0;
-  late double _exploration = (_constraints['exploration'] as num?)?.toDouble() ?? 0.08;
+  late int _quality = _nearest(_qualityFloors, (_constraints['minIntelligence'] as num?)?.toDouble() ?? 0);
+  late int _price = _nearest(_priceCaps, (_constraints['maxPriceOut'] as num?)?.toDouble());
+  late int _variety = _nearest(_varietySteps, (_constraints['exploration'] as num?)?.toDouble() ?? 0.08);
   late bool _adaptive = _constraints['adaptive'] != false;
-  // How much free, subscription and paid models count (0 = not used).
-  late final Map<String, double> _kinds = <String, double>{
-    for (final kind in const <String>['free', 'plan', 'paid']) kind: ((_constraints['kinds'] as Map?)?[kind] as num?)?.toDouble() ?? 1,
+  late final Set<String> _skipped = <String>{...((_constraints['excludeProviders'] as List?) ?? const <Object>[]).map((item) => '$item')};
+  late final Map<String, int> _kinds = <String, int>{
+    for (final kind in const <String>['free', 'plan', 'paid'])
+      kind: _nearest(_kindSteps, ((_constraints['kinds'] as Map?)?[kind] as num?)?.toDouble() ?? 1),
   };
-  bool _advanced = false;
+  List<ProviderAccount> _accounts = <ProviderAccount>[];
+  bool _more = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.api.accounts().then((accounts) {
+      if (mounted) setState(() => _accounts = accounts);
+    }).catchError((Object _) {});
+  }
 
   @override
   void dispose() {
     _name.dispose();
-    _maxPrice.dispose();
-    _exclude.dispose();
     super.dispose();
   }
 
   Map<String, Object?> _constraintBody() => <String, Object?>{
-        'minIntelligence': _minIntelligence > 0 ? _minIntelligence : null,
-        'maxPriceOut': double.tryParse(_maxPrice.text.trim().replaceAll(',', '.')),
-        'excludeProviders': _exclude.text.split(',').map((item) => item.trim()).where((item) => item.isNotEmpty).toList(),
+        'minIntelligence': _qualityFloors[_quality] > 0 ? _qualityFloors[_quality] : null,
+        'maxPriceOut': _priceCaps[_price],
+        'excludeProviders': _skipped.toList(),
         'adaptive': _adaptive,
-        'exploration': _exploration,
-        // Every kind at full weight is the same as no preference.
-        'kinds': _kinds.values.every((value) => value >= 1)
+        'exploration': _varietySteps[_variety],
+        // Every kind preferred is the same as no preference.
+        'kinds': _kinds.values.every((step) => step == 0)
             ? null
-            : <String, double>{for (final entry in _kinds.entries) entry.key: entry.value < 0.01 ? 0 : entry.value},
+            : <String, double>{for (final entry in _kinds.entries) entry.key: _kindSteps[entry.value]},
       };
 
   Future<void> _save() async {
     final t = AppL10n.of(context);
+    if (_kinds.values.every((step) => _kindSteps[step] == 0)) {
+      setState(() => _error = t.pickOneKind);
+      return;
+    }
     final name = _name.text.trim().isEmpty ? t.presetCustom : _name.text.trim();
     try {
       final api = widget.controller.api;
@@ -505,13 +536,97 @@ class _StyleEditorState extends State<_StyleEditor> {
     if (mounted) Navigator.of(context).pop('');
   }
 
-  Widget _slider(String label, double value, ValueChanged<double> onChanged, {double min = 0, double max = 1}) {
+  String _level(AppL10n t, double value) => switch ((value * 3).round()) {
+        0 => t.styleLevel0,
+        1 => t.styleLevel1,
+        2 => t.styleLevel2,
+        _ => t.styleLevel3,
+      };
+
+  Widget _section(String title, {String? hint, required List<Widget> children}) {
     final palette = neoRouterPaletteOf(context);
-    return Row(
-      children: <Widget>[
-        SizedBox(width: 110, child: Text(label, style: TextStyle(fontSize: 13.5, color: palette.text))),
-        Expanded(child: Slider(value: value.clamp(min, max), min: min, max: max, onChanged: (next) => setState(() => onChanged(next)))),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5, color: palette.text)),
+          if (hint != null) ...<Widget>[
+            const SizedBox(height: 3),
+            Text(hint, style: TextStyle(fontSize: 12.5, color: palette.textSoft, height: 1.4)),
+          ],
+          const SizedBox(height: AppSpacing.sm),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  // One priority: icon, name, what it means, and how much it counts in words.
+  Widget _priority(IconData icon, String label, String hint, double value, ValueChanged<double> onChanged) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(color: palette.surfaceRaised, borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, size: 18, color: palette.textSoft),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Expanded(child: Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text))),
+                    Text(_level(t, value), style: TextStyle(fontSize: 12.5, color: palette.accent, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+                Text(hint, style: TextStyle(fontSize: 12, color: palette.textMuted)),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(trackHeight: 3, overlayShape: SliderComponentShape.noOverlay),
+                  child: Slider(value: value.clamp(0, 1), divisions: 3, onChanged: (next) => setState(() => onChanged(next))),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // A slider over named steps: the current step's name above it.
+  Widget _steps(String label, List<String> names, int index, ValueChanged<int> onChanged, {String? detail}) {
+    final palette = neoRouterPaletteOf(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(child: Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text))),
+              Text(names[index], style: TextStyle(fontSize: 12.5, color: palette.accent, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(trackHeight: 3, overlayShape: SliderComponentShape.noOverlay),
+            child: Slider(
+              value: index.toDouble(),
+              min: 0,
+              max: (names.length - 1).toDouble(),
+              divisions: names.length - 1,
+              onChanged: (next) => setState(() => onChanged(next.round())),
+            ),
+          ),
+          if (detail != null) Text(detail, style: TextStyle(fontSize: 12, color: palette.textMuted)),
+        ],
+      ),
     );
   }
 
@@ -519,10 +634,12 @@ class _StyleEditorState extends State<_StyleEditor> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
+    final price = _priceCaps[_price];
+    final kindLabels = <(String, String)>[('free', t.kindFree), ('plan', t.kindPlan), ('paid', t.kindPaid)];
     return AlertDialog(
       title: Text(widget.profile == null ? t.createStyle : t.editStyle),
       content: SizedBox(
-        width: 460,
+        width: 540,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -530,55 +647,86 @@ class _StyleEditorState extends State<_StyleEditor> {
             children: <Widget>[
               TextField(controller: _name, autofocus: widget.profile == null, decoration: InputDecoration(labelText: t.profileName)),
               const SizedBox(height: AppSpacing.lg),
-              Text(t.weightsTitle, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
-              const SizedBox(height: 2),
-              Text(t.weightsHint, style: TextStyle(fontSize: 12.5, color: palette.textSoft)),
-              const SizedBox(height: AppSpacing.xs),
-              _slider(t.intelligence, _weights.intelligence, (value) => _weights.intelligence = value),
-              _slider(t.speed, _weights.speed, (value) => _weights.speed = value),
-              _slider(t.reliability, _weights.reliability, (value) => _weights.reliability = value),
-              _slider(t.cost, _weights.cost, (value) => _weights.cost = value),
-              const SizedBox(height: AppSpacing.md),
-              Text(t.styleKindsTitle, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
-              const SizedBox(height: 2),
-              Text(t.styleKindsHint, style: TextStyle(fontSize: 12.5, color: palette.textSoft)),
-              const SizedBox(height: AppSpacing.xs),
-              for (final (kind, label) in <(String, String)>[('free', t.kindFree), ('plan', t.kindPlan), ('paid', t.kindPaid)])
-                Row(
-                  children: <Widget>[
-                    Expanded(child: _slider(label, _kinds[kind]!, (value) => _kinds[kind] = value)),
-                    SizedBox(
-                      width: 92,
-                      child: Text(
-                        _kinds[kind]! < 0.01 ? t.styleKindOff : '${(_kinds[kind]! * 100).round()} %',
-                        textAlign: TextAlign.end,
-                        style: TextStyle(fontSize: 12.5, color: palette.textMuted),
+              _section(
+                t.stylePrioritiesTitle,
+                hint: t.presetCheaperNote,
+                children: <Widget>[
+                  _priority(Icons.psychology_outlined, t.stylePriorityQuality, t.stylePriorityQualityHint, _weights.intelligence, (value) => _weights.intelligence = value),
+                  _priority(Icons.bolt_outlined, t.stylePrioritySpeed, t.stylePrioritySpeedHint, _weights.speed, (value) => _weights.speed = value),
+                  _priority(Icons.verified_outlined, t.stylePriorityReliability, t.stylePriorityReliabilityHint, _weights.reliability, (value) => _weights.reliability = value),
+                  _priority(Icons.savings_outlined, t.stylePriorityCost, t.stylePriorityCostHint, _weights.cost, (value) => _weights.cost = value),
+                ],
+              ),
+              _section(
+                t.styleKindsTitle,
+                hint: t.styleKindsHint,
+                children: <Widget>[
+                  for (final (kind, label) in kindLabels)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(child: Text(label, style: TextStyle(color: palette.text))),
+                          SegmentedButton<int>(
+                            showSelectedIcon: false,
+                            style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                            segments: <ButtonSegment<int>>[
+                              ButtonSegment<int>(value: 0, label: Text(t.styleKindPrefer)),
+                              ButtonSegment<int>(value: 1, label: Text(t.styleKindIfNeeded)),
+                              ButtonSegment<int>(value: 2, label: Text(t.styleKindNever)),
+                            ],
+                            selected: <int>{_kinds[kind]!},
+                            onSelectionChanged: (value) => setState(() => _kinds[kind] = value.first),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                ],
+              ),
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
-                  onPressed: () => setState(() => _advanced = !_advanced),
-                  icon: Icon(_advanced ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
-                  label: Text(t.advancedOptions),
+                  onPressed: () => setState(() => _more = !_more),
+                  icon: Icon(_more ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
+                  label: Text(t.styleMoreTitle),
                 ),
               ),
-              if (_advanced) ...<Widget>[
-                _slider(t.minIntelligence, _minIntelligence, (value) => _minIntelligence = value, max: 0.9),
-                _slider(t.exploration, _exploration, (value) => _exploration = value, min: 0.01, max: 0.3),
-                Text(t.explorationHint, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+              if (_more) ...<Widget>[
+                const SizedBox(height: AppSpacing.sm),
+                _steps(t.styleQualityFloor, <String>[t.styleQualityAny, t.styleQualityDecent, t.styleQualityGood, t.styleQualityTop], _quality, (value) => _quality = value),
+                _steps(
+                  t.stylePriceCap,
+                  <String>[t.stylePriceAny, t.stylePricePremium, t.stylePriceMid, t.stylePriceCheap, t.stylePriceVeryCheap],
+                  _price,
+                  (value) => _price = value,
+                  detail: price == null ? null : t.stylePriceDetail(formatUsd(price)),
+                ),
+                _steps(t.styleVariety, <String>[t.styleVarietyLow, t.styleVarietyMid, t.styleVarietyHigh], _variety, (value) => _variety = value),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   value: _adaptive,
                   onChanged: (value) => setState(() => _adaptive = value),
-                  title: Text(t.adaptive, style: const TextStyle(fontSize: 13.5)),
-                  subtitle: Text(t.adaptiveHint, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+                  title: Text(t.styleAdaptive, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text, fontSize: 14)),
+                  subtitle: Text(t.styleAdaptiveHint, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
                 ),
-                TextField(controller: _maxPrice, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: t.maxPriceOut)),
-                const SizedBox(height: AppSpacing.sm),
-                TextField(controller: _exclude, decoration: InputDecoration(labelText: t.excludeProviders)),
+                if (_accounts.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(t.styleSkipProviders, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
+                  Text(t.styleSkipProvidersHint, style: TextStyle(fontSize: 12, color: palette.textMuted)),
+                  const SizedBox(height: AppSpacing.xs),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: <Widget>[
+                      for (final account in _accounts)
+                        FilterChip(
+                          label: Text(account.label),
+                          selected: _skipped.contains(account.slug),
+                          onSelected: (on) => setState(() => on ? _skipped.add(account.slug) : _skipped.remove(account.slug)),
+                        ),
+                    ],
+                  ),
+                ],
               ],
               if (_error != null) ...<Widget>[const SizedBox(height: AppSpacing.sm), InlineError(message: _error!)],
             ],

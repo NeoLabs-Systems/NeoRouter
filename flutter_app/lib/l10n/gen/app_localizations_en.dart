@@ -917,30 +917,6 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get minIntelligence => 'Minimum quality';
-
-  @override
-  String get maxPriceOut => 'Max price per 1M output tokens (USD, empty = any)';
-
-  @override
-  String get adaptive => 'Adapt to the request';
-
-  @override
-  String get adaptiveHint =>
-      'Long or code-heavy requests lean towards smarter models.';
-
-  @override
-  String get exploration => 'Spread load';
-
-  @override
-  String get explorationHint =>
-      'Higher values share requests among more good models instead of always using the top one.';
-
-  @override
-  String get excludeProviders =>
-      'Never use these connections (comma separated)';
-
-  @override
   String get previewTitle => 'Right now it would choose';
 
   @override
@@ -1939,6 +1915,14 @@ class AppL10nEn extends AppL10n {
   String get accountPaidPlan => 'Paid account';
 
   @override
+  String accountPaidWithFree(String count) {
+    return 'Paid account · $count free models';
+  }
+
+  @override
+  String get accountFreeModelsOnly => 'Free models only';
+
+  @override
   String get accountFreeVerified => 'Free plan, verified';
 
   @override
@@ -1965,6 +1949,13 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get billingOptionFree => 'Free tier';
+
+  @override
+  String get billingOptionFreeModels => 'Free models only';
+
+  @override
+  String get billingOptionFreeModelsHint =>
+      'No credits on this account. NeoRouter uses only its free models and skips the rest.';
 
   @override
   String get billingOptionFreeHint =>
@@ -2147,9 +2138,6 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get weightsTitle => 'What matters';
-
-  @override
-  String get weightsHint => 'Move a slider to the right to make it count more.';
 
   @override
   String get previewDefaultPrompt => 'Explain quicksort in two sentences.';
@@ -3028,6 +3016,28 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String get homeCapacityTitle => 'Around the clock';
+
+  @override
+  String homeCapacityValue(String count) {
+    return '$count requests a day';
+  }
+
+  @override
+  String homeCapacityCaption(String hour, String providers) {
+    return 'What your free models could answer if used non-stop: about $hour an hour, from the usage limits of $providers providers.';
+  }
+
+  @override
+  String homeCapacityUnknown(String models) {
+    return '$models more free models publish no limit and are not counted.';
+  }
+
+  @override
+  String get homeCapacityNone =>
+      'None of your free models has a known usage limit yet, so there is nothing to add up.';
+
+  @override
   String get keyLimitsTitle => 'Limits';
 
   @override
@@ -3059,14 +3069,126 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get styleKindsTitle => 'Kinds of model';
+  String get styleKindsTitle => 'Which models';
 
   @override
   String get styleKindsHint =>
-      'Which kinds this style uses and how much each counts. A kind at a low share is only used when the others cannot answer.';
+      '\"If needed\" models step in only when the preferred ones cannot answer.';
 
   @override
-  String get styleKindOff => 'Not used';
+  String get styleKindPrefer => 'Prefer';
+
+  @override
+  String get styleKindIfNeeded => 'If needed';
+
+  @override
+  String get styleKindNever => 'Never';
+
+  @override
+  String get stylePrioritiesTitle => 'What matters most';
+
+  @override
+  String get stylePriorityQuality => 'Quality';
+
+  @override
+  String get stylePriorityQualityHint => 'Smarter, more capable answers';
+
+  @override
+  String get stylePrioritySpeed => 'Speed';
+
+  @override
+  String get stylePrioritySpeedHint => 'Answers start sooner and finish faster';
+
+  @override
+  String get stylePriorityReliability => 'Reliability';
+
+  @override
+  String get stylePriorityReliabilityHint =>
+      'Models that rarely fail or time out';
+
+  @override
+  String get stylePriorityCost => 'Saving money';
+
+  @override
+  String get stylePriorityCostHint => 'Cheaper models, free ones first';
+
+  @override
+  String get styleLevel0 => 'Not important';
+
+  @override
+  String get styleLevel1 => 'A little';
+
+  @override
+  String get styleLevel2 => 'Important';
+
+  @override
+  String get styleLevel3 => 'Very important';
+
+  @override
+  String get styleMoreTitle => 'Fine-tuning';
+
+  @override
+  String get styleQualityFloor => 'Lowest quality allowed';
+
+  @override
+  String get styleQualityAny => 'Any model';
+
+  @override
+  String get styleQualityDecent => 'Decent and up';
+
+  @override
+  String get styleQualityGood => 'Good and up';
+
+  @override
+  String get styleQualityTop => 'Top models only';
+
+  @override
+  String get stylePriceCap => 'Price limit for paid models';
+
+  @override
+  String get stylePriceAny => 'Any price';
+
+  @override
+  String get stylePricePremium => 'Up to premium models';
+
+  @override
+  String get stylePriceMid => 'Mid-priced and below';
+
+  @override
+  String get stylePriceCheap => 'Cheap models only';
+
+  @override
+  String get stylePriceVeryCheap => 'Very cheap only';
+
+  @override
+  String stylePriceDetail(String price) {
+    return 'Answers cost at most $price per 750,000 words';
+  }
+
+  @override
+  String get styleVariety => 'Variety';
+
+  @override
+  String get styleVarietyLow => 'Stick to the best model';
+
+  @override
+  String get styleVarietyMid => 'Spread over a few good models';
+
+  @override
+  String get styleVarietyHigh => 'Spread widely';
+
+  @override
+  String get styleAdaptive => 'Stronger models for hard requests';
+
+  @override
+  String get styleAdaptiveHint =>
+      'Long, code-heavy or tool requests lean towards smarter models.';
+
+  @override
+  String get styleSkipProviders => 'Leave out';
+
+  @override
+  String get styleSkipProvidersHint => 'Connections this style never uses.';
 
   @override
   String get pgLiveHint =>

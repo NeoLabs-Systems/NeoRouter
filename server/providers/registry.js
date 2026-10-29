@@ -189,8 +189,10 @@ function publicDefinition(definition) {
     connect: definition.connect || null,
     billing: {
       defaultMode: definition.billing.defaultMode,
-      freeTierAvailable: definition.billing.freeTierAll || definition.billing.freeTierModels.length > 0,
-      freeTierPartial: !definition.billing.freeTierAll && definition.billing.freeTierModels.length > 0,
+      // "Free" (no credits, free models only) is offered whenever the provider
+      // is known to have free models; accounts may also find some in their listing.
+      freeTierAvailable: definition.billing.freeTierAll || definition.billing.freeTierModels.length > 0 || definition.billing.alwaysFree.length > 0,
+      freeTierPartial: !definition.billing.freeTierAll && (definition.billing.freeTierModels.length > 0 || definition.billing.alwaysFree.length > 0),
       verified: Boolean(definition.billing.verify),
       hasAlwaysFreeModels: definition.billing.alwaysFree.length > 0,
       note: definition.billing.note,

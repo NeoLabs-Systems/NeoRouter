@@ -924,31 +924,6 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
-  String get minIntelligence => 'Mindestqualität';
-
-  @override
-  String get maxPriceOut =>
-      'Max. Preis pro 1 Mio. Ausgabe-Tokens (USD, leer = egal)';
-
-  @override
-  String get adaptive => 'An die Anfrage anpassen';
-
-  @override
-  String get adaptiveHint =>
-      'Lange oder code-lastige Anfragen bevorzugen klügere Modelle.';
-
-  @override
-  String get exploration => 'Last verteilen';
-
-  @override
-  String get explorationHint =>
-      'Höhere Werte verteilen Anfragen auf mehr gute Modelle statt immer das beste zu nehmen.';
-
-  @override
-  String get excludeProviders =>
-      'Diese Verbindungen nie nutzen (mit Komma getrennt)';
-
-  @override
   String get previewTitle => 'Gerade würde es wählen';
 
   @override
@@ -1956,6 +1931,14 @@ class AppL10nDe extends AppL10n {
   String get accountPaidPlan => 'Bezahlkonto';
 
   @override
+  String accountPaidWithFree(String count) {
+    return 'Bezahlkonto · $count Gratis-Modelle';
+  }
+
+  @override
+  String get accountFreeModelsOnly => 'Nur Gratis-Modelle';
+
+  @override
   String get accountFreeVerified => 'Gratis-Tarif, bestätigt';
 
   @override
@@ -1982,6 +1965,13 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get billingOptionFree => 'Gratis-Kontingent';
+
+  @override
+  String get billingOptionFreeModels => 'Nur Gratis-Modelle';
+
+  @override
+  String get billingOptionFreeModelsHint =>
+      'Kein Guthaben auf diesem Konto. NeoRouter nutzt nur die Gratis-Modelle und lässt den Rest aus.';
 
   @override
   String get billingOptionFreeHint =>
@@ -2164,9 +2154,6 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get weightsTitle => 'Was zählt';
-
-  @override
-  String get weightsHint => 'Je weiter rechts, desto wichtiger.';
 
   @override
   String get previewDefaultPrompt => 'Erkläre Quicksort in zwei Sätzen.';
@@ -3049,6 +3036,28 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
+  String get homeCapacityTitle => 'Rund um die Uhr';
+
+  @override
+  String homeCapacityValue(String count) {
+    return '$count Anfragen am Tag';
+  }
+
+  @override
+  String homeCapacityCaption(String hour, String providers) {
+    return 'So viel könnten deine Gratis-Modelle im Dauerbetrieb beantworten: etwa $hour pro Stunde, nach den Nutzungslimits von $providers Anbietern.';
+  }
+
+  @override
+  String homeCapacityUnknown(String models) {
+    return '$models weitere Gratis-Modelle nennen kein Limit und sind nicht mitgezählt.';
+  }
+
+  @override
+  String get homeCapacityNone =>
+      'Für keines deiner Gratis-Modelle ist bisher ein Nutzungslimit bekannt, daher lässt sich nichts zusammenrechnen.';
+
+  @override
   String get keyLimitsTitle => 'Limits';
 
   @override
@@ -3080,14 +3089,128 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
-  String get styleKindsTitle => 'Arten von Modellen';
+  String get styleKindsTitle => 'Welche Modelle';
 
   @override
   String get styleKindsHint =>
-      'Welche Arten dieser Stil nutzt und wie stark jede zählt. Eine Art mit kleinem Anteil kommt nur dran, wenn die anderen nicht antworten können.';
+      '„Bei Bedarf“-Modelle springen nur ein, wenn die bevorzugten nicht antworten können.';
 
   @override
-  String get styleKindOff => 'Nicht genutzt';
+  String get styleKindPrefer => 'Bevorzugt';
+
+  @override
+  String get styleKindIfNeeded => 'Bei Bedarf';
+
+  @override
+  String get styleKindNever => 'Nie';
+
+  @override
+  String get stylePrioritiesTitle => 'Was am wichtigsten ist';
+
+  @override
+  String get stylePriorityQuality => 'Qualität';
+
+  @override
+  String get stylePriorityQualityHint => 'Klügere, fähigere Antworten';
+
+  @override
+  String get stylePrioritySpeed => 'Tempo';
+
+  @override
+  String get stylePrioritySpeedHint =>
+      'Antworten beginnen früher und sind schneller fertig';
+
+  @override
+  String get stylePriorityReliability => 'Zuverlässigkeit';
+
+  @override
+  String get stylePriorityReliabilityHint => 'Modelle, die selten ausfallen';
+
+  @override
+  String get stylePriorityCost => 'Geld sparen';
+
+  @override
+  String get stylePriorityCostHint =>
+      'Günstigere Modelle, Gratis-Modelle zuerst';
+
+  @override
+  String get styleLevel0 => 'Unwichtig';
+
+  @override
+  String get styleLevel1 => 'Etwas';
+
+  @override
+  String get styleLevel2 => 'Wichtig';
+
+  @override
+  String get styleLevel3 => 'Sehr wichtig';
+
+  @override
+  String get styleMoreTitle => 'Feinschliff';
+
+  @override
+  String get styleQualityFloor => 'Niedrigste erlaubte Qualität';
+
+  @override
+  String get styleQualityAny => 'Jedes Modell';
+
+  @override
+  String get styleQualityDecent => 'Ordentlich und besser';
+
+  @override
+  String get styleQualityGood => 'Gut und besser';
+
+  @override
+  String get styleQualityTop => 'Nur Spitzenmodelle';
+
+  @override
+  String get stylePriceCap => 'Preisgrenze für Bezahl-Modelle';
+
+  @override
+  String get stylePriceAny => 'Jeder Preis';
+
+  @override
+  String get stylePricePremium => 'Bis zu Premium-Modellen';
+
+  @override
+  String get stylePriceMid => 'Mittlere Preise und darunter';
+
+  @override
+  String get stylePriceCheap => 'Nur günstige Modelle';
+
+  @override
+  String get stylePriceVeryCheap => 'Nur sehr günstige';
+
+  @override
+  String stylePriceDetail(String price) {
+    return 'Antworten kosten höchstens $price pro 750.000 Wörter';
+  }
+
+  @override
+  String get styleVariety => 'Abwechslung';
+
+  @override
+  String get styleVarietyLow => 'Beim besten Modell bleiben';
+
+  @override
+  String get styleVarietyMid => 'Auf einige gute Modelle verteilen';
+
+  @override
+  String get styleVarietyHigh => 'Breit verteilen';
+
+  @override
+  String get styleAdaptive => 'Stärkere Modelle für schwere Anfragen';
+
+  @override
+  String get styleAdaptiveHint =>
+      'Lange, code-lastige oder Tool-Anfragen bevorzugen klügere Modelle.';
+
+  @override
+  String get styleSkipProviders => 'Weglassen';
+
+  @override
+  String get styleSkipProvidersHint =>
+      'Verbindungen, die dieser Stil nie nutzt.';
 
   @override
   String get pgLiveHint =>

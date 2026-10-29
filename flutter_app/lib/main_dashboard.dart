@@ -24,6 +24,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<RouterKey> _keys = <RouterKey>[];
   List<RequestLog> _logs = <RequestLog>[];
   Map<String, dynamic> _totals = <String, dynamic>{};
+  Map<String, dynamic>? _capacity;
   bool _loading = true;
   String? _error;
 
@@ -37,12 +38,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _error = null);
     try {
       final api = widget.controller.api;
-      final results = await Future.wait(<Future<Object>>[api.accounts(), api.keys(), api.logs(limit: 5), api.summary('7d')]);
+      final results = await Future.wait(<Future<Object>>[api.accounts(), api.keys(), api.logs(limit: 5), api.summary('7d'), api.capacity()]);
       setState(() {
         _accounts = results[0] as List<ProviderAccount>;
         _keys = (results[1] as List<RouterKey>).where((key) => !key.revoked).toList();
         _logs = results[2] as List<RequestLog>;
         _totals = Map<String, dynamic>.from((results[3] as Map<String, dynamic>)['totals'] as Map? ?? const <String, dynamic>{});
+        _capacity = results[4] as Map<String, dynamic>;
       });
     } catch (error) {
       setState(() => _error = '$error');
@@ -100,6 +102,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               if (_logs.isNotEmpty) ...<Widget>[
                 SettingsHeading(title: t.homeLast7Days),
                 _WeekStrip(totals: _totals),
+                const SizedBox(height: 28),
+              ],
+              if (active.isNotEmpty && _capacity != null) ...<Widget>[
+                _CapacityCard(capacity: _capacity!),
                 const SizedBox(height: 28),
               ],
               LayoutBuilder(
@@ -287,6 +293,57 @@ class _WeekStrip extends StatelessWidget {
         (label: t.metricSaved, value: formatUsd(saved), caption: t.metricSavedCaption(formatUsd(cost), '${requests == 0 ? 0 : (free * 100 / requests).round()}')),
         (label: t.metricResponse, value: formatMs(latency), caption: null),
       ],
+    );
+  }
+}
+
+/// How many requests the free models could take a day, used non-stop.
+class _CapacityCard extends StatelessWidget {
+  const _CapacityCard({required this.capacity});
+
+  final Map<String, dynamic> capacity;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final perDay = (capacity['perDay'] as num?)?.toInt() ?? 0;
+    final perHour = (capacity['perHour'] as num?)?.toInt() ?? 0;
+    final providers = (capacity['providersCounted'] as num?)?.toInt() ?? 0;
+    final uncounted = (capacity['modelsWithoutLimit'] as num?)?.toInt() ?? 0;
+    return AppCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(color: palette.accentSoft, borderRadius: BorderRadius.circular(12)),
+            child: Icon(Icons.all_inclusive_rounded, size: 20, color: palette.accent),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(t.homeCapacityTitle.toUpperCase(), style: sectionEyebrowStyle(palette)),
+                const SizedBox(height: 6),
+                if (perDay == 0)
+                  Text(t.homeCapacityNone, style: TextStyle(color: palette.textSoft, height: 1.45))
+                else ...<Widget>[
+                  Text(t.homeCapacityValue(formatCount(perDay)), style: displayTitleStyle(palette, size: 24)),
+                  const SizedBox(height: 6),
+                  Text(t.homeCapacityCaption(formatCount(perHour), '$providers'), style: TextStyle(color: palette.textSoft, height: 1.45)),
+                ],
+                if (uncounted > 0) ...<Widget>[
+                  const SizedBox(height: 4),
+                  Text(t.homeCapacityUnknown('$uncounted'), style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

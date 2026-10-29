@@ -1735,48 +1735,6 @@ abstract class AppL10n {
   /// **'Use it as model \"auto:{id}\" or set it as a key default.'**
   String profileUsage(String id);
 
-  /// No description provided for @minIntelligence.
-  ///
-  /// In en, this message translates to:
-  /// **'Minimum quality'**
-  String get minIntelligence;
-
-  /// No description provided for @maxPriceOut.
-  ///
-  /// In en, this message translates to:
-  /// **'Max price per 1M output tokens (USD, empty = any)'**
-  String get maxPriceOut;
-
-  /// No description provided for @adaptive.
-  ///
-  /// In en, this message translates to:
-  /// **'Adapt to the request'**
-  String get adaptive;
-
-  /// No description provided for @adaptiveHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Long or code-heavy requests lean towards smarter models.'**
-  String get adaptiveHint;
-
-  /// No description provided for @exploration.
-  ///
-  /// In en, this message translates to:
-  /// **'Spread load'**
-  String get exploration;
-
-  /// No description provided for @explorationHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Higher values share requests among more good models instead of always using the top one.'**
-  String get explorationHint;
-
-  /// No description provided for @excludeProviders.
-  ///
-  /// In en, this message translates to:
-  /// **'Never use these connections (comma separated)'**
-  String get excludeProviders;
-
   /// No description provided for @previewTitle.
   ///
   /// In en, this message translates to:
@@ -3553,6 +3511,18 @@ abstract class AppL10n {
   /// **'Paid account'**
   String get accountPaidPlan;
 
+  /// No description provided for @accountPaidWithFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid account · {count} free models'**
+  String accountPaidWithFree(String count);
+
+  /// No description provided for @accountFreeModelsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Free models only'**
+  String get accountFreeModelsOnly;
+
   /// No description provided for @accountFreeVerified.
   ///
   /// In en, this message translates to:
@@ -3600,6 +3570,18 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Free tier'**
   String get billingOptionFree;
+
+  /// No description provided for @billingOptionFreeModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Free models only'**
+  String get billingOptionFreeModels;
+
+  /// No description provided for @billingOptionFreeModelsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No credits on this account. NeoRouter uses only its free models and skips the rest.'**
+  String get billingOptionFreeModelsHint;
 
   /// No description provided for @billingOptionFreeHint.
   ///
@@ -3906,12 +3888,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'What matters'**
   String get weightsTitle;
-
-  /// No description provided for @weightsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Move a slider to the right to make it count more.'**
-  String get weightsHint;
 
   /// No description provided for @previewDefaultPrompt.
   ///
@@ -5431,6 +5407,36 @@ abstract class AppL10n {
   /// **'{actor} left {subject}\'s team'**
   String teamEventLeave(String actor, String subject);
 
+  /// No description provided for @homeCapacityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Around the clock'**
+  String get homeCapacityTitle;
+
+  /// No description provided for @homeCapacityValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} requests a day'**
+  String homeCapacityValue(String count);
+
+  /// No description provided for @homeCapacityCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'What your free models could answer if used non-stop: about {hour} an hour, from the usage limits of {providers} providers.'**
+  String homeCapacityCaption(String hour, String providers);
+
+  /// No description provided for @homeCapacityUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'{models} more free models publish no limit and are not counted.'**
+  String homeCapacityUnknown(String models);
+
+  /// No description provided for @homeCapacityNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None of your free models has a known usage limit yet, so there is nothing to add up.'**
+  String get homeCapacityNone;
+
   /// No description provided for @keyLimitsTitle.
   ///
   /// In en, this message translates to:
@@ -5488,20 +5494,236 @@ abstract class AppL10n {
   /// No description provided for @styleKindsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Kinds of model'**
+  /// **'Which models'**
   String get styleKindsTitle;
 
   /// No description provided for @styleKindsHint.
   ///
   /// In en, this message translates to:
-  /// **'Which kinds this style uses and how much each counts. A kind at a low share is only used when the others cannot answer.'**
+  /// **'\"If needed\" models step in only when the preferred ones cannot answer.'**
   String get styleKindsHint;
 
-  /// No description provided for @styleKindOff.
+  /// No description provided for @styleKindPrefer.
   ///
   /// In en, this message translates to:
-  /// **'Not used'**
-  String get styleKindOff;
+  /// **'Prefer'**
+  String get styleKindPrefer;
+
+  /// No description provided for @styleKindIfNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'If needed'**
+  String get styleKindIfNeeded;
+
+  /// No description provided for @styleKindNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Never'**
+  String get styleKindNever;
+
+  /// No description provided for @stylePrioritiesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What matters most'**
+  String get stylePrioritiesTitle;
+
+  /// No description provided for @stylePriorityQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality'**
+  String get stylePriorityQuality;
+
+  /// No description provided for @stylePriorityQualityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Smarter, more capable answers'**
+  String get stylePriorityQualityHint;
+
+  /// No description provided for @stylePrioritySpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get stylePrioritySpeed;
+
+  /// No description provided for @stylePrioritySpeedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Answers start sooner and finish faster'**
+  String get stylePrioritySpeedHint;
+
+  /// No description provided for @stylePriorityReliability.
+  ///
+  /// In en, this message translates to:
+  /// **'Reliability'**
+  String get stylePriorityReliability;
+
+  /// No description provided for @stylePriorityReliabilityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Models that rarely fail or time out'**
+  String get stylePriorityReliabilityHint;
+
+  /// No description provided for @stylePriorityCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving money'**
+  String get stylePriorityCost;
+
+  /// No description provided for @stylePriorityCostHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cheaper models, free ones first'**
+  String get stylePriorityCostHint;
+
+  /// No description provided for @styleLevel0.
+  ///
+  /// In en, this message translates to:
+  /// **'Not important'**
+  String get styleLevel0;
+
+  /// No description provided for @styleLevel1.
+  ///
+  /// In en, this message translates to:
+  /// **'A little'**
+  String get styleLevel1;
+
+  /// No description provided for @styleLevel2.
+  ///
+  /// In en, this message translates to:
+  /// **'Important'**
+  String get styleLevel2;
+
+  /// No description provided for @styleLevel3.
+  ///
+  /// In en, this message translates to:
+  /// **'Very important'**
+  String get styleLevel3;
+
+  /// No description provided for @styleMoreTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fine-tuning'**
+  String get styleMoreTitle;
+
+  /// No description provided for @styleQualityFloor.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowest quality allowed'**
+  String get styleQualityFloor;
+
+  /// No description provided for @styleQualityAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any model'**
+  String get styleQualityAny;
+
+  /// No description provided for @styleQualityDecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Decent and up'**
+  String get styleQualityDecent;
+
+  /// No description provided for @styleQualityGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Good and up'**
+  String get styleQualityGood;
+
+  /// No description provided for @styleQualityTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Top models only'**
+  String get styleQualityTop;
+
+  /// No description provided for @stylePriceCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Price limit for paid models'**
+  String get stylePriceCap;
+
+  /// No description provided for @stylePriceAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any price'**
+  String get stylePriceAny;
+
+  /// No description provided for @stylePricePremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to premium models'**
+  String get stylePricePremium;
+
+  /// No description provided for @stylePriceMid.
+  ///
+  /// In en, this message translates to:
+  /// **'Mid-priced and below'**
+  String get stylePriceMid;
+
+  /// No description provided for @stylePriceCheap.
+  ///
+  /// In en, this message translates to:
+  /// **'Cheap models only'**
+  String get stylePriceCheap;
+
+  /// No description provided for @stylePriceVeryCheap.
+  ///
+  /// In en, this message translates to:
+  /// **'Very cheap only'**
+  String get stylePriceVeryCheap;
+
+  /// No description provided for @stylePriceDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Answers cost at most {price} per 750,000 words'**
+  String stylePriceDetail(String price);
+
+  /// No description provided for @styleVariety.
+  ///
+  /// In en, this message translates to:
+  /// **'Variety'**
+  String get styleVariety;
+
+  /// No description provided for @styleVarietyLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Stick to the best model'**
+  String get styleVarietyLow;
+
+  /// No description provided for @styleVarietyMid.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread over a few good models'**
+  String get styleVarietyMid;
+
+  /// No description provided for @styleVarietyHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread widely'**
+  String get styleVarietyHigh;
+
+  /// No description provided for @styleAdaptive.
+  ///
+  /// In en, this message translates to:
+  /// **'Stronger models for hard requests'**
+  String get styleAdaptive;
+
+  /// No description provided for @styleAdaptiveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Long, code-heavy or tool requests lean towards smarter models.'**
+  String get styleAdaptiveHint;
+
+  /// No description provided for @styleSkipProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave out'**
+  String get styleSkipProviders;
+
+  /// No description provided for @styleSkipProvidersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Connections this style never uses.'**
+  String get styleSkipProvidersHint;
 
   /// No description provided for @pgLiveHint.
   ///

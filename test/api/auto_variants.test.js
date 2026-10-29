@@ -112,3 +112,17 @@ test('a custom style chooses kinds of model and how much each counts', async () 
   const leaning = await api('post', '/routing/profiles').send({ name: 'Mostly paid', weights: { intelligence: 0.4, speed: 0.2, reliability: 0.3, cost: 0.1 }, constraints: { kinds: { free: 0.05, plan: 0, paid: 1 } } });
   for (let i = 0; i < 4; i += 1) assert.equal((await chat(secret, `auto:${leaning.body.profile.id}`)).headers['x-neorouter-model'], 'paid/ok-paid', 'a small weight makes free a fallback');
 });
+
+test('capacity adds up what the free models could take around the clock', async () => {
+  const quota = require('../../server/services/quota/quota_service');
+  // The mock's rate-limit headers (1000 requests) are already learned as a minute limit.
+  const before = (await api('get', '/usage/capacity')).body;
+  assert.equal(before.perDay, 1000 * 1440);
+  const free = (await api('get', '/models')).body.models.find((model) => model.id === 'free/ok-free');
+  quota.setLimit(`m:${free.ref}`, 'rpm', 2, 'learned');
+  quota.setLimit(`m:${free.ref}`, 'rpd', 1000, 'learned');
+  const after = (await api('get', '/usage/capacity')).body;
+  assert.equal(after.perDay, 1000, 'the lower of the daily limit and the minute limit kept up all day');
+  assert.equal(after.perHour, 42);
+  assert.equal(after.providersCounted, 1);
+});
