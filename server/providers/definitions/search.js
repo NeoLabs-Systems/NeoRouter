@@ -123,8 +123,9 @@ module.exports = [
     auth: { type: 'header', header: 'X-Subscription-Token' },
     ...search('brave', { id: 'brave-web-search', name: 'Brave Web Search', price_per_search: 0.005 }),
     billing: {
-      defaultMode: 'paid',
-      note: 'Needs a card: 5 USD of monthly credit is included, usage beyond it is billed (about 5 USD per 1,000 searches).',
+      defaultMode: 'free_tier',
+      freeTierAll: true,
+      note: 'Free on the Free plan (monthly allowance, requests fail beyond it). On a paid plan searches are billed (about 5 USD per 1,000): choose paid for such keys.',
       source: 'https://brave.com/search/api',
       checkedAt: '2026-10-29',
     },
