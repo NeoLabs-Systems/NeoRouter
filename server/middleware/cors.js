@@ -11,7 +11,7 @@ function cors(req, res, next) {
     res.set('Access-Control-Allow-Origin', origin);
     res.set('Vary', 'Origin');
     res.set('Access-Control-Expose-Headers', 'X-Request-Id,X-NeoRouter-Model,X-NeoRouter-Trail');
-    res.set('Access-Control-Allow-Headers', 'Authorization,Content-Type,X-Api-Key,Anthropic-Version,Anthropic-Beta,OpenAI-Organization,OpenAI-Beta,X-Request-Id');
+    res.set('Access-Control-Allow-Headers', 'Authorization,Content-Type,X-Api-Key,Anthropic-Version,Anthropic-Beta,OpenAI-Organization,OpenAI-Beta,X-Request-Id,X-NeoRouter-Space');
     res.set('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
     res.set('Access-Control-Allow-Credentials', 'true');
   }

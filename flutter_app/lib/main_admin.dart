@@ -11,6 +11,21 @@ import 'src/models.dart';
 
 enum _AdminTab { users, server, metadata }
 
+/// One line for a team event, e.g. "anna joined neo's team".
+String teamEventLabel(AppL10n t, Map<String, dynamic> event) {
+  final actor = event['actor'] as String? ?? t.formerMember;
+  final subject = event['subject'] as String? ?? t.formerMember;
+  return switch (event['action']) {
+    'invite.create' => t.teamEventInviteCreate(actor),
+    'invite.revoke' => t.teamEventInviteRevoke(actor),
+    'member.join' => t.teamEventJoin(actor, subject),
+    'member.permissions' => t.teamEventPermissions(actor, subject),
+    'member.release' => t.teamEventRelease(actor, subject),
+    'member.leave' => t.teamEventLeave(actor, subject),
+    _ => '${event['action']}',
+  };
+}
+
 extension on _AdminTab {
   IconData get icon => switch (this) {
         _AdminTab.users => Icons.group_outlined,
@@ -56,6 +71,7 @@ class _AdminScreenState extends State<AdminScreen> {
   List<AppUser> _users = <AppUser>[];
   Map<String, dynamic>? _settings;
   Map<String, dynamic>? _info;
+  List<Map<String, dynamic>> _teamEvents = <Map<String, dynamic>>[];
   bool _loading = true;
   bool _refreshing = false;
   String? _error;
@@ -77,11 +93,12 @@ class _AdminScreenState extends State<AdminScreen> {
     setState(() => _error = null);
     try {
       final api = widget.controller.api;
-      final results = await Future.wait(<Future<Object>>[api.users(), api.adminSettings(), api.info()]);
+      final results = await Future.wait(<Future<Object>>[api.users(), api.adminSettings(), api.info(), api.teamAudit()]);
       setState(() {
         _users = results[0] as List<AppUser>;
         _settings = results[1] as Map<String, dynamic>;
         _info = results[2] as Map<String, dynamic>;
+        _teamEvents = results[3] as List<Map<String, dynamic>>;
       });
     } catch (error) {
       setState(() => _error = '$error');
@@ -190,6 +207,20 @@ class _AdminScreenState extends State<AdminScreen> {
               description: t.usersCount('${_users.length}'),
               children: <Widget>[for (final user in _users) _userRow(t, palette, user)],
             ),
+            SettingsGroup(
+              title: t.teamActivityTitle,
+              description: t.teamActivityHint,
+              children: <Widget>[
+                if (_teamEvents.isEmpty)
+                  SettingsRow(label: t.teamActivityEmpty)
+                else
+                  for (final event in _teamEvents.take(30))
+                    ListRow(
+                      title: teamEventLabel(t, event),
+                      subtitle: formatTime(DateTime.parse(event['createdAt'] as String).toLocal()),
+                    ),
+              ],
+            ),
           ],
         );
       case _AdminTab.server:
@@ -285,7 +316,10 @@ class _AdminScreenState extends State<AdminScreen> {
               children: <Widget>[
                 Text('${user.displayName}${self ? ' (${t.you})' : ''}', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: palette.text)),
                 const SizedBox(height: 2),
-                Text('${user.username} · ${user.email}', style: TextStyle(color: palette.textSoft, fontSize: 13)),
+                Text(
+                  <String>[user.username, user.email, if (user.teamOwner != null) t.inTeamOf(user.teamOwner!.displayName)].join(' · '),
+                  style: TextStyle(color: palette.textSoft, fontSize: 13),
+                ),
               ],
             ),
           ),

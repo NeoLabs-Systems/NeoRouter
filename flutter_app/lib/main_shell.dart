@@ -13,9 +13,11 @@ import 'main_processing.dart';
 import 'main_providers.dart';
 import 'main_routing.dart';
 import 'main_settings.dart';
+import 'main_team.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
+import 'src/models.dart';
 
 class NavItem {
   const NavItem(this.page, this.label, this.icon);
@@ -39,7 +41,7 @@ class NavGroup {
 
 List<NavGroup> navigationGroups(BuildContext context, NeoRouterController controller) {
   final t = AppL10n.of(context);
-  return <NavGroup>[
+  final groups = <NavGroup>[
     NavGroup(t.groupOverview, Icons.space_dashboard_outlined, <NavItem>[
       NavItem(AppPage.home, t.navHome, Icons.space_dashboard_outlined),
       NavItem(AppPage.activity, t.navActivity, Icons.insights_outlined),
@@ -53,11 +55,18 @@ List<NavGroup> navigationGroups(BuildContext context, NeoRouterController contro
       NavItem(AppPage.routing, t.navRouting, Icons.alt_route_outlined),
       NavItem(AppPage.keys, t.navKeys, Icons.key_outlined),
       NavItem(AppPage.processing, t.navProcessing, Icons.shield_outlined),
+      NavItem(AppPage.team, t.navTeam, Icons.groups_2_outlined),
     ]),
     if (controller.user?.isAdmin == true)
       NavGroup(t.navAdmin, Icons.admin_panel_settings_outlined, <NavItem>[
         NavItem(AppPage.admin, t.navAdmin, Icons.admin_panel_settings_outlined),
       ]),
+  ];
+  // In someone else's space only the pages the owner shared stay visible.
+  return <NavGroup>[
+    for (final group in groups)
+      if (group.items.any((item) => controller.canOpen(item.page)))
+        NavGroup(group.label, group.icon, group.items.where((item) => controller.canOpen(item.page)).toList()),
   ];
 }
 
@@ -120,7 +129,7 @@ class _NeoRouterShellState extends State<NeoRouterShell> {
                 switchOutCurve: Curves.easeIn,
                 transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
                 layoutBuilder: (current, previous) => Stack(children: <Widget>[if (current != null) current]),
-                child: KeyedSubtree(key: ValueKey<AppPage>(controller.page), child: _page(controller.page)),
+                child: KeyedSubtree(key: ValueKey<String>('${controller.spaceOwnerId}:${controller.page.name}'), child: _page(controller.page)),
               ),
             ),
           ],
@@ -138,6 +147,7 @@ class _NeoRouterShellState extends State<NeoRouterShell> {
         AppPage.keys => KeysScreen(controller: controller),
         AppPage.routing => RoutingScreen(controller: controller),
         AppPage.processing => ProcessingScreen(controller: controller),
+        AppPage.team => TeamScreen(controller: controller),
         AppPage.settings => SettingsScreen(controller: controller),
         AppPage.admin => controller.user?.isAdmin == true ? AdminScreen(controller: controller) : DashboardScreen(controller: controller),
       };
@@ -227,6 +237,8 @@ class _Sidebar extends StatelessWidget {
                 ),
               ),
             ),
+            if (controller.team?.owner != null)
+              Padding(padding: const EdgeInsets.fromLTRB(14, 0, 14, 12), child: _SpaceSwitcher(controller: controller, owner: controller.team!.owner!)),
             Expanded(child: ListView(padding: const EdgeInsets.fromLTRB(12, 2, 12, 10), children: items)),
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
@@ -236,6 +248,61 @@ class _Sidebar extends StatelessWidget {
                 onTap: () => go(AppPage.settings),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown only to team members: picks between their own space and the space
+/// of the owner whose team they are in.
+class _SpaceSwitcher extends StatelessWidget {
+  const _SpaceSwitcher({required this.controller, required this.owner});
+
+  final NeoRouterController controller;
+  final TeamUser owner;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = neoRouterPaletteOf(context);
+    final t = AppL10n.of(context);
+    final shared = controller.inSharedSpace;
+    final radius = BorderRadius.circular(14);
+    return PopupMenuButton<String>(
+      tooltip: t.switchSpace,
+      position: PopupMenuPosition.under,
+      onSelected: (value) => controller.switchSpace(value == 'own' ? null : owner.id),
+      itemBuilder: (_) => <PopupMenuEntry<String>>[
+        CheckedPopupMenuItem<String>(value: 'own', checked: !shared, child: Text(t.mySpace)),
+        CheckedPopupMenuItem<String>(value: owner.id, checked: shared, child: Text(t.spaceOf(owner.displayName))),
+      ],
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 9, 10, 9),
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          color: shared ? palette.accentSoft : palette.surfaceRaised,
+          border: Border.all(color: shared ? palette.accent.withValues(alpha: 0.35) : palette.border),
+        ),
+        child: Row(
+          children: <Widget>[
+            Icon(shared ? Icons.groups_2_outlined : Icons.person_outline_rounded, size: 17, color: shared ? palette.accent : palette.textSoft),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(t.spaceLabel, style: TextStyle(color: palette.textMuted, fontSize: 11.5)),
+                  Text(
+                    shared ? t.spaceOf(owner.displayName) : t.mySpace,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.geist(color: palette.text, fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.unfold_more_rounded, size: 17, color: palette.textMuted),
           ],
         ),
       ),

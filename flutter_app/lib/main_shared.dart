@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
+import 'src/models.dart';
 
 /// Flat page backdrop for the app shell.
 class AmbientBackdrop extends StatelessWidget {
@@ -773,6 +774,9 @@ Future<bool> confirmAction(BuildContext context, {required String title, require
 void showSnack(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), behavior: SnackBarBehavior.floating, width: 420));
 }
+
+/// "Created by Anna", or "Created by a former member" once that account is gone.
+String createdByLabel(AppL10n t, TeamUser? user) => t.createdBy(user?.displayName ?? t.formerMember);
 
 String formatUsd(double value) {
   if (value == 0) return r'$0';

@@ -2611,4 +2611,280 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get unitKind => 'Billed';
+
+  @override
+  String get navTeam => 'Team';
+
+  @override
+  String get teamTitle => 'Team';
+
+  @override
+  String get teamDescription =>
+      'Let other people help manage your NeoRouter. You decide per person what they may see and change. Everything they create stays yours.';
+
+  @override
+  String get inviteSomeone => 'Invite someone';
+
+  @override
+  String get teamMembersTitle => 'People in your team';
+
+  @override
+  String get teamMembersHint =>
+      'They work in your space with the rights you gave them.';
+
+  @override
+  String get noMembersTitle => 'Nobody here yet';
+
+  @override
+  String get noMembersMessage =>
+      'Create an invite link and send it to the person. They need an account on this server.';
+
+  @override
+  String get inviteLinksTitle => 'Open invite links';
+
+  @override
+  String get inviteLinksHint =>
+      'Anyone with an open link can join. Revoke links you no longer need.';
+
+  @override
+  String get joinTeamTitle => 'Someone else\'s team';
+
+  @override
+  String get joinTeamLabel => 'Got an invite link?';
+
+  @override
+  String get joinTeamHint =>
+      'Join to help manage that person\'s NeoRouter. Your own space stays as it is.';
+
+  @override
+  String get useInviteLink => 'Use invite link';
+
+  @override
+  String memberOfTitle(String name) {
+    return 'You are in $name\'s team';
+  }
+
+  @override
+  String get memberOfHint => 'Switch spaces in the sidebar to work there.';
+
+  @override
+  String get youMay => 'You may';
+
+  @override
+  String openSpaceOf(String name) {
+    return 'Open $name\'s space';
+  }
+
+  @override
+  String get leaveTeam => 'Leave team';
+
+  @override
+  String leaveTeamConfirm(String name) {
+    return 'Leave $name\'s team? You lose access until they invite you again. What you created there stays.';
+  }
+
+  @override
+  String get editPermissions => 'Change rights';
+
+  @override
+  String permissionsFor(String name) {
+    return 'What $name may do';
+  }
+
+  @override
+  String get removeMember => 'Remove from team';
+
+  @override
+  String removeMemberConfirm(String name) {
+    return 'Remove $name? They lose access right away. Keys and providers they created stay.';
+  }
+
+  @override
+  String get noPermissions => 'Nothing yet';
+
+  @override
+  String permissionCount(String count) {
+    return '$count rights';
+  }
+
+  @override
+  String get permView => 'See';
+
+  @override
+  String get permCreate => 'Create';
+
+  @override
+  String get permEdit => 'Change';
+
+  @override
+  String get permDelete => 'Delete';
+
+  @override
+  String get permActivityView => 'See activity and costs';
+
+  @override
+  String get permPlaygroundUse => 'Use the playground';
+
+  @override
+  String get permProvidersManage => 'Add and change';
+
+  @override
+  String get permModelsManage => 'Turn models on or off';
+
+  @override
+  String get presetView => 'Only look';
+
+  @override
+  String get presetKeys => 'Manage API keys';
+
+  @override
+  String get presetFull => 'Everything';
+
+  @override
+  String get inviteLabel => 'Name';
+
+  @override
+  String get inviteLabelHint => 'Who is this link for?';
+
+  @override
+  String get inviteExpiry => 'Link works for';
+
+  @override
+  String get expiry24h => '24 hours';
+
+  @override
+  String get expiry7d => '7 days';
+
+  @override
+  String get expiry30d => '30 days';
+
+  @override
+  String get expiryNever => 'Until revoked';
+
+  @override
+  String get inviteSingleUseLabel => 'One person only';
+
+  @override
+  String get inviteSingleUseHint =>
+      'The link stops working once someone joins.';
+
+  @override
+  String get invitePermissionsLabel => 'What they may do';
+
+  @override
+  String get createInviteLink => 'Create link';
+
+  @override
+  String get inviteLinkTitle => 'Invite link ready';
+
+  @override
+  String get inviteLinkBody =>
+      'Send this link to the person. It is shown only now; you can revoke it any time.';
+
+  @override
+  String get inviteUntitled => 'Invite link';
+
+  @override
+  String get inviteSingleUse => 'One person';
+
+  @override
+  String inviteReusable(String count) {
+    return 'Reusable · used $count×';
+  }
+
+  @override
+  String get inviteNoExpiry => 'No expiry';
+
+  @override
+  String inviteExpires(String date) {
+    return 'Until $date';
+  }
+
+  @override
+  String get inviteLinkField => 'Invite link';
+
+  @override
+  String get inviteLinkFieldHint => 'Paste the link you got';
+
+  @override
+  String get inviteCheck => 'Check link';
+
+  @override
+  String invitePreview(String name) {
+    return 'Join $name\'s team?';
+  }
+
+  @override
+  String get invitePreviewHint =>
+      'You can then work in their space with these rights:';
+
+  @override
+  String get joinTeam => 'Join team';
+
+  @override
+  String get spaceLabel => 'Space';
+
+  @override
+  String get mySpace => 'My space';
+
+  @override
+  String spaceOf(String name) {
+    return '$name\'s space';
+  }
+
+  @override
+  String get switchSpace => 'Switch space';
+
+  @override
+  String createdBy(String name) {
+    return 'Created by $name';
+  }
+
+  @override
+  String get formerMember => 'a former member';
+
+  @override
+  String inTeamOf(String name) {
+    return 'in $name\'s team';
+  }
+
+  @override
+  String get teamActivityTitle => 'Team activity';
+
+  @override
+  String get teamActivityHint =>
+      'Invites, joins and changed rights across the server.';
+
+  @override
+  String get teamActivityEmpty => 'Nothing has happened yet.';
+
+  @override
+  String teamEventInviteCreate(String actor) {
+    return '$actor created an invite link';
+  }
+
+  @override
+  String teamEventInviteRevoke(String actor) {
+    return '$actor revoked an invite link';
+  }
+
+  @override
+  String teamEventJoin(String actor, String subject) {
+    return '$actor joined $subject\'s team';
+  }
+
+  @override
+  String teamEventPermissions(String actor, String subject) {
+    return '$actor changed what $subject may do';
+  }
+
+  @override
+  String teamEventRelease(String actor, String subject) {
+    return '$actor removed $subject from the team';
+  }
+
+  @override
+  String teamEventLeave(String actor, String subject) {
+    return '$actor left $subject\'s team';
+  }
 }

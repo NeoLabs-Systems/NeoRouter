@@ -4,6 +4,7 @@ const crypto = require('node:crypto');
 const { z } = require('zod');
 const { getDatabase } = require('../../db/database');
 const { HttpError } = require('../../middleware/error_handler');
+const teamMembers = require('../teams/members');
 
 // Weights are relative; scoring normalizes them. Presets are the positions
 // of the routing slider in the UI.
@@ -54,6 +55,7 @@ function rowToProfile(row) {
     constraints: { ...DEFAULT_CONSTRAINTS, ...JSON.parse(row.constraints_json || '{}') },
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    createdBy: teamMembers.publicUser(row.created_by_user_id),
   };
 }
 
@@ -72,12 +74,12 @@ function resolve(userId, reference) {
   return rowToProfile(row);
 }
 
-function create(userId, { name, weights, constraints = {} }) {
+function create(userId, { name, weights, constraints = {} }, createdBy = userId) {
   const parsedWeights = weightsSchema.parse(weights);
   const parsedConstraints = constraintsSchema.parse(constraints);
   const id = `custom_${crypto.randomBytes(6).toString('hex')}`;
-  getDatabase().prepare('INSERT INTO routing_profiles (id, user_id, name, weights_json, constraints_json) VALUES (?, ?, ?, ?, ?)')
-    .run(id, userId, name, JSON.stringify(parsedWeights), JSON.stringify(parsedConstraints));
+  getDatabase().prepare('INSERT INTO routing_profiles (id, user_id, name, weights_json, constraints_json, created_by_user_id) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(id, userId, name, JSON.stringify(parsedWeights), JSON.stringify(parsedConstraints), createdBy);
   return resolve(userId, id);
 }
 

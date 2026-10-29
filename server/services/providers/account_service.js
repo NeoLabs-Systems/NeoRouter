@@ -7,6 +7,7 @@ const { encryptString, decryptString } = require('../../utils/crypto');
 const registry = require('../../providers/registry');
 const { hasFreeTier } = require('../catalog/free_classifier');
 const { createLogger } = require('../../utils/logger');
+const teamMembers = require('../teams/members');
 
 const logger = createLogger('provider-accounts');
 const AUTH_FAILURES_BEFORE_DISABLE = 3;
@@ -79,6 +80,7 @@ function publicAccount(row) {
     lastValidatedAt: row.last_validated_at,
     lastSyncedAt: row.last_synced_at,
     createdAt: row.created_at,
+    createdBy: teamMembers.publicUser(row.created_by_user_id),
     models: { total: counts.total || 0, free: counts.free || 0, enabled: counts.enabled || 0 },
   };
 }
@@ -139,7 +141,7 @@ async function validateAccount(accountId) {
   return result;
 }
 
-async function create(userId, input) {
+async function create(userId, input, createdBy = userId) {
   const definition = definitionOrThrow(input.definitionId);
   const baseUrl = definition.editableBaseUrl ? (input.baseUrl || definition.baseUrl || null) : null;
   const options = { ...(input.options || {}) };
@@ -156,11 +158,11 @@ async function create(userId, input) {
   const id = crypto.randomUUID();
   const slug = uniqueSlug(userId, input.slug || definition.id);
   getDatabase().prepare(`INSERT INTO provider_accounts
-    (id, user_id, definition_id, slug, label, base_url, secret_encrypted, options_json, billing_mode, status, status_message, last_validated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`)
+    (id, user_id, definition_id, slug, label, base_url, secret_encrypted, options_json, billing_mode, status, status_message, last_validated_at, created_by_user_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'), ?)`)
     .run(id, userId, definition.id, slug, input.label || definition.label, baseUrl,
       input.secret ? encryptString(input.secret) : null, JSON.stringify(options), billingMode,
-      result.status === 'healthy' ? 'healthy' : 'error', result.message || null);
+      result.status === 'healthy' ? 'healthy' : 'error', result.message || null, createdBy);
   return { account: publicAccount(getRow(userId, id)), validation: result };
 }
 

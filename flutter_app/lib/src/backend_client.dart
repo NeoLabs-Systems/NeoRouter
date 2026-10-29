@@ -32,6 +32,7 @@ class BackendClient {
 
   String _baseUrl;
   String? _token;
+  String? _space;
 
   String get baseUrl => _baseUrl;
   String? get token => _token;
@@ -67,6 +68,11 @@ class BackendClient {
     _token = token;
   }
 
+  /// The team owner whose space requests act on; null is the user's own.
+  void setSpace(String? ownerId) {
+    _space = ownerId;
+  }
+
   Uri _uri(String path) {
     if (_baseUrl.isEmpty) return Uri.parse(path);
     return Uri.parse('$_baseUrl$path');
@@ -76,6 +82,7 @@ class BackendClient {
     return <String, String>{
       if (json) 'Content-Type': 'application/json',
       if (_token != null) 'Authorization': 'Bearer $_token',
+      if (_space != null) 'X-NeoRouter-Space': _space!,
     };
   }
 
@@ -143,5 +150,13 @@ class BackendClient {
 
   Future<void> put(String path, Object body) async {
     await _send('PUT', path, body: body, decode: false);
+  }
+
+  Future<Map<String, dynamic>> putJson(String path, Object body) async {
+    return Map<String, dynamic>.from(await _send('PUT', path, body: body) as Map);
+  }
+
+  Future<Map<String, dynamic>> deleteJson(String path) async {
+    return Map<String, dynamic>.from(await _send('DELETE', path) as Map);
   }
 }

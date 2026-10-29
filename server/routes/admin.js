@@ -5,6 +5,8 @@ const { z } = require('zod');
 const auth = require('../services/auth/auth_service');
 const settings = require('../services/settings/settings_service');
 const metadata = require('../services/catalog/metadata_service');
+const teamAudit = require('../services/teams/audit');
+const teamMembers = require('../services/teams/members');
 const { requireAdmin } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
 const { asyncRoute } = require('./helpers');
@@ -12,12 +14,19 @@ const { asyncRoute } = require('./helpers');
 const router = express.Router();
 router.use(requireAdmin);
 
-router.get('/users', (_req, res) => res.json({ users: auth.listUsers() }));
+// Each user with the owner whose team they are in, if any.
+const listUsers = () => auth.listUsers().map((user) => {
+  const current = teamMembers.membership(user.id);
+  return { ...user, teamOwner: current ? teamMembers.publicUser(current.ownerUserId) : null };
+});
+
+router.get('/users', (_req, res) => res.json({ users: listUsers() }));
 router.patch('/users/:id', validate(z.object({ disabled: z.boolean().optional(), role: z.enum(['admin', 'user']).optional() })), (req, res) => {
   if (req.body.disabled !== undefined) auth.setUserDisabled(req.auth.userId, req.params.id, req.body.disabled);
   if (req.body.role) auth.setUserRole(req.auth.userId, req.params.id, req.body.role);
-  res.json({ users: auth.listUsers() });
+  res.json({ users: listUsers() });
 });
+router.get('/team-audit', (req, res) => res.json({ events: teamAudit.list(req.query.limit) }));
 router.delete('/users/:id', (req, res) => { auth.deleteUser(req.auth.userId, req.params.id); res.status(204).end(); });
 
 router.get('/settings', (_req, res) => res.json({

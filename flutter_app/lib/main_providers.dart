@@ -159,14 +159,18 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
+    final controller = widget.controller;
+    final canManage = controller.can('providers.manage');
+    // The limits tab reads usage, which a team member may not be allowed to see.
+    final showLimits = controller.can('activity.view');
     return PageScaffold(
       header: ScreenHeader(
         title: t.providersTitle,
         description: t.providersDescription,
-        trailing: FilledButton.icon(onPressed: _definitions.isEmpty ? null : _add, icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.addProvider)),
+        trailing: canManage ? FilledButton.icon(onPressed: _definitions.isEmpty ? null : _add, icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.addProvider)) : null,
       ),
       children: <Widget>[
-        if (_accounts.isNotEmpty)
+        if (_accounts.isNotEmpty && showLimits)
           PageTabs<_ProvidersTab>(
             tabs: <({_ProvidersTab value, String label, int? count})>[
               (value: _ProvidersTab.connected, label: t.tabConnected, count: _accounts.length),
@@ -175,7 +179,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
             selected: _tab,
             onChanged: (value) => setState(() => _tab = value),
           ),
-        if (_tab == _ProvidersTab.limits && _accounts.isNotEmpty)
+        if (_tab == _ProvidersTab.limits && _accounts.isNotEmpty && showLimits)
           _LimitsView(controller: widget.controller)
         else
           AsyncBody(
@@ -188,11 +192,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
                       icon: Icons.link_rounded,
                       title: t.noProvidersTitle,
                       message: t.noProvidersMessage,
-                      action: FilledButton.icon(
-                        onPressed: _definitions.isEmpty ? null : _add,
-                        icon: const Icon(Icons.add_rounded, size: 18),
-                        label: Text(t.addProvider),
-                      ),
+                      action: canManage ? FilledButton.icon(onPressed: _definitions.isEmpty ? null : _add, icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.addProvider)) : null,
                     ),
                   )
                 : SettingsCardList(
@@ -201,6 +201,9 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
                         _AccountRow(
                           account: account,
                           busy: _busy.contains(account.id),
+                          showCreator: controller.showCreators,
+                          canManage: canManage,
+                          canDelete: controller.can('providers.delete'),
                           onToggle: (enabled) => _run(account.id, () async {
                             await widget.controller.api.updateAccount(account.id, <String, Object?>{'enabled': enabled});
                             return null;
@@ -219,10 +222,21 @@ enum _AccountAction { check, sync, balance, edit, remove }
 
 /// One connection: who, how many models, whether it is free and working.
 class _AccountRow extends StatelessWidget {
-  const _AccountRow({required this.account, required this.busy, required this.onToggle, required this.onAction});
+  const _AccountRow({
+    required this.account,
+    required this.busy,
+    required this.onToggle,
+    required this.onAction,
+    this.showCreator = false,
+    this.canManage = true,
+    this.canDelete = true,
+  });
 
   final ProviderAccount account;
   final bool busy;
+  final bool showCreator;
+  final bool canManage;
+  final bool canDelete;
   final ValueChanged<bool> onToggle;
   final ValueChanged<_AccountAction> onAction;
 
@@ -261,7 +275,11 @@ class _AccountRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '${t.homeModelsLine('${account.modelCount}', '${account.freeModelCount}')} · $billing',
+                    <String>[
+                      t.homeModelsLine('${account.modelCount}', '${account.freeModelCount}'),
+                      billing,
+                      if (showCreator) createdByLabel(t, account.createdBy),
+                    ].join(' · '),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 13, color: palette.textMuted),
@@ -289,19 +307,22 @@ class _AccountRow extends StatelessWidget {
                 child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)),
               )
             else
-              Switch(value: account.enabled, onChanged: onToggle),
+              Switch(value: account.enabled, onChanged: canManage ? onToggle : null),
+            if (canManage || canDelete)
             PopupMenuButton<_AccountAction>(
               tooltip: t.moreActions,
               enabled: !busy,
               icon: const Icon(Icons.more_horiz_rounded, size: 20),
               onSelected: onAction,
               itemBuilder: (context) => <PopupMenuEntry<_AccountAction>>[
-                _menuItem(_AccountAction.check, Icons.verified_user_outlined, t.revalidate),
-                _menuItem(_AccountAction.sync, Icons.sync_rounded, t.syncModels),
-                _menuItem(_AccountAction.balance, Icons.account_balance_wallet_outlined, t.probeQuota),
-                _menuItem(_AccountAction.edit, Icons.edit_outlined, t.editProvider),
-                const PopupMenuDivider(),
-                _menuItem(_AccountAction.remove, Icons.delete_outline_rounded, t.removeProvider, destructive: palette.error),
+                if (canManage) ...<PopupMenuEntry<_AccountAction>>[
+                  _menuItem(_AccountAction.check, Icons.verified_user_outlined, t.revalidate),
+                  _menuItem(_AccountAction.sync, Icons.sync_rounded, t.syncModels),
+                  _menuItem(_AccountAction.balance, Icons.account_balance_wallet_outlined, t.probeQuota),
+                  _menuItem(_AccountAction.edit, Icons.edit_outlined, t.editProvider),
+                ],
+                if (canManage && canDelete) const PopupMenuDivider(),
+                if (canDelete) _menuItem(_AccountAction.remove, Icons.delete_outline_rounded, t.removeProvider, destructive: palette.error),
               ],
             ),
           ],

@@ -5,7 +5,20 @@ import 'src/backend_client.dart';
 import 'src/models.dart';
 import 'src/router_api.dart';
 
-enum AppPage { home, playground, models, providers, keys, activity, routing, processing, settings, admin }
+enum AppPage { home, playground, models, providers, keys, activity, routing, processing, team, settings, admin }
+
+/// What a team member needs to open a page in someone else's space. Pages
+/// missing here are only ever shown in the user's own space.
+const Map<AppPage, String> pagePermissions = <AppPage, String>{
+  AppPage.home: 'activity.view',
+  AppPage.activity: 'activity.view',
+  AppPage.playground: 'playground.use',
+  AppPage.models: 'providers.view',
+  AppPage.providers: 'providers.view',
+  AppPage.keys: 'keys.view',
+  AppPage.routing: 'routing.view',
+  AppPage.processing: 'processing.view',
+};
 
 /// Single root state object. Pages own their page-local data and talk to the
 /// API through [api]; the controller holds session, navigation and prefs.
@@ -15,6 +28,7 @@ class NeoRouterController extends ChangeNotifier {
   static const String _tokenKey = 'neorouter.session';
   static const String _themeKey = 'neorouter.theme';
   static const String _localeKey = 'neorouter.locale';
+  static const String _spaceKey = 'neorouter.space';
 
   final BackendClient client;
   late final RouterApi api = RouterApi(client);
@@ -30,6 +44,16 @@ class NeoRouterController extends ChangeNotifier {
   Locale? locale;
   String? endpoint;
 
+  /// The user's team state; null until loaded.
+  TeamSummary? team;
+
+  /// The owner whose space is shown, or null for the user's own space.
+  String? spaceOwnerId;
+
+  /// An invite link the app was opened with ("?invite=…"), redeemed on the
+  /// Team page after sign-in.
+  String? pendingInvite;
+
   /// Result of a provider OAuth redirect (e.g. OpenRouter connect), read once
   /// from the URL the browser came back to: 'connected' or an error message.
   String? oauthStatus;
@@ -40,6 +64,23 @@ class NeoRouterController extends ChangeNotifier {
 
   bool get hasUser => user != null;
   bool get awaitingTwoFactor => twoFactorChallenge != null;
+
+  bool get inSharedSpace => spaceOwnerId != null;
+  TeamUser? get spaceOwner => inSharedSpace ? team?.owner : null;
+
+  /// Whether the user may do [permission] in the space that is shown. In
+  /// their own space they may do everything.
+  bool can(String permission) => !inSharedSpace || (team?.grantedToMe.contains(permission) ?? false);
+
+  bool canOpen(AppPage target) {
+    if (!inSharedSpace) return true;
+    if (target == AppPage.settings) return true;
+    final needed = pagePermissions[target];
+    return needed != null && can(needed);
+  }
+
+  /// "Created by" tags only matter once more than one person works in a space.
+  bool get showCreators => inSharedSpace || (team?.members.isNotEmpty ?? false);
 
   Future<void> bootstrap() async {
     final prefs = await SharedPreferences.getInstance();
@@ -52,6 +93,7 @@ class NeoRouterController extends ChangeNotifier {
       try {
         user = await api.me();
         await _loadInfo();
+        await _restoreSpace(prefs.getString(_spaceKey));
       } on ApiException {
         client.setToken(null);
         await prefs.remove(_tokenKey);
@@ -61,6 +103,7 @@ class NeoRouterController extends ChangeNotifier {
     }
     _readOAuthResult();
     _readPageLink();
+    _readInviteLink();
     await refreshRegistration();
     bootstrapping = false;
     notifyListeners();
@@ -78,8 +121,61 @@ class NeoRouterController extends ChangeNotifier {
   void _readPageLink() {
     final name = Uri.base.queryParameters['page'];
     final match = AppPage.values.where((item) => item.name == name).firstOrNull;
-    if (match != null && user != null) page = match;
+    if (match != null && user != null && canOpen(match)) page = match;
   }
+
+  void _readInviteLink() {
+    final invite = Uri.base.queryParameters['invite'];
+    if (invite == null || invite.isEmpty) return;
+    pendingInvite = invite;
+    if (user != null) _openInvite();
+  }
+
+  void _openInvite() {
+    if (spaceOwnerId != null) _setSpace(null);
+    page = AppPage.team;
+  }
+
+  void consumeInvite() {
+    pendingInvite = null;
+  }
+
+  Future<void> refreshTeam() async {
+    // The team summary always belongs to the user's own account.
+    try {
+      client.setSpace(null);
+      team = await api.team();
+    } catch (_) {
+      team = null;
+    } finally {
+      client.setSpace(spaceOwnerId);
+    }
+    if (spaceOwnerId != null && team?.owner?.id != spaceOwnerId) _setSpace(null);
+    notifyListeners();
+  }
+
+  Future<void> _restoreSpace(String? saved) async {
+    await refreshTeam();
+    if (saved != null && team?.owner?.id == saved) _setSpace(saved);
+    if (!canOpen(page)) page = _firstOpenPage();
+  }
+
+  void _setSpace(String? ownerId) {
+    spaceOwnerId = ownerId;
+    client.setSpace(ownerId);
+    SharedPreferences.getInstance().then((prefs) => ownerId == null ? prefs.remove(_spaceKey) : prefs.setString(_spaceKey, ownerId));
+  }
+
+  /// Switches between the user's own space and the owner's space they are a
+  /// member of. Pages reload because the shell keys them by space.
+  Future<void> switchSpace(String? ownerId) async {
+    await refreshTeam();
+    _setSpace(ownerId != null && team?.owner?.id == ownerId ? ownerId : null);
+    if (!canOpen(page)) page = _firstOpenPage();
+    notifyListeners();
+  }
+
+  AppPage _firstOpenPage() => AppPage.values.where(canOpen).firstOrNull ?? AppPage.settings;
 
   void consumeOAuthResult() {
     oauthStatus = null;
@@ -111,7 +207,10 @@ class NeoRouterController extends ChangeNotifier {
     (await SharedPreferences.getInstance()).setString(_tokenKey, token);
     user = AppUser(Map<String, dynamic>.from(result['user'] as Map));
     page = AppPage.home;
+    _setSpace(null);
     await _loadInfo();
+    await refreshTeam();
+    if (pendingInvite != null) _openInvite();
   }
 
   Future<bool> login(String account, String password) => _authAction(() async {
@@ -169,6 +268,8 @@ class NeoRouterController extends ChangeNotifier {
     client.setToken(null);
     (await SharedPreferences.getInstance()).remove(_tokenKey);
     user = null;
+    team = null;
+    _setSpace(null);
     await refreshRegistration();
     notifyListeners();
   }
@@ -179,7 +280,7 @@ class NeoRouterController extends ChangeNotifier {
   }
 
   void go(AppPage next) {
-    page = next;
+    page = canOpen(next) ? next : _firstOpenPage();
     notifyListeners();
   }
 

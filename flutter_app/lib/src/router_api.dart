@@ -122,6 +122,25 @@ class RouterApi {
   Future<Map<String, dynamic>> playgroundVideo(String id) => client.get('$_base/playground/videos/$id');
   Future<Map<String, dynamic>> playgroundVideoContent(String id) => client.get('$_base/playground/videos/$id/content');
 
+  // ---- teams --------------------------------------------------------------------
+  Future<TeamSummary> team() async => TeamSummary(await client.get('$_base/teams'));
+  Future<Map<String, dynamic>> previewInvite(String link) => client.post('$_base/teams/invites/preview', <String, Object>{'link': link});
+  Future<TeamSummary> redeemInvite(String link) async => TeamSummary(await client.post('$_base/teams/invites/redeem', <String, Object>{'link': link}));
+  Future<String> createInvite({required String label, required List<String> permissions, int? expiresInHours, required bool singleUse}) async =>
+      (await client.post('$_base/teams/invites', <String, Object?>{
+        'label': label,
+        'permissions': permissions,
+        'expiresInHours': expiresInHours,
+        'singleUse': singleUse,
+      }))['link'] as String;
+  Future<TeamSummary> revokeInvite(String id) async => TeamSummary(await client.deleteJson('$_base/teams/invites/$id'));
+  Future<TeamSummary> setMemberPermissions(String userId, List<String> permissions) async =>
+      TeamSummary(await client.putJson('$_base/teams/members/$userId/permissions', <String, Object>{'permissions': permissions}));
+  Future<TeamSummary> releaseMember(String userId) async => TeamSummary(await client.deleteJson('$_base/teams/members/$userId'));
+  Future<TeamSummary> leaveTeam() async => TeamSummary(await client.post('$_base/teams/leave'));
+  Future<List<Map<String, dynamic>>> teamAudit() async =>
+      ((await client.get('$_base/admin/team-audit'))['events'] as List).map((item) => Map<String, dynamic>.from(item as Map)).toList();
+
   // ---- admin --------------------------------------------------------------------
   Future<List<AppUser>> users() async => _list(await client.get('$_base/admin/users'), 'users', AppUser.new);
   Future<void> updateUser(String id, {bool? disabled, String? role}) => client.patch(

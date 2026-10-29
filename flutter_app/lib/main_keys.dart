@@ -129,9 +129,14 @@ class _KeysScreenState extends State<KeysScreen> {
     final palette = neoRouterPaletteOf(context);
     final active = _keys.where((key) => !key.revoked).toList();
     final revoked = _keys.where((key) => key.revoked).toList();
+    final controller = widget.controller;
+    final canCreate = controller.can('keys.create');
     Widget row(RouterKey key) => _KeyRow(
           routerKey: key,
           profiles: _profiles,
+          showCreator: controller.showCreators,
+          canEdit: controller.can('keys.edit'),
+          canDelete: controller.can('keys.delete'),
           onAction: (action) => switch (action) {
             'edit' => _open(key),
             'revoke' => _revoke(key),
@@ -142,7 +147,7 @@ class _KeysScreenState extends State<KeysScreen> {
       header: ScreenHeader(
         title: t.keysTitle,
         description: t.keysDescription,
-        trailing: FilledButton.icon(onPressed: _loading ? null : () => _open(), icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.createKey)),
+        trailing: canCreate ? FilledButton.icon(onPressed: _loading ? null : () => _open(), icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.createKey)) : null,
       ),
       children: <Widget>[
         AsyncBody(
@@ -158,7 +163,7 @@ class _KeysScreenState extends State<KeysScreen> {
                     icon: Icons.key_outlined,
                     title: t.noKeysTitle,
                     message: t.noKeysMessage,
-                    action: FilledButton.icon(onPressed: () => _open(), icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.createKey)),
+                    action: canCreate ? FilledButton.icon(onPressed: () => _open(), icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.createKey)) : null,
                   ),
                 )
               else
@@ -186,11 +191,21 @@ class _KeysScreenState extends State<KeysScreen> {
 }
 
 class _KeyRow extends StatelessWidget {
-  const _KeyRow({required this.routerKey, required this.profiles, required this.onAction});
+  const _KeyRow({
+    required this.routerKey,
+    required this.profiles,
+    required this.onAction,
+    this.showCreator = false,
+    this.canEdit = true,
+    this.canDelete = true,
+  });
 
   final RouterKey routerKey;
   final List<RoutingProfile> profiles;
   final ValueChanged<String> onAction;
+  final bool showCreator;
+  final bool canEdit;
+  final bool canDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -202,7 +217,13 @@ class _KeyRow extends StatelessWidget {
     final subtitle = <String>[
       if (key.revoked) t.revoked else keyModeLabel(t, key.mode),
       used,
+      if (showCreator) createdByLabel(t, key.createdBy),
     ].join(' · ');
+    final actions = <PopupMenuEntry<String>>[
+      if (!key.revoked && canEdit) PopupMenuItem<String>(value: 'edit', child: Text(t.edit)),
+      if (!key.revoked && canEdit) PopupMenuItem<String>(value: 'revoke', child: Text(t.revoke)),
+      if (canDelete) PopupMenuItem<String>(value: 'delete', child: Text(t.delete, style: TextStyle(color: palette.error))),
+    ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
       child: Row(
@@ -251,16 +272,13 @@ class _KeyRow extends StatelessWidget {
               ],
             ),
           ),
-          PopupMenuButton<String>(
-            tooltip: t.moreActions,
-            icon: const Icon(Icons.more_horiz_rounded, size: 20),
-            onSelected: onAction,
-            itemBuilder: (_) => <PopupMenuEntry<String>>[
-              if (!key.revoked) PopupMenuItem<String>(value: 'edit', child: Text(t.edit)),
-              if (!key.revoked) PopupMenuItem<String>(value: 'revoke', child: Text(t.revoke)),
-              PopupMenuItem<String>(value: 'delete', child: Text(t.delete, style: TextStyle(color: palette.error))),
-            ],
-          ),
+          if (actions.isNotEmpty)
+            PopupMenuButton<String>(
+              tooltip: t.moreActions,
+              icon: const Icon(Icons.more_horiz_rounded, size: 20),
+              onSelected: onAction,
+              itemBuilder: (_) => actions,
+            ),
         ],
       ),
     );

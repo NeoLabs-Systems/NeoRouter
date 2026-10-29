@@ -7,6 +7,7 @@ const { CATEGORIES } = require('../services/processing/redaction');
 const { LEVELS, ENGINES } = require('../services/processing/compression');
 const { getDatabase } = require('../db/database');
 const { validate } = require('../middleware/validate');
+const { requirePermission } = require('../middleware/space');
 const { asyncRoute } = require('./helpers');
 
 const router = express.Router();
@@ -27,28 +28,28 @@ const settingsSchema = z.object({
   }),
 });
 
-router.get('/settings', (req, res) => res.json({
-  settings: processing.getSettings(req.auth.userId),
+router.get('/settings', requirePermission('processing.view'), (req, res) => res.json({
+  settings: processing.getSettings(req.space.ownerId),
   categories: CATEGORIES,
   levels: LEVELS,
   engines: ENGINES,
 }));
 
-router.put('/settings', validate(settingsSchema), (req, res) => res.json({ settings: processing.saveSettings(req.auth.userId, req.body) }));
+router.put('/settings', requirePermission('processing.edit'), validate(settingsSchema), (req, res) => res.json({ settings: processing.saveSettings(req.space.ownerId, req.body) }));
 
 // Shows what would be sent for a sample text, without sending anything.
-router.post('/preview', validate(z.object({
+router.post('/preview', requirePermission('processing.view'), validate(z.object({
   text: z.string().max(400_000).optional(),
   role: z.enum(['user', 'tool']).optional(),
   messages: z.array(z.object({ role: z.enum(['system', 'user', 'assistant', 'tool']), content: z.string().max(400_000) })).max(200).optional(),
   settings: settingsSchema.optional(),
-})), asyncRoute(async (req, res) => res.json(await processing.preview(req.auth.userId, req.body))));
+})), asyncRoute(async (req, res) => res.json(await processing.preview(req.space.ownerId, req.body))));
 
-router.get('/stats', (req, res) => {
+router.get('/stats', requirePermission('processing.view'), (req, res) => {
   const since = Date.now() - 30 * 86_400_000;
   const row = getDatabase().prepare(`SELECT COUNT(*) requests, SUM(redacted_count > 0) protected_requests, SUM(redacted_count) redacted,
       SUM(compression_saved_tokens > 0) compressed_requests, SUM(compression_saved_tokens) saved_tokens
-    FROM requests WHERE user_id = ? AND created_at >= ?`).get(req.auth.userId, since);
+    FROM requests WHERE user_id = ? AND created_at >= ?`).get(req.space.ownerId, since);
   res.json({
     days: 30,
     requests: row.requests || 0,

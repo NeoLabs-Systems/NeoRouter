@@ -4722,6 +4722,468 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Billed'**
   String get unitKind;
+
+  /// No description provided for @navTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Team'**
+  String get navTeam;
+
+  /// No description provided for @teamTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Team'**
+  String get teamTitle;
+
+  /// No description provided for @teamDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Let other people help manage your NeoRouter. You decide per person what they may see and change. Everything they create stays yours.'**
+  String get teamDescription;
+
+  /// No description provided for @inviteSomeone.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite someone'**
+  String get inviteSomeone;
+
+  /// No description provided for @teamMembersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'People in your team'**
+  String get teamMembersTitle;
+
+  /// No description provided for @teamMembersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'They work in your space with the rights you gave them.'**
+  String get teamMembersHint;
+
+  /// No description provided for @noMembersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody here yet'**
+  String get noMembersTitle;
+
+  /// No description provided for @noMembersMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an invite link and send it to the person. They need an account on this server.'**
+  String get noMembersMessage;
+
+  /// No description provided for @inviteLinksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open invite links'**
+  String get inviteLinksTitle;
+
+  /// No description provided for @inviteLinksHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone with an open link can join. Revoke links you no longer need.'**
+  String get inviteLinksHint;
+
+  /// No description provided for @joinTeamTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone else\'s team'**
+  String get joinTeamTitle;
+
+  /// No description provided for @joinTeamLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Got an invite link?'**
+  String get joinTeamLabel;
+
+  /// No description provided for @joinTeamHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Join to help manage that person\'s NeoRouter. Your own space stays as it is.'**
+  String get joinTeamHint;
+
+  /// No description provided for @useInviteLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Use invite link'**
+  String get useInviteLink;
+
+  /// No description provided for @memberOfTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You are in {name}\'s team'**
+  String memberOfTitle(String name);
+
+  /// No description provided for @memberOfHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch spaces in the sidebar to work there.'**
+  String get memberOfHint;
+
+  /// No description provided for @youMay.
+  ///
+  /// In en, this message translates to:
+  /// **'You may'**
+  String get youMay;
+
+  /// No description provided for @openSpaceOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {name}\'s space'**
+  String openSpaceOf(String name);
+
+  /// No description provided for @leaveTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave team'**
+  String get leaveTeam;
+
+  /// No description provided for @leaveTeamConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave {name}\'s team? You lose access until they invite you again. What you created there stays.'**
+  String leaveTeamConfirm(String name);
+
+  /// No description provided for @editPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Change rights'**
+  String get editPermissions;
+
+  /// No description provided for @permissionsFor.
+  ///
+  /// In en, this message translates to:
+  /// **'What {name} may do'**
+  String permissionsFor(String name);
+
+  /// No description provided for @removeMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from team'**
+  String get removeMember;
+
+  /// No description provided for @removeMemberConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}? They lose access right away. Keys and providers they created stay.'**
+  String removeMemberConfirm(String name);
+
+  /// No description provided for @noPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing yet'**
+  String get noPermissions;
+
+  /// No description provided for @permissionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} rights'**
+  String permissionCount(String count);
+
+  /// No description provided for @permView.
+  ///
+  /// In en, this message translates to:
+  /// **'See'**
+  String get permView;
+
+  /// No description provided for @permCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get permCreate;
+
+  /// No description provided for @permEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get permEdit;
+
+  /// No description provided for @permDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get permDelete;
+
+  /// No description provided for @permActivityView.
+  ///
+  /// In en, this message translates to:
+  /// **'See activity and costs'**
+  String get permActivityView;
+
+  /// No description provided for @permPlaygroundUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the playground'**
+  String get permPlaygroundUse;
+
+  /// No description provided for @permProvidersManage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add and change'**
+  String get permProvidersManage;
+
+  /// No description provided for @permModelsManage.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn models on or off'**
+  String get permModelsManage;
+
+  /// No description provided for @presetView.
+  ///
+  /// In en, this message translates to:
+  /// **'Only look'**
+  String get presetView;
+
+  /// No description provided for @presetKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage API keys'**
+  String get presetKeys;
+
+  /// No description provided for @presetFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything'**
+  String get presetFull;
+
+  /// No description provided for @inviteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get inviteLabel;
+
+  /// No description provided for @inviteLabelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Who is this link for?'**
+  String get inviteLabelHint;
+
+  /// No description provided for @inviteExpiry.
+  ///
+  /// In en, this message translates to:
+  /// **'Link works for'**
+  String get inviteExpiry;
+
+  /// No description provided for @expiry24h.
+  ///
+  /// In en, this message translates to:
+  /// **'24 hours'**
+  String get expiry24h;
+
+  /// No description provided for @expiry7d.
+  ///
+  /// In en, this message translates to:
+  /// **'7 days'**
+  String get expiry7d;
+
+  /// No description provided for @expiry30d.
+  ///
+  /// In en, this message translates to:
+  /// **'30 days'**
+  String get expiry30d;
+
+  /// No description provided for @expiryNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Until revoked'**
+  String get expiryNever;
+
+  /// No description provided for @inviteSingleUseLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'One person only'**
+  String get inviteSingleUseLabel;
+
+  /// No description provided for @inviteSingleUseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The link stops working once someone joins.'**
+  String get inviteSingleUseHint;
+
+  /// No description provided for @invitePermissionsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'What they may do'**
+  String get invitePermissionsLabel;
+
+  /// No description provided for @createInviteLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Create link'**
+  String get createInviteLink;
+
+  /// No description provided for @inviteLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link ready'**
+  String get inviteLinkTitle;
+
+  /// No description provided for @inviteLinkBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Send this link to the person. It is shown only now; you can revoke it any time.'**
+  String get inviteLinkBody;
+
+  /// No description provided for @inviteUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link'**
+  String get inviteUntitled;
+
+  /// No description provided for @inviteSingleUse.
+  ///
+  /// In en, this message translates to:
+  /// **'One person'**
+  String get inviteSingleUse;
+
+  /// No description provided for @inviteReusable.
+  ///
+  /// In en, this message translates to:
+  /// **'Reusable · used {count}×'**
+  String inviteReusable(String count);
+
+  /// No description provided for @inviteNoExpiry.
+  ///
+  /// In en, this message translates to:
+  /// **'No expiry'**
+  String get inviteNoExpiry;
+
+  /// No description provided for @inviteExpires.
+  ///
+  /// In en, this message translates to:
+  /// **'Until {date}'**
+  String inviteExpires(String date);
+
+  /// No description provided for @inviteLinkField.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link'**
+  String get inviteLinkField;
+
+  /// No description provided for @inviteLinkFieldHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the link you got'**
+  String get inviteLinkFieldHint;
+
+  /// No description provided for @inviteCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check link'**
+  String get inviteCheck;
+
+  /// No description provided for @invitePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Join {name}\'s team?'**
+  String invitePreview(String name);
+
+  /// No description provided for @invitePreviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can then work in their space with these rights:'**
+  String get invitePreviewHint;
+
+  /// No description provided for @joinTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Join team'**
+  String get joinTeam;
+
+  /// No description provided for @spaceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Space'**
+  String get spaceLabel;
+
+  /// No description provided for @mySpace.
+  ///
+  /// In en, this message translates to:
+  /// **'My space'**
+  String get mySpace;
+
+  /// No description provided for @spaceOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s space'**
+  String spaceOf(String name);
+
+  /// No description provided for @switchSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch space'**
+  String get switchSpace;
+
+  /// No description provided for @createdBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Created by {name}'**
+  String createdBy(String name);
+
+  /// No description provided for @formerMember.
+  ///
+  /// In en, this message translates to:
+  /// **'a former member'**
+  String get formerMember;
+
+  /// No description provided for @inTeamOf.
+  ///
+  /// In en, this message translates to:
+  /// **'in {name}\'s team'**
+  String inTeamOf(String name);
+
+  /// No description provided for @teamActivityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Team activity'**
+  String get teamActivityTitle;
+
+  /// No description provided for @teamActivityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Invites, joins and changed rights across the server.'**
+  String get teamActivityHint;
+
+  /// No description provided for @teamActivityEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing has happened yet.'**
+  String get teamActivityEmpty;
+
+  /// No description provided for @teamEventInviteCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} created an invite link'**
+  String teamEventInviteCreate(String actor);
+
+  /// No description provided for @teamEventInviteRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} revoked an invite link'**
+  String teamEventInviteRevoke(String actor);
+
+  /// No description provided for @teamEventJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} joined {subject}\'s team'**
+  String teamEventJoin(String actor, String subject);
+
+  /// No description provided for @teamEventPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} changed what {subject} may do'**
+  String teamEventPermissions(String actor, String subject);
+
+  /// No description provided for @teamEventRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} removed {subject} from the team'**
+  String teamEventRelease(String actor, String subject);
+
+  /// No description provided for @teamEventLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} left {subject}\'s team'**
+  String teamEventLeave(String actor, String subject);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

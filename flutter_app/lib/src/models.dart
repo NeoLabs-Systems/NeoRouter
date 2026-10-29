@@ -19,6 +19,59 @@ class AppUser {
   bool get isAdmin => raw['role'] == 'admin';
   bool get disabled => raw['disabled'] == true;
   String get role => raw['role'] as String? ?? 'user';
+
+  /// Admin list only: the owner whose team this account is in.
+  TeamUser? get teamOwner => TeamUser.from(raw['teamOwner']);
+}
+
+/// Another account as teammates see it: name only, nothing private.
+class TeamUser {
+  TeamUser(this.raw);
+  final Map<String, dynamic> raw;
+
+  static TeamUser? from(Object? value) => value is Map ? TeamUser(Map<String, dynamic>.from(value)) : null;
+
+  String get id => raw['id'] as String;
+  String get username => raw['username'] as String;
+  String get displayName => raw['displayName'] as String? ?? username;
+}
+
+class TeamMember {
+  TeamMember(this.raw);
+  final Map<String, dynamic> raw;
+
+  TeamUser get user => TeamUser(_map(raw['user']));
+  List<String> get permissions => _strings(raw['permissions']);
+  String? get joinedAt => raw['joinedAt'] as String?;
+}
+
+class TeamInvite {
+  TeamInvite(this.raw);
+  final Map<String, dynamic> raw;
+
+  String get id => raw['id'] as String;
+  String get label => raw['label'] as String? ?? '';
+  List<String> get permissions => _strings(raw['permissions']);
+  bool get singleUse => raw['singleUse'] == true;
+  int get useCount => _int(raw['useCount']) ?? 0;
+  String? get expiresAt => raw['expiresAt'] as String?;
+  String get status => raw['status'] as String? ?? 'active';
+  bool get active => status == 'active';
+}
+
+/// The Team page in one payload: whose team this account is in, its own
+/// members and links, and the permission catalog.
+class TeamSummary {
+  TeamSummary(this.raw);
+  final Map<String, dynamic> raw;
+
+  Map<String, dynamic>? get _memberOf => raw['memberOf'] is Map ? _map(raw['memberOf']) : null;
+  TeamUser? get owner => TeamUser.from(_memberOf?['owner']);
+  List<String> get grantedToMe => _strings(_memberOf?['permissions']);
+  List<TeamMember> get members => (raw['members'] as List? ?? const <Object>[]).map((item) => TeamMember(_map(item))).toList();
+  List<TeamInvite> get invites => (raw['invites'] as List? ?? const <Object>[]).map((item) => TeamInvite(_map(item))).toList();
+  List<String> get permissions => _strings(raw['permissions']);
+  Map<String, List<String>> get presets => _map(raw['presets']).map((key, value) => MapEntry(key, _strings(value)));
 }
 
 class ProviderField {
@@ -77,6 +130,7 @@ class ProviderAccount {
   int get modelCount => _int(_map(raw['models'])['total']) ?? 0;
   int get freeModelCount => _int(_map(raw['models'])['free']) ?? 0;
   int get enabledModelCount => _int(_map(raw['models'])['enabled']) ?? 0;
+  TeamUser? get createdBy => TeamUser.from(raw['createdBy']);
 }
 
 class CatalogModel {
@@ -144,6 +198,7 @@ class RouterKey {
   String? get expiresAt => raw['expiresAt'] as String?;
   bool get revoked => raw['revoked'] == true;
   String? get lastUsedAt => raw['lastUsedAt'] as String?;
+  TeamUser? get createdBy => TeamUser.from(raw['createdBy']);
 }
 
 class RoutingWeights {
@@ -180,6 +235,7 @@ class RoutingProfile {
   bool get preset => raw['preset'] == true;
   RoutingWeights get weights => RoutingWeights.fromJson(_map(raw['weights']));
   Map<String, dynamic> get constraints => _map(raw['constraints']);
+  TeamUser? get createdBy => TeamUser.from(raw['createdBy']);
 }
 
 class RequestLog {

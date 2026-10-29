@@ -140,7 +140,7 @@ class _RoutingScreenState extends State<RoutingScreen> {
                 custom: custom,
                 selected: _selected,
                 onSelect: _select,
-                onCreate: () => _editStyle(),
+                onCreate: widget.controller.can('routing.edit') ? () => _editStyle() : null,
                 compact: constraints.maxWidth < 820,
               );
               final detail = current == null ? const SizedBox.shrink() : _detail(context, current);
@@ -178,9 +178,14 @@ class _RoutingScreenState extends State<RoutingScreen> {
             Icon(presetIcon(profile.preset ? profile.id : ''), size: 24, color: palette.accent),
             const SizedBox(width: 12),
             Expanded(child: Text(profileLabel(t, profile), style: displayTitleStyle(palette, size: 26))),
-            if (!profile.preset) OutlinedButton.icon(onPressed: () => _editStyle(profile), icon: const Icon(Icons.edit_outlined, size: 16), label: Text(t.edit)),
+            if (!profile.preset && widget.controller.can('routing.edit'))
+              OutlinedButton.icon(onPressed: () => _editStyle(profile), icon: const Icon(Icons.edit_outlined, size: 16), label: Text(t.edit)),
           ],
         ),
+        if (!profile.preset && widget.controller.showCreators) ...<Widget>[
+          const SizedBox(height: 6),
+          Text(createdByLabel(t, profile.createdBy), style: TextStyle(color: palette.textMuted, fontSize: 13)),
+        ],
         if (profile.preset) ...<Widget>[
           const SizedBox(height: 8),
           Text(presetHint(t, profile.id), style: TextStyle(color: palette.textSoft, fontSize: 14.5, height: 1.45)),
@@ -295,7 +300,7 @@ class _StyleRail extends StatelessWidget {
   final List<RoutingProfile> custom;
   final String selected;
   final ValueChanged<String> onSelect;
-  final VoidCallback onCreate;
+  final VoidCallback? onCreate;
   final bool compact;
 
   @override
@@ -318,7 +323,7 @@ class _StyleRail extends StatelessWidget {
                   onSelected: (_) => onSelect(profile.id),
                 ),
               ),
-            ActionChip(avatar: const Icon(Icons.add_rounded, size: 16), label: Text(t.createStyle), onPressed: onCreate),
+            if (onCreate != null) ActionChip(avatar: const Icon(Icons.add_rounded, size: 16), label: Text(t.createStyle), onPressed: onCreate),
           ],
         ),
       );
@@ -363,10 +368,11 @@ class _StyleRail extends StatelessWidget {
         const SizedBox(height: 18),
         Padding(padding: const EdgeInsets.fromLTRB(10, 0, 10, 8), child: Text(t.customStylesTitle.toUpperCase(), style: sectionEyebrowStyle(palette))),
         for (final profile in custom) item(profile),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(onPressed: onCreate, icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.createStyle)),
-        ),
+        if (onCreate != null)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(onPressed: onCreate, icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.createStyle)),
+          ),
       ],
     );
   }

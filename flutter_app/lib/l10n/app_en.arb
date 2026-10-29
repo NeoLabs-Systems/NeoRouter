@@ -1403,5 +1403,220 @@
       }
     }
   },
-  "unitKind": "Billed"
+  "unitKind": "Billed",
+  "navTeam": "Team",
+  "teamTitle": "Team",
+  "teamDescription": "Let other people help manage your NeoRouter. You decide per person what they may see and change. Everything they create stays yours.",
+  "inviteSomeone": "Invite someone",
+  "teamMembersTitle": "People in your team",
+  "teamMembersHint": "They work in your space with the rights you gave them.",
+  "noMembersTitle": "Nobody here yet",
+  "noMembersMessage": "Create an invite link and send it to the person. They need an account on this server.",
+  "inviteLinksTitle": "Open invite links",
+  "inviteLinksHint": "Anyone with an open link can join. Revoke links you no longer need.",
+  "joinTeamTitle": "Someone else's team",
+  "joinTeamLabel": "Got an invite link?",
+  "joinTeamHint": "Join to help manage that person's NeoRouter. Your own space stays as it is.",
+  "useInviteLink": "Use invite link",
+  "memberOfTitle": "You are in {name}'s team",
+  "@memberOfTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "memberOfHint": "Switch spaces in the sidebar to work there.",
+  "youMay": "You may",
+  "openSpaceOf": "Open {name}'s space",
+  "@openSpaceOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveTeam": "Leave team",
+  "leaveTeamConfirm": "Leave {name}'s team? You lose access until they invite you again. What you created there stays.",
+  "@leaveTeamConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "editPermissions": "Change rights",
+  "permissionsFor": "What {name} may do",
+  "@permissionsFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "removeMember": "Remove from team",
+  "removeMemberConfirm": "Remove {name}? They lose access right away. Keys and providers they created stay.",
+  "@removeMemberConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "noPermissions": "Nothing yet",
+  "permissionCount": "{count} rights",
+  "@permissionCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "permView": "See",
+  "permCreate": "Create",
+  "permEdit": "Change",
+  "permDelete": "Delete",
+  "permActivityView": "See activity and costs",
+  "permPlaygroundUse": "Use the playground",
+  "permProvidersManage": "Add and change",
+  "permModelsManage": "Turn models on or off",
+  "presetView": "Only look",
+  "presetKeys": "Manage API keys",
+  "presetFull": "Everything",
+  "inviteLabel": "Name",
+  "inviteLabelHint": "Who is this link for?",
+  "inviteExpiry": "Link works for",
+  "expiry24h": "24 hours",
+  "expiry7d": "7 days",
+  "expiry30d": "30 days",
+  "expiryNever": "Until revoked",
+  "inviteSingleUseLabel": "One person only",
+  "inviteSingleUseHint": "The link stops working once someone joins.",
+  "invitePermissionsLabel": "What they may do",
+  "createInviteLink": "Create link",
+  "inviteLinkTitle": "Invite link ready",
+  "inviteLinkBody": "Send this link to the person. It is shown only now; you can revoke it any time.",
+  "inviteUntitled": "Invite link",
+  "inviteSingleUse": "One person",
+  "inviteReusable": "Reusable · used {count}×",
+  "@inviteReusable": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteNoExpiry": "No expiry",
+  "inviteExpires": "Until {date}",
+  "@inviteExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteLinkField": "Invite link",
+  "inviteLinkFieldHint": "Paste the link you got",
+  "inviteCheck": "Check link",
+  "invitePreview": "Join {name}'s team?",
+  "@invitePreview": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "invitePreviewHint": "You can then work in their space with these rights:",
+  "joinTeam": "Join team",
+  "spaceLabel": "Space",
+  "mySpace": "My space",
+  "spaceOf": "{name}'s space",
+  "@spaceOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "switchSpace": "Switch space",
+  "createdBy": "Created by {name}",
+  "@createdBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "formerMember": "a former member",
+  "inTeamOf": "in {name}'s team",
+  "@inTeamOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "teamActivityTitle": "Team activity",
+  "teamActivityHint": "Invites, joins and changed rights across the server.",
+  "teamActivityEmpty": "Nothing has happened yet.",
+  "teamEventInviteCreate": "{actor} created an invite link",
+  "@teamEventInviteCreate": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
+  "teamEventInviteRevoke": "{actor} revoked an invite link",
+  "@teamEventInviteRevoke": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
+  "teamEventJoin": "{actor} joined {subject}'s team",
+  "@teamEventJoin": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "teamEventPermissions": "{actor} changed what {subject} may do",
+  "@teamEventPermissions": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "teamEventRelease": "{actor} removed {subject} from the team",
+  "@teamEventRelease": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "teamEventLeave": "{actor} left {subject}'s team",
+  "@teamEventLeave": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "subject": {
+        "type": "String"
+      }
+    }
+  }
 }

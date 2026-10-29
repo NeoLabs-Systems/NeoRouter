@@ -34,14 +34,16 @@ function safeReturnTo(returnTo, requestHost) {
   return null;
 }
 
-function start({ userId, origin, requestHost, returnTo }) {
+// userId owns the new account; createdBy is who connected it (a team member
+// working in the owner's space, or the owner).
+function start({ userId, createdBy = userId, origin, requestHost, returnTo }) {
   prune();
   const target = safeReturnTo(returnTo, requestHost);
   if (!target) throw new HttpError(400, 'INVALID_RETURN_URL', 'The return URL must point to this NeoRouter instance.');
   const state = base64url(crypto.randomBytes(18));
   const verifier = base64url(crypto.randomBytes(48));
   const challenge = base64url(crypto.createHash('sha256').update(verifier).digest());
-  flows.set(state, { userId, verifier, returnTo: target.toString(), expiresAt: Date.now() + FLOW_TTL_MS });
+  flows.set(state, { userId, createdBy, verifier, returnTo: target.toString(), expiresAt: Date.now() + FLOW_TTL_MS });
   const callback = `${origin.replace(/\/+$/, '')}/api/v1/oauth/openrouter/callback/${state}`;
   const url = `${AUTH_URL}?callback_url=${encodeURIComponent(callback)}&code_challenge=${challenge}&code_challenge_method=S256`;
   return { url };
@@ -68,7 +70,7 @@ async function complete({ state, code }) {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || !data.key) throw new Error(data?.error?.message || `OpenRouter returned HTTP ${response.status}`);
-    const { account } = await accounts.create(flow.userId, { definitionId: 'openrouter', secret: data.key, billingMode: 'paid' });
+    const { account } = await accounts.create(flow.userId, { definitionId: 'openrouter', secret: data.key, billingMode: 'paid' }, flow.createdBy);
     await catalog.syncAccount(account.id).catch((error) => logger.warn('Initial model sync failed', { error: error.message }));
     return withResult(flow.returnTo, { oauth: 'openrouter', oauth_status: 'connected' });
   } catch (error) {

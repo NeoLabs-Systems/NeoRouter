@@ -6,6 +6,7 @@ const { HttpError } = require('../../middleware/error_handler');
 const { randomToken, sha256 } = require('../../utils/crypto');
 const budget = require('../budget/budget_service');
 const profiles = require('../routing/profiles');
+const teamMembers = require('../teams/members');
 
 const PREFIX = 'nrt';
 const rpmWindows = new Map();
@@ -29,6 +30,7 @@ function publicKey(row) {
     revoked: Boolean(row.revoked_at),
     lastUsedAt: row.last_used_at,
     createdAt: row.created_at,
+    createdBy: teamMembers.publicUser(row.created_by_user_id),
   };
 }
 
@@ -36,17 +38,17 @@ function assertProfile(userId, profile) {
   if (profile && !profiles.resolve(userId, profile)) throw new HttpError(400, 'UNKNOWN_PROFILE', 'This routing profile does not exist.');
 }
 
-function create(userId, input) {
+function create(userId, input, createdBy = userId) {
   assertProfile(userId, input.profile);
   const id = crypto.randomUUID();
   const prefix = crypto.randomBytes(4).toString('hex');
   const secret = `${PREFIX}_${prefix}_${randomToken(32)}`;
   getDatabase().prepare(`INSERT INTO router_keys
-    (id, user_id, name, prefix, key_hash, mode, budget_usd, budget_period, rpm_limit, allowed_models_json, profile, expires_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    (id, user_id, name, prefix, key_hash, mode, budget_usd, budget_period, rpm_limit, allowed_models_json, profile, expires_at, created_by_user_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run(id, userId, input.name, prefix, sha256(secret), input.mode || 'both', input.budgetUsd ?? null,
       input.budgetPeriod || 'total', input.rpmLimit ?? null, JSON.stringify(input.allowedModels || []),
-      input.profile || 'balanced', input.expiresAt || null);
+      input.profile || 'balanced', input.expiresAt || null, createdBy);
   return { key: get(userId, id), secret };
 }
 

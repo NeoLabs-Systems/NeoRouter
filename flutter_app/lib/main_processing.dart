@@ -106,7 +106,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
       header: ScreenHeader(
         title: t.processingTitle,
         description: t.processingDescription,
-        trailing: _settings == null
+        trailing: _settings == null || !widget.controller.can('processing.edit')
             ? null
             : FilledButton(
                 onPressed: _dirty && !_saving ? _save : null,
