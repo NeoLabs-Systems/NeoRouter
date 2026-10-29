@@ -120,6 +120,16 @@ test('a custom style chooses kinds of model and how much each counts', async () 
   const otherKey = (await request(app).post('/api/v1/keys').set('Authorization', `Bearer ${other}`).send({ name: 'other', mode: 'free_only' })).body.secret;
   assert.ok(!(await ids(otherKey)).includes('auto:paid-first'), 'another account does not see it');
   assert.equal((await chat(otherKey, 'auto:paid-first')).status, 400, 'nor can it use it');
+  // "If needed" waits until no preferred model can answer, however much
+  // better it scores: a far smarter paid model still loses to a free one.
+  const models = (await api('get', '/models')).body.models;
+  await api('patch', `/models/${models.find((model) => model.id === 'paid/ok-paid').ref}`).send({ overrides: { intelligence: 0.95 } });
+  await api('patch', `/models/${models.find((model) => model.id === 'free/ok-free').ref}`).send({ overrides: { intelligence: 0.15 } });
+  const freeFirst = await api('post', '/routing/profiles').send({ name: 'Free first', weights: { intelligence: 1, speed: 0.2, reliability: 0.6, cost: 0 }, constraints: { kinds: { free: 1, plan: 0.25, paid: 0.25 } } });
+  for (let i = 0; i < 6; i += 1) {
+    const response = await chat(secret, 'auto:free-first');
+    assert.equal(response.headers['x-neorouter-model'], 'free/ok-free', 'free is preferred');
+  }
   const leaning = await api('post', '/routing/profiles').send({ name: 'Mostly paid', weights: { intelligence: 0.4, speed: 0.2, reliability: 0.3, cost: 0.1 }, constraints: { kinds: { free: 0.05, plan: 0, paid: 1 } } });
   for (let i = 0; i < 4; i += 1) assert.equal((await chat(secret, `auto:${leaning.body.profile.id}`)).headers['x-neorouter-model'], 'paid/ok-paid', 'a small weight makes free a fallback');
 });

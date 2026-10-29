@@ -190,6 +190,15 @@ function kindWeight(kinds, entry) {
   return (kinds[modelKind(entry)] || 0) / top;
 }
 
+// A custom style's kinds as tiers: the kinds it weighs most ("Prefer") are
+// tier 0, a lower weight ("If needed") a later tier. A later tier is only
+// drawn from once no model of an earlier one can take the request (none fits,
+// or all were tried), however much better it scores.
+function kindTier(kinds, entry) {
+  const levels = [...new Set([kinds.free, kinds.plan, kinds.paid].filter((weight) => weight > 0))].sort((a, b) => b - a);
+  return Math.max(0, levels.indexOf(kinds[modelKind(entry)]));
+}
+
 // A custom style that weighs a kind of model lower does not count it as the
 // cheaper equal (`weightOf`).
 function preferCheaperEquals(scored, weightOf = () => 1) {
@@ -346,7 +355,7 @@ class RoutingPlan {
       if (qualityProfile && features.intelligence < bestIntelligence - QUALITY_GAP) value *= QUALITY_GATE_FACTOR;
       value *= plans.factor(item.entry);
       // A custom style's preference between free, subscription and paid models.
-      if (this.profile.constraints.kinds) value *= kindWeight(this.profile.constraints.kinds, item.entry);
+      item.tier = this.profile.constraints.kinds ? kindTier(this.profile.constraints.kinds, item.entry) : 0;
       if ((this.needs.tools && item.entry.tools === null) || (this.needs.json && item.entry.json === false)) value *= UNKNOWN_CAPABILITY_FACTOR;
       // Far more than this request's fair share of the budget: last resort only.
       if (this.pacing && !item.entry.isFree && !item.entry.isPlan) {
@@ -368,8 +377,11 @@ class RoutingPlan {
   // Softmax draw among the top-k so load spreads across good candidates
   // instead of hammering the single best one.
   next({ filter = null, now = Date.now() } = {}) {
-    const ranked = this.rank({ now }).filter((item) => !filter || filter(item.entry));
-    if (!ranked.length) return null;
+    const candidates = this.rank({ now }).filter((item) => !filter || filter(item.entry));
+    if (!candidates.length) return null;
+    // Only the style's first tier of model kinds that still has a candidate.
+    const tier = Math.min(...candidates.map((item) => item.tier ?? 0));
+    const ranked = candidates.filter((item) => (item.tier ?? 0) === tier);
     let choice = ranked[0];
     // Among copies of the requested model (several accounts) the draw stays
     // within those copies; otherwise among the top-k.
@@ -407,7 +419,9 @@ class RoutingPlan {
 
 function preview({ userId, key, requestedModel = 'auto', request, needs, inputTokens, limit = 20 }) {
   const plan = new RoutingPlan({ userId, key, request, requestedModel, needs, inputTokens });
-  const ranked = plan.rank({ includeRejected: true, sample: false });
+  // In the order the router tries them: a style's preferred kinds first.
+  const ranked = plan.rank({ includeRejected: true, sample: false })
+    .sort((a, b) => (a.rejected ? 1 : 0) - (b.rejected ? 1 : 0) || (a.tier ?? 0) - (b.tier ?? 0) || (b.score ?? -1) - (a.score ?? -1));
   return {
     profile: plan.profile,
     weights: plan.weights,
@@ -422,7 +436,9 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
       score: item.score ?? null,
       features: item.details?.features || null,
       factors: item.details?.factors || null,
-    })).sort((a, b) => (a.rejected ? 1 : 0) - (b.rejected ? 1 : 0)).slice(0, limit),
+      // 0 = a kind the style prefers; higher = only if those cannot answer.
+      tier: item.tier ?? 0,
+    })).slice(0, limit),
   };
 }
 
