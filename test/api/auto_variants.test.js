@@ -149,4 +149,7 @@ test('capacity adds up what the free models could take around the clock', async 
   assert.equal(after.perMinuteOnly, 0);
   assert.equal(after.perHour, 42);
   assert.equal(after.providersCounted, 1);
+  assert.equal(after.tokensPerDay, 1000 * after.tokensPerRequest, 'requests are turned into tokens');
+  quota.setLimit(`m:${free.ref}`, 'tpd', 5_000, 'learned');
+  assert.equal((await api('get', '/usage/capacity')).body.tokensPerDay, 5_000, 'the tighter token limit wins');
 });

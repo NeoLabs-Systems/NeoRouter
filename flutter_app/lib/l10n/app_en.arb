@@ -921,6 +921,9 @@
   "homeStatusEmpty": "Connect an AI provider to get started.",
   "homeLast7Days": "Last 7 days",
   "metricRequests": "Requests",
+  "homeTokens": "Tokens",
+  "homeTokensCaption": "{count} requests",
+  "@homeTokensCaption": {"placeholders": {"count": {"type": "String"}}},
   "metricAnswered": "Answered",
   "metricSpent": "Spent",
   "metricFreeShare": "{percent} % free",
@@ -1745,7 +1748,7 @@
   "previewPromptTry": "Try",
   "detailTask": "Task",
   "homeCapacityTitle": "Around the clock",
-  "homeCapacityValue": "{count} requests a day",
+  "homeCapacityValue": "{count} tokens a day",
   "@homeCapacityValue": {
     "placeholders": {
       "count": {
@@ -1753,7 +1756,7 @@
       }
     }
   },
-  "homeCapacityCaption": "What your free models could answer if used non-stop: about {hour} an hour, from the usage limits of {providers} providers.",
+  "homeCapacityCaption": "What your free models could handle if used non-stop: about {hour} tokens an hour, from the usage limits of {providers} providers.",
   "@homeCapacityCaption": {
     "placeholders": {
       "hour": {
@@ -1764,7 +1767,7 @@
       }
     }
   },
-  "homeCapacityPerMinute": "Plus up to {count} requests a minute from providers that only publish a per-minute limit.",
+  "homeCapacityPerMinute": "Plus up to {count} tokens a minute from providers that only publish a per-minute limit.",
   "@homeCapacityPerMinute": {
     "placeholders": {
       "count": {

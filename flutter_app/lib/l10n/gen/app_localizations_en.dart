@@ -1702,6 +1702,14 @@ class AppL10nEn extends AppL10n {
   String get metricRequests => 'Requests';
 
   @override
+  String get homeTokens => 'Tokens';
+
+  @override
+  String homeTokensCaption(String count) {
+    return '$count requests';
+  }
+
+  @override
   String get metricAnswered => 'Answered';
 
   @override
@@ -3129,17 +3137,17 @@ class AppL10nEn extends AppL10n {
 
   @override
   String homeCapacityValue(String count) {
-    return '$count requests a day';
+    return '$count tokens a day';
   }
 
   @override
   String homeCapacityCaption(String hour, String providers) {
-    return 'What your free models could answer if used non-stop: about $hour an hour, from the usage limits of $providers providers.';
+    return 'What your free models could handle if used non-stop: about $hour tokens an hour, from the usage limits of $providers providers.';
   }
 
   @override
   String homeCapacityPerMinute(String count) {
-    return 'Plus up to $count requests a minute from providers that only publish a per-minute limit.';
+    return 'Plus up to $count tokens a minute from providers that only publish a per-minute limit.';
   }
 
   @override

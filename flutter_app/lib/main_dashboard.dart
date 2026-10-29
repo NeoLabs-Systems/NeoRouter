@@ -281,6 +281,7 @@ class _WeekStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final requests = (totals['requests'] as num?)?.toInt() ?? 0;
+    final tokens = ((totals['inputTokens'] as num?)?.toInt() ?? 0) + ((totals['outputTokens'] as num?)?.toInt() ?? 0);
     final rate = (totals['successRate'] as num?)?.toDouble();
     final cost = (totals['costUsd'] as num?)?.toDouble() ?? 0;
     final free = (totals['freeRequests'] as num?)?.toInt() ?? 0;
@@ -288,7 +289,7 @@ class _WeekStrip extends StatelessWidget {
     final saved = (totals['savedUsd'] as num?)?.toDouble() ?? 0;
     return MetricStrip(
       metrics: <({String label, String value, String? caption})>[
-        (label: t.metricRequests, value: formatCount(requests), caption: null),
+        (label: t.homeTokens, value: formatCount(tokens), caption: t.homeTokensCaption(formatCount(requests))),
         (label: t.metricAnswered, value: rate == null ? '—' : '${(rate * 100).round()} %', caption: null),
         (label: t.metricSaved, value: formatUsd(saved), caption: t.metricSavedCaption(formatUsd(cost), '${requests == 0 ? 0 : (free * 100 / requests).round()}')),
         (label: t.metricResponse, value: formatMs(latency), caption: null),
@@ -297,7 +298,7 @@ class _WeekStrip extends StatelessWidget {
   }
 }
 
-/// How many requests the free models could take a day, used non-stop.
+/// How many tokens the free models could take a day, used non-stop.
 class _CapacityCard extends StatelessWidget {
   const _CapacityCard({required this.capacity});
 
@@ -307,11 +308,11 @@ class _CapacityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    final perDay = (capacity['perDay'] as num?)?.toInt() ?? 0;
-    final perHour = (capacity['perHour'] as num?)?.toInt() ?? 0;
+    final perDay = (capacity['tokensPerDay'] as num?)?.toInt() ?? 0;
+    final perHour = (capacity['tokensPerHour'] as num?)?.toInt() ?? 0;
     final providers = (capacity['providersCounted'] as num?)?.toInt() ?? 0;
     final uncounted = (capacity['modelsWithoutLimit'] as num?)?.toInt() ?? 0;
-    final perMinute = (capacity['perMinuteOnly'] as num?)?.toInt() ?? 0;
+    final perMinute = (capacity['tokensPerMinuteOnly'] as num?)?.toInt() ?? 0;
     return AppCard(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

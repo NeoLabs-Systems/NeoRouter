@@ -3145,6 +3145,18 @@ abstract class AppL10n {
   /// **'Requests'**
   String get metricRequests;
 
+  /// No description provided for @homeTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens'**
+  String get homeTokens;
+
+  /// No description provided for @homeTokensCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} requests'**
+  String homeTokensCaption(String count);
+
   /// No description provided for @metricAnswered.
   ///
   /// In en, this message translates to:
@@ -5614,19 +5626,19 @@ abstract class AppL10n {
   /// No description provided for @homeCapacityValue.
   ///
   /// In en, this message translates to:
-  /// **'{count} requests a day'**
+  /// **'{count} tokens a day'**
   String homeCapacityValue(String count);
 
   /// No description provided for @homeCapacityCaption.
   ///
   /// In en, this message translates to:
-  /// **'What your free models could answer if used non-stop: about {hour} an hour, from the usage limits of {providers} providers.'**
+  /// **'What your free models could handle if used non-stop: about {hour} tokens an hour, from the usage limits of {providers} providers.'**
   String homeCapacityCaption(String hour, String providers);
 
   /// No description provided for @homeCapacityPerMinute.
   ///
   /// In en, this message translates to:
-  /// **'Plus up to {count} requests a minute from providers that only publish a per-minute limit.'**
+  /// **'Plus up to {count} tokens a minute from providers that only publish a per-minute limit.'**
   String homeCapacityPerMinute(String count);
 
   /// No description provided for @homeCapacityUnknown.
