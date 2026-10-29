@@ -46,7 +46,13 @@ module.exports = [
     billing: { freeTierModels: [':free$'], note: 'Only models ending in ":free" are free, about one request a minute each; all others are billed.', source: 'https://unorouter.com', checkedAt: '2026-10-29' },
     limits: { models: [{ match: ':free$', rpm: 1 }] },
   }),
-  community('xkiro', 'xKiro', 'https://api.xkiro.com/v1', { validate: { path: '/usage' } }),
+  // Free models end in ":free" and share a daily token allowance
+  // (500K a day, 1M with a verified Telegram account; xkiro.com, October 2026).
+  community('xkiro', 'xKiro', 'https://api.xkiro.com/v1', {
+    validate: { path: '/usage' },
+    billing: { freeTierModels: [':free$'], note: 'Only models ending in ":free" are free, sharing 500K tokens a day (1M with Telegram verified); all others are billed.', source: 'https://xkiro.com', checkedAt: '2026-10-29' },
+    limits: { pool: 'account', poolMatch: ':free$', account: { tpd: 500000 } },
+  }),
   community('opencode', 'OpenCode Zen', 'https://opencode.ai/zen/v1', { headers: { 'x-opencode-session': 'neorouter' } }),
   community('airforce', 'api.airforce', 'https://api.airforce/v1'),
   community('apinex', 'Apinex', 'https://api.apinex.bond/v1', { validate: { path: '/balance' }, limits: { pool: 'account', account: { rpm: 5 } } }),
