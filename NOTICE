@@ -1,0 +1,36 @@
+NeoRouter
+Copyright (c) NeoLabs Systems. Licensed under AGPL-3.0-only (see LICENSE).
+
+The privacy shield (server/services/processing/shield/) includes data from
+third parties:
+
+gitleaks rules (shield/rules/secrets_gitleaks.json), converted by
+scripts/import_gitleaks.js from https://github.com/gitleaks/gitleaks
+  MIT License. Copyright (c) 2019 Zachary Rice.
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to
+  deal in the Software without restriction, including without limitation the
+  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+  sell copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions: The above copyright
+  notice and this permission notice shall be included in all copies or
+  substantial portions of the Software. THE SOFTWARE IS PROVIDED "AS IS",
+  WITHOUT WARRANTY OF ANY KIND.
+
+First names (shield/data/first_names.txt)
+  BerlinOnline GmbH, auf Basis von Daten des Berliner Landesamtes für Bürger-
+  und Ordnungsangelegenheiten (LABO), "Liste der häufigen Vornamen" 2012-2023,
+  https://github.com/berlin/haeufige-vornamen-berlin, CC BY 3.0 DE
+  (https://creativecommons.org/licenses/by/3.0/de/). Reduced to a list of
+  names; merged with the US Census Bureau 1990 name files (public domain).
+
+Last names (shield/data/last_names.txt)
+  US Census Bureau 1990 surname file (public domain).
+
+Common words (shield/data/common_words.txt)
+  Hermit Dave, FrequencyWords, https://github.com/hermitdave/FrequencyWords,
+  CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/). The derived
+  list (frequent words with names removed) is shared under the same licence.
+
+BIP-39 English wordlist (shield/data/bip39_english.txt)
+  https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt, MIT.

@@ -18,6 +18,7 @@ const DEFAULT_SETTINGS = Object.freeze({
     enabled: false,
     modes: { ...redaction.DEFAULT_MODES },
     customTerms: [],
+    allowTerms: [],
     ai: { enabled: false, model: 'auto:fast', freeOnly: true },
   },
   compression: { ...compression.DEFAULTS },
@@ -31,6 +32,7 @@ function merge(stored = {}) {
       ...privacy,
       modes: { ...DEFAULT_SETTINGS.privacy.modes, ...(privacy.modes || {}) },
       customTerms: Array.isArray(privacy.customTerms) ? privacy.customTerms : [],
+      allowTerms: Array.isArray(privacy.allowTerms) ? privacy.allowTerms : [],
       ai: { ...DEFAULT_SETTINGS.privacy.ai, ...(privacy.ai || {}) },
     },
     compression: { ...DEFAULT_SETTINGS.compression, ...(stored.compression || {}), engines: { ...(stored.compression?.engines || {}) } },
@@ -70,7 +72,7 @@ async function apply(userId, canonical, options = {}) {
       entitiesFor = await aiDetector.detectEntities(userId, config.privacy.ai, result);
       aiUsed = true;
     }
-    const redacted = redaction.redactRequest(result, { modes: config.privacy.modes, customTerms: config.privacy.customTerms, entitiesFor });
+    const redacted = redaction.redactRequest(result, { modes: config.privacy.modes, customTerms: config.privacy.customTerms, allowTerms: config.privacy.allowTerms, entitiesFor });
     if (redacted) {
       result = redacted.canonical;
       vault = redacted.vault;
@@ -79,6 +81,7 @@ async function apply(userId, canonical, options = {}) {
   return {
     canonical: result,
     vault,
+    findings: vault ? vault.findings() : [],
     stats: {
       compression: compressed.stats,
       redacted: vault ? vault.size : 0,
@@ -86,6 +89,19 @@ async function apply(userId, canonical, options = {}) {
       aiDetection: aiUsed,
     },
   };
+}
+
+// Texts that leave for a provider without an answer to put values back into
+// (embeddings, image and video prompts, direct web searches). Only the "hide"
+// categories apply: values that must never leave. Hiding names there would
+// break what the caller asked for, and nothing could be restored.
+function shieldTexts(userId, texts) {
+  const config = getSettings(userId);
+  if (!config.privacy.enabled) return { texts, redacted: 0 };
+  const modes = Object.fromEntries(Object.entries(config.privacy.modes).map(([category, mode]) => [category, mode === 'hide' ? 'hide' : 'off']));
+  const vault = new redaction.Vault(modes);
+  const shielded = texts.map((text) => vault.redactText(text, { customTerms: config.privacy.customTerms, allowTerms: config.privacy.allowTerms }));
+  return { texts: shielded, redacted: vault.size };
 }
 
 // The same pipeline for the settings page: shows what would be sent.
@@ -101,7 +117,7 @@ async function preview(userId, { text, messages, role = 'user', settings: draft 
         : [{ role: 'user', content: String(text || '') }],
   };
   const result = await apply(userId, canonical, { settings: config });
-  return { messages: result.canonical.messages.filter((message) => !(message.role === 'system' && !canonical.messages.some((original) => original.role === 'system'))), stats: result.stats };
+  return { messages: result.canonical.messages.filter((message) => !(message.role === 'system' && !canonical.messages.some((original) => original.role === 'system'))), findings: result.findings, stats: result.stats };
 }
 
-module.exports = { getSettings, saveSettings, apply, preview, DEFAULT_SETTINGS };
+module.exports = { getSettings, saveSettings, apply, shieldTexts, preview, DEFAULT_SETTINGS };

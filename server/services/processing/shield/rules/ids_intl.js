@@ -1,0 +1,67 @@
+'use strict';
+
+// US and UK personal numbers, and machine-readable passport lines.
+module.exports = [
+  {
+    id: 'us_ssn',
+    label: { en: 'US Social Security number', de: 'US-Sozialversicherungsnummer' },
+    category: 'id',
+    pattern: /\b(?!000|666|9\d\d)\d{3}-(?!00)\d{2}-(?!0000)\d{4}\b/g,
+    score: 0.6,
+    context: { negative: ['phone', 'tel', 'fax', 'order', 'bestellung', 'invoice', 'rechnung'], window: 30 },
+    tests: { match: ['SSN 078-05-1120'], ignore: ['phone 555-12-3456', '000-12-3456'] },
+  },
+  {
+    id: 'us_ssn_plain',
+    label: { en: 'US Social Security number', de: 'US-Sozialversicherungsnummer' },
+    category: 'id',
+    pattern: /(?<!\d)(?!000|666|9)\d{9}(?!\d)/g,
+    score: 0.2,
+    context: { positive: ['ssn', 'social security', 'social security number', 'social security no'], window: 30 },
+    tests: { match: ['SSN: 078051120'], ignore: ['ticket 078051120'] },
+  },
+  {
+    id: 'us_itin',
+    label: { en: 'US ITIN', de: 'US-ITIN' },
+    category: 'id',
+    pattern: /\b9\d{2}-(?:5\d|6[0-5]|7\d|8[0-8]|9[0-24-9])-\d{4}\b/g,
+    score: 0.6,
+    tests: { match: ['ITIN 912-70-1234'], ignore: ['912-40-1234'] },
+  },
+  {
+    id: 'uk_national_insurance',
+    label: { en: 'UK National Insurance number', de: 'Britische National-Insurance-Nummer' },
+    category: 'id',
+    pattern: /\b(?!BG|GB|NK|KN|TN|NT|ZZ)[A-CEGHJ-PR-TW-Z][A-CEGHJ-NPR-TW-Z]\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-D]\b/g,
+    score: 0.6,
+    tests: { match: ['NI number AB 12 34 56 C'], ignore: ['GB 12 34 56 A'] },
+  },
+  {
+    id: 'uk_nhs',
+    label: { en: 'NHS number', de: 'NHS-Nummer' },
+    category: 'id',
+    pattern: /\b\d{3}\s?\d{3}\s?\d{4}\b/g,
+    validator: 'nhsUk',
+    score: 0,
+    context: { positive: ['nhs', 'nhs number', 'nhs no'], window: 30 },
+    tests: { match: ['NHS number 943 476 5919'], ignore: ['call 943 476 5919'] },
+  },
+  {
+    id: 'mrz_passport_line',
+    label: { en: 'Passport machine-readable line', de: 'Maschinenlesbare Passzeile' },
+    category: 'id',
+    pattern: /(?<![A-Z0-9<])[A-Z0-9<]{9}\d[A-Z<]{3}\d{6}\d[MFX<]\d{6}\d[A-Z0-9<]{14}[0-9<]\d(?![A-Z0-9<])/g,
+    validator: 'mrzLine',
+    score: 0.4,
+    tests: { match: ['L898902C36UTO7408122F1204159ZE184226B<<<<<10'], ignore: ['L898902C36UTO7408122F1204159ZE184226B<<<<<11'] },
+  },
+  {
+    id: 'mrz_name_line',
+    label: { en: 'Passport name line', de: 'Namenszeile im Pass' },
+    category: 'id',
+    pattern: /(?<![A-Z0-9<])(?:P[A-Z<][A-Z<]{42}|I[A-Z<][A-Z<]{28}|[A-Z<]{30})(?![A-Z0-9<])/g,
+    accept: 'mrzNames',
+    score: 0.6,
+    tests: { match: ['P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<'], ignore: ['ANNA MARIA ERIKSSON'] },
+  },
+];

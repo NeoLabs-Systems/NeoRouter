@@ -2295,7 +2295,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get privacyEnableHint =>
-      'Applies to every API key and the Playground.';
+      'Applies to every API key and the Playground. Embeddings, image and video prompts and web searches only get the values set to \"Hide only\".';
 
   @override
   String get privacyWhatToHide => 'What to hide';
@@ -2326,31 +2326,58 @@ class AppL10nEn extends AppL10n {
   String get catPhoneHint => 'International and local formats.';
 
   @override
-  String get catIban => 'Bank accounts (IBAN)';
+  String get catIban => 'Bank accounts';
 
   @override
   String get catIbanHint =>
-      'Checked with the IBAN checksum, so random numbers are left alone.';
+      'IBAN (checked with its checksum), BIC, and account numbers named as such.';
 
   @override
   String get catCard => 'Payment cards';
 
   @override
   String get catCardHint =>
-      'Only real card numbers (issuer and checksum match).';
+      'Real card numbers (issuer and checksum match), and security codes and expiry dates next to them.';
 
   @override
-  String get catIp => 'IP addresses';
+  String get catIp => 'Network addresses';
 
   @override
-  String get catIpHint => 'Except localhost.';
+  String get catIpHint => 'IPv4, IPv6 and MAC addresses, except localhost.';
 
   @override
   String get catSecret => 'Passwords & API keys';
 
   @override
   String get catSecretHint =>
-      'Known key formats, \"password: …\", passwords in links and random-looking tokens.';
+      'More than 250 key formats, private keys, \"password: …\", passwords in links, cookies, webhook links, one-time codes and wallet recovery phrases.';
+
+  @override
+  String get catBirthdate => 'Dates of birth';
+
+  @override
+  String get catBirthdateHint =>
+      'Dates next to words like \"born\" or \"geb.\".';
+
+  @override
+  String get catCrypto => 'Crypto wallets';
+
+  @override
+  String get catCryptoHint =>
+      'Bitcoin, Ethereum, Litecoin, Tron, Monero and Solana addresses.';
+
+  @override
+  String get catLocation => 'Locations';
+
+  @override
+  String get catLocationHint => 'GPS coordinates and Plus Codes.';
+
+  @override
+  String get catVehicle => 'Vehicles';
+
+  @override
+  String get catVehicleHint =>
+      'Number plates and vehicle identification numbers.';
 
   @override
   String get catCustom => 'Your private terms';
@@ -2359,16 +2386,17 @@ class AppL10nEn extends AppL10n {
   String get catCustomHint => 'The words you list below.';
 
   @override
-  String get catPerson => 'Names of people';
+  String get catPerson => 'Last names';
 
   @override
-  String get catPersonHint => 'Found by AI detection.';
+  String get catPersonHint =>
+      'First names stay, last names are hidden: \"Anna [LASTNAME_1]\".';
 
   @override
-  String get catAddress => 'Addresses';
+  String get catAddress => 'Postal addresses';
 
   @override
-  String get catAddressHint => 'Found by AI detection.';
+  String get catAddressHint => 'Street and number, postcode and town.';
 
   @override
   String get catOrganization => 'Organizations';
@@ -2378,11 +2406,11 @@ class AppL10nEn extends AppL10n {
       'Employers, clinics, schools – found by AI detection.';
 
   @override
-  String get catId => 'ID and account numbers';
+  String get catId => 'ID, tax and insurance numbers';
 
   @override
   String get catIdHint =>
-      'Customer, contract, insurance and tax numbers – found by AI detection.';
+      'Steuer-ID, VAT IDs, ID cards, passports, social security and health insurance numbers from Germany, Europe, the UK and the US.';
 
   @override
   String get privacyTermsTitle => 'Your private terms';
@@ -2396,14 +2424,24 @@ class AppL10nEn extends AppL10n {
       'Anna Schmidt\nAcme Holding\nHauptstraße 5';
 
   @override
+  String get privacyAllowTitle => 'Never hide';
+
+  @override
+  String get privacyAllowHint =>
+      'Values that may always go out, one per line. Start with @ to allow a whole mail domain, e.g. your company\'s.';
+
+  @override
+  String get privacyAllowPlaceholder => '@acme.example\nsupport@acme.example';
+
+  @override
   String get privacyAiTitle => 'AI detection';
 
   @override
   String get privacyAiHint =>
-      'Patterns cannot spot names or addresses. A fast AI model can: it reads each new message and points out private details, which are then hidden like everything else.';
+      'Everything above is found on your server in about a millisecond, without AI. A fast AI model can also read each new message to find organizations and what the rules miss.';
 
   @override
-  String get privacyAiEnable => 'Find names, addresses and IDs with AI';
+  String get privacyAiEnable => 'Also look with AI';
 
   @override
   String get privacyAiEnableHint =>
@@ -2429,11 +2467,16 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get privacyTrySample =>
-      'Hi, I am Anna Schmidt. Please send the invoice to anna.schmidt@example.de and call me at +49 170 1234567. My IBAN is DE89 3704 0044 0532 0130 00, the server password: hunter2pw.';
+      'Hi, I am Anna Schmidt, born 14.07.1988, living at Lindenstraße 12, 50674 Köln. Please send the invoice to anna.schmidt@example.de and call me at +49 170 1234567. My IBAN is DE89 3704 0044 0532 0130 00, my tax ID 86 095 742 719, the server password: hunter2pw.';
 
   @override
   String privacyTryResult(String count) {
     return '$count values hidden';
+  }
+
+  @override
+  String privacyTryFoundBy(String list) {
+    return 'Found by: $list';
   }
 
   @override

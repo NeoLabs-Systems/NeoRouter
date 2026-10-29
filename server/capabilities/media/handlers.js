@@ -17,6 +17,7 @@ const videoJobs = require('./video_jobs');
 const catalog = require('../../services/catalog/catalog_service');
 const accounts = require('../../services/providers/account_service');
 const { isAutoModel } = require('../../services/routing/router');
+const requestProcessing = require('../../services/processing/processing_service');
 
 const MAX_EMBEDDING_INPUTS = 2048;
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
@@ -33,6 +34,18 @@ function parseBody(schema, body) {
 const estimateTokens = (texts) => texts.reduce((sum, text) => sum + Math.ceil(String(text).length / 4), 0);
 // Unknown unit price: fall back to token price (Gemini prices speech per token).
 const priced = (unitValue, tokenValue) => (unitValue !== null ? unitValue : tokenValue);
+
+// Text that leaves without an answer to restore into passes the privacy
+// shield's "hide" categories (secrets, card numbers). Speech, transcription
+// and moderation are left alone: their output is audio or a verdict on the
+// real text. If the shield fails, the request does not go out.
+function shield(key, texts) {
+  try {
+    return requestProcessing.shieldTexts(key.user_id, texts);
+  } catch {
+    throw new HttpError(500, 'PRIVACY_SHIELD_FAILED', 'The privacy shield could not check this request, so it was not sent.');
+  }
+}
 
 // ---------------------------------------------------------------- embeddings
 
@@ -52,7 +65,8 @@ function float32Base64(vector) {
 
 async function embeddings({ req, res, key, body, freeOnly = false }) {
   const input = parseBody(embeddingSchema, body);
-  const texts = Array.isArray(input.input) ? input.input : [input.input];
+  const shielded = shield(key, Array.isArray(input.input) ? input.input : [input.input]);
+  const { texts } = shielded;
   const inputType = /passage|document/.test(input.input_type || '') ? 'passage' : 'query';
   const tokens = estimateTokens(texts);
   const auto = isAutoModel(input.model);
@@ -62,7 +76,7 @@ async function embeddings({ req, res, key, body, freeOnly = false }) {
   }
   const dimensions = input.dimensions || pin?.dimensions || undefined;
   await runCapability({
-    req, res, key, capability: 'embedding', method: 'embed', requestedModel: input.model, freeOnly, inputTokens: tokens, units: texts.length,
+    req, res, key, capability: 'embedding', method: 'embed', requestedModel: input.model, freeOnly, inputTokens: tokens, units: texts.length, redactedCount: shielded.redacted,
     filter: pin ? (entry) => entry.canonicalId === pin.canonicalId : null,
     onNoCandidate: () => (pin ? new HttpError(503, 'EMBEDDING_PIN_UNAVAILABLE', `This key is pinned to the embedding model ${pin.canonicalId}, and no provider can serve it right now. Mixing in another model would make your vectors incomparable; reset the pin to switch models (and re-embed your data).`) : null),
     estimateCost: (entry) => tokenCost(entry, tokens),
@@ -104,8 +118,10 @@ async function fetchImage(url, signal) {
 async function images({ req, res, key, body, freeOnly = false }) {
   const input = parseBody(imageSchema, body);
   const size = input.size === 'auto' ? undefined : input.size;
+  const shielded = shield(key, [input.prompt]);
+  [input.prompt] = shielded.texts;
   await runCapability({
-    req, res, key, capability: 'image', method: 'generateImage', requestedModel: input.model, freeOnly, inputTokens: estimateTokens([input.prompt]), units: input.n,
+    req, res, key, capability: 'image', method: 'generateImage', requestedModel: input.model, freeOnly, inputTokens: estimateTokens([input.prompt]), units: input.n, redactedCount: shielded.redacted,
     estimateCost: (entry) => unitCost(entry, 'image', input.n),
     invoke: ({ adapter, entry, signal, timeoutMs }) => adapter.generateImage({ prompt: input.prompt, n: input.n, size, quality: input.quality }, { modelId: entry.modelId, signal, timeoutMs }),
     costOf: (entry, result) => unitCost(entry, 'image', result.images.length) || 0,
@@ -310,8 +326,10 @@ const videoSchema = z.object({
 
 async function createVideo({ req, res, key, body, freeOnly = false }) {
   const input = parseBody(videoSchema, body);
+  const shielded = shield(key, [input.prompt]);
+  [input.prompt] = shielded.texts;
   await runCapability({
-    req, res, key, capability: 'video', method: 'createVideo', requestedModel: input.model, freeOnly, inputTokens: estimateTokens([input.prompt]), units: input.seconds,
+    req, res, key, capability: 'video', method: 'createVideo', requestedModel: input.model, freeOnly, inputTokens: estimateTokens([input.prompt]), units: input.seconds, redactedCount: shielded.redacted,
     estimateCost: (entry) => unitCost(entry, 'second', input.seconds),
     invoke: ({ adapter, entry, signal, timeoutMs }) => adapter.createVideo({ prompt: input.prompt, seconds: input.seconds, size: input.size }, { modelId: entry.modelId, signal, timeoutMs }),
     costOf: (entry) => unitCost(entry, 'second', input.seconds) || 0,
@@ -334,9 +352,9 @@ const searchSchema = z.object({
 });
 
 /** Runs one web search through the search engines in the catalog. */
-async function searchWeb({ req, res = null, key, input, freeOnly = false, format = 'search' }) {
+async function searchWeb({ req, res = null, key, input, freeOnly = false, format = 'search', redactedCount = 0 }) {
   return runCapability({
-    req, res, key, capability: 'search', method: 'search', requestedModel: input.model || 'auto', freeOnly, format,
+    req, res, key, capability: 'search', method: 'search', requestedModel: input.model || 'auto', freeOnly, format, redactedCount,
     inputTokens: estimateTokens([input.query]), contextTokens: 0, units: 1,
     estimateCost: (entry) => unitCost(entry, 'search', 1),
     invoke: ({ adapter, entry, signal, timeoutMs }) => adapter.search({
@@ -348,7 +366,10 @@ async function searchWeb({ req, res = null, key, input, freeOnly = false, format
 
 async function search({ req, res, key, body, freeOnly = false }) {
   const input = parseBody(searchSchema, body);
-  const { result, entry } = await searchWeb({ req, res, key, input, freeOnly });
+  // Chat's web search tool shields its queries itself (fully, see web_search.js).
+  const shielded = shield(key, [input.query]);
+  [input.query] = shielded.texts;
+  const { result, entry } = await searchWeb({ req, res, key, input, freeOnly, redactedCount: shielded.redacted });
   res.json({ object: 'search', model: entry.id, query: input.query, results: result.results });
 }
 

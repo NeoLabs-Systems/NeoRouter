@@ -32,12 +32,14 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
   Map<String, dynamic>? _settings;
   String _saved = '';
   List<String> _categories = <String>[];
+  List<String> _aiOnly = <String>[];
   Map<String, dynamic> _engines = <String, dynamic>{};
   Map<String, dynamic> _stats = <String, dynamic>{};
   bool _loading = true;
   bool _saving = false;
   String? _error;
   late final TextEditingController _terms = TextEditingController();
+  late final TextEditingController _allow = TextEditingController();
 
   @override
   void initState() {
@@ -48,6 +50,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
   @override
   void dispose() {
     _terms.dispose();
+    _allow.dispose();
     super.dispose();
   }
 
@@ -64,9 +67,11 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
       setState(() {
         _settings = jsonDecode(jsonEncode(data['settings'])) as Map<String, dynamic>;
         _categories = (data['categories'] as List).cast<String>();
+        _aiOnly = ((data['aiOnlyCategories'] as List?) ?? const <Object>[]).cast<String>();
         _engines = Map<String, dynamic>.from(data['engines'] as Map);
         _stats = results[1];
         _terms.text = ((_privacy['customTerms'] as List?) ?? const <Object>[]).join('\n');
+        _allow.text = ((_privacy['allowTerms'] as List?) ?? const <Object>[]).join('\n');
         _saved = jsonEncode(_body());
       });
     } catch (error) {
@@ -78,9 +83,12 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
 
   Map<String, Object?> _body() {
     final privacy = Map<String, dynamic>.from(_privacy);
-    privacy['customTerms'] = _terms.text.split('\n').map((line) => line.trim()).where((line) => line.length >= 2).toList();
+    privacy['customTerms'] = _lines(_terms);
+    privacy['allowTerms'] = _lines(_allow);
     return <String, Object?>{'privacy': privacy, 'compression': _compression};
   }
+
+  static List<String> _lines(TextEditingController controller) => controller.text.split('\n').map((line) => line.trim()).where((line) => line.length >= 2).toList();
 
   Future<void> _save() async {
     final t = AppL10n.of(context);
@@ -173,8 +181,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                   description: t.privacyModesHint,
                   children: <Widget>[
                     for (final category in _categories)
-                      if (category != 'person' && category != 'address' && category != 'organization' && category != 'id')
-                        _modeRow(context, category, modes),
+                      if (!_aiOnly.contains(category)) _modeRow(context, category, modes),
                   ],
                 ),
                 SettingsGroup(
@@ -194,6 +201,22 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                   ],
                 ),
                 SettingsGroup(
+                  title: t.privacyAllowTitle,
+                  description: t.privacyAllowHint,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: TextField(
+                        controller: _allow,
+                        minLines: 2,
+                        maxLines: 6,
+                        onChanged: (_) => setState(() {}),
+                        decoration: InputDecoration(hintText: t.privacyAllowPlaceholder),
+                      ),
+                    ),
+                  ],
+                ),
+                SettingsGroup(
                   title: t.privacyAiTitle,
                   description: t.privacyAiHint,
                   children: <Widget>[
@@ -203,7 +226,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                       control: Switch(value: ai['enabled'] == true, onChanged: (value) => _update(() => ai['enabled'] = value)),
                     ),
                     if (ai['enabled'] == true) ...<Widget>[
-                      for (final category in <String>['person', 'address', 'organization', 'id']) _modeRow(context, category, modes),
+                      for (final category in _aiOnly) _modeRow(context, category, modes),
                       SettingsRow(
                         label: t.privacyAiModel,
                         description: t.privacyAiModelHint,
@@ -244,7 +267,13 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
           sample: t.privacyTrySample,
           describe: (result) {
             final stats = Map<String, dynamic>.from(result['stats'] as Map);
-            return t.privacyTryResult('${stats['redacted'] ?? 0}');
+            final language = Localizations.localeOf(context).languageCode == 'de' ? 'de' : 'en';
+            final found = <String>[
+              for (final finding in (result['findings'] as List?) ?? const <Object>[])
+                if (finding is Map) '${finding['token']} ${(finding['label'] as Map?)?[language] ?? _categoryLabel(t, '${finding['category']}')}',
+            ];
+            final count = t.privacyTryResult('${stats['redacted'] ?? 0}');
+            return found.isEmpty ? count : '$count · ${t.privacyTryFoundBy(found.join(', '))}';
           },
         ),
         const SizedBox(height: 8),
@@ -283,6 +312,10 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
         'address' => t.catAddress,
         'organization' => t.catOrganization,
         'id' => t.catId,
+        'birthdate' => t.catBirthdate,
+        'crypto' => t.catCrypto,
+        'location' => t.catLocation,
+        'vehicle' => t.catVehicle,
         _ => category,
       };
 
@@ -298,6 +331,10 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
         'address' => t.catAddressHint,
         'organization' => t.catOrganizationHint,
         'id' => t.catIdHint,
+        'birthdate' => t.catBirthdateHint,
+        'crypto' => t.catCryptoHint,
+        'location' => t.catLocationHint,
+        'vehicle' => t.catVehicleHint,
         _ => '',
       };
 

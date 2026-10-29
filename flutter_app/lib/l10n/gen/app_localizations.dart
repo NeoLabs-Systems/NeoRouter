@@ -4162,7 +4162,7 @@ abstract class AppL10n {
   /// No description provided for @privacyEnableHint.
   ///
   /// In en, this message translates to:
-  /// **'Applies to every API key and the Playground.'**
+  /// **'Applies to every API key and the Playground. Embeddings, image and video prompts and web searches only get the values set to \"Hide only\".'**
   String get privacyEnableHint;
 
   /// No description provided for @privacyWhatToHide.
@@ -4222,13 +4222,13 @@ abstract class AppL10n {
   /// No description provided for @catIban.
   ///
   /// In en, this message translates to:
-  /// **'Bank accounts (IBAN)'**
+  /// **'Bank accounts'**
   String get catIban;
 
   /// No description provided for @catIbanHint.
   ///
   /// In en, this message translates to:
-  /// **'Checked with the IBAN checksum, so random numbers are left alone.'**
+  /// **'IBAN (checked with its checksum), BIC, and account numbers named as such.'**
   String get catIbanHint;
 
   /// No description provided for @catCard.
@@ -4240,19 +4240,19 @@ abstract class AppL10n {
   /// No description provided for @catCardHint.
   ///
   /// In en, this message translates to:
-  /// **'Only real card numbers (issuer and checksum match).'**
+  /// **'Real card numbers (issuer and checksum match), and security codes and expiry dates next to them.'**
   String get catCardHint;
 
   /// No description provided for @catIp.
   ///
   /// In en, this message translates to:
-  /// **'IP addresses'**
+  /// **'Network addresses'**
   String get catIp;
 
   /// No description provided for @catIpHint.
   ///
   /// In en, this message translates to:
-  /// **'Except localhost.'**
+  /// **'IPv4, IPv6 and MAC addresses, except localhost.'**
   String get catIpHint;
 
   /// No description provided for @catSecret.
@@ -4264,8 +4264,56 @@ abstract class AppL10n {
   /// No description provided for @catSecretHint.
   ///
   /// In en, this message translates to:
-  /// **'Known key formats, \"password: …\", passwords in links and random-looking tokens.'**
+  /// **'More than 250 key formats, private keys, \"password: …\", passwords in links, cookies, webhook links, one-time codes and wallet recovery phrases.'**
   String get catSecretHint;
+
+  /// No description provided for @catBirthdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Dates of birth'**
+  String get catBirthdate;
+
+  /// No description provided for @catBirthdateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Dates next to words like \"born\" or \"geb.\".'**
+  String get catBirthdateHint;
+
+  /// No description provided for @catCrypto.
+  ///
+  /// In en, this message translates to:
+  /// **'Crypto wallets'**
+  String get catCrypto;
+
+  /// No description provided for @catCryptoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Bitcoin, Ethereum, Litecoin, Tron, Monero and Solana addresses.'**
+  String get catCryptoHint;
+
+  /// No description provided for @catLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Locations'**
+  String get catLocation;
+
+  /// No description provided for @catLocationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS coordinates and Plus Codes.'**
+  String get catLocationHint;
+
+  /// No description provided for @catVehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicles'**
+  String get catVehicle;
+
+  /// No description provided for @catVehicleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Number plates and vehicle identification numbers.'**
+  String get catVehicleHint;
 
   /// No description provided for @catCustom.
   ///
@@ -4282,25 +4330,25 @@ abstract class AppL10n {
   /// No description provided for @catPerson.
   ///
   /// In en, this message translates to:
-  /// **'Names of people'**
+  /// **'Last names'**
   String get catPerson;
 
   /// No description provided for @catPersonHint.
   ///
   /// In en, this message translates to:
-  /// **'Found by AI detection.'**
+  /// **'First names stay, last names are hidden: \"Anna [LASTNAME_1]\".'**
   String get catPersonHint;
 
   /// No description provided for @catAddress.
   ///
   /// In en, this message translates to:
-  /// **'Addresses'**
+  /// **'Postal addresses'**
   String get catAddress;
 
   /// No description provided for @catAddressHint.
   ///
   /// In en, this message translates to:
-  /// **'Found by AI detection.'**
+  /// **'Street and number, postcode and town.'**
   String get catAddressHint;
 
   /// No description provided for @catOrganization.
@@ -4318,13 +4366,13 @@ abstract class AppL10n {
   /// No description provided for @catId.
   ///
   /// In en, this message translates to:
-  /// **'ID and account numbers'**
+  /// **'ID, tax and insurance numbers'**
   String get catId;
 
   /// No description provided for @catIdHint.
   ///
   /// In en, this message translates to:
-  /// **'Customer, contract, insurance and tax numbers – found by AI detection.'**
+  /// **'Steuer-ID, VAT IDs, ID cards, passports, social security and health insurance numbers from Germany, Europe, the UK and the US.'**
   String get catIdHint;
 
   /// No description provided for @privacyTermsTitle.
@@ -4345,6 +4393,24 @@ abstract class AppL10n {
   /// **'Anna Schmidt\nAcme Holding\nHauptstraße 5'**
   String get privacyTermsPlaceholder;
 
+  /// No description provided for @privacyAllowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Never hide'**
+  String get privacyAllowTitle;
+
+  /// No description provided for @privacyAllowHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Values that may always go out, one per line. Start with @ to allow a whole mail domain, e.g. your company\'s.'**
+  String get privacyAllowHint;
+
+  /// No description provided for @privacyAllowPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'@acme.example\nsupport@acme.example'**
+  String get privacyAllowPlaceholder;
+
   /// No description provided for @privacyAiTitle.
   ///
   /// In en, this message translates to:
@@ -4354,13 +4420,13 @@ abstract class AppL10n {
   /// No description provided for @privacyAiHint.
   ///
   /// In en, this message translates to:
-  /// **'Patterns cannot spot names or addresses. A fast AI model can: it reads each new message and points out private details, which are then hidden like everything else.'**
+  /// **'Everything above is found on your server in about a millisecond, without AI. A fast AI model can also read each new message to find organizations and what the rules miss.'**
   String get privacyAiHint;
 
   /// No description provided for @privacyAiEnable.
   ///
   /// In en, this message translates to:
-  /// **'Find names, addresses and IDs with AI'**
+  /// **'Also look with AI'**
   String get privacyAiEnable;
 
   /// No description provided for @privacyAiEnableHint.
@@ -4402,7 +4468,7 @@ abstract class AppL10n {
   /// No description provided for @privacyTrySample.
   ///
   /// In en, this message translates to:
-  /// **'Hi, I am Anna Schmidt. Please send the invoice to anna.schmidt@example.de and call me at +49 170 1234567. My IBAN is DE89 3704 0044 0532 0130 00, the server password: hunter2pw.'**
+  /// **'Hi, I am Anna Schmidt, born 14.07.1988, living at Lindenstraße 12, 50674 Köln. Please send the invoice to anna.schmidt@example.de and call me at +49 170 1234567. My IBAN is DE89 3704 0044 0532 0130 00, my tax ID 86 095 742 719, the server password: hunter2pw.'**
   String get privacyTrySample;
 
   /// No description provided for @privacyTryResult.
@@ -4410,6 +4476,12 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'{count} values hidden'**
   String privacyTryResult(String count);
+
+  /// No description provided for @privacyTryFoundBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Found by: {list}'**
+  String privacyTryFoundBy(String list);
 
   /// No description provided for @privacyFootnote.
   ///

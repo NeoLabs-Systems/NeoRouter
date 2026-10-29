@@ -39,8 +39,9 @@ function trailItem(entry, outcome, extra = {}) {
  * @param {number} [options.units]        billed units (images, seconds, …) for the log
  * @param {(entry, adapter) => boolean} [options.filter]  extra candidate filter (embedding pins, timestamps)
  * @param {() => HttpError|null} [options.onNoCandidate]  explains an empty candidate list
+ * @param {number} [options.redactedCount]  values the privacy shield hid, for the log
  */
-async function runCapability({ req, res = null, key, capability, method, requestedModel = 'auto', invoke, costOf, estimateCost, respond, inputTokens = 0, units = 0, format = capability, freeOnly = false, filter = null, onNoCandidate = null, contextTokens = inputTokens }) {
+async function runCapability({ req, res = null, key, capability, method, requestedModel = 'auto', invoke, costOf, estimateCost, respond, inputTokens = 0, units = 0, format = capability, freeOnly = false, filter = null, onNoCandidate = null, contextTokens = inputTokens, redactedCount = 0 }) {
   const requestId = req.id || crypto.randomUUID();
   const startedAt = Date.now();
   const trail = [];
@@ -76,7 +77,7 @@ async function runCapability({ req, res = null, key, capability, method, request
         id: requestId, user_id: key.user_id, router_key_id: key.id, created_at: startedAt, api_format: format,
         requested_model: requestedModel, attempts: Math.max(1, trail.length), stream: 0, trail_json: JSON.stringify(trail),
         latency_ms: Date.now() - startedAt, input_tokens: inputTokens, output_tokens: 0, cost_usd: 0, is_free: 0,
-        capability, units, ...fields,
+        capability, units, redacted_count: redactedCount, ...fields,
       });
     } catch {
       // Logging must never break a request.
@@ -115,6 +116,7 @@ async function runCapability({ req, res = null, key, capability, method, request
       if (res) {
         res.set('X-NeoRouter-Model', entry.id);
         res.set('X-NeoRouter-Trail', trail.map((item) => item.model).join(','));
+        if (redactedCount) res.set('X-NeoRouter-Redacted', String(redactedCount));
       }
       finish({
         status: 'success', http_status: 200, model_ref: entry.ref, model_label: entry.id, account_id: entry.accountId,

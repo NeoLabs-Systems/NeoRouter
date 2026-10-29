@@ -4,6 +4,7 @@ const express = require('express');
 const { z } = require('zod');
 const processing = require('../services/processing/processing_service');
 const { CATEGORIES } = require('../services/processing/redaction');
+const { categoryList } = require('../services/processing/shield/registry');
 const { LEVELS, ENGINES } = require('../services/processing/compression');
 const { getDatabase } = require('../db/database');
 const { validate } = require('../middleware/validate');
@@ -17,6 +18,7 @@ const settingsSchema = z.object({
     enabled: z.boolean(),
     modes: z.record(z.enum(['off', 'restore', 'hide'])).refine((modes) => Object.keys(modes).every((key) => CATEGORIES.includes(key)), 'Unknown category'),
     customTerms: z.array(z.string().trim().min(2).max(200)).max(500),
+    allowTerms: z.array(z.string().trim().min(2).max(200)).max(500).default([]),
     ai: z.object({ enabled: z.boolean(), model: z.string().min(1).max(300), freeOnly: z.boolean() }),
   }),
   compression: z.object({
@@ -31,6 +33,8 @@ const settingsSchema = z.object({
 router.get('/settings', requirePermission('processing.view'), (req, res) => res.json({
   settings: processing.getSettings(req.space.ownerId),
   categories: CATEGORIES,
+  // Categories only the AI pass can find (organizations).
+  aiOnlyCategories: categoryList.filter((category) => category.aiOnly).map((category) => category.id),
   levels: LEVELS,
   engines: ENGINES,
 }));
