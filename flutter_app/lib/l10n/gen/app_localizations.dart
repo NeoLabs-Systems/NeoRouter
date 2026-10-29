@@ -3121,6 +3121,18 @@ abstract class AppL10n {
   /// **'Create short videos from a description.'**
   String get capVideoHint;
 
+  /// No description provided for @capLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live voice'**
+  String get capLive;
+
+  /// No description provided for @capLiveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Talk in real time: the model listens and answers with its own voice.'**
+  String get capLiveHint;
+
   /// No description provided for @capModerationHint.
   ///
   /// In en, this message translates to:
@@ -5436,6 +5448,150 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'{actor} left {subject}\'s team'**
   String teamEventLeave(String actor, String subject);
+
+  /// No description provided for @connectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect {name}?'**
+  String connectTitle(String name);
+
+  /// No description provided for @connectSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} wants its own key for your NeoRouter. You choose what it may use and can disconnect it any time under API keys.'**
+  String connectSubtitle(String name);
+
+  /// No description provided for @connectSendsTo.
+  ///
+  /// In en, this message translates to:
+  /// **'The key goes to {host}'**
+  String connectSendsTo(String host);
+
+  /// No description provided for @connectInsecure.
+  ///
+  /// In en, this message translates to:
+  /// **'This address is not encrypted. Only continue if it is your own device or network.'**
+  String get connectInsecure;
+
+  /// No description provided for @connectDeviceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The app is waiting on another device and picks up the key by itself.'**
+  String get connectDeviceHint;
+
+  /// No description provided for @connectWantsToUse.
+  ///
+  /// In en, this message translates to:
+  /// **'It says it will use'**
+  String get connectWantsToUse;
+
+  /// No description provided for @connectInSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'The key is created in {name}.'**
+  String connectInSpace(String name);
+
+  /// No description provided for @connectApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get connectApprove;
+
+  /// No description provided for @connectDeny.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get connectDeny;
+
+  /// No description provided for @connectCodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect an app'**
+  String get connectCodeTitle;
+
+  /// No description provided for @connectCodeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code the app shows you.'**
+  String get connectCodeSubtitle;
+
+  /// No description provided for @connectCodeField.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get connectCodeField;
+
+  /// No description provided for @connectCodeContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get connectCodeContinue;
+
+  /// No description provided for @connectDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is connected'**
+  String connectDoneTitle(String name);
+
+  /// No description provided for @connectDoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You can go back to the app. To disconnect it later, revoke its key under API keys.'**
+  String get connectDoneBody;
+
+  /// No description provided for @connectDeniedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined'**
+  String get connectDeniedTitle;
+
+  /// No description provided for @connectDeniedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} did not get a key.'**
+  String connectDeniedBody(String name);
+
+  /// No description provided for @connectFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This connection did not work'**
+  String get connectFailedTitle;
+
+  /// No description provided for @connectOpenNeoRouter.
+  ///
+  /// In en, this message translates to:
+  /// **'Open NeoRouter'**
+  String get connectOpenNeoRouter;
+
+  /// No description provided for @connectNoPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'The team owner has not allowed you to create keys here. Switch to your own space to connect the app.'**
+  String get connectNoPermission;
+
+  /// No description provided for @connectedAppsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected apps'**
+  String get connectedAppsTitle;
+
+  /// No description provided for @connectedAppsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Apps that signed in with NeoRouter. Revoke one to disconnect it.'**
+  String get connectedAppsHint;
+
+  /// No description provided for @connectedVia.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected · {host}'**
+  String connectedVia(String host);
+
+  /// No description provided for @connectedApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected app'**
+  String get connectedApp;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

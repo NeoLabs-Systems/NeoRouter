@@ -54,6 +54,11 @@ class NeoRouterController extends ChangeNotifier {
   /// Team page after sign-in.
   String? pendingInvite;
 
+  /// An app asking to connect ("?connect=" plus the request id, empty to type a
+  /// code), answered on the connect screen after sign-in.
+  String? pendingConnect;
+  String? connectError;
+
   /// Result of a provider OAuth redirect (e.g. OpenRouter connect), read once
   /// from the URL the browser came back to: 'connected' or an error message.
   String? oauthStatus;
@@ -104,6 +109,7 @@ class NeoRouterController extends ChangeNotifier {
     _readOAuthResult();
     _readPageLink();
     _readInviteLink();
+    _readConnectLink();
     await refreshRegistration();
     bootstrapping = false;
     notifyListeners();
@@ -129,6 +135,18 @@ class NeoRouterController extends ChangeNotifier {
     if (invite == null || invite.isEmpty) return;
     pendingInvite = invite;
     if (user != null) _openInvite();
+  }
+
+  void _readConnectLink() {
+    final params = Uri.base.queryParameters;
+    pendingConnect = params['connect'] ?? (params['connect_error'] != null ? '' : null);
+    connectError = params['connect_error'];
+  }
+
+  void finishConnect() {
+    pendingConnect = null;
+    connectError = null;
+    notifyListeners();
   }
 
   void _openInvite() {

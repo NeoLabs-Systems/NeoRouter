@@ -875,6 +875,8 @@
   "capSearchHint": "Find current pages on the web, for you and as a tool for chat models.",
   "capTranscriptionHint": "Turn recordings into text and subtitles.",
   "capVideoHint": "Create short videos from a description.",
+  "capLive": "Live voice",
+  "capLiveHint": "Talk in real time: the model listens and answers with its own voice.",
   "capModerationHint": "Fast decision models such as Jev: they classify, check and decide in a split second instead of writing long answers.",
   "capOtherHint": "Specialised models such as translation or document parsing.",
   "capComingSoon": "NeoRouter already found {count} of these models in your connections and will route them in a coming update.",
@@ -1691,5 +1693,78 @@
         "type": "String"
       }
     }
-  }
+  },
+  "connectTitle": "Connect {name}?",
+  "@connectTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "connectSubtitle": "{name} wants its own key for your NeoRouter. You choose what it may use and can disconnect it any time under API keys.",
+  "@connectSubtitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "connectSendsTo": "The key goes to {host}",
+  "@connectSendsTo": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "connectInsecure": "This address is not encrypted. Only continue if it is your own device or network.",
+  "connectDeviceHint": "The app is waiting on another device and picks up the key by itself.",
+  "connectWantsToUse": "It says it will use",
+  "connectInSpace": "The key is created in {name}.",
+  "@connectInSpace": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "connectApprove": "Connect",
+  "connectDeny": "Decline",
+  "connectCodeTitle": "Connect an app",
+  "connectCodeSubtitle": "Enter the code the app shows you.",
+  "connectCodeField": "Code",
+  "connectCodeContinue": "Continue",
+  "connectDoneTitle": "{name} is connected",
+  "@connectDoneTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "connectDoneBody": "You can go back to the app. To disconnect it later, revoke its key under API keys.",
+  "connectDeniedTitle": "Declined",
+  "connectDeniedBody": "{name} did not get a key.",
+  "@connectDeniedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "connectFailedTitle": "This connection did not work",
+  "connectOpenNeoRouter": "Open NeoRouter",
+  "connectNoPermission": "The team owner has not allowed you to create keys here. Switch to your own space to connect the app.",
+  "connectedAppsTitle": "Connected apps",
+  "connectedAppsHint": "Apps that signed in with NeoRouter. Revoke one to disconnect it.",
+  "connectedVia": "Connected · {host}",
+  "@connectedVia": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "connectedApp": "Connected app"
 }

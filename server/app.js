@@ -52,6 +52,8 @@ function createApp() {
   app.use('/v1', gateway);
 
   app.use(compression());
+  // "Connect with NeoRouter": the OAuth endpoints apps talk to.
+  app.use(require('./routes/connect').router);
   // Playground audio uploads arrive as base64 JSON (25 MB of audio).
   app.use('/api/v1/playground/media', express.json({ limit: '36mb' }));
   app.use(express.json({ limit: '2mb' }));

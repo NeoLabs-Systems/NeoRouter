@@ -207,6 +207,23 @@ class RouterKey {
   bool get revoked => raw['revoked'] == true;
   String? get lastUsedAt => raw['lastUsedAt'] as String?;
   TeamUser? get createdBy => TeamUser.from(raw['createdBy']);
+  // Set when an app received the key through "Connect with NeoRouter".
+  String? get appName => (raw['app'] as Map?)?['name'] as String?;
+  String? get appOrigin => (raw['app'] as Map?)?['origin'] as String?;
+  bool get isConnectedApp => appName != null;
+}
+
+/// An app asking for a key ("Connect with NeoRouter").
+class ConnectRequest {
+  ConnectRequest(this.raw);
+  final Map<String, dynamic> raw;
+
+  String get id => raw['id'] as String;
+  String get name => raw['name'] as String;
+  bool get isDevice => raw['kind'] == 'device';
+  String? get host => (raw['redirect'] as Map?)?['host'] as String?;
+  bool get secure => (raw['redirect'] as Map?)?['secure'] != false;
+  List<String> get scopes => _strings(raw['scopes']);
 }
 
 class RoutingWeights {

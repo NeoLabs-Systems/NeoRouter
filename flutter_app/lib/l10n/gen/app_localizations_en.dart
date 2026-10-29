@@ -1678,6 +1678,13 @@ class AppL10nEn extends AppL10n {
   String get capVideoHint => 'Create short videos from a description.';
 
   @override
+  String get capLive => 'Live voice';
+
+  @override
+  String get capLiveHint =>
+      'Talk in real time: the model listens and answers with its own voice.';
+
+  @override
   String get capModerationHint =>
       'Fast decision models such as Jev: they classify, check and decide in a split second instead of writing long answers.';
 
@@ -3027,4 +3034,95 @@ class AppL10nEn extends AppL10n {
   String teamEventLeave(String actor, String subject) {
     return '$actor left $subject\'s team';
   }
+
+  @override
+  String connectTitle(String name) {
+    return 'Connect $name?';
+  }
+
+  @override
+  String connectSubtitle(String name) {
+    return '$name wants its own key for your NeoRouter. You choose what it may use and can disconnect it any time under API keys.';
+  }
+
+  @override
+  String connectSendsTo(String host) {
+    return 'The key goes to $host';
+  }
+
+  @override
+  String get connectInsecure =>
+      'This address is not encrypted. Only continue if it is your own device or network.';
+
+  @override
+  String get connectDeviceHint =>
+      'The app is waiting on another device and picks up the key by itself.';
+
+  @override
+  String get connectWantsToUse => 'It says it will use';
+
+  @override
+  String connectInSpace(String name) {
+    return 'The key is created in $name.';
+  }
+
+  @override
+  String get connectApprove => 'Connect';
+
+  @override
+  String get connectDeny => 'Decline';
+
+  @override
+  String get connectCodeTitle => 'Connect an app';
+
+  @override
+  String get connectCodeSubtitle => 'Enter the code the app shows you.';
+
+  @override
+  String get connectCodeField => 'Code';
+
+  @override
+  String get connectCodeContinue => 'Continue';
+
+  @override
+  String connectDoneTitle(String name) {
+    return '$name is connected';
+  }
+
+  @override
+  String get connectDoneBody =>
+      'You can go back to the app. To disconnect it later, revoke its key under API keys.';
+
+  @override
+  String get connectDeniedTitle => 'Declined';
+
+  @override
+  String connectDeniedBody(String name) {
+    return '$name did not get a key.';
+  }
+
+  @override
+  String get connectFailedTitle => 'This connection did not work';
+
+  @override
+  String get connectOpenNeoRouter => 'Open NeoRouter';
+
+  @override
+  String get connectNoPermission =>
+      'The team owner has not allowed you to create keys here. Switch to your own space to connect the app.';
+
+  @override
+  String get connectedAppsTitle => 'Connected apps';
+
+  @override
+  String get connectedAppsHint =>
+      'Apps that signed in with NeoRouter. Revoke one to disconnect it.';
+
+  @override
+  String connectedVia(String host) {
+    return 'Connected · $host';
+  }
+
+  @override
+  String get connectedApp => 'Connected app';
 }

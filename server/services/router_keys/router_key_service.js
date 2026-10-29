@@ -55,6 +55,8 @@ function publicKey(row) {
     lastUsedAt: row.last_used_at,
     createdAt: row.created_at,
     createdBy: teamMembers.publicUser(row.created_by_user_id),
+    // Set when an app received the key through "Connect with NeoRouter".
+    app: row.app_name ? { name: row.app_name, origin: row.app_origin, scopes: JSON.parse(row.app_scopes_json || '[]') } : null,
   };
 }
 
@@ -62,18 +64,21 @@ function assertProfile(userId, profile) {
   if (profile && !profiles.resolve(userId, profile)) throw new HttpError(400, 'UNKNOWN_PROFILE', 'This routing profile does not exist.');
 }
 
-function create(userId, input, createdBy = userId) {
+// `app` ({name, origin, scopes}) marks a key made for a connected app.
+function create(userId, input, createdBy = userId, app = null) {
   assertProfile(userId, input.profile);
   const id = crypto.randomUUID();
   const prefix = crypto.randomBytes(4).toString('hex');
   const secret = `${PREFIX}_${prefix}_${randomToken(32)}`;
   const allowed = kinds(input);
   getDatabase().prepare(`INSERT INTO router_keys
-    (id, user_id, name, prefix, key_hash, mode, budget_usd, budget_period, rpm_limit, allowed_models_json, profile, expires_at, created_by_user_id, allow_free, allow_plan)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    (id, user_id, name, prefix, key_hash, mode, budget_usd, budget_period, rpm_limit, allowed_models_json, profile, expires_at, created_by_user_id, allow_free, allow_plan,
+      app_name, app_origin, app_scopes_json)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run(id, userId, input.name, prefix, sha256(secret), allowed.mode, input.budgetUsd ?? null,
       input.budgetPeriod || 'total', input.rpmLimit ?? null, JSON.stringify(input.allowedModels || []),
-      input.profile || 'balanced', input.expiresAt || null, createdBy, allowed.allowFree, allowed.allowPlan);
+      input.profile || 'balanced', input.expiresAt || null, createdBy, allowed.allowFree, allowed.allowPlan,
+      app?.name ?? null, app?.origin ?? null, app ? JSON.stringify(app.scopes || []) : null);
   return { key: get(userId, id), secret };
 }
 
@@ -147,4 +152,4 @@ function consumeRpm(key, now = Date.now()) {
   return { allowed: true };
 }
 
-module.exports = { create, list, get, getRow, update, revoke, remove, authenticate, consumeRpm, publicKey, PREFIX };
+module.exports = { create, list, get, getRow, update, revoke, remove, authenticate, consumeRpm, publicKey, kinds, PREFIX };

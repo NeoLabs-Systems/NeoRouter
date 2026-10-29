@@ -1695,6 +1695,13 @@ class AppL10nDe extends AppL10n {
   String get capVideoHint => 'Erstellen kurze Videos aus einer Beschreibung.';
 
   @override
+  String get capLive => 'Live-Sprache';
+
+  @override
+  String get capLiveHint =>
+      'Sprich in Echtzeit: Das Modell hört zu und antwortet mit eigener Stimme.';
+
+  @override
   String get capModerationHint =>
       'Schnelle Entscheidungsmodelle wie Jev: Sie klassifizieren, prüfen und entscheiden in Sekundenbruchteilen, statt lange Antworten zu schreiben.';
 
@@ -3049,4 +3056,96 @@ class AppL10nDe extends AppL10n {
   String teamEventLeave(String actor, String subject) {
     return '$actor hat das Team von $subject verlassen';
   }
+
+  @override
+  String connectTitle(String name) {
+    return '$name verbinden?';
+  }
+
+  @override
+  String connectSubtitle(String name) {
+    return '$name möchte einen eigenen Key für deinen NeoRouter. Du bestimmst, was die App nutzen darf, und kannst sie jederzeit unter API-Keys trennen.';
+  }
+
+  @override
+  String connectSendsTo(String host) {
+    return 'Der Key geht an $host';
+  }
+
+  @override
+  String get connectInsecure =>
+      'Diese Adresse ist nicht verschlüsselt. Fahre nur fort, wenn es dein eigenes Gerät oder Netzwerk ist.';
+
+  @override
+  String get connectDeviceHint =>
+      'Die App wartet auf einem anderen Gerät und holt sich den Key selbst ab.';
+
+  @override
+  String get connectWantsToUse => 'Die App möchte nutzen';
+
+  @override
+  String connectInSpace(String name) {
+    return 'Der Key wird in $name erstellt.';
+  }
+
+  @override
+  String get connectApprove => 'Verbinden';
+
+  @override
+  String get connectDeny => 'Ablehnen';
+
+  @override
+  String get connectCodeTitle => 'App verbinden';
+
+  @override
+  String get connectCodeSubtitle =>
+      'Gib den Code ein, den die App dir anzeigt.';
+
+  @override
+  String get connectCodeField => 'Code';
+
+  @override
+  String get connectCodeContinue => 'Weiter';
+
+  @override
+  String connectDoneTitle(String name) {
+    return '$name ist verbunden';
+  }
+
+  @override
+  String get connectDoneBody =>
+      'Du kannst zur App zurückkehren. Um sie später zu trennen, widerrufe ihren Key unter API-Keys.';
+
+  @override
+  String get connectDeniedTitle => 'Abgelehnt';
+
+  @override
+  String connectDeniedBody(String name) {
+    return '$name hat keinen Key bekommen.';
+  }
+
+  @override
+  String get connectFailedTitle => 'Diese Verbindung hat nicht geklappt';
+
+  @override
+  String get connectOpenNeoRouter => 'NeoRouter öffnen';
+
+  @override
+  String get connectNoPermission =>
+      'Der Team-Inhaber erlaubt dir hier keine Keys. Wechsle in deinen eigenen Bereich, um die App zu verbinden.';
+
+  @override
+  String get connectedAppsTitle => 'Verbundene Apps';
+
+  @override
+  String get connectedAppsHint =>
+      'Apps, die sich mit NeoRouter angemeldet haben. Widerrufe eine, um sie zu trennen.';
+
+  @override
+  String connectedVia(String host) {
+    return 'Verbunden · $host';
+  }
+
+  @override
+  String get connectedApp => 'Verbundene App';
 }

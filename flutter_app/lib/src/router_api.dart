@@ -88,6 +88,11 @@ class RouterApi {
 
   Future<RouterKey> updateKey(String id, Map<String, Object?> body) async =>
       RouterKey(Map<String, dynamic>.from((await client.patch('$_base/keys/$id', body))['key'] as Map));
+  Future<ConnectRequest> connectRequest(String reference) async =>
+      ConnectRequest(Map<String, dynamic>.from((await client.get('$_base/oauth/apps/requests/${Uri.encodeComponent(reference)}'))['request'] as Map));
+  /// Returns where the browser goes next, or null when the app polls (device flow).
+  Future<String?> answerConnect(String id, {required bool approve, Map<String, Object?>? access}) async =>
+      (await client.post('$_base/oauth/apps/requests/$id/${approve ? 'approve' : 'deny'}', access ?? <String, Object?>{}))['redirect'] as String?;
   Future<void> revokeKey(String id) => client.post('$_base/keys/$id/revoke');
   Future<void> deleteKey(String id) => client.delete('$_base/keys/$id');
 

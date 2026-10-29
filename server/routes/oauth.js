@@ -22,4 +22,7 @@ router.post('/openrouter/start', requireSession, resolveSpace, requirePermission
   res.json(openrouter.start({ userId: req.space.ownerId, createdBy: req.space.actorId, origin, requestHost: req.get('host'), returnTo: req.body.returnTo }));
 });
 
+// Approving an app that asked to connect needs the right to create keys.
+router.use('/apps', requireSession, resolveSpace, requirePermission('keys.create'), require('./connect').approval);
+
 module.exports = router;

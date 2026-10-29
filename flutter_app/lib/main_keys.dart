@@ -124,7 +124,8 @@ class _KeysScreenState extends State<KeysScreen> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    final active = _keys.where((key) => !key.revoked).toList();
+    final active = _keys.where((key) => !key.revoked && !key.isConnectedApp).toList();
+    final apps = _keys.where((key) => !key.revoked && key.isConnectedApp).toList();
     final revoked = _keys.where((key) => key.revoked).toList();
     final controller = widget.controller;
     final canCreate = controller.can('keys.create');
@@ -156,7 +157,15 @@ class _KeysScreenState extends State<KeysScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              if (active.isEmpty)
+              if (apps.isNotEmpty) ...<Widget>[
+                SettingsHeading(title: t.connectedAppsTitle, description: t.connectedAppsHint),
+                SettingsCardList(children: <Widget>[for (final key in apps) row(key)]),
+                const SizedBox(height: AppSpacing.lg),
+                if (active.isNotEmpty) SettingsHeading(title: t.keysTitle),
+              ],
+              if (active.isEmpty && apps.isNotEmpty)
+                const SizedBox.shrink()
+              else if (active.isEmpty)
                 AppCard(
                   child: EmptyState(
                     icon: Icons.key_outlined,
@@ -215,7 +224,10 @@ class _KeyRow extends StatelessWidget {
     final key = routerKey;
     final budget = key.budgetUsd;
     final used = key.lastUsedAt == null ? t.keyNeverUsed : t.keyUsed(formatAgo(t, DateTime.parse(key.lastUsedAt!).toLocal()));
-    final subtitle = <String>[if (key.revoked) t.revoked else keyKindsLabel(t, key), used, if (showCreator) createdByLabel(t, key.createdBy)].join(' · ');
+    final subtitle = <String>[
+      if (key.revoked) t.revoked else keyKindsLabel(t, key),
+      if (key.isConnectedApp) key.appOrigin == null ? t.connectedApp : t.connectedVia(key.appOrigin!),
+      used, if (showCreator) createdByLabel(t, key.createdBy)].join(' · ');
     final actions = <PopupMenuEntry<String>>[
       if (!key.revoked && canEdit) PopupMenuItem<String>(value: 'edit', child: Text(t.edit)),
       if (!key.revoked && canEdit) PopupMenuItem<String>(value: 'revoke', child: Text(t.revoke)),
@@ -234,7 +246,7 @@ class _KeyRow extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(color: palette.surfaceRaised, borderRadius: BorderRadius.circular(10)),
-            child: Icon(Icons.key_outlined, size: 18, color: palette.textSoft),
+            child: Icon(key.isConnectedApp ? Icons.apps_rounded : Icons.key_outlined, size: 18, color: palette.textSoft),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -377,8 +389,6 @@ class _KeyFormState extends State<_KeyForm> {
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    final palette = neoRouterPaletteOf(context);
-    final label = TextStyle(fontWeight: FontWeight.w600, color: palette.text);
     return AlertDialog(
       title: Text(widget.existing == null ? t.createKey : t.editKey),
       content: SizedBox(
@@ -394,45 +404,17 @@ class _KeyFormState extends State<_KeyForm> {
                 decoration: InputDecoration(labelText: t.keyName, hintText: t.keyNameHint),
               ),
               const SizedBox(height: AppSpacing.lg),
-              Text(t.keyAccessTitle, style: label),
-              const SizedBox(height: AppSpacing.xs),
-              _KindCheck(title: t.kindFree, description: t.kindFreeHint, value: _free, onChanged: (value) => setState(() => _free = value)),
-              _KindCheck(title: t.kindPlan, description: t.kindPlanHint, value: _plan, onChanged: (value) => setState(() => _plan = value)),
-              _KindCheck(title: t.kindPaid, description: t.kindPaidHint, value: _paid, onChanged: (value) => setState(() => _paid = value)),
-              if (_paid) ...<Widget>[
-                const SizedBox(height: AppSpacing.md),
-                Text(t.keyBudgetTitle, style: label),
-                const SizedBox(height: AppSpacing.xs),
-                Row(
-                  children: <Widget>[
-                    SizedBox(
-                      width: 140,
-                      child: TextField(
-                        controller: _budget,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(prefixText: r'$ ', isDense: true),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text(t.spendingLimitPer, style: TextStyle(color: neoRouterPaletteOf(context).textSoft)),
-                    const SizedBox(width: AppSpacing.sm),
-                    DropdownButton<String>(
-                      value: _period,
-                      onChanged: (value) => setState(() => _period = value ?? _period),
-                      items: <DropdownMenuItem<String>>[
-                        DropdownMenuItem<String>(value: 'daily', child: Text(t.periodDaily)),
-                        DropdownMenuItem<String>(value: 'monthly', child: Text(t.periodMonthly)),
-                        DropdownMenuItem<String>(value: 'total', child: Text(t.periodTotal)),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  _free || _plan ? t.budgetFallsBack : t.budgetStops,
-                  style: TextStyle(fontSize: 12, color: neoRouterPaletteOf(context).textMuted, height: 1.4),
-                ),
-              ],
+              KeyAccessFields(
+                free: _free,
+                plan: _plan,
+                paid: _paid,
+                budget: _budget,
+                period: _period,
+                onFree: (value) => setState(() => _free = value),
+                onPlan: (value) => setState(() => _plan = value),
+                onPaid: (value) => setState(() => _paid = value),
+                onPeriod: (value) => setState(() => _period = value),
+              ),
               const SizedBox(height: AppSpacing.sm),
               Align(
                 alignment: Alignment.centerLeft,
@@ -487,6 +469,84 @@ String? _paceText(AppL10n t, RouterKey key) => switch (key.paceState) {
   'over' => t.paceOver,
   _ => null,
 };
+
+/// What a key may use: the three kinds of models and, for paid models, the
+/// spending limit. Shared by the key form and the connect-an-app screen.
+class KeyAccessFields extends StatelessWidget {
+  const KeyAccessFields({
+    super.key,
+    required this.free,
+    required this.plan,
+    required this.paid,
+    required this.budget,
+    required this.period,
+    required this.onFree,
+    required this.onPlan,
+    required this.onPaid,
+    required this.onPeriod,
+  });
+
+  final bool free;
+  final bool plan;
+  final bool paid;
+  final TextEditingController budget;
+  final String period;
+  final ValueChanged<bool> onFree;
+  final ValueChanged<bool> onPlan;
+  final ValueChanged<bool> onPaid;
+  final ValueChanged<String> onPeriod;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final label = TextStyle(fontWeight: FontWeight.w600, color: palette.text);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(t.keyAccessTitle, style: label),
+        const SizedBox(height: AppSpacing.xs),
+        _KindCheck(title: t.kindFree, description: t.kindFreeHint, value: free, onChanged: onFree),
+        _KindCheck(title: t.kindPlan, description: t.kindPlanHint, value: plan, onChanged: onPlan),
+        _KindCheck(title: t.kindPaid, description: t.kindPaidHint, value: paid, onChanged: onPaid),
+        if (paid) ...<Widget>[
+          const SizedBox(height: AppSpacing.md),
+          Text(t.keyBudgetTitle, style: label),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: <Widget>[
+              SizedBox(
+                width: 140,
+                child: TextField(
+                  controller: budget,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(prefixText: r'$ ', isDense: true),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(t.spendingLimitPer, style: TextStyle(color: palette.textSoft)),
+              const SizedBox(width: AppSpacing.sm),
+              DropdownButton<String>(
+                value: period,
+                onChanged: (value) => onPeriod(value ?? period),
+                items: <DropdownMenuItem<String>>[
+                  DropdownMenuItem<String>(value: 'daily', child: Text(t.periodDaily)),
+                  DropdownMenuItem<String>(value: 'monthly', child: Text(t.periodMonthly)),
+                  DropdownMenuItem<String>(value: 'total', child: Text(t.periodTotal)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            free || plan ? t.budgetFallsBack : t.budgetStops,
+            style: TextStyle(fontSize: 12, color: palette.textMuted, height: 1.4),
+          ),
+        ],
+      ],
+    );
+  }
+}
 
 /// One kind of model a key may use: a checkbox card.
 class _KindCheck extends StatelessWidget {

@@ -24,6 +24,7 @@ class CapabilityInfo {
     'transcription' => t.capTranscription,
     'video' => t.capVideo,
     'moderation' => t.capModeration,
+    'live' => t.capLive,
     'router' => t.capRouter,
     _ => t.capOther,
   };
@@ -39,6 +40,7 @@ class CapabilityInfo {
     'transcription' => t.capTranscriptionHint,
     'video' => t.capVideoHint,
     'moderation' => t.capModerationHint,
+    'live' => t.capLiveHint,
     'router' => t.capRouterHint,
     _ => t.capOtherHint,
   };
@@ -55,6 +57,7 @@ const List<CapabilityInfo> kCapabilities = <CapabilityInfo>[
   CapabilityInfo('video', Icons.movie_outlined),
   CapabilityInfo('search', Icons.travel_explore_outlined),
   CapabilityInfo('moderation', Icons.bolt_outlined),
+  CapabilityInfo('live', Icons.settings_voice_outlined),
   CapabilityInfo('router', Icons.alt_route_outlined),
   CapabilityInfo('other', Icons.category_outlined),
 ];
