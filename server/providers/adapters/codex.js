@@ -166,7 +166,7 @@ class CodexAdapter extends BaseAdapter {
   }
 
   async listModels() {
-    const { data } = await request(`${this.baseUrl}/models?client_version=${encodeURIComponent(oauth.CLIENT_VERSION)}`, { headers: await this.codexHeaders(), timeoutMs: 30_000 });
+    const { data } = await request(`${this.baseUrl}/models?client_version=${encodeURIComponent(await oauth.clientVersion())}`, { headers: await this.codexHeaders(), timeoutMs: 30_000 });
     const models = (data?.models || []).filter((model) => model.slug && (model.visibility === undefined || model.visibility === 'list'));
     return models.map((model) => normalizeModel({ id: model.slug, name: model.display_name || model.slug, context_length: model.context_window || null }, { tools: true, vision: true, reasoning: true }));
   }

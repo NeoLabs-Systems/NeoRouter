@@ -4,7 +4,7 @@ module.exports = {
   id: 'deepgram',
   label: 'Deepgram',
   description: 'Nova speech-to-text and Aura voices.',
-  category: 'free',
+  category: 'paid',
   website: 'https://deepgram.com',
   keyUrl: 'https://console.deepgram.com/project/default/keys',
   adapter: 'deepgram',
@@ -19,10 +19,10 @@ module.exports = {
       { id: 'aura-2', name: 'Aura-2', kind: 'speech', price_per_mchar: 30 },
     ],
   },
+  // A one-time 200 USD trial credit, then pay per use with a card: no free tier.
   billing: {
-    defaultMode: 'free_tier',
-    freeTierAll: true,
-    note: 'New projects get 200 USD of free credit without a card; when it is used up requests fail. With a card on file, usage beyond it is billed: choose paid for such keys.',
+    defaultMode: 'paid',
+    note: 'New projects get a one-time 200 USD trial credit; after that, usage is billed per minute and per character.',
     source: 'https://deepgram.com/pricing',
     checkedAt: '2026-10-29',
   },

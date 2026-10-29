@@ -507,8 +507,6 @@ class _ProviderFormState extends State<_ProviderForm> {
   }
 
   bool get _signInOnly => widget.definition.connect == 'codex_device';
-  // Claude Code signs in on the server itself; there is no key to paste.
-  bool get _claudeCli => widget.definition.connect == 'claude_cli';
 
   Future<void> _startChatgptSignIn() async {
     final t = AppL10n.of(context);
@@ -771,7 +769,6 @@ class _ProviderFormState extends State<_ProviderForm> {
                     ),
                   ),
               ],
-              if (_claudeCli) ...<Widget>[const SizedBox(height: AppSpacing.md), InlineHint(message: t.claudeCliSteps, icon: Icons.terminal_rounded)],
               if (!_signInOnly) ...<Widget>[
                 const SizedBox(height: AppSpacing.md),
                 TextField(
@@ -779,9 +776,7 @@ class _ProviderFormState extends State<_ProviderForm> {
                   obscureText: true,
                   autofocus: !_editing && definition.id != 'openrouter',
                   decoration: InputDecoration(
-                    labelText: _claudeCli && !_editing
-                        ? t.claudeToken
-                        : _editing
+                    labelText: _editing
                         ? t.apiKeyKeep
                         : definition.keyOptional
                         ? t.apiKeyOptional
@@ -909,13 +904,7 @@ class _ProviderFormState extends State<_ProviderForm> {
             onPressed: _saving ? null : _submit,
             child: _saving
                 ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                : Text(
-                    _editing
-                        ? t.save
-                        : _claudeCli
-                        ? t.claudeCliConnect
-                        : t.checkAndAdd,
-                  ),
+                : Text(_editing ? t.save : t.checkAndAdd),
           ),
       ],
     );

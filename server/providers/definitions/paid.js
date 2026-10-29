@@ -24,13 +24,7 @@ module.exports = [
     keyUrl: 'https://console.anthropic.com/settings/keys',
     adapter: 'anthropic',
     baseUrl: 'https://api.anthropic.com/v1',
-    billing: {
-      defaultMode: 'paid',
-      // Claude subscriptions cannot be used from other tools (Anthropic blocks
-      // subscription sign-ins outside Claude Code); API credits that come with
-      // a plan can, through a normal Console key.
-      plan: { note: 'For monthly API credits that come with a Claude plan: use a Console API key from the linked organization. A Claude Pro/Max sign-in itself only works in Claude Code.' },
-    },
+    billing: { defaultMode: 'paid' },
   },
   {
     id: 'xai',

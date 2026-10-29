@@ -33,12 +33,28 @@ function mediaKey(text) {
   return tokens.filter((token, index) => token !== tokens[index - 1]).join('-');
 }
 
+// Arena names often carry both names: "Nano Banana 2 (Gemini 3.1 Flash
+// Image)" or "Gemini 2.5 Flash TTS (Dec 2025)". Each part is a key of its own.
+function namesOf(record) {
+  const name = String(record.name || '');
+  const inner = /\(([^)]*)\)/.exec(name)?.[1] || '';
+  return [record.slug, name, name.replace(/\([^)]*\)/g, ' '), /\d{4}/.test(inner) ? '' : inner];
+}
+
 function buildIndex(records = []) {
   const map = new Map();
   for (const record of records) {
-    for (const key of [mediaKey(record.slug), mediaKey(record.name)]) if (key && !map.has(key)) map.set(key, record);
+    for (const key of namesOf(record).map(mediaKey)) if (key && !map.has(key)) map.set(key, record);
   }
   return map;
+}
+
+// Provider ids to try for a model, most specific first.
+function candidates(kind, id) {
+  const base = String(id).split('/').pop();
+  const variants = [id, base, base.replace(/^gemini-(?=nano-)/, '')];
+  if (kind === 'speech') variants.push(base.replace(/-tts(-preview)?$|-preview-tts$/, ''));
+  return [...new Set(variants)];
 }
 
 // Arena ELO → 0..1 within that arena (the best model is 1, the weakest 0.2).
@@ -46,7 +62,7 @@ function lookup(indexByKind, kind, modelIds) {
   const index = indexByKind?.[kind];
   if (!index?.map?.size) return null;
   for (const id of modelIds) {
-    for (const text of [id, String(id).split('/').pop()]) {
+    for (const text of candidates(kind, id)) {
       const record = index.map.get(mediaKey(text));
       if (record) return { ...record, score: 0.2 + 0.8 * ((record.elo - index.min) / Math.max(1, index.max - index.min)) };
     }

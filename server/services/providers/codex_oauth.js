@@ -17,8 +17,26 @@ const DEVICE_REDIRECT = `${ISSUER}/deviceauth/callback`;
 const ACCOUNT_CLAIM = 'https://api.openai.com/auth';
 const REFRESH_MARGIN_MS = 5 * 60_000;
 const DEVICE_CODE_TTL_MS = 15 * 60_000;
-// Sent as client_version when listing models; recent enough to see current models.
-const CLIENT_VERSION = '0.120.0';
+// The models list depends on the Codex version a client reports (an old one
+// sees almost nothing), so the current Codex release is used, checked daily.
+const FALLBACK_CLIENT_VERSION = '0.165.0';
+const VERSION_TTL_MS = 24 * 60 * 60_000;
+let clientVersionCache = null;
+
+async function clientVersion() {
+  if (clientVersionCache && Date.now() - clientVersionCache.at < VERSION_TTL_MS) return clientVersionCache.value;
+  let value = FALLBACK_CLIENT_VERSION;
+  try {
+    const response = await fetch('https://api.github.com/repos/openai/codex/releases/latest', { headers: { Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(10_000) });
+    const tag = response.ok ? (await response.json())?.tag_name : null;
+    const match = /(\d+\.\d+\.\d+)/.exec(String(tag || ''));
+    if (match) value = match[1];
+  } catch {
+    // Offline or rate-limited: the fallback is recent enough.
+  }
+  clientVersionCache = { at: Date.now(), value };
+  return value;
+}
 
 const pendingLogins = new Map();
 const refreshing = new Map();
@@ -134,4 +152,4 @@ async function freshCredentials(account) {
   return refreshing.get(key);
 }
 
-module.exports = { startDeviceLogin, pollDeviceLogin, freshCredentials, parseSecret, accountIdOf, CLIENT_ID, CLIENT_VERSION, VERIFICATION_URL };
+module.exports = { startDeviceLogin, pollDeviceLogin, freshCredentials, parseSecret, accountIdOf, clientVersion, CLIENT_ID, VERIFICATION_URL };

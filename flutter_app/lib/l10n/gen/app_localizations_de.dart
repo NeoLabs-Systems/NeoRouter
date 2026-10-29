@@ -442,16 +442,6 @@ class AppL10nDe extends AppL10n {
   String get chatgptConnected => 'ChatGPT verbunden';
 
   @override
-  String get claudeCliSteps =>
-      'Führe auf einem beliebigen Rechner mit Claude Code `claude setup-token` aus, melde dich mit deinem Claude-Konto an und füge den Token hier ein. Er bleibt nur für diese Verbindung.';
-
-  @override
-  String get claudeToken => 'Claude-Code-Token';
-
-  @override
-  String get claudeCliConnect => 'Claude verbinden';
-
-  @override
   String get apiKey => 'API-Key';
 
   @override

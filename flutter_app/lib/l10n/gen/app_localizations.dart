@@ -901,24 +901,6 @@ abstract class AppL10n {
   /// **'ChatGPT connected'**
   String get chatgptConnected;
 
-  /// No description provided for @claudeCliSteps.
-  ///
-  /// In en, this message translates to:
-  /// **'On any computer with Claude Code, run `claude setup-token`, sign in with your Claude account and paste the token here. It stays private to this connection.'**
-  String get claudeCliSteps;
-
-  /// No description provided for @claudeToken.
-  ///
-  /// In en, this message translates to:
-  /// **'Claude Code token'**
-  String get claudeToken;
-
-  /// No description provided for @claudeCliConnect.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect Claude'**
-  String get claudeCliConnect;
-
   /// No description provided for @apiKey.
   ///
   /// In en, this message translates to:

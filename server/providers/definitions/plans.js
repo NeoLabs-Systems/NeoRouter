@@ -46,34 +46,6 @@ module.exports = [
     quirks: { timeoutMs: 300000 },
   },
   {
-    id: 'claude_code',
-    label: 'Claude',
-    description: 'Your Claude plan (Pro, Max) through the official Claude Code program.',
-    category: 'plan',
-    website: 'https://code.claude.com',
-    adapter: 'claude_cli',
-    connect: 'claude_cli',
-    keyUrl: 'https://code.claude.com/docs/en/authentication#generate-a-long-lived-token',
-    models: {
-      static: [
-        { id: 'claude-opus-5-5', name: 'Claude Opus 5.5' },
-        { id: 'claude-sonnet-5-5', name: 'Claude Sonnet 5.5' },
-        { id: 'claude-haiku-5-5', name: 'Claude Haiku 5.5' },
-        { id: 'claude-fable-5-1', name: 'Claude Fable 5.1' },
-      ],
-    },
-    billing: {
-      defaultMode: 'plan',
-      plan: { note: 'Uses your Claude plan limits. Claude Code says when a window is used up, and NeoRouter waits until it resets.' },
-      note: 'The token from `claude setup-token` is stored encrypted for this connection only and handed to the official Claude Code program on the server, nothing else. Chat only, without tools or images. Meant for your own plan, not shared between people.',
-      source: 'https://code.claude.com/docs/en/legal-and-compliance',
-      checkedAt: '2026-10-29',
-    },
-    // Every request starts a Claude Code process.
-    limits: { pool: 'account', account: { concurrent: 3 } },
-    quirks: { timeoutMs: 300000, noTools: true },
-  },
-  {
     id: 'synthetic',
     label: 'Synthetic',
     description: 'Open models on a flat subscription, for any OpenAI-compatible tool.',

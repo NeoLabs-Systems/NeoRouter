@@ -71,7 +71,11 @@ function createApp() {
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     revalidate(res);
-    return res.sendFile(path.join(appWebRoot, 'index.html'), (error) => next(error));
+    // The callback also runs after a successful send; only a failure before
+    // anything was sent may go on to the error handler.
+    return res.sendFile(path.join(appWebRoot, 'index.html'), (error) => {
+      if (error && !res.headersSent) next(error);
+    });
   });
 
   app.use('/', express.static(LANDING_DIR, { extensions: ['html'], setHeaders: revalidate }));

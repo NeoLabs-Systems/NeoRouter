@@ -440,16 +440,6 @@ class AppL10nEn extends AppL10n {
   String get chatgptConnected => 'ChatGPT connected';
 
   @override
-  String get claudeCliSteps =>
-      'On any computer with Claude Code, run `claude setup-token`, sign in with your Claude account and paste the token here. It stays private to this connection.';
-
-  @override
-  String get claudeToken => 'Claude Code token';
-
-  @override
-  String get claudeCliConnect => 'Connect Claude';
-
-  @override
   String get apiKey => 'API key';
 
   @override

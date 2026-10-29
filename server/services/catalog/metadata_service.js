@@ -13,6 +13,7 @@ const modelsDev = require('./metadata/models_dev');
 const openrouterPublic = require('./metadata/openrouter_public');
 const artificialAnalysis = require('./metadata/artificial_analysis');
 const artificialAnalysisMedia = require('./metadata/artificial_analysis_media');
+const mteb = require('./metadata/mteb');
 
 const logger = createLogger('metadata');
 const AA_SETTING = 'artificial_analysis_key';
@@ -43,7 +44,7 @@ function loadState() {
   try {
     state = JSON.parse(fs.readFileSync(cacheFile(), 'utf8'));
   } catch {
-    state = { modelsDev: {}, openrouter: [], artificialAnalysis: [], artificialAnalysisMedia: {}, fetchedAt: {} };
+    state = { modelsDev: {}, openrouter: [], artificialAnalysis: [], artificialAnalysisMedia: {}, mteb: {}, fetchedAt: {} };
   }
   buildIndexes();
   return state;
@@ -63,6 +64,103 @@ function addToIndex(map, key, record) {
   map.get(key).push(record);
 }
 
+// Models without the combined index: each benchmark score is translated to
+// the index by a monotone mapping learned on the models that have both
+// (isotonic fit, interpolated; below the known range it scales down in
+// proportion instead of extrapolating a line into nonsense). A model's
+// estimate is the average over its benchmarks, weighted by how well each
+// benchmark's ranking agrees with the index (Spearman ρ²). At least
+// MIN_DERIVED_BENCHMARKS are required.
+const MIN_DERIVED_BENCHMARKS = 2;
+const MIN_RANK_AGREEMENT = 0.3;
+const MIN_FIT_PAIRS = 8;
+
+function ranks(values) {
+  const order = values.map((value, index) => [value, index]).sort((a, b) => a[0] - b[0]);
+  const result = new Array(values.length);
+  for (let i = 0; i < order.length;) {
+    let j = i;
+    while (j + 1 < order.length && order[j + 1][0] === order[i][0]) j += 1;
+    for (let k = i; k <= j; k += 1) result[order[k][1]] = (i + j) / 2;
+    i = j + 1;
+  }
+  return result;
+}
+
+function spearman(pairs) {
+  const rx = ranks(pairs.map(([x]) => x));
+  const ry = ranks(pairs.map(([, y]) => y));
+  const n = pairs.length;
+  const mean = (n - 1) / 2;
+  let sxy = 0;
+  let sxx = 0;
+  let syy = 0;
+  for (let i = 0; i < n; i += 1) {
+    sxy += (rx[i] - mean) * (ry[i] - mean);
+    sxx += (rx[i] - mean) ** 2;
+    syy += (ry[i] - mean) ** 2;
+  }
+  return sxx && syy ? sxy / Math.sqrt(sxx * syy) : 0;
+}
+
+// Pool-adjacent-violators: the best non-decreasing fit of y over sorted x.
+function isotonic(pairs) {
+  const sorted = [...pairs].sort((a, b) => a[0] - b[0]);
+  const blocks = [];
+  for (const [x, y] of sorted) {
+    blocks.push({ x: [x], sum: y, count: 1 });
+    while (blocks.length > 1 && blocks[blocks.length - 2].sum / blocks[blocks.length - 2].count > blocks[blocks.length - 1].sum / blocks[blocks.length - 1].count) {
+      const last = blocks.pop();
+      const previous = blocks[blocks.length - 1];
+      previous.x.push(...last.x);
+      previous.sum += last.sum;
+      previous.count += last.count;
+    }
+  }
+  return blocks.map((block) => [block.x.reduce((a, b) => a + b, 0) / block.x.length, block.sum / block.count]);
+}
+
+function mapScore(curve, x) {
+  const [x0, y0] = curve[0];
+  const [xn, yn] = curve[curve.length - 1];
+  if (x <= x0) return x0 > 0 ? y0 * Math.max(0, x / x0) : y0;
+  if (x >= xn) return yn;
+  for (let i = 1; i < curve.length; i += 1) {
+    const [xa, ya] = curve[i - 1];
+    const [xb, yb] = curve[i];
+    if (x <= xb) return xb === xa ? yb : ya + ((x - xa) / (xb - xa)) * (yb - ya);
+  }
+  return yn;
+}
+
+function deriveIndexes(records) {
+  const indexed = records.filter((record) => record.intelligenceIndex && !record.indexDerived && record.benchmarks);
+  const fits = {};
+  for (const name of artificialAnalysis.BENCHMARKS) {
+    const pairs = indexed.filter((record) => Number.isFinite(record.benchmarks[name])).map((record) => [record.benchmarks[name], record.intelligenceIndex]);
+    if (pairs.length < MIN_FIT_PAIRS) continue;
+    const rho = spearman(pairs);
+    if (rho * rho >= MIN_RANK_AGREEMENT && rho > 0) fits[name] = { curve: isotonic(pairs), weight: rho * rho };
+  }
+  for (const record of records) {
+    if (record.intelligenceIndex || !record.benchmarks) continue;
+    let weight = 0;
+    let total = 0;
+    let used = 0;
+    for (const [name, fit] of Object.entries(fits)) {
+      const value = record.benchmarks[name];
+      if (!Number.isFinite(value)) continue;
+      total += fit.weight * mapScore(fit.curve, value);
+      weight += fit.weight;
+      used += 1;
+    }
+    if (used >= MIN_DERIVED_BENCHMARKS && weight > 0) {
+      record.intelligenceIndex = Math.max(1, total / weight);
+      record.indexDerived = true;
+    }
+  }
+}
+
 function buildIndexes() {
   const byCanonical = new Map();
   for (const [providerId, models] of Object.entries(state.modelsDev || {})) {
@@ -71,11 +169,12 @@ function buildIndexes() {
     }
   }
   for (const record of state.openrouter || []) addToIndex(byCanonical, canonicalId(record.id), { source: 'openrouter', ...record });
+  const aaMax = Math.max(0, ...(state.artificialAnalysis || []).filter((record) => !record.indexDerived).map((record) => record.intelligenceIndex || 0));
+  deriveIndexes(state.artificialAnalysis || []);
   const aa = new Map();
   for (const record of state.artificialAnalysis || []) {
     for (const key of [canonicalId(record.slug), canonicalId(record.name)]) if (key && !aa.has(key)) aa.set(key, record);
   }
-  const aaMax = Math.max(0, ...(state.artificialAnalysis || []).map((record) => record.intelligenceIndex || 0));
   indexes = { byCanonical, aa, aaScale: aaMax > 0 ? aaMax : AA_INDEX_SCALE, calibration: null, benchmark: buildBenchmarkKeys(state.artificialAnalysis || []), media: artificialAnalysisMedia.buildIndexes(state.artificialAnalysisMedia) };
   indexes.calibration = fitCalibration();
 }
@@ -92,6 +191,7 @@ const PARAM_TOKEN = /^([ae]?\d+(\.\d+)?b|\d+x\d+b)$/;
 
 function benchmarkKeys(text) {
   const tokens = String(text || '').toLowerCase()
+    .replace(/non-reasoning/g, 'nonreasoning')
     .replace(/\([^)]*\)/g, ' ')
     .replace(/:(free|beta|thinking|extended|nitro)$/, '')
     .split(/[\s./:_-]+/)
@@ -105,7 +205,7 @@ function buildBenchmarkKeys(records) {
   const exact = new Map();
   const loose = new Map();
   // Records without an effort suffix are the provider default; index them first.
-  const ordered = [...records].sort((a, b) => Number(/-(xhigh|high|medium|low|minimal)$/.test(a.slug || '')) - Number(/-(xhigh|high|medium|low|minimal)$/.test(b.slug || '')));
+  const ordered = [...records].sort((a, b) => Number(/-(xhigh|high|medium|low|minimal|non-reasoning)$/.test(a.slug || '')) - Number(/-(xhigh|high|medium|low|minimal|non-reasoning)$/.test(b.slug || '')));
   for (const record of ordered) {
     if (!record.intelligenceIndex) continue;
     const seen = new Set();
@@ -117,7 +217,7 @@ function buildBenchmarkKeys(records) {
         // Two different models collapsing onto one size-less key make it ambiguous.
         const existing = loose.get(withoutParams);
         if (existing === undefined) loose.set(withoutParams, record);
-        else if (existing && existing.intelligenceIndex !== record.intelligenceIndex && existing.slug.replace(/-(xhigh|high|medium|low|minimal)$/, '') !== record.slug.replace(/-(xhigh|high|medium|low|minimal)$/, '')) loose.set(withoutParams, null);
+        else if (existing && existing.intelligenceIndex !== record.intelligenceIndex && existing.slug.replace(/-(xhigh|high|medium|low|minimal|non-reasoning)$/, '') !== record.slug.replace(/-(xhigh|high|medium|low|minimal|non-reasoning)$/, '')) loose.set(withoutParams, null);
       }
     }
   }
@@ -233,6 +333,11 @@ async function refreshSources() {
     tasks.push(['artificialAnalysis', () => artificialAnalysis.fetchSource({ apiKey: aaKey })]);
     tasks.push(['artificialAnalysisMedia', () => artificialAnalysisMedia.fetchSource({ apiKey: aaKey })]);
   }
+  // MTEB for the embedding models in the catalog (cached per model for a week).
+  tasks.push(['mteb', async () => {
+    const ids = getDatabase().prepare("SELECT DISTINCT model_id FROM models WHERE capability = 'embedding' AND available = 1").all().map((row) => row.model_id);
+    return mteb.fetchScores(ids, state.mteb || {});
+  }]);
   const results = {};
   for (const [key, run] of tasks) {
     try {
@@ -288,6 +393,12 @@ function computeCanonical(canonical, sampleModelIds = [], capability = 'chat') {
     intelligence = arena.score;
     source = 'artificial_analysis_arena';
     confidence = 0.85;
+  } else if (capability === 'embedding' && sampleModelIds.some((id) => state.mteb?.[id]?.score)) {
+    // MTEB, the embedding benchmark (average over a fixed set of English tasks).
+    const scored = sampleModelIds.map((id) => state.mteb?.[id]).find((item) => item?.score);
+    intelligence = mteb.intelligence(scored.score);
+    source = 'mteb';
+    confidence = 0.8;
   } else if (capability === 'search' && SEARCH_QUALITY[sampleModelIds[0]]) {
     // No public index compares search APIs; a curated ranking from agent
     // search evaluations (accuracy of answers built on the results).
@@ -303,8 +414,8 @@ function computeCanonical(canonical, sampleModelIds = [], capability = 'chat') {
     confidence = Math.min(0.5, guess.weightSum * 0.5);
   } else if (aa?.intelligenceIndex) {
     intelligence = Math.min(1, aa.intelligenceIndex / (indexes.aaScale || AA_INDEX_SCALE));
-    source = 'artificial_analysis';
-    confidence = 0.9;
+    source = aa.indexDerived ? 'artificial_analysis_benchmarks' : 'artificial_analysis';
+    confidence = aa.indexDerived ? 0.8 : 0.9;
   } else {
     const guess = heuristicIntelligence(records, sampleModelIds, aa);
     const calibration = indexes.calibration;
@@ -383,7 +494,7 @@ function status() {
 }
 
 function resetForTests(seed) {
-  state = { modelsDev: {}, openrouter: [], artificialAnalysis: [], artificialAnalysisMedia: {}, fetchedAt: {}, ...seed };
+  state = { modelsDev: {}, openrouter: [], artificialAnalysis: [], artificialAnalysisMedia: {}, mteb: {}, fetchedAt: {}, ...seed };
   buildIndexes();
 }
 
