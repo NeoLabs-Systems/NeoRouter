@@ -37,13 +37,13 @@ function remaining(key, now = Date.now()) {
 }
 
 function costOf(entry, usage) {
-  if (entry.isFree || !usage) return 0;
+  if (entry.isFree || entry.isPlan || !usage) return 0;
   if (entry.priceIn === null || entry.priceOut === null) return 0;
   return ((usage.prompt_tokens || 0) * entry.priceIn + (usage.completion_tokens || 0) * entry.priceOut) / 1e6;
 }
 
 function estimateMaxCost(entry, inputTokens, maxOutputTokens) {
-  if (entry.isFree) return 0;
+  if (entry.isFree || entry.isPlan) return 0;
   if (entry.priceIn === null || entry.priceOut === null) return null;
   return (inputTokens * entry.priceIn + maxOutputTokens * entry.priceOut) / 1e6;
 }

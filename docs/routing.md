@@ -106,3 +106,16 @@ paid models whose typical request would take far more than its fair share of
 what is left are ranked last; well under pace, the cost weight shrinks so better
 models win. One-time budgets only get the per-request share. Responses carry
 `X-NeoRouter-Budget-Pace` (`ahead`, `on_track`, `tight`, `over`).
+
+## Prepaid plans
+
+An account can be a prepaid plan (`prepaid` 1) or a plan followed by pay per
+use (`prepaid` 2); `billing_mode` stays `paid`. Plan models cost nothing extra,
+so they do not draw from key budgets and free-only keys may use them, but they
+are never hedged (that would spend the allowance twice). `routing/plans.js`
+reads the allowance from the provider's quota probe (`plan_requests`, or
+percentage windows `plan_5h` / `plan_week`), subtracts requests sent since the
+probe and uses the tightest window: a mild preference while there is room
+(the allowance does not roll over), held back below 15 %, and once used up
+either skipped (`plan_used_up`) or billed like any paid model. Plan accounts
+are probed every 5 minutes and when they are added.

@@ -6,7 +6,6 @@ const registry = require('../providers/registry');
 const billing = require('../services/providers/billing_check');
 const accounts = require('../services/providers/account_service');
 const catalog = require('../services/catalog/catalog_service');
-const quota = require('../services/quota/quota_service');
 const { validate } = require('../middleware/validate');
 const { requirePermission } = require('../middleware/space');
 const { asyncRoute } = require('./helpers');
@@ -31,7 +30,8 @@ const accountInput = z.object({
     modelsPath: z.string().max(512).optional(),
   }).catchall(z.string().max(512)).optional(),
   headers: z.record(z.string().max(2048)).optional(),
-  billingMode: z.enum(['free_tier', 'paid']).optional(),
+  // 'plan': a prepaid subscription; 'plan_paid': the plan, then pay per use.
+  billingMode: z.enum(['free_tier', 'paid', 'plan', 'plan_paid']).optional(),
 });
 
 router.post('/probe', requirePermission('providers.manage'), validate(accountInput), asyncRoute(async (req, res) => res.json(await accounts.probe(req.body))));
@@ -46,6 +46,8 @@ router.post('/accounts', requirePermission('providers.manage'), validate(account
     logger.warn('Initial model sync failed', { accountId: account.id, error: error.message });
   }
   await billing.verifyAccount(account.id);
+  // A plan's allowance should be known before the first request.
+  await accounts.probeQuota(account.id).catch(() => {});
   res.status(201).json({ account: accounts.get(req.space.ownerId, account.id), validation, sync });
 }));
 
@@ -72,10 +74,7 @@ router.post('/accounts/:id/sync', requirePermission('providers.manage'), asyncRo
 
 router.post('/accounts/:id/quota', requirePermission('providers.view'), asyncRoute(async (req, res) => {
   accounts.getRow(req.space.ownerId, req.params.id);
-  const adapter = accounts.adapterFor(accounts.getRuntime(req.params.id));
-  const results = (await adapter.fetchQuota()) || [];
-  for (const item of results) quota.setState(`a:${req.params.id}`, item.metric, { limit: item.limit, remaining: item.remaining, resetAt: item.resetAt || null }, 'probe');
-  res.json({ quota: results });
+  res.json({ quota: await accounts.probeQuota(req.params.id) });
 }));
 
 module.exports = router;

@@ -10,6 +10,7 @@ const scoring = require('./scoring');
 const profiles = require('./profiles');
 const budget = require('../budget/budget_service');
 const pacing = require('../budget/pacing');
+const plans = require('./plans');
 const { getConfig } = require('../../config/env');
 const { HttpError } = require('../../middleware/error_handler');
 
@@ -68,7 +69,8 @@ function rejection(entry, ctx, now) {
   if (!entry.available) return 'model_unavailable';
   if (!entry.accountEnabled || entry.accountStatus === 'disabled' || entry.accountStatus === 'invalid') return 'account_unavailable';
   if (!allowedByKey(entry, key)) return 'not_allowed_for_key';
-  if ((freeOnly || key.mode === 'free_only') && !entry.isFree) return 'not_free';
+  // Free-only means "never costs extra": a prepaid plan's allowance qualifies.
+  if ((freeOnly || key.mode === 'free_only') && !entry.isFree && !entry.isPlan) return 'not_free';
   if (needs.tools && entry.tools === false) return 'no_tools';
   if (needs.vision && entry.vision !== true) return 'no_vision';
   const reserve = Math.max(MIN_OUTPUT_RESERVE, Math.min(request.max_tokens || MIN_OUTPUT_RESERVE, 32000));
@@ -80,9 +82,9 @@ function rejection(entry, ctx, now) {
   if (constraints.excludeProviders?.includes(entry.providerSlug) || constraints.excludeProviders?.includes(entry.definitionId)) return 'provider_excluded';
   if (constraints.excludeModels?.some((pattern) => globToRegExp(pattern).test(entry.id))) return 'model_excluded';
   if (constraints.minIntelligence !== null && constraints.minIntelligence !== undefined && (entry.intelligence ?? 0) < constraints.minIntelligence) return 'below_min_intelligence';
-  if (constraints.maxPriceOut !== null && constraints.maxPriceOut !== undefined && !entry.isFree && (entry.priceOut === null || entry.priceOut > constraints.maxPriceOut)) return 'too_expensive';
+  if (constraints.maxPriceOut !== null && constraints.maxPriceOut !== undefined && !entry.isFree && !entry.isPlan && (entry.priceOut === null || entry.priceOut > constraints.maxPriceOut)) return 'too_expensive';
   if (constraints.maxTtftMs && entry.stats.ttftMs && entry.stats.ttftMs > constraints.maxTtftMs) return 'too_slow';
-  if (!entry.isFree) {
+  if (!entry.isFree && !entry.isPlan) {
     const hasBudget = key.budget_usd !== null && key.budget_usd !== undefined;
     const maxCost = ctx.estimateCost ? ctx.estimateCost(entry) : budget.estimateMaxCost(entry, inputTokens, maxOutputFor(request, entry));
     if (hasBudget && maxCost === null) return 'price_unknown';
@@ -93,6 +95,8 @@ function rejection(entry, ctx, now) {
   if (request.max_tokens && minOutput && request.max_tokens < minOutput && !ctx.primaryRefs.has(entry.ref)) return 'needs_more_tokens';
   const available = stats.availability(entry.ref, now);
   if (!available.available) return available.reason;
+  const planReason = plans.rejection(entry, now);
+  if (planReason) return planReason;
   // An account at its (learned or documented) concurrency limit takes no more work right now.
   const parallel = concurrency.limitFor(entry, now);
   if (parallel && loadTracker.inflight(entry).account >= parallel.limit) return 'account_busy';
@@ -166,7 +170,7 @@ class RoutingPlan {
     if (this.pacing && this.pacing.costShift !== 1) {
       this.weights = { ...this.weights, cost: Math.max(this.weights.cost, PACED_COST_FLOOR) * this.pacing.costShift };
     }
-    this.entries = catalog.listForUser(userId, { capability });
+    this.entries = catalog.listForUser(userId, { capability }).map((entry) => plans.effective(entry));
     this.primaryRefs = new Set();
     if (!this.parsed.auto) this.scopeToRequestedModel();
   }
@@ -241,9 +245,10 @@ class RoutingPlan {
       const { quota: quotaFactor, penalty, load } = item.details.factors;
       let value = base * quotaFactor * penalty * load;
       if (qualityProfile && features.intelligence < bestIntelligence - QUALITY_GAP) value *= QUALITY_GATE_FACTOR;
+      value *= plans.factor(item.entry);
       if ((this.needs.tools && item.entry.tools === null) || (this.needs.json && item.entry.json === false)) value *= UNKNOWN_CAPABILITY_FACTOR;
       // Far more than this request's fair share of the budget: last resort only.
-      if (this.pacing && !item.entry.isFree) {
+      if (this.pacing && !item.entry.isFree && !item.entry.isPlan) {
         const typical = this.estimateCost ? this.estimateCost(item.entry) : budget.estimateMaxCost(item.entry, this.inputTokens, Math.min(maxOutputFor(this.request, item.entry), TYPICAL_OUTPUT_TOKENS));
         if (typical !== null && typical > this.pacing.perRequestCap) value *= OVER_PACE_FACTOR;
       }
@@ -306,6 +311,7 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
       ref: item.entry.ref,
       name: item.entry.name,
       isFree: item.entry.isFree,
+      isPlan: item.entry.isPlan,
       rejected: item.rejected || null,
       score: item.score ?? null,
       features: item.details?.features || null,

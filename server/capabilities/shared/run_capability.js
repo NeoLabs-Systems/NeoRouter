@@ -13,6 +13,7 @@ const accounts = require('../../services/providers/account_service');
 const { RoutingPlan } = require('../../services/routing/router');
 const learning = require('../../services/routing/learning');
 const loadTracker = require('../../services/routing/load_tracker');
+const plans = require('../../services/routing/plans');
 const quota = require('../../services/quota/quota_service');
 const budget = require('../../services/budget/budget_service');
 const usage = require('../../services/usage/usage_service');
@@ -100,6 +101,7 @@ async function runCapability({ req, res = null, key, capability, method, request
     const reservation = budget.reserve(key, estimateCost(entry) || 0);
     const release = loadTracker.lease(entry);
     quota.recordRequest(entry, inputTokens);
+    plans.onSent(entry);
     const attemptStarted = Date.now();
     try {
       const timeoutMs = Math.min(adapter.timeoutMs, config.routing.totalBudgetMs - (Date.now() - startedAt));

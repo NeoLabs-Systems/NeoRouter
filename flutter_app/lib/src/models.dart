@@ -100,6 +100,8 @@ class ProviderDefinition {
   String get defaultBillingMode => billing['defaultMode'] as String? ?? 'paid';
   bool get freeTierAvailable => billing['freeTierAvailable'] == true;
   bool get hasAlwaysFreeModels => billing['hasAlwaysFreeModels'] == true;
+  bool get planAvailable => billing['planAvailable'] == true;
+  String? get planNote => billing['planNote'] as String?;
   String get billingNote => billing['note'] as String? ?? '';
 }
 
@@ -143,6 +145,7 @@ class CatalogModel {
   String get accountId => raw['accountId'] as String;
   bool get enabled => raw['enabled'] == true;
   bool get isFree => raw['isFree'] == true;
+  bool get isPlan => raw['isPlan'] == true;
   String? get freeReason => raw['freeReason'] as String?;
   int? get contextWindow => _int(raw['contextWindow']);
   bool? get tools => _bool(raw['tools']);

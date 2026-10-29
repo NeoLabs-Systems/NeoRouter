@@ -39,7 +39,7 @@ const KINDS = new Set(require('../../core/capability_registry').list().map((item
 
 function modelsVisibleTo(key, capability = 'chat') {
   return catalog.listForUser(key.user_id, { capability })
-    .filter((entry) => entry.enabled && entry.accountEnabled && allowedByKey(entry, key) && (key.mode !== 'free_only' || entry.isFree));
+    .filter((entry) => entry.enabled && entry.accountEnabled && allowedByKey(entry, key) && (key.mode !== 'free_only' || entry.isFree || entry.isPlan));
 }
 
 router.get('/models', requireRouterKey, (req, res) => {
@@ -68,8 +68,8 @@ router.get('/models', requireRouterKey, (req, res) => {
         owned_by: entry.providerSlug,
         name: entry.name,
         context_length: entry.contextWindow,
-        pricing: entry.isFree ? { prompt: '0', completion: '0' } : { prompt: entry.priceIn === null ? null : String(entry.priceIn / 1e6), completion: entry.priceOut === null ? null : String(entry.priceOut / 1e6) },
-        neorouter: { kind, free: entry.isFree, intelligence: entry.intelligence, tools: entry.tools, vision: entry.vision, ...(entry.priceUnit ? { unit_price: entry.unitPrice, price_unit: entry.priceUnit } : {}) },
+        pricing: entry.isFree || entry.isPlan ? { prompt: '0', completion: '0' } : { prompt: entry.priceIn === null ? null : String(entry.priceIn / 1e6), completion: entry.priceOut === null ? null : String(entry.priceOut / 1e6) },
+        neorouter: { kind, free: entry.isFree, plan: entry.isPlan, intelligence: entry.intelligence, tools: entry.tools, vision: entry.vision, ...(entry.priceUnit ? { unit_price: entry.unitPrice, price_unit: entry.priceUnit } : {}) },
       })),
     ],
   });

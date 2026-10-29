@@ -370,6 +370,9 @@ class AppL10nEn extends AppL10n {
   String get categorySearch => 'Web search';
 
   @override
+  String get categoryPlan => 'Subscriptions';
+
+  @override
   String get apiKey => 'API key';
 
   @override
@@ -1905,6 +1908,55 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String get billingOptionFree => 'Free tier';
+
+  @override
+  String get billingOptionFreeHint =>
+      'No payment method on file. NeoRouter only uses the free models.';
+
+  @override
+  String get billingOptionPlan => 'Prepaid plan';
+
+  @override
+  String get billingOptionPlanHint =>
+      'A subscription with an included allowance. Used first while there is room; stops when it is used up.';
+
+  @override
+  String get billingOptionPlanPaid => 'Plan, then pay per use';
+
+  @override
+  String get billingOptionPlanPaidHint =>
+      'The allowance first; after that requests are billed and count against key budgets.';
+
+  @override
+  String get billingOptionPaid => 'Pay per use';
+
+  @override
+  String get billingOptionPaidHint =>
+      'Every request to a paid model is billed and counts against your API keys\' budgets.';
+
+  @override
+  String get accountPrepaidPlan => 'Prepaid plan';
+
+  @override
+  String get accountPlanThenPaid => 'Plan, then pay per use';
+
+  @override
+  String get includedInPlan => 'Included in plan';
+
+  @override
+  String get metricPlanRequests => 'Plan requests';
+
+  @override
+  String get metricPlan5h => 'Plan, 5-hour window';
+
+  @override
+  String get metricPlanWeek => 'Plan, this week';
+
+  @override
+  String get metricPlanMonth => 'Plan, this month';
+
+  @override
   String get billingPaidHint =>
       'Requests to paid models are billed by the provider and count against your API keys\' budgets.';
 
@@ -1967,7 +2019,8 @@ class AppL10nEn extends AppL10n {
   String get factMeasured => 'Measured';
 
   @override
-  String get modeFreeOnlyHint => 'Never costs anything. Recommended.';
+  String get modeFreeOnlyHint =>
+      'Never costs anything extra: free models and plans you already pay for. Recommended.';
 
   @override
   String get modeBothHint =>

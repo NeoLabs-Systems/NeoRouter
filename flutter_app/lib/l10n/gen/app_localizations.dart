@@ -769,6 +769,12 @@ abstract class AppL10n {
   /// **'Web search'**
   String get categorySearch;
 
+  /// No description provided for @categoryPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscriptions'**
+  String get categoryPlan;
+
   /// No description provided for @apiKey.
   ///
   /// In en, this message translates to:
@@ -3487,6 +3493,96 @@ abstract class AppL10n {
   /// **'Get a key at {name}'**
   String getKeyAt(String name);
 
+  /// No description provided for @billingOptionFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free tier'**
+  String get billingOptionFree;
+
+  /// No description provided for @billingOptionFreeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No payment method on file. NeoRouter only uses the free models.'**
+  String get billingOptionFreeHint;
+
+  /// No description provided for @billingOptionPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepaid plan'**
+  String get billingOptionPlan;
+
+  /// No description provided for @billingOptionPlanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A subscription with an included allowance. Used first while there is room; stops when it is used up.'**
+  String get billingOptionPlanHint;
+
+  /// No description provided for @billingOptionPlanPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan, then pay per use'**
+  String get billingOptionPlanPaid;
+
+  /// No description provided for @billingOptionPlanPaidHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The allowance first; after that requests are billed and count against key budgets.'**
+  String get billingOptionPlanPaidHint;
+
+  /// No description provided for @billingOptionPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay per use'**
+  String get billingOptionPaid;
+
+  /// No description provided for @billingOptionPaidHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Every request to a paid model is billed and counts against your API keys\' budgets.'**
+  String get billingOptionPaidHint;
+
+  /// No description provided for @accountPrepaidPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepaid plan'**
+  String get accountPrepaidPlan;
+
+  /// No description provided for @accountPlanThenPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan, then pay per use'**
+  String get accountPlanThenPaid;
+
+  /// No description provided for @includedInPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Included in plan'**
+  String get includedInPlan;
+
+  /// No description provided for @metricPlanRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan requests'**
+  String get metricPlanRequests;
+
+  /// No description provided for @metricPlan5h.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan, 5-hour window'**
+  String get metricPlan5h;
+
+  /// No description provided for @metricPlanWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan, this week'**
+  String get metricPlanWeek;
+
+  /// No description provided for @metricPlanMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan, this month'**
+  String get metricPlanMonth;
+
   /// No description provided for @billingPaidHint.
   ///
   /// In en, this message translates to:
@@ -3586,7 +3682,7 @@ abstract class AppL10n {
   /// No description provided for @modeFreeOnlyHint.
   ///
   /// In en, this message translates to:
-  /// **'Never costs anything. Recommended.'**
+  /// **'Never costs anything extra: free models and plans you already pay for. Recommended.'**
   String get modeFreeOnlyHint;
 
   /// No description provided for @modeBothHint.

@@ -34,7 +34,7 @@ const definitionSchema = z.object({
   id: z.string().regex(/^[a-z0-9][a-z0-9_-]*$/),
   label: z.string().min(1),
   description: z.string().default(''),
-  category: z.enum(['free', 'paid', 'aggregator', 'local', 'custom', 'community', 'search']),
+  category: z.enum(['free', 'paid', 'aggregator', 'plan', 'local', 'custom', 'community', 'search']),
   // Web search engines: which dialect the search adapter speaks.
   search: z.object({ engine: z.enum(['tavily', 'exa', 'linkup', 'parallel', 'firecrawl', 'serper', 'brave', 'jina', 'searxng']) }).optional(),
   website: z.string().url().optional(),
@@ -70,7 +70,9 @@ const definitionSchema = z.object({
   extraModels: z.array(z.object({ id: z.string(), name: z.string().optional(), type: z.string().optional() })).default([]),
   validate: z.union([z.literal(false), z.object({ path: z.string().optional(), chatProbe: z.boolean().optional() })]).optional(),
   billing: z.object({
-    defaultMode: z.enum(['free_tier', 'paid']),
+    defaultMode: z.enum(['free_tier', 'paid', 'plan', 'plan_paid']),
+    // A subscription with an included allowance this provider sells for API use.
+    plan: z.object({ note: z.string() }).optional(),
     // With billing_mode=free_tier the account has no payment method, so
     // nothing it can call is ever charged. freeTierAll covers every model;
     // freeTierModels (patterns) only the models the free tier includes.
@@ -184,6 +186,9 @@ function publicDefinition(definition) {
       verified: Boolean(definition.billing.verify),
       hasAlwaysFreeModels: definition.billing.alwaysFree.length > 0,
       note: definition.billing.note,
+      // Prepaid plans: offered by the provider, or possible on any custom endpoint.
+      planAvailable: Boolean(definition.billing.plan) || definition.editableBaseUrl,
+      planNote: definition.billing.plan?.note || null,
     },
   };
 }

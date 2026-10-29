@@ -71,14 +71,14 @@ function speed(entry, snapshot) {
 }
 
 function blendedPrice(entry) {
-  if (entry.isFree) return 0;
+  if (entry.isFree || entry.isPlan) return 0;
   if (entry.priceIn === null || entry.priceOut === null) return null;
   return (entry.priceIn * 3 + entry.priceOut) / 4;
 }
 
 function cost(entry) {
   // Media models priced per image, second, minute or million characters.
-  if (!entry.isFree && entry.priceUnit && UNIT_PRICE_RANGES[entry.priceUnit] && entry.unitPrice !== null && entry.unitPrice !== undefined) {
+  if (!entry.isFree && !entry.isPlan && entry.priceUnit && UNIT_PRICE_RANGES[entry.priceUnit] && entry.unitPrice !== null && entry.unitPrice !== undefined) {
     return entry.unitPrice === 0 ? 1 : 1 - (logScale(entry.unitPrice, UNIT_PRICE_RANGES[entry.priceUnit]) ?? 0);
   }
   const price = blendedPrice(entry);

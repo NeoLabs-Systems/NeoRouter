@@ -397,12 +397,7 @@ class _KeyFormState extends State<_KeyForm> {
               Text(t.keyAccessTitle, style: label),
               const SizedBox(height: AppSpacing.xs),
               for (final mode in <String>['free_only', 'both', 'paid'])
-                _OptionCard(
-                  title: keyModeLabel(t, mode),
-                  description: keyModeHint(t, mode),
-                  selected: _mode == mode,
-                  onTap: () => setState(() => _mode = mode),
-                ),
+                OptionCard(title: keyModeLabel(t, mode), description: keyModeHint(t, mode), selected: _mode == mode, onTap: () => setState(() => _mode = mode)),
               if (_mode != 'free_only') ...<Widget>[
                 const SizedBox(height: AppSpacing.md),
                 Text(t.keyBudgetTitle, style: label),
@@ -487,60 +482,6 @@ class _KeyFormState extends State<_KeyForm> {
 }
 
 /// A selectable choice with a one-line explanation.
-class _OptionCard extends StatelessWidget {
-  const _OptionCard({required this.title, required this.description, required this.selected, required this.onTap});
-
-  final String title;
-  final String description;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = neoRouterPaletteOf(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: selected ? palette.surfaceRaised : Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          side: BorderSide(color: selected ? palette.text.withValues(alpha: 0.5) : palette.borderStrong),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Icon(
-                  selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-                  size: 18,
-                  color: selected ? palette.accent : palette.textMuted,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        title,
-                        style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(description, style: TextStyle(fontSize: 12.5, color: palette.textSoft, height: 1.4)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 String? _paceText(AppL10n t, RouterKey key) => switch (key.paceState) {
   'ahead' => t.paceAhead,

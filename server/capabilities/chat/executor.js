@@ -10,6 +10,7 @@ const { RoutingPlan, maxOutputFor } = require('../../services/routing/router');
 const learning = require('../../services/routing/learning');
 const stats = require('../../services/routing/stats_store');
 const loadTracker = require('../../services/routing/load_tracker');
+const plans = require('../../services/routing/plans');
 const quota = require('../../services/quota/quota_service');
 const budget = require('../../services/budget/budget_service');
 const usage = require('../../services/usage/usage_service');
@@ -353,6 +354,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
       release: loadTracker.lease(entry),
     };
     quota.recordRequest(entry, inputTokens);
+    plans.onSent(entry);
     const timeoutMs = Math.min(adapter.timeoutMs, config.routing.totalBudgetMs - (Date.now() - startedAt));
     attempt.promise = runAttempt({ entry, adapter, canonical, stream, signal: AbortSignal.any([clientAbort.signal, controller.signal]), timeoutMs })
       .then((result) => ({ attempt, result }), (error) => ({ attempt, error }));

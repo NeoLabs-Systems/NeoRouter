@@ -371,6 +371,9 @@ class AppL10nDe extends AppL10n {
   String get categorySearch => 'Websuche';
 
   @override
+  String get categoryPlan => 'Abos';
+
+  @override
   String get apiKey => 'API-Key';
 
   @override
@@ -1921,6 +1924,55 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
+  String get billingOptionFree => 'Gratis-Kontingent';
+
+  @override
+  String get billingOptionFreeHint =>
+      'Keine Zahlungsmethode hinterlegt. NeoRouter nutzt nur die Gratis-Modelle.';
+
+  @override
+  String get billingOptionPlan => 'Vorausbezahlter Plan';
+
+  @override
+  String get billingOptionPlanHint =>
+      'Ein Abo mit enthaltenem Kontingent. Wird zuerst genutzt, solange Platz ist, und stoppt, wenn es aufgebraucht ist.';
+
+  @override
+  String get billingOptionPlanPaid => 'Plan, dann nach Verbrauch';
+
+  @override
+  String get billingOptionPlanPaidHint =>
+      'Erst das Kontingent; danach werden Anfragen abgerechnet und zählen gegen die Key-Budgets.';
+
+  @override
+  String get billingOptionPaid => 'Nach Verbrauch';
+
+  @override
+  String get billingOptionPaidHint =>
+      'Jede Anfrage an ein bezahltes Modell wird abgerechnet und zählt gegen die Budgets deiner API-Keys.';
+
+  @override
+  String get accountPrepaidPlan => 'Vorausbezahlter Plan';
+
+  @override
+  String get accountPlanThenPaid => 'Plan, dann nach Verbrauch';
+
+  @override
+  String get includedInPlan => 'Im Plan enthalten';
+
+  @override
+  String get metricPlanRequests => 'Plan-Anfragen';
+
+  @override
+  String get metricPlan5h => 'Plan, 5-Stunden-Fenster';
+
+  @override
+  String get metricPlanWeek => 'Plan, diese Woche';
+
+  @override
+  String get metricPlanMonth => 'Plan, dieser Monat';
+
+  @override
   String get billingPaidHint =>
       'Anfragen an kostenpflichtige Modelle rechnet der Anbieter ab; sie zählen gegen das Budget deiner API-Keys.';
 
@@ -1983,7 +2035,8 @@ class AppL10nDe extends AppL10n {
   String get factMeasured => 'Gemessen';
 
   @override
-  String get modeFreeOnlyHint => 'Kostet nie etwas. Empfohlen.';
+  String get modeFreeOnlyHint =>
+      'Kostet nie extra: Gratis-Modelle und Pläne, die du schon bezahlst. Empfohlen.';
 
   @override
   String get modeBothHint =>

@@ -7,13 +7,13 @@
 // unknown price is never free: budget keys skip such models.
 
 function tokenCost(entry, tokens) {
-  if (entry.isFree) return 0;
+  if (entry.isFree || entry.isPlan) return 0;
   if (entry.priceIn === null || entry.priceIn === undefined) return null;
   return (tokens * entry.priceIn) / 1e6;
 }
 
 function unitCost(entry, unit, amount) {
-  if (entry.isFree) return 0;
+  if (entry.isFree || entry.isPlan) return 0;
   if (entry.priceUnit !== unit || entry.unitPrice === null || entry.unitPrice === undefined) return null;
   return (unit === 'mchar' ? amount / 1e6 : amount) * entry.unitPrice;
 }

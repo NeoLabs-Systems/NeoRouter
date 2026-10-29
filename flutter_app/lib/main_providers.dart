@@ -11,7 +11,7 @@ import 'main_theme.dart';
 import 'src/backend_client.dart';
 import 'src/models.dart';
 
-const List<String> _categoryOrder = <String>['free', 'aggregator', 'paid', 'search', 'local', 'custom', 'community'];
+const List<String> _categoryOrder = <String>['free', 'plan', 'aggregator', 'paid', 'search', 'local', 'custom', 'community'];
 
 String categoryLabel(AppL10n t, String category) => switch (category) {
   'free' => t.categoryFree,
@@ -20,6 +20,7 @@ String categoryLabel(AppL10n t, String category) => switch (category) {
   'local' => t.categoryLocal,
   'custom' => t.categoryCustom,
   'search' => t.categorySearch,
+  'plan' => t.categoryPlan,
   _ => t.categoryCommunity,
 };
 
@@ -270,7 +271,11 @@ class _AccountRow extends StatelessWidget {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final (statusText, tone) = accountStatus(t, account);
-    final billing = account.billingMode != 'free_tier'
+    final billing = account.billingMode == 'plan'
+        ? t.accountPrepaidPlan
+        : account.billingMode == 'plan_paid'
+        ? t.accountPlanThenPaid
+        : account.billingMode != 'free_tier'
         ? t.accountPaidPlan
         : !account.billingVerifiable
         ? t.accountFreePlan
@@ -693,22 +698,20 @@ class _ProviderFormState extends State<_ProviderForm> {
                 style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
               ),
               const SizedBox(height: AppSpacing.xs),
-              SegmentedButton<String>(
-                showSelectedIcon: false,
-                segments: <ButtonSegment<String>>[
-                  if (definition.freeTierAvailable) ButtonSegment<String>(value: 'free_tier', label: Text(t.accountFreePlan)),
-                  ButtonSegment<String>(value: 'paid', label: Text(t.accountPaidPlan)),
-                ],
-                selected: <String>{definition.freeTierAvailable ? _billing : 'paid'},
-                onSelectionChanged: (value) => setState(() => _billing = value.first),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                _billing == 'free_tier' && definition.freeTierAvailable
-                    ? t.billingFreeWarning
-                    : (definition.hasAlwaysFreeModels ? t.billingAlwaysFreeNote : t.billingPaidHint),
-                style: TextStyle(color: palette.textSoft, fontSize: 12.5, height: 1.45),
-              ),
+              for (final (mode, title, hint) in <(String, String, String)>[
+                if (definition.freeTierAvailable) ('free_tier', t.billingOptionFree, t.billingOptionFreeHint),
+                if (definition.planAvailable) ('plan', t.billingOptionPlan, definition.planNote ?? t.billingOptionPlanHint),
+                if (definition.planAvailable) ('plan_paid', t.billingOptionPlanPaid, t.billingOptionPlanPaidHint),
+                ('paid', t.billingOptionPaid, t.billingOptionPaidHint),
+              ])
+                OptionCard(title: title, description: hint, selected: _billing == mode, onTap: () => setState(() => _billing = mode)),
+              if (_billing == 'free_tier' && definition.freeTierAvailable) ...<Widget>[
+                const SizedBox(height: AppSpacing.xs),
+                Text(t.billingFreeWarning, style: TextStyle(color: palette.textSoft, fontSize: 12.5, height: 1.45)),
+              ] else if (definition.hasAlwaysFreeModels) ...<Widget>[
+                const SizedBox(height: AppSpacing.xs),
+                Text(t.billingAlwaysFreeNote, style: TextStyle(color: palette.textSoft, fontSize: 12.5, height: 1.45)),
+              ],
               if (definition.billingNote.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 6),
                 Text(definition.billingNote, style: TextStyle(color: palette.textMuted, fontSize: 12.5, height: 1.45)),
@@ -838,6 +841,10 @@ String metricLabel(AppL10n t, String metric) => switch (metric) {
   'tpm' => t.metricTpm,
   'tpd' => t.metricTpd,
   'balance' || 'credits_usd' => t.balance,
+  'plan_requests' => t.metricPlanRequests,
+  'plan_5h' => t.metricPlan5h,
+  'plan_week' => t.metricPlanWeek,
+  'plan_month' => t.metricPlanMonth,
   _ => metric,
 };
 
@@ -933,7 +940,10 @@ class _AccountLimits extends StatelessWidget {
     }
     low.sort((a, b) => b.fraction.compareTo(a.fraction));
     final rows = <Widget>[
-      for (final probe in probes)
+      // Plan windows get a usage bar; other probes (balances) stay plain values.
+      for (final probe in probes.where((item) => '${item['metric']}'.startsWith('plan_') && item['limit'] != null))
+        _WindowRow(title: metricLabel(t, '${probe['metric']}'), window: probe),
+      for (final probe in probes.where((item) => !'${item['metric']}'.startsWith('plan_') || item['limit'] == null))
         SettingsRow(
           label: metricLabel(t, '${probe['metric']}'),
           control: Text('${probe['remaining'] ?? '—'}${probe['limit'] == null ? '' : ' / ${probe['limit']}'}', style: TextStyle(color: palette.text)),

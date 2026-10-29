@@ -7,6 +7,7 @@ const billing = require('../services/providers/billing_check');
 const metadata = require('../services/catalog/metadata_service');
 const quota = require('../services/quota/quota_service');
 const usage = require('../services/usage/usage_service');
+const PLAN_PROBE_MS = 5 * 60_000;
 const { createLogger } = require('../utils/logger');
 
 const logger = createLogger('scheduler');
@@ -64,10 +65,11 @@ function start() {
   if (config.metadataSourcesEnabled) {
     every('refresh-metadata', config.sync.metadataIntervalMs, () => metadata.refreshSources(), { runAtStart: true });
   }
-  every('probe-quotas', config.sync.quotaProbeIntervalMs, () => forEachAccount(async (id) => {
-    const results = await accounts.adapterFor(accounts.getRuntime(id)).fetchQuota();
-    for (const item of results || []) quota.setState(`a:${id}`, item.metric, { limit: item.limit, remaining: item.remaining, resetAt: item.resetAt || null }, 'probe');
-  }));
+  every('probe-quotas', config.sync.quotaProbeIntervalMs, () => forEachAccount((id) => accounts.probeQuota(id)));
+  // Plan allowances move with every request, so plans are checked more often.
+  every('probe-plans', PLAN_PROBE_MS, async () => {
+    for (const id of accounts.prepaidIds()) await accounts.probeQuota(id).catch((error) => logger.warn('Plan probe failed', { accountId: id, error: error.message }));
+  });
   every('prune-logs', 24 * 60 * 60_000, () => usage.prune(LOG_RETENTION_DAYS));
 }
 

@@ -48,9 +48,18 @@ function rowToRuntime(row) {
     secret,
     options: JSON.parse(row.options_json || '{}'),
     billingMode: row.billing_mode,
+    prepaid: Boolean(row.prepaid),
     enabled: Boolean(row.enabled),
     status: row.status,
   };
+}
+
+// A prepaid plan is billed (so never free), but its allowance is already
+// paid for. prepaid: 1 = the plan only, 2 = the plan, then pay per use.
+const PLAN_MODES = { plan: 1, plan_paid: 2 };
+
+function storedBilling(mode) {
+  return PLAN_MODES[mode] ? { billing: 'paid', prepaid: PLAN_MODES[mode] } : { billing: mode, prepaid: 0 };
 }
 
 function publicAccount(row) {
@@ -68,7 +77,8 @@ function publicAccount(row) {
     baseUrl: row.base_url || definition?.baseUrl || null,
     keyPreview: maskSecret(runtime.secret),
     options: runtime.options,
-    billingMode: row.billing_mode,
+    billingMode: row.prepaid === 2 ? 'plan_paid' : row.prepaid ? 'plan' : row.billing_mode,
+    planNote: definition?.billing.plan?.note || null,
     billingState: row.billing_state,
     billingMessage: row.billing_message,
     billingCheckedAt: row.billing_checked_at,
@@ -147,8 +157,9 @@ async function create(userId, input, createdBy = userId) {
   const options = { ...(input.options || {}) };
   if (input.headers) options.headers = input.headers;
   validateInput(definition, { secret: input.secret, baseUrl, options });
-  const billingMode = input.billingMode && (input.billingMode === 'paid' || hasFreeTier(definition.billing))
+  const requestedMode = input.billingMode && (input.billingMode !== 'free_tier' || hasFreeTier(definition.billing))
     ? input.billingMode : definition.billing.defaultMode;
+  const { billing: billingMode, prepaid } = storedBilling(requestedMode);
 
   const probe = { secret: input.secret || null, baseUrl, options };
   const result = await registry.createAdapter(definition, probe).validate();
@@ -161,11 +172,11 @@ async function create(userId, input, createdBy = userId) {
   const siblings = getDatabase().prepare('SELECT COUNT(*) count FROM provider_accounts WHERE user_id = ? AND definition_id = ?').get(userId, definition.id).count;
   const label = input.label || (siblings ? `${definition.label} ${siblings + 1}` : definition.label);
   getDatabase().prepare(`INSERT INTO provider_accounts
-    (id, user_id, definition_id, slug, label, base_url, secret_encrypted, options_json, billing_mode, status, status_message, last_validated_at, created_by_user_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'), ?)`)
+    (id, user_id, definition_id, slug, label, base_url, secret_encrypted, options_json, billing_mode, status, status_message, last_validated_at, created_by_user_id, prepaid)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'), ?, ?)`)
     .run(id, userId, definition.id, slug, label, baseUrl,
       input.secret ? encryptString(input.secret) : null, JSON.stringify(options), billingMode,
-      result.status === 'healthy' ? 'healthy' : 'error', result.message || null, createdBy);
+      result.status === 'healthy' ? 'healthy' : 'error', result.message || null, createdBy, prepaid);
   return { account: publicAccount(getRow(userId, id)), validation: result };
 }
 
@@ -207,13 +218,14 @@ async function update(userId, accountId, input) {
       next.baseUrl,
       next.secret ? encryptString(next.secret) : null,
       JSON.stringify(next.options),
-      input.billingMode ?? row.billing_mode,
+      input.billingMode !== undefined ? storedBilling(input.billingMode).billing : row.billing_mode,
       input.enabled === undefined ? row.enabled : (input.enabled ? 1 : 0),
       credentialsChanged || input.enabled === true ? 1 : 0,
-      credentialsChanged || (input.billingMode !== undefined && input.billingMode !== row.billing_mode) ? 1 : 0,
+      credentialsChanged || (input.billingMode !== undefined && storedBilling(input.billingMode).billing !== row.billing_mode) ? 1 : 0,
       credentialsChanged || (input.enabled === true && row.status === 'disabled') ? 1 : 0,
       accountId,
     );
+  if (input.billingMode !== undefined) db.prepare('UPDATE provider_accounts SET prepaid = ? WHERE id = ?').run(storedBilling(input.billingMode).prepaid, accountId);
   return publicAccount(getRow(userId, accountId));
 }
 
@@ -254,6 +266,19 @@ function allEnabledIds() {
   return getDatabase().prepare('SELECT id FROM provider_accounts WHERE enabled = 1').all().map((row) => row.id);
 }
 
+function prepaidIds() {
+  return getDatabase().prepare('SELECT id FROM provider_accounts WHERE enabled = 1 AND prepaid > 0').all().map((row) => row.id);
+}
+
+// Balance and plan allowance as the provider reports them (quota.probe in
+// the definition); stored so routing and the limits page can use them.
+async function probeQuota(accountId) {
+  const quota = require('../quota/quota_service');
+  const results = (await adapterFor(getRuntime(accountId)).fetchQuota()) || [];
+  for (const item of results) quota.setState(`a:${accountId}`, item.metric, { limit: item.limit, remaining: item.remaining, resetAt: item.resetAt || null }, 'probe');
+  return results;
+}
+
 module.exports = {
   create,
   probe,
@@ -267,5 +292,7 @@ module.exports = {
   validateAccount,
   recordValidation,
   allEnabledIds,
+  prepaidIds,
+  probeQuota,
   AUTH_FAILURES_BEFORE_DISABLE,
 };

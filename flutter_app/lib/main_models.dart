@@ -77,6 +77,7 @@ const Set<String> kUnitPricedKinds = <String>{'image', 'video', 'speech', 'trans
 /// "Free", "$0.04 per image" or "$0.15 / $0.60 per 1M tokens".
 String modelPriceLabel(AppL10n t, CatalogModel model) {
   if (model.isFree) return t.free;
+  if (model.isPlan) return t.includedInPlan;
   if (model.priceUnit != null && model.unitPrice != null) return t.unitPriceLabel(formatUsd(model.unitPrice!), unitLabel(t, model.priceUnit!));
   if (model.priceIn == null) return t.priceUnknown;
   return t.pricePerMillion(formatPricePerMillion(model.priceIn), formatPricePerMillion(model.priceOut));

@@ -155,7 +155,7 @@ function bulkSetEnabled(userId, { accountId, enabled, onlyFree }) {
 
 // One row per model with everything routing needs. Overrides win over
 // provider data; provider data wins over canonical metadata.
-const SELECT_ENTRY = `SELECT m.*, a.slug, a.user_id, a.definition_id, a.billing_mode, a.enabled account_enabled, a.status account_status,
+const SELECT_ENTRY = `SELECT m.*, a.slug, a.user_id, a.definition_id, a.billing_mode, a.enabled account_enabled, a.status account_status, a.prepaid account_prepaid,
     md.intelligence, md.intelligence_source, md.intelligence_confidence, md.speed_tps, md.context_window md_context,
     md.supports_tools md_tools, md.supports_vision md_vision, md.supports_reasoning md_reasoning, md.release_date, md.params_b,
     s.successes, s.failures, s.decayed_at, s.latency_ms, s.ttft_ms, s.tps, s.samples, s.penalty, s.penalty_at,
@@ -199,6 +199,10 @@ function toEntry(row) {
     priceUnit: pick(overrides.priceUnit, row.price_unit, null),
     unitPrice: pick(overrides.unitPrice, row.price_per_unit, null),
     isFree: Boolean(row.is_free),
+    // Included in a prepaid plan: no extra cost per request.
+    isPlan: !row.is_free && Boolean(row.account_prepaid),
+    // After the plan is used up: billed per use (true) or unavailable.
+    planOverflow: row.account_prepaid === 2,
     freeReason: row.free_reason,
     intelligence: pick(overrides.intelligence, row.intelligence, null),
     intelligenceSource: overrides.intelligence !== undefined ? 'manual' : row.intelligence_source,

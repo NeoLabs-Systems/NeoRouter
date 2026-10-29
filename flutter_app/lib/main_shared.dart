@@ -14,7 +14,10 @@ class AmbientBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(decoration: BoxDecoration(color: neoRouterPaletteOf(context).scaffold), child: child);
+    return DecoratedBox(
+      decoration: BoxDecoration(color: neoRouterPaletteOf(context).scaffold),
+      child: child,
+    );
   }
 }
 
@@ -51,12 +54,7 @@ class _EntranceMotionState extends State<EntranceMotion> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOut,
-      opacity: _visible ? 1 : 0,
-      child: widget.child,
-    );
+    return AnimatedOpacity(duration: const Duration(milliseconds: 220), curve: Curves.easeOut, opacity: _visible ? 1 : 0, child: widget.child);
   }
 }
 
@@ -106,16 +104,18 @@ class _Notice extends StatelessWidget {
     final palette = neoRouterPaletteOf(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppRadius.control),
-      ),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(AppRadius.control)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Padding(padding: const EdgeInsets.only(top: 1), child: Icon(icon, color: color, size: 17)),
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(icon, color: color, size: 17),
+          ),
           const SizedBox(width: 10),
-          Expanded(child: Text(message, style: TextStyle(color: palette.text, fontSize: 13, height: 1.4))),
+          Expanded(
+            child: Text(message, style: TextStyle(color: palette.text, fontSize: 13, height: 1.4)),
+          ),
         ],
       ),
     );
@@ -128,8 +128,7 @@ class InlineError extends StatelessWidget {
   final String message;
 
   @override
-  Widget build(BuildContext context) =>
-      _Notice(message: message, color: neoRouterPaletteOf(context).error, icon: Icons.error_outline_rounded);
+  Widget build(BuildContext context) => _Notice(message: message, color: neoRouterPaletteOf(context).error, icon: Icons.error_outline_rounded);
 }
 
 class InlineSuccess extends StatelessWidget {
@@ -138,8 +137,7 @@ class InlineSuccess extends StatelessWidget {
   final String message;
 
   @override
-  Widget build(BuildContext context) =>
-      _Notice(message: message, color: neoRouterPaletteOf(context).success, icon: Icons.check_circle_outline_rounded);
+  Widget build(BuildContext context) => _Notice(message: message, color: neoRouterPaletteOf(context).success, icon: Icons.check_circle_outline_rounded);
 }
 
 /// Neutral hint box, e.g. "coming soon" or a short explanation.
@@ -211,11 +209,17 @@ class ScreenHeader extends StatelessWidget {
       child: compact
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[heading, if (trailing != null) ...<Widget>[const SizedBox(height: 14), trailing!]],
+              children: <Widget>[
+                heading,
+                if (trailing != null) ...<Widget>[const SizedBox(height: 14), trailing!],
+              ],
             )
           : Row(
               crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[Expanded(child: heading), if (trailing != null) ...<Widget>[const SizedBox(width: 16), trailing!]],
+              children: <Widget>[
+                Expanded(child: heading),
+                if (trailing != null) ...<Widget>[const SizedBox(width: 16), trailing!],
+              ],
             ),
     );
   }
@@ -248,7 +252,11 @@ class EmptyState extends StatelessWidget {
               const SizedBox(height: 16),
               Text(title, textAlign: TextAlign.center, style: displayTitleStyle(palette, size: 18)),
               const SizedBox(height: 6),
-              Text(message, textAlign: TextAlign.center, style: TextStyle(color: palette.textSoft, fontSize: 14, height: 1.45)),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: palette.textSoft, fontSize: 14, height: 1.45),
+              ),
               if (action != null) ...<Widget>[const SizedBox(height: 18), action!],
             ],
           ),
@@ -262,12 +270,12 @@ class EmptyState extends StatelessWidget {
 enum PillTone { neutral, accent, success, warning, error, info }
 
 Color toneColor(NeoRouterPalette palette, PillTone tone) => switch (tone) {
-      PillTone.success => palette.success,
-      PillTone.warning => palette.warning,
-      PillTone.error => palette.error,
-      PillTone.accent => palette.accent,
-      PillTone.neutral || PillTone.info => palette.textMuted,
-    };
+  PillTone.success => palette.success,
+  PillTone.warning => palette.warning,
+  PillTone.error => palette.error,
+  PillTone.accent => palette.accent,
+  PillTone.neutral || PillTone.info => palette.textMuted,
+};
 
 class ToneDot extends StatelessWidget {
   const ToneDot({super.key, required this.tone, this.size = 7});
@@ -277,10 +285,10 @@ class ToneDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(color: toneColor(neoRouterPaletteOf(context), tone), shape: BoxShape.circle),
-      );
+    width: size,
+    height: size,
+    decoration: BoxDecoration(color: toneColor(neoRouterPaletteOf(context), tone), shape: BoxShape.circle),
+  );
 }
 
 class StatusDot extends StatelessWidget {
@@ -359,9 +367,17 @@ class AppCard extends StatelessWidget {
     final radius = BorderRadius.circular(AppRadius.card);
     return Material(
       color: palette.surface,
-      shape: RoundedRectangleBorder(borderRadius: radius, side: BorderSide(color: palette.border)),
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: BorderSide(color: palette.border),
+      ),
       clipBehavior: Clip.antiAlias,
-      child: onTap == null ? Padding(padding: padding, child: child) : InkWell(onTap: onTap, child: Padding(padding: padding, child: child)),
+      child: onTap == null
+          ? Padding(padding: padding, child: child)
+          : InkWell(
+              onTap: onTap,
+              child: Padding(padding: padding, child: child),
+            ),
     );
   }
 }
@@ -381,15 +397,14 @@ class MetaPill extends StatelessWidget {
     final dot = tone == PillTone.success || tone == PillTone.warning || tone == PillTone.error;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: palette.surfaceRaised,
-        borderRadius: BorderRadius.circular(AppRadius.tag),
-      ),
+      decoration: BoxDecoration(color: palette.surfaceRaised, borderRadius: BorderRadius.circular(AppRadius.tag)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          if (dot) ...<Widget>[ToneDot(tone: tone, size: 6), const SizedBox(width: 6)]
-          else if (icon != null) ...<Widget>[Icon(icon, size: 12, color: palette.textMuted), const SizedBox(width: 5)],
+          if (dot) ...<Widget>[ToneDot(tone: tone, size: 6), const SizedBox(width: 6)] else if (icon != null) ...<Widget>[
+            Icon(icon, size: 12, color: palette.textMuted),
+            const SizedBox(width: 5),
+          ],
           Text(
             label,
             style: TextStyle(
@@ -415,7 +430,10 @@ class StatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(padding: const EdgeInsets.all(18), child: _Metric(label: label, value: value, caption: caption));
+    return AppCard(
+      padding: const EdgeInsets.all(18),
+      child: _Metric(label: label, value: value, caption: caption),
+    );
   }
 }
 
@@ -433,12 +451,22 @@ class _Metric extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: palette.textMuted, fontSize: 12.5),
+        ),
         const SizedBox(height: 6),
         Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: displayTitleStyle(palette, size: 24)),
         if (caption != null) ...<Widget>[
           const SizedBox(height: 3),
-          Text(caption!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: palette.textSoft, fontSize: 12.5)),
+          Text(
+            caption!,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: palette.textSoft, fontSize: 12.5),
+          ),
         ],
       ],
     );
@@ -480,10 +508,7 @@ class MetricStrip extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
-                      for (var c = 0; c < rows[r].length; c++) ...<Widget>[
-                        if (c > 0) VerticalDivider(width: 1, color: palette.border),
-                        rows[r][c],
-                      ],
+                      for (var c = 0; c < rows[r].length; c++) ...<Widget>[if (c > 0) VerticalDivider(width: 1, color: palette.border), rows[r][c]],
                     ],
                   ),
                 ),
@@ -508,7 +533,9 @@ class PageTabs<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = neoRouterPaletteOf(context);
     return Container(
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: palette.border))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: palette.border)),
+      ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -559,7 +586,9 @@ class ProviderAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = neoRouterPaletteOf(context);
     final words = label.trim().split(RegExp(r'[\s/_-]+')).where((word) => word.isNotEmpty).toList();
-    final initials = words.isEmpty ? '?' : (words.length == 1 ? words.first.characters.take(2).toString() : '${words[0].characters.first}${words[1].characters.first}');
+    final initials = words.isEmpty
+        ? '?'
+        : (words.length == 1 ? words.first.characters.take(2).toString() : '${words[0].characters.first}${words[1].characters.first}');
     return Container(
       width: size,
       height: size,
@@ -601,10 +630,20 @@ class ListRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: palette.text, fontSize: 14, fontWeight: FontWeight.w500)),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: palette.text, fontSize: 14, fontWeight: FontWeight.w500),
+                ),
                 if (subtitle != null && subtitle!.isNotEmpty) ...<Widget>[
                   const SizedBox(height: 2),
-                  Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+                  Text(
+                    subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: palette.textMuted, fontSize: 12.5),
+                  ),
                 ],
               ],
             ),
@@ -738,10 +777,7 @@ class PageScaffold extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 header,
-                for (var index = 0; index < children.length; index++) ...<Widget>[
-                  if (index > 0) SizedBox(height: gap),
-                  children[index],
-                ],
+                for (var index = 0; index < children.length; index++) ...<Widget>[if (index > 0) SizedBox(height: gap), children[index]],
               ],
             ),
           ),
@@ -751,13 +787,23 @@ class PageScaffold extends StatelessWidget {
   }
 }
 
-Future<bool> confirmAction(BuildContext context, {required String title, required String message, required String confirmLabel, required String cancelLabel, bool destructive = true}) async {
+Future<bool> confirmAction(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String confirmLabel,
+  required String cancelLabel,
+  bool destructive = true,
+}) async {
   final palette = neoRouterPaletteOf(context);
   final result = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: Text(title),
-      content: SizedBox(width: 400, child: Text(message, style: TextStyle(color: palette.textSoft, height: 1.45))),
+      content: SizedBox(
+        width: 400,
+        child: Text(message, style: TextStyle(color: palette.textSoft, height: 1.45)),
+      ),
       actions: <Widget>[
         TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(cancelLabel)),
         FilledButton(
@@ -870,10 +916,7 @@ class SettingsCardList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          for (var i = 0; i < children.length; i++) ...<Widget>[
-            if (i > 0) Divider(height: 1, thickness: 1, color: palette.border),
-            children[i],
-          ],
+          for (var i = 0; i < children.length; i++) ...<Widget>[if (i > 0) Divider(height: 1, thickness: 1, color: palette.border), children[i]],
         ],
       ),
     );
@@ -895,7 +938,10 @@ class SettingsRow extends StatelessWidget {
     final text = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: palette.text)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: palette.text),
+        ),
         if (description != null) ...<Widget>[
           const SizedBox(height: 3),
           Text(description!, style: TextStyle(fontSize: 13, color: palette.textSoft, height: 1.45)),
@@ -911,10 +957,20 @@ class SettingsRow extends StatelessWidget {
           if (constraints.maxWidth < 560) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[text, const SizedBox(height: 12), Align(alignment: Alignment.centerLeft, child: control)],
+              children: <Widget>[
+                text,
+                const SizedBox(height: 12),
+                Align(alignment: Alignment.centerLeft, child: control),
+              ],
             );
           }
-          return Row(children: <Widget>[Expanded(child: text), const SizedBox(width: 24), control]);
+          return Row(
+            children: <Widget>[
+              Expanded(child: text),
+              const SizedBox(width: 24),
+              control,
+            ],
+          );
         },
       ),
     );
@@ -940,6 +996,62 @@ class SettingsGroup extends StatelessWidget {
           SettingsHeading(title: title, description: description, trailing: trailing),
           if (children.isNotEmpty) SettingsCardList(children: children),
         ],
+      ),
+    );
+  }
+}
+
+/// A selectable card with a title and a one-line explanation.
+class OptionCard extends StatelessWidget {
+  const OptionCard({super.key, required this.title, required this.description, required this.selected, required this.onTap});
+
+  final String title;
+  final String description;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = neoRouterPaletteOf(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: selected ? palette.surfaceRaised : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          side: BorderSide(color: selected ? palette.text.withValues(alpha: 0.5) : palette.borderStrong),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Icon(
+                  selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
+                  size: 18,
+                  color: selected ? palette.accent : palette.textMuted,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        title,
+                        style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(description, style: TextStyle(fontSize: 12.5, color: palette.textSoft, height: 1.4)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

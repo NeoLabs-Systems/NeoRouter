@@ -104,6 +104,8 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
   </tr>
 </table>
 
+**Subscriptions:** Ollama Cloud Pro/Max, Synthetic, MiniMax M Plan and Kimi Code as prepaid plans: used first while the allowance lasts, then stopped or billed per use.
+
 **Search engines:** Tavily, Exa, Linkup, Parallel, Firecrawl, Serper, Brave Search, Jina and self-hosted SearXNG.
 
 **Providers:** Groq, Google Gemini, Deepgram, ElevenLabs, Cerebras, Mistral, OpenRouter, NVIDIA NIM, Cloudflare, Cohere, Z.ai, SiliconFlow, Hugging Face, Ollama Cloud, Kilo, OpenAI, Anthropic, xAI, DeepSeek, Together, Fireworks, DeepInfra, Nous, local Ollama and LM Studio, and any OpenAI- or Anthropic-compatible endpoint.

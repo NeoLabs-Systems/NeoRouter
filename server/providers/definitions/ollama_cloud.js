@@ -20,6 +20,8 @@ module.exports = {
       '^nemotron-3-(nano:30b|super|ultra)',
     ],
     note: 'Only a few cloud models are covered by the free monthly usage; all others are pay-per-token. Keep the usage-credit balance at $0 with auto-reload off so nothing can be charged once the free usage is used up.',
+    // Pro and Max include monthly usage credits for every cloud model.
+    plan: { note: 'Pro ($20) and Max ($100) include monthly usage credits ($60 and $300) for all cloud models; with "plan, then pay per use", bought credits are used afterwards.' },
     source: 'https://ollama.com/pricing',
     checkedAt: '2026-10-28',
   },
