@@ -47,7 +47,7 @@ router.post('/preview', requirePermission('processing.view'), validate(z.object(
   role: z.enum(['user', 'tool']).optional(),
   messages: z.array(z.object({ role: z.enum(['system', 'user', 'assistant', 'tool']), content: z.string().max(400_000) })).max(200).optional(),
   settings: settingsSchema.optional(),
-})), asyncRoute(async (req, res) => res.json(await processing.preview(req.space.ownerId, req.body))));
+})), asyncRoute(async (req, res) => res.json(await processing.preview(req.space.ownerId, { ...req.body, canEdit: req.space.permissions.has('processing.edit') }))));
 
 router.get('/stats', requirePermission('processing.view'), (req, res) => {
   const since = Date.now() - 30 * 86_400_000;

@@ -15,6 +15,9 @@ const { createLogger } = require('../utils/logger');
 const logger = createLogger('providers');
 const router = express.Router();
 
+// Who is changing an account, for the checks on where its key may be sent.
+const actorOf = (req) => ({ role: req.user.role, isOwner: req.space.isOwner });
+
 router.get('/definitions', (_req, res) => res.json({ definitions: registry.list().map(registry.publicDefinition) }));
 
 router.get('/accounts', requirePermission('providers.view'), (req, res) => res.json({ accounts: accounts.list(req.space.ownerId) }));
@@ -28,7 +31,7 @@ const accountInput = z.object({
   options: z.object({
     manualModels: z.array(z.string().min(1).max(300)).max(500).optional(),
     authHeader: z.string().regex(/^[A-Za-z0-9-]{1,64}$/).optional(),
-    modelsPath: z.string().max(512).optional(),
+    modelsPath: z.string().max(512).regex(/^\/(?!\/)/, 'The models path must start with /').optional(),
   }).catchall(z.string().max(512)).optional(),
   headers: z.record(z.string().max(2048)).optional(),
   // 'plan': a prepaid subscription; 'plan_paid': the plan, then pay per use.
@@ -71,10 +74,10 @@ router.post('/chatgpt/login/:loginId', requirePermission('providers.manage'), as
   return res.json({ status: 'done', plan: result.plan, account: accounts.get(pending.ownerId, account.id) });
 }));
 
-router.post('/probe', requirePermission('providers.manage'), validate(accountInput), asyncRoute(async (req, res) => res.json(await accounts.probe(req.body))));
+router.post('/probe', requirePermission('providers.manage'), validate(accountInput), asyncRoute(async (req, res) => res.json(await accounts.probe(req.space.ownerId, req.body, actorOf(req)))));
 
 router.post('/accounts', requirePermission('providers.manage'), validate(accountInput), asyncRoute(async (req, res) => {
-  const { account, validation } = await accounts.create(req.space.ownerId, req.body, req.space.actorId);
+  const { account, validation } = await accounts.create(req.space.ownerId, req.body, req.space.actorId, actorOf(req));
   let sync = null;
   try {
     sync = await catalog.syncAccount(account.id);
@@ -89,7 +92,7 @@ router.post('/accounts', requirePermission('providers.manage'), validate(account
 }));
 
 router.patch('/accounts/:id', requirePermission('providers.manage'), validate(accountInput.omit({ definitionId: true }).extend({ enabled: z.boolean().optional() })), asyncRoute(async (req, res) => {
-  const account = await accounts.update(req.space.ownerId, req.params.id, req.body);
+  const account = await accounts.update(req.space.ownerId, req.params.id, req.body, actorOf(req));
   catalog.reclassifyAccount(req.params.id);
   if (req.body.billingMode !== undefined || req.body.secret !== undefined) await billing.verifyAccount(req.params.id);
   res.json({ account: accounts.get(req.space.ownerId, account.id) });

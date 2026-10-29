@@ -5,7 +5,6 @@
 // ("aura-2-thalia-en"); the catalog lists one Aura model and the request's
 // voice picks the speaker.
 const { BaseAdapter } = require('./base_adapter');
-const { request } = require('../http');
 const { normalizeModel } = require('../model_info');
 const { ProviderError, KINDS } = require('../provider_error');
 
@@ -49,7 +48,7 @@ class DeepgramAdapter extends BaseAdapter {
     if (target.container) params.set('container', target.container);
     if (target.sample_rate) params.set('sample_rate', target.sample_rate);
     if (speed) params.set('speed', String(speed));
-    const response = await request(this.url(`/speak?${params}`), { method: 'POST', headers: this.headers(), body: { text: input }, signal, timeoutMs, raw: true });
+    const response = await this.request(this.url(`/speak?${params}`), { method: 'POST', headers: this.headers(), body: { text: input }, signal, timeoutMs, raw: true });
     const audio = Buffer.from(await response.arrayBuffer());
     if (!audio.length) throw new ProviderError(KINDS.EMPTY, 'Deepgram returned no audio.');
     return { audio, mime: target.mime, headers: response.headers };

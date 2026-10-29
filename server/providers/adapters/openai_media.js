@@ -6,7 +6,6 @@
 // Every method returns a normalized result that the gateway turns back into
 // the OpenAI response shape, so providers with other dialects (Gemini,
 // Cloudflare) can return the same shapes.
-const { request } = require('../http');
 const { ProviderError, KINDS } = require('../provider_error');
 
 const DEFAULT_PATHS = Object.freeze({
@@ -78,7 +77,7 @@ const methods = {
     const chosenFormat = quirks.speechFormats && !quirks.speechFormats.includes(format) ? quirks.speechFormats[0] : format;
     const body = { model: modelId, input, voice: chosenVoice, response_format: chosenFormat };
     if (speed) body.speed = speed;
-    const response = await request(this.url(mediaPath(this, 'speech')), { method: 'POST', headers: this.headers(), body, signal, timeoutMs, raw: true });
+    const response = await this.request(this.url(mediaPath(this, 'speech')), { method: 'POST', headers: this.headers(), body, signal, timeoutMs, raw: true });
     const audio = await binary(response);
     if (!audio.data.length) throw new ProviderError(KINDS.EMPTY, 'The provider returned no audio.');
     return { audio: audio.data, mime: audio.mime, headers: audio.headers };
@@ -137,7 +136,7 @@ const methods = {
   },
 
   async videoContent(upstreamId, { signal } = {}) {
-    const response = await request(this.url(`${mediaPath(this, 'createVideo')}/${encodeURIComponent(upstreamId)}/content`), { headers: this.headers(), signal, timeoutMs: 300_000, raw: true });
+    const response = await this.request(this.url(`${mediaPath(this, 'createVideo')}/${encodeURIComponent(upstreamId)}/content`), { headers: this.headers(), signal, timeoutMs: 300_000, raw: true });
     return { response };
   },
 };

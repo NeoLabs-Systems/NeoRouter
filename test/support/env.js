@@ -11,5 +11,8 @@ process.env.NEOROUTER_HOME = home;
 process.env.NEOROUTER_WORKERS_ENABLED = 'false';
 process.env.NEOROUTER_METADATA_SOURCES_ENABLED = 'false';
 process.env.NEOROUTER_LOG_LEVEL = 'error';
+// The mock providers listen on loopback; tests of the private-address guard
+// switch this off.
+process.env.NEOROUTER_ALLOW_PRIVATE_PROVIDER_URLS = 'true';
 
 module.exports = { home };

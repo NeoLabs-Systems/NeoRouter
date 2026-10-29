@@ -8,6 +8,8 @@ const registry = require('../../providers/registry');
 const { declaresFreeModels } = require('../catalog/free_classifier');
 const { createLogger } = require('../../utils/logger');
 const teamMembers = require('../teams/members');
+const { isPrivateDestination } = require('../../providers/net_guard');
+const { getConfig } = require('../../config/env');
 
 const logger = createLogger('provider-accounts');
 const AUTH_FAILURES_BEFORE_DISABLE = 3;
@@ -36,9 +38,28 @@ function maskSecret(secret) {
   return secret.length <= 8 ? '••••' : `${secret.slice(0, 4)}••••${secret.slice(-4)}`;
 }
 
+function isAdmin(userId) {
+  return getDatabase().prepare('SELECT role FROM users WHERE id = ?').get(userId)?.role === 'admin';
+}
+
+// Local and private network addresses are for the instance admin only (their
+// own Ollama or LAN server). The acting user and the space owner both count:
+// a member of the admin's team cannot use them either.
+function publicOnly(ownerId, actor) {
+  if (getConfig().allowPrivateProviderUrls) return false;
+  return Boolean(actor && actor.role !== 'admin') || !isAdmin(ownerId);
+}
+
+async function assertDestination(baseUrl, restricted) {
+  if (restricted && baseUrl && await isPrivateDestination(baseUrl)) {
+    throw new HttpError(400, 'PRIVATE_ADDRESS', 'This address is on a local or private network. Only the instance admin can use those.');
+  }
+}
+
 function rowToRuntime(row) {
   const secret = row.secret_encrypted ? decryptString(row.secret_encrypted) : null;
   return {
+    publicOnly: publicOnly(row.user_id),
     id: row.id,
     userId: row.user_id,
     definitionId: row.definition_id,
@@ -131,6 +152,10 @@ function validateInput(definition, { secret, baseUrl, options = {} }) {
     try { parsed = new URL(baseUrl); } catch { throw new HttpError(400, 'INVALID_BASE_URL', 'The base URL is not a valid URL.'); }
     if (!/^https?:$/.test(parsed.protocol)) throw new HttpError(400, 'INVALID_BASE_URL', 'The base URL must use http or https.');
   }
+  // A full URL here would send the key to another host than the base URL.
+  if (options.modelsPath && !/^\/(?!\/)/.test(options.modelsPath)) {
+    throw new HttpError(400, 'INVALID_MODELS_PATH', 'The models path must start with / and stay on the base URL.');
+  }
   for (const field of definition.fields) {
     if (field.required && !String(options[field.key] || '').trim()) {
       throw new HttpError(400, 'FIELD_REQUIRED', `${field.label} is required.`);
@@ -162,7 +187,9 @@ async function validateAccount(accountId) {
   return result;
 }
 
-async function create(userId, input, createdBy = userId) {
+// actor ({ role, isOwner }) is the signed-in user acting through the API;
+// it is absent for trusted local callers such as the CLI.
+async function create(userId, input, createdBy = userId, actor = null) {
   const definition = definitionOrThrow(input.definitionId);
   const baseUrl = definition.editableBaseUrl ? (input.baseUrl || definition.baseUrl || null) : null;
   const options = { ...(input.options || {}) };
@@ -172,7 +199,9 @@ async function create(userId, input, createdBy = userId) {
     ? input.billingMode : definition.billing.defaultMode;
   const { billing: billingMode, prepaid } = storedBilling(requestedMode);
 
-  const probe = { secret: input.secret || null, baseUrl, options };
+  const restricted = publicOnly(userId, actor);
+  await assertDestination(baseUrl, restricted);
+  const probe = { secret: input.secret || null, baseUrl, options, publicOnly: restricted };
   const result = await registry.createAdapter(definition, probe).validate();
   if (result.status === 'invalid') {
     throw new HttpError(422, 'KEY_REJECTED', `${definition.label} rejected this key: ${result.message}`);
@@ -191,7 +220,7 @@ async function create(userId, input, createdBy = userId) {
   return { account: publicAccount(getRow(userId, id)), validation: result };
 }
 
-async function update(userId, accountId, input) {
+async function update(userId, accountId, input, actor = null) {
   const row = getRow(userId, accountId);
   const definition = definitionOrThrow(row.definition_id);
   const db = getDatabase();
@@ -204,9 +233,16 @@ async function update(userId, accountId, input) {
     options: input.options !== undefined ? { ...input.options, ...(runtime.options.headers ? { headers: runtime.options.headers } : {}) } : runtime.options,
   };
   if (input.headers !== undefined) next.options.headers = input.headers;
+  // Members never see the stored key, so they may not send it somewhere new:
+  // moving an account to another base URL needs the key typed again.
+  if (actor && !actor.isOwner && runtime.secret && input.secret === undefined && (next.baseUrl || null) !== (runtime.baseUrl || null)) {
+    throw new HttpError(400, 'SECRET_REQUIRED', 'Enter the API key again to change where this provider is reached.');
+  }
+  next.publicOnly = publicOnly(userId, actor);
   const credentialsChanged = input.secret !== undefined || input.baseUrl !== undefined || input.options !== undefined;
   if (credentialsChanged) {
     validateInput(definition, next);
+    await assertDestination(next.baseUrl, next.publicOnly);
     const result = await registry.createAdapter(definition, next).validate();
     if (result.status === 'invalid') throw new HttpError(422, 'KEY_REJECTED', `${definition.label} rejected this key: ${result.message}`);
   }
@@ -242,13 +278,15 @@ async function update(userId, accountId, input) {
 
 // Checks credentials and lists models without saving anything, so the UI
 // can preview what an endpoint offers before the account is created.
-async function probe(input) {
+async function probe(userId, input, actor = null) {
   const definition = definitionOrThrow(input.definitionId);
   const baseUrl = definition.editableBaseUrl ? (input.baseUrl || definition.baseUrl || null) : null;
   const options = { ...(input.options || {}) };
   if (input.headers) options.headers = input.headers;
   validateInput(definition, { secret: input.secret, baseUrl, options });
-  const adapter = registry.createAdapter(definition, { secret: input.secret || null, baseUrl, options });
+  const restricted = publicOnly(userId, actor);
+  await assertDestination(baseUrl, restricted);
+  const adapter = registry.createAdapter(definition, { secret: input.secret || null, baseUrl, options, publicOnly: restricted });
   const validation = await adapter.validate();
   let models = [];
   let modelsError = null;

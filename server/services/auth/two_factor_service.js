@@ -101,6 +101,9 @@ async function verifyCode(userId, code, now = Date.now()) {
 
 async function beginSetup(userId, currentPassword) {
   await assertPassword(userId, currentPassword);
+  // Replacing an enabled factor must need the factor itself, like turning it
+  // off does; otherwise a password alone could swap in another app.
+  if (isEnabled(userId)) throw new HttpError(409, 'TWO_FACTOR_ENABLED', 'Two-factor is already on. Turn it off first to set up another app.');
   const user = getDatabase().prepare('SELECT username, email FROM users WHERE id = ?').get(userId);
   const secret = generateSecret();
   const otpauthUrl = generateURI({ ...TOTP_OPTIONS, issuer: ISSUER, label: user.email || user.username, secret });

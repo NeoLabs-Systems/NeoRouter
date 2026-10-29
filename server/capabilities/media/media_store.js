@@ -34,10 +34,28 @@ function get(id) {
   return item;
 }
 
+// The provider picks the content type, and media links open on the app's own
+// origin, so only plain image, audio and video types are served as such.
+// Anything else (HTML, SVG, scripts) is sent as a download.
+const SAFE_TYPE = /^(image\/(png|jpeg|webp|gif|avif)|audio\/[a-z0-9.+-]+|video\/(mp4|webm|quicktime))$/;
+
+function safeContentType(mime) {
+  const type = String(mime || '').split(';')[0].trim().toLowerCase();
+  return SAFE_TYPE.test(type) ? type : null;
+}
+
+function serveHeaders(res, mime) {
+  const type = safeContentType(mime);
+  res.set('Content-Type', type || 'application/octet-stream');
+  if (!type) res.set('Content-Disposition', 'attachment');
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('Content-Security-Policy', "default-src 'none'; sandbox");
+}
+
 function publicUrl(req, id) {
   const { getConfig } = require('../../config/env');
   const origin = getConfig().publicUrl || `${req.protocol}://${req.get('host')}`;
   return `${origin.replace(/\/+$/, '')}/v1/media/${id}`;
 }
 
-module.exports = { put, get, publicUrl };
+module.exports = { put, get, publicUrl, safeContentType, serveHeaders };

@@ -104,9 +104,15 @@ function shieldTexts(userId, texts) {
   return { texts: shielded, redacted: vault.size };
 }
 
-// The same pipeline for the settings page: shows what would be sent.
-async function preview(userId, { text, messages, role = 'user', settings: draft }) {
-  const config = draft ? merge(draft) : getSettings(userId);
+// The same pipeline for the settings page: shows what would be sent. Only
+// someone who may edit the settings can preview a draft of them; everyone
+// else sees the saved ones, with the AI pass kept to free models, so a
+// view-only member cannot spend on the owner's paid models.
+async function preview(userId, { text, messages, role = 'user', settings: draft, canEdit = true }) {
+  const saved = getSettings(userId);
+  const config = canEdit
+    ? (draft ? merge(draft) : saved)
+    : { ...saved, privacy: { ...saved.privacy, ai: { ...saved.privacy.ai, freeOnly: true } } };
   // A sample shown as tool output is not "the latest user message", so the
   // lossy compression steps can be previewed on it.
   const canonical = {

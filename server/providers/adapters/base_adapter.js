@@ -53,8 +53,14 @@ class BaseAdapter {
     return headers;
   }
 
+  // Every upstream call of an account goes through here, so accounts of
+  // non-admin owners stay on public hosts.
+  request(url, options = {}) {
+    return request(url, { ...options, publicOnly: Boolean(this.account.publicOnly) });
+  }
+
   async http(pathname, options = {}) {
-    return request(this.url(pathname), {
+    return this.request(this.url(pathname), {
       timeoutMs: this.timeoutMs,
       ...options,
       headers: this.headers(options.headers),

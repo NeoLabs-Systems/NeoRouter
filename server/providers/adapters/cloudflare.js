@@ -3,7 +3,6 @@
 const { OpenAICompatibleAdapter } = require('./openai_compatible');
 const { normalizeModel } = require('../model_info');
 const { ProviderError, KINDS } = require('../provider_error');
-const { request } = require('../http');
 
 const API = 'https://api.cloudflare.com/client/v4';
 
@@ -51,7 +50,7 @@ class CloudflareAdapter extends OpenAICompatibleAdapter {
 
   // /ai/run answers JSON ({ result }) or raw bytes depending on the model.
   async run(modelId, body, { signal, timeoutMs, binary = false }) {
-    const response = await request(`${this.accountApi()}/ai/run/${modelId}`, {
+    const response = await this.request(`${this.accountApi()}/ai/run/${modelId}`, {
       method: 'POST', headers: this.headers(), body, signal, timeoutMs, raw: true,
     });
     const type = response.headers.get('content-type') || '';

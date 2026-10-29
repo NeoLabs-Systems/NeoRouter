@@ -12,6 +12,7 @@ const WebSocket = require('ws');
 const { dialectFor, usageOf } = require('./dialects');
 const { ProviderError, KINDS, classifyHttpError, fromNetworkError } = require('../../providers/provider_error');
 const accounts = require('../../services/providers/account_service');
+const { isPrivateDestination } = require('../../providers/net_guard');
 const { RoutingPlan } = require('../../services/routing/router');
 const learning = require('../../services/routing/learning');
 const loadTracker = require('../../services/routing/load_tracker');
@@ -48,8 +49,12 @@ function reject(socket, status, message) {
 }
 
 // Opens the provider's socket; resolves once it is open, rejects with a
-// ProviderError (HTTP status from a refused upgrade) otherwise.
-function openUpstream({ url, headers }) {
+// ProviderError (HTTP status from a refused upgrade) otherwise. Accounts of
+// non-admin owners may only reach public hosts.
+async function openUpstream({ url, headers }, publicOnly) {
+  if (publicOnly && await isPrivateDestination(url.replace(/^ws/, 'http'))) {
+    throw new ProviderError(KINDS.BAD_REQUEST, 'This address is on a local or private network. Only the instance admin can use those.');
+  }
   return new Promise((resolve, rejectOpen) => {
     const upstream = new WebSocket(url, { headers, maxPayload: MAX_PAYLOAD, handshakeTimeout: OPEN_TIMEOUT_MS });
     // The provider may speak right after the handshake, before the session
@@ -168,7 +173,7 @@ class LiveSession {
       quota.recordRequest(entry, 0);
       plans.onSent(entry);
       try {
-        const upstream = await openUpstream(this.dialect.upstream(adapter, entry.modelId, { request: this.request, path: this.url.pathname }));
+        const upstream = await openUpstream(this.dialect.upstream(adapter, entry.modelId, { request: this.request, path: this.url.pathname }), adapter.account.publicOnly);
         if (this.closed) {
           upstream.close();
           return null;

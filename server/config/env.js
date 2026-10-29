@@ -24,6 +24,9 @@ function getConfig() {
     publicUrl: process.env.NEOROUTER_PUBLIC_URL || null,
     webDevUrl: process.env.NEOROUTER_WEB_DEV_URL || null,
     trustProxy: boolean('NEOROUTER_TRUST_PROXY', false),
+    // Lets every user, not only the instance admin, point providers at local
+    // and private network addresses.
+    allowPrivateProviderUrls: boolean('NEOROUTER_ALLOW_PRIVATE_PROVIDER_URLS', false),
     logLevel: process.env.NEOROUTER_LOG_LEVEL || 'info',
     sessionTtlMs: integer('NEOROUTER_SESSION_TTL_MS', 30 * 24 * 60 * 60 * 1000, { min: 60_000 }),
     workersEnabled: boolean('NEOROUTER_WORKERS_ENABLED', process.env.NODE_ENV !== 'test'),

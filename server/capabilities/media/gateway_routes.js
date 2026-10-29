@@ -62,7 +62,7 @@ router.get('/videos/:id', requireRouterKey, asyncRoute(async (req, res) => {
 router.get('/videos/:id/content', requireRouterKey, asyncRoute(async (req, res) => {
   const job = await videoJobs.refresh(videoJobs.find(req.routerKey.user_id, req.params.id));
   const { response } = await videoJobs.content(job, AbortSignal.timeout(300_000));
-  res.set('Content-Type', response.headers.get('content-type') || 'video/mp4');
+  mediaStore.serveHeaders(res, response.headers.get('content-type') || 'video/mp4');
   const length = response.headers.get('content-length');
   if (length) res.set('Content-Length', length);
   for await (const chunk of response.body) res.write(chunk);
@@ -73,7 +73,7 @@ router.get('/videos/:id/content', requireRouterKey, asyncRoute(async (req, res) 
 router.get('/media/:id', (req, res) => {
   const item = mediaStore.get(req.params.id);
   if (!item) return res.status(404).json({ error: { message: 'This media link expired or does not exist.', type: 'invalid_request_error', code: 'MEDIA_NOT_FOUND' } });
-  res.set('Content-Type', item.mime);
+  mediaStore.serveHeaders(res, item.mime);
   res.set('Cache-Control', 'private, max-age=3600');
   return res.send(item.data);
 });

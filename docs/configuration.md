@@ -12,6 +12,7 @@ process environment. Change values with `neorouter env set KEY value`.
 | `NEOROUTER_PUBLIC_URL` | – | External URL; used for the endpoint shown in the app and OAuth callbacks. |
 | `NEOROUTER_HOME` | `~/.neorouter` | Data, logs, backups and `secret.key`. |
 | `NEOROUTER_TRUST_PROXY` | `false` | Trust `X-Forwarded-*` from a reverse proxy. |
+| `NEOROUTER_ALLOW_PRIVATE_PROVIDER_URLS` | `false` | Let every user, not only the instance admin, use local and private network addresses for provider accounts. |
 | `NEOROUTER_ALLOWED_ORIGINS` | – | Extra CORS origins (comma separated); loopback is always allowed. |
 | `NEOROUTER_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error`. |
 | `NEOROUTER_SESSION_TTL_MS` | 30 days | Dashboard session lifetime. |

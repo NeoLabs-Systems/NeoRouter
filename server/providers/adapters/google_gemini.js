@@ -2,7 +2,7 @@
 
 const crypto = require('node:crypto');
 const { BaseAdapter } = require('./base_adapter');
-const { request, readSse, emptyResponseError } = require('../http');
+const { readSse, emptyResponseError } = require('../http');
 const { normalizeModel } = require('../model_info');
 const { classifyHttpError, ProviderError, KINDS } = require('../provider_error');
 const { contentParts, textOf, completionId, buildResponse } = require('../../capabilities/chat/canonical');
@@ -222,7 +222,7 @@ class GoogleGeminiAdapter extends BaseAdapter {
   }
 
   async *stream(canonical, { modelId, signal, onHeaders }) {
-    const response = await request(this.url(`/models/${encodeURIComponent(modelId)}:streamGenerateContent?alt=sse`), {
+    const response = await this.request(this.url(`/models/${encodeURIComponent(modelId)}:streamGenerateContent?alt=sse`), {
       method: 'POST',
       headers: this.headers({ Accept: 'text/event-stream' }),
       body: await toGemini(canonical, modelId, signal),

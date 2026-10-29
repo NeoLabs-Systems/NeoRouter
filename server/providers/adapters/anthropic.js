@@ -1,7 +1,7 @@
 'use strict';
 
 const { BaseAdapter } = require('./base_adapter');
-const { request, readSse } = require('../http');
+const { readSse } = require('../http');
 const { normalizeModel } = require('../model_info');
 const { classifyHttpError, ProviderError, KINDS } = require('../provider_error');
 const translator = require('../../capabilities/chat/translators/anthropic_messages');
@@ -48,7 +48,7 @@ class AnthropicAdapter extends BaseAdapter {
   }
 
   async *stream(canonical, { modelId, signal, onHeaders, model }) {
-    const response = await request(this.url('/messages'), {
+    const response = await this.request(this.url('/messages'), {
       method: 'POST',
       headers: this.headers({ Accept: 'text/event-stream' }),
       body: this.body(canonical, modelId, true, model?.maxOutput),

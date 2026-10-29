@@ -7,7 +7,7 @@
 // secret holds the OAuth tokens as JSON; they are refreshed when needed.
 const crypto = require('node:crypto');
 const { BaseAdapter } = require('./base_adapter');
-const { request, readSse } = require('../http');
+const { readSse } = require('../http');
 const { normalizeModel } = require('../model_info');
 const { ProviderError, KINDS, classifyHttpError } = require('../provider_error');
 const { completionId, buildChunk, buildResponse, textOf, contentParts, StreamAccumulator } = require('../../capabilities/chat/canonical');
@@ -166,13 +166,13 @@ class CodexAdapter extends BaseAdapter {
   }
 
   async listModels() {
-    const { data } = await request(`${this.baseUrl}/models?client_version=${encodeURIComponent(await oauth.clientVersion())}`, { headers: await this.codexHeaders(), timeoutMs: 30_000 });
+    const { data } = await this.request(`${this.baseUrl}/models?client_version=${encodeURIComponent(await oauth.clientVersion())}`, { headers: await this.codexHeaders(), timeoutMs: 30_000 });
     const models = (data?.models || []).filter((model) => model.slug && (model.visibility === undefined || model.visibility === 'list'));
     return models.map((model) => normalizeModel({ id: model.slug, name: model.display_name || model.slug, context_length: model.context_window || null }, { tools: true, vision: true, reasoning: true }));
   }
 
   async open(canonical, modelId, signal, timeoutMs) {
-    const send = async (instructions) => request(`${this.baseUrl}/responses`, {
+    const send = async (instructions) => this.request(`${this.baseUrl}/responses`, {
       method: 'POST', headers: await this.codexHeaders({ Accept: 'text/event-stream' }), body: buildBody(canonical, modelId, instructions), signal, timeoutMs, raw: true,
     });
     if (needsCodexPrompt) return send(await officialInstructions());

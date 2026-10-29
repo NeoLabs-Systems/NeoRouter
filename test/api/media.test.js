@@ -174,6 +174,21 @@ test('video jobs stay bound to their provider and finish by polling', async () =
   assert.equal((await gateway('get', '/videos')).body.data[0].id, id);
 });
 
+test('media links serve only plain media types, never pages', async () => {
+  const mediaStore = require('../../server/capabilities/media/media_store');
+  const page = await request(app).get(`/v1/media/${mediaStore.put(Buffer.from('<script>alert(1)</script>'), 'text/html')}`);
+  assert.equal(page.status, 200);
+  assert.equal(page.headers['content-type'], 'application/octet-stream');
+  assert.equal(page.headers['content-disposition'], 'attachment');
+  assert.equal(page.headers['x-content-type-options'], 'nosniff');
+  assert.match(page.headers['content-security-policy'], /sandbox/);
+  const svg = await request(app).get(`/v1/media/${mediaStore.put(Buffer.from('<svg/>'), 'image/svg+xml')}`);
+  assert.equal(svg.headers['content-type'], 'application/octet-stream');
+  const png = await request(app).get(`/v1/media/${mediaStore.put(Buffer.from('png'), 'image/png')}`);
+  assert.equal(png.headers['content-type'], 'image/png');
+  assert.equal(png.headers['content-disposition'], undefined);
+});
+
 test('the playground runs every kind with a stored key', async () => {
   const play = (kind, body) => request(app).post(`/api/v1/playground/media/${kind}`).set('Authorization', `Bearer ${session}`).send({ keyId, ...body });
   const speech = await play('speech', { input: 'hi' });

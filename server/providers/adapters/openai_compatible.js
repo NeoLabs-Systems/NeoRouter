@@ -1,7 +1,7 @@
 'use strict';
 
 const { BaseAdapter } = require('./base_adapter');
-const { request, readSse, assertNoEmbeddedError } = require('../http');
+const { readSse, assertNoEmbeddedError } = require('../http');
 const { normalizeModel } = require('../model_info');
 const { ProviderError, KINDS } = require('../provider_error');
 
@@ -101,7 +101,7 @@ class OpenAICompatibleAdapter extends BaseAdapter {
   }
 
   async *stream(canonical, { modelId, signal, onHeaders }) {
-    const response = await request(this.url(this.chatPath()), {
+    const response = await this.request(this.url(this.chatPath()), {
       method: 'POST',
       headers: this.headers({ Accept: 'text/event-stream' }),
       body: this.buildBody(canonical, modelId, true),

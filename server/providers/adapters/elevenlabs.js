@@ -4,7 +4,6 @@
 // speech-to-text (/v1/speech-to-text). /v1/models lists the speech models;
 // Scribe is not listed there, so the definition adds it.
 const { BaseAdapter } = require('./base_adapter');
-const { request } = require('../http');
 const { normalizeModel } = require('../model_info');
 const { ProviderError, KINDS } = require('../provider_error');
 
@@ -76,7 +75,7 @@ class ElevenLabsAdapter extends BaseAdapter {
     const body = { text: input, model_id: modelId };
     if (speed) body.voice_settings = { speed: Math.min(1.2, Math.max(0.7, speed)) };
     const voiceId = await this.voiceId(voice);
-    const response = await request(this.url(`/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${target.value}`), {
+    const response = await this.request(this.url(`/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${target.value}`), {
       method: 'POST', headers: this.headers({ Accept: target.mime }), body, signal, timeoutMs, raw: true,
     });
     const audio = Buffer.from(await response.arrayBuffer());

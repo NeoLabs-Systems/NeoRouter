@@ -1,6 +1,7 @@
 'use strict';
 
 const { classifyHttpError, fromNetworkError, ProviderError, KINDS } = require('./provider_error');
+const { isPrivateDestination } = require('./net_guard');
 
 function combineSignals(signal, timeoutMs) {
   const signals = [];
@@ -24,20 +25,43 @@ async function readBody(response) {
   }
 }
 
+const MAX_REDIRECTS = 5;
+
+// With publicOnly, every hop (the URL and each redirect) must resolve to a
+// public address, so an account cannot reach the server's own network.
+async function send(url, init, publicOnly) {
+  if (!publicOnly) return fetch(url, { ...init, redirect: 'follow' });
+  let current = url;
+  let options = init;
+  for (let hop = 0; ; hop += 1) {
+    if (await isPrivateDestination(current)) {
+      throw new ProviderError(KINDS.BAD_REQUEST, 'This address is on a local or private network. Only the instance admin can use those.');
+    }
+    const response = await fetch(current, { ...options, redirect: 'manual' });
+    const location = response.status >= 300 && response.status < 400 ? response.headers.get('location') : null;
+    if (!location) return response;
+    if (hop >= MAX_REDIRECTS) throw new ProviderError(KINDS.NETWORK, 'Too many redirects.');
+    current = new URL(location, current).toString();
+    if (response.status === 303 || ((response.status === 301 || response.status === 302) && options.method === 'POST')) {
+      options = { ...options, method: 'GET', body: undefined };
+    }
+  }
+}
+
 // Performs one upstream HTTP call. Non-2xx responses become classified
 // ProviderErrors; network failures and timeouts are classified too.
-async function request(url, { method = 'GET', headers = {}, body, signal, timeoutMs, raw = false } = {}) {
+async function request(url, { method = 'GET', headers = {}, body, signal, timeoutMs, raw = false, publicOnly = false } = {}) {
   let response;
   try {
-    response = await fetch(url, {
+    response = await send(url, {
       method,
       // FormData and binary bodies (audio uploads) go out as they are.
       headers: body !== undefined && !isRawBody(body) ? { 'Content-Type': 'application/json', ...headers } : headers,
       body: body === undefined ? undefined : isRawBody(body) ? body : JSON.stringify(body),
       signal: combineSignals(signal, timeoutMs),
-      redirect: 'follow',
-    });
+    }, publicOnly);
   } catch (error) {
+    if (error instanceof ProviderError) throw error;
     throw fromNetworkError(error);
   }
   if (!response.ok) {

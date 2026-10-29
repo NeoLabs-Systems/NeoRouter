@@ -53,6 +53,15 @@ test('login requires the second step', async () => {
   assert.equal(reused.status, 401, 'a challenge works only once');
 });
 
+test('an enabled factor cannot be swapped with only the password', async () => {
+  const swap = await request(app).post('/api/v1/auth/2fa/setup').set('Authorization', `Bearer ${session}`).send({ currentPassword: PASSWORD });
+  assert.equal(swap.status, 409, JSON.stringify(swap.body));
+  assert.equal(swap.body.error.code, 'TWO_FACTOR_ENABLED');
+  const first = await request(app).post('/api/v1/auth/login').send({ account: 'tfa', password: PASSWORD });
+  const still = await request(app).post('/api/v1/auth/login/2fa').send({ challenge: first.body.challenge, code: code() });
+  assert.equal(still.status, 200, 'the original authenticator still works');
+});
+
 test('a recovery code works exactly once', async () => {
   const first = await request(app).post('/api/v1/auth/login').send({ account: 'tfa', password: PASSWORD });
   const ok = await request(app).post('/api/v1/auth/login/2fa').send({ challenge: first.body.challenge, code: recoveryCodes[0].toLowerCase() });
