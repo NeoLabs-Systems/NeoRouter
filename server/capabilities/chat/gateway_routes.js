@@ -5,7 +5,7 @@ const { requireRouterKey } = require('../../middleware/router_key_auth');
 const { execute } = require('./executor');
 const catalog = require('../../services/catalog/catalog_service');
 const accounts = require('../../services/providers/account_service');
-const { allowedByKey, kindAllowed } = require('../../services/routing/router');
+const { allowedByKey, kindAllowed, modelKind, MODEL_KINDS } = require('../../services/routing/router');
 const profiles = require('../../services/routing/profiles');
 const { createLogger } = require('../../utils/logger');
 
@@ -64,6 +64,30 @@ function liveProtocols(entry) {
   return runtime ? accounts.adapterFor(runtime).definition.live : [];
 }
 
+// "auto" and one entry per routing profile, over every kind of model the key
+// may use. With more than one kind in reach, the same again limited to each
+// kind ("auto-free:fast", "auto-plan", "auto-paid:best"), so an app can ask
+// for, say, only what a subscription already covers. Kinds the key may not
+// use, or that have no models of this type, get no entries.
+const KIND_LABELS = { free: 'free models', plan: 'subscriptions', paid: 'paid models' };
+
+function autoModels(key, entries) {
+  const kinds = MODEL_KINDS.filter((item) => entries.some((entry) => modelKind(entry) === item));
+  const scopes = kinds.length > 1 ? [null, ...kinds] : [null];
+  const list = [];
+  for (const scope of scopes) {
+    for (const profile of profiles.list(key.user_id)) {
+      const base = scope ? `auto-${scope}` : 'auto';
+      list.push({
+        id: profile.id === 'balanced' ? base : `${base}:${profile.id}`,
+        name: scope ? `Auto (${profile.name}, ${KIND_LABELS[scope]} only)` : `Auto (${profile.name})`,
+        neorouter: { auto: true, profile: profile.id, kinds: scope ? [scope] : kinds },
+      });
+    }
+  }
+  return list;
+}
+
 router.get('/models', requireRouterKey, (req, res) => {
   const key = req.routerKey;
   // ?type=embedding (or image, speech, transcription, moderation, video) lists another kind.
@@ -72,10 +96,7 @@ router.get('/models', requireRouterKey, (req, res) => {
   const created = Math.floor(Date.now() / 1000);
   // A live session's protocol depends on the provider, so live models are
   // listed one by one with the protocols that reach them.
-  const autos = kind === 'live' ? [] : profiles.list(key.user_id).map((profile) => ({
-    id: profile.id === 'balanced' ? 'auto' : `auto:${profile.id}`,
-    name: `Auto (${profile.name})`,
-  }));
+  const autos = kind === 'live' ? [] : autoModels(key, entries);
   if (req.get('anthropic-version')) {
     const data = [...autos.map((auto) => ({ type: 'model', id: auto.id, display_name: auto.name, created_at: new Date().toISOString() })),
       ...entries.map((entry) => ({ type: 'model', id: entry.id, display_name: entry.name, created_at: new Date().toISOString() }))];
@@ -84,7 +105,7 @@ router.get('/models', requireRouterKey, (req, res) => {
   return res.json({
     object: 'list',
     data: [
-      ...autos.map((auto) => ({ id: auto.id, object: 'model', created, owned_by: 'neorouter', name: auto.name })),
+      ...autos.map((auto) => ({ id: auto.id, object: 'model', created, owned_by: 'neorouter', name: auto.name, neorouter: auto.neorouter })),
       ...entries.map((entry) => ({
         id: entry.id,
         object: 'model',

@@ -16,6 +16,7 @@ const transcode = require('./transcode');
 const videoJobs = require('./video_jobs');
 const catalog = require('../../services/catalog/catalog_service');
 const accounts = require('../../services/providers/account_service');
+const { isAutoModel } = require('../../services/routing/router');
 
 const MAX_EMBEDDING_INPUTS = 2048;
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
@@ -54,7 +55,7 @@ async function embeddings({ req, res, key, body, freeOnly = false }) {
   const texts = Array.isArray(input.input) ? input.input : [input.input];
   const inputType = /passage|document/.test(input.input_type || '') ? 'passage' : 'query';
   const tokens = estimateTokens(texts);
-  const auto = input.model === 'auto' || input.model.startsWith('auto:');
+  const auto = isAutoModel(input.model);
   const pin = auto ? pins.get(key.id) : null;
   if (pin?.dimensions && input.dimensions && input.dimensions !== pin.dimensions) {
     throw new HttpError(400, 'EMBEDDING_PIN_MISMATCH', `This key is pinned to ${pin.canonicalId} at ${pin.dimensions} dimensions; vectors of another size would not be comparable. Ask for ${pin.dimensions} dimensions or reset the pin.`);
@@ -189,7 +190,7 @@ async function transcription({ req, res, key, fields, file, translate = false, f
   const minutes = estimateAudioMinutes(file.data.length);
   // Subtitles need segment timestamps: prefer models that return them, as
   // long as one is in the catalog (otherwise the whole text is one cue).
-  const needsTimestamps = ['srt', 'vtt', 'verbose_json'].includes(input.response_format) && (input.model === 'auto' || input.model.startsWith('auto:'));
+  const needsTimestamps = ['srt', 'vtt', 'verbose_json'].includes(input.response_format) && (isAutoModel(input.model));
   const hasTimestamps = (adapter) => adapter.transcribeTimestamps !== false;
   const timestampFilter = needsTimestamps && catalog.listForUser(key.user_id, { capability: 'transcription' }).some((entry) => {
     const runtime = entry.enabled && accounts.getRuntime(entry.accountId);
@@ -267,7 +268,7 @@ async function moderations({ req, res, key, body, freeOnly = false }) {
     req, res, key, capability: 'moderation', method: 'chat', requestedModel: input.model, freeOnly, inputTokens: tokens, units: inputs.length,
     // A model named explicitly is taken at its word; auto picks a family that fits the check.
     // Decision models answer other questions and never stand in for a check.
-    filter: input.model === 'auto' || input.model.startsWith('auto:') ? (entry) => !entry.decision && CHECK_FAMILIES[input.check].has(systemOne.family(entry.modelId)) : (entry) => !entry.decision,
+    filter: isAutoModel(input.model) ? (entry) => !entry.decision && CHECK_FAMILIES[input.check].has(systemOne.family(entry.modelId)) : (entry) => !entry.decision,
     estimateCost: (entry) => tokenCost(entry, tokens + 400 * inputs.length),
     invoke: ({ adapter, entry, signal, timeoutMs }) => systemOne.classify(adapter, { inputs, policy: input.policy }, { modelId: entry.modelId, signal, timeoutMs }),
     costOf: (entry, result) => tokenCost(entry, result.inputTokens || tokens) || 0,

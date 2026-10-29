@@ -51,11 +51,24 @@ function complexityOf(request, inputTokens) {
   return Math.min(1, 0.5 * tokenSignal + 0.25 * codeSignal + 0.25 * toolSignal);
 }
 
+// The kinds of model an auto variant can be limited to.
+const MODEL_KINDS = Object.freeze(['free', 'plan', 'paid']);
+const AUTO_PATTERN = /^auto(?:-(free|plan|paid))?(?::(.+))?$/;
+
+// "auto" and "auto:<profile>" route over every kind the key allows;
+// "auto-free", "auto-plan:fast" or "auto-paid:best" only over that kind.
 function parseModel(requested) {
   const value = String(requested || '').trim();
-  if (!value || value === AUTO) return { auto: true, profile: null };
-  if (value.startsWith(`${AUTO}:`)) return { auto: true, profile: value.slice(AUTO.length + 1) };
+  if (!value) return { auto: true, profile: null, kind: null };
+  const match = AUTO_PATTERN.exec(value);
+  if (match) return { auto: true, kind: match[1] || null, profile: match[2] || null };
   return { auto: false, model: value };
+}
+
+const isAutoModel = (value) => parseModel(value).auto;
+
+function modelKind(entry) {
+  return entry.isFree ? 'free' : entry.isPlan ? 'plan' : 'paid';
 }
 
 function maxOutputFor(request, entry) {
@@ -71,6 +84,7 @@ function rejection(entry, ctx, now) {
   if (!allowedByKey(entry, key)) return 'not_allowed_for_key';
   const kind = kindAllowed(entry, key, freeOnly);
   if (kind) return kind;
+  if (ctx.onlyKind && modelKind(entry) !== ctx.onlyKind) return 'other_kind';
   if (needs.tools && entry.tools === false) return 'no_tools';
   if (needs.vision && entry.vision !== true) return 'no_vision';
   const reserve = Math.max(MIN_OUTPUT_RESERVE, Math.min(request.max_tokens || MIN_OUTPUT_RESERVE, 32000));
@@ -207,7 +221,7 @@ class RoutingPlan {
   }
 
   context() {
-    return { key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost };
+    return { onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost };
   }
 
   rank({ includeRejected = false, sample = true, now = Date.now() } = {}) {
@@ -331,4 +345,4 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
   };
 }
 
-module.exports = { RoutingPlan, preview, parseModel, allowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor };
+module.exports = { RoutingPlan, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor };
