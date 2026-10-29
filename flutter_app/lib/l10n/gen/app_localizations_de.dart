@@ -443,7 +443,10 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get claudeCliSteps =>
-      'Installiere auf dem NeoRouter-Server Claude Code und führe `claude auth login` mit deinem Claude-Konto aus, als der Benutzer, unter dem NeoRouter läuft. Verbinde danach hier.';
+      'Führe auf einem beliebigen Rechner mit Claude Code `claude setup-token` aus, melde dich mit deinem Claude-Konto an und füge den Token hier ein. Er bleibt nur für diese Verbindung.';
+
+  @override
+  String get claudeToken => 'Claude-Code-Token';
 
   @override
   String get claudeCliConnect => 'Claude verbinden';

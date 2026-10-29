@@ -250,8 +250,13 @@ async function probe(input) {
 }
 
 function remove(userId, accountId) {
-  getRow(userId, accountId);
+  const row = getRow(userId, accountId);
   getDatabase().prepare('DELETE FROM provider_accounts WHERE id = ?').run(accountId);
+  // A Claude Code connection's private configuration folder goes with it.
+  if (registry.get(row.definition_id)?.adapter === 'claude_cli') {
+    const { RUNTIME_HOME } = require('../../../runtime/paths');
+    require('node:fs').rm(require('node:path').join(RUNTIME_HOME, 'claude', accountId), { recursive: true, force: true }, () => {});
+  }
 }
 
 function list(userId) {

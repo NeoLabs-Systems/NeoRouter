@@ -904,8 +904,14 @@ abstract class AppL10n {
   /// No description provided for @claudeCliSteps.
   ///
   /// In en, this message translates to:
-  /// **'On the NeoRouter server, install Claude Code and run `claude auth login` with your Claude account, as the user NeoRouter runs as. Then connect here.'**
+  /// **'On any computer with Claude Code, run `claude setup-token`, sign in with your Claude account and paste the token here. It stays private to this connection.'**
   String get claudeCliSteps;
+
+  /// No description provided for @claudeToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Claude Code token'**
+  String get claudeToken;
 
   /// No description provided for @claudeCliConnect.
   ///

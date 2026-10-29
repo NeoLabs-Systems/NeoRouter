@@ -48,13 +48,12 @@ module.exports = [
   {
     id: 'claude_code',
     label: 'Claude',
-    description: 'Your Claude plan (Pro, Max) through Claude Code on the NeoRouter server.',
+    description: 'Your Claude plan (Pro, Max) through the official Claude Code program.',
     category: 'plan',
     website: 'https://code.claude.com',
     adapter: 'claude_cli',
     connect: 'claude_cli',
-    keyOptional: true,
-    fields: [{ key: 'claudePath', label: 'Path to claude (optional)', required: false, placeholder: '/opt/homebrew/bin/claude' }],
+    keyUrl: 'https://code.claude.com/docs/en/authentication#generate-a-long-lived-token',
     models: {
       static: [
         { id: 'claude-opus-5-5', name: 'Claude Opus 5.5' },
@@ -66,7 +65,7 @@ module.exports = [
     billing: {
       defaultMode: 'plan',
       plan: { note: 'Uses your Claude plan limits. Claude Code says when a window is used up, and NeoRouter waits until it resets.' },
-      note: 'Runs the official Claude Code program, signed in on the server with `claude auth login` (Anthropic allows this; copying its sign-in into other tools is not allowed). Chat only, without tools or images. Meant for your own plan, not shared between people.',
+      note: 'The token from `claude setup-token` is stored encrypted for this connection only and handed to the official Claude Code program on the server, nothing else. Chat only, without tools or images. Meant for your own plan, not shared between people.',
       source: 'https://code.claude.com/docs/en/legal-and-compliance',
       checkedAt: '2026-10-29',
     },

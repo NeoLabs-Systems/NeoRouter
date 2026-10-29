@@ -772,14 +772,16 @@ class _ProviderFormState extends State<_ProviderForm> {
                   ),
               ],
               if (_claudeCli) ...<Widget>[const SizedBox(height: AppSpacing.md), InlineHint(message: t.claudeCliSteps, icon: Icons.terminal_rounded)],
-              if (!_signInOnly && !_claudeCli) ...<Widget>[
+              if (!_signInOnly) ...<Widget>[
                 const SizedBox(height: AppSpacing.md),
                 TextField(
                   controller: _secret,
                   obscureText: true,
                   autofocus: !_editing && definition.id != 'openrouter',
                   decoration: InputDecoration(
-                    labelText: _editing
+                    labelText: _claudeCli && !_editing
+                        ? t.claudeToken
+                        : _editing
                         ? t.apiKeyKeep
                         : definition.keyOptional
                         ? t.apiKeyOptional
