@@ -7,6 +7,11 @@ const plans = require('./plans');
 const quota = require('../quota/quota_service');
 const billing = require('../providers/billing_check');
 const { getDatabase } = require('../../db/database');
+const experience = require('./task/experience');
+
+// Failures that say the model handled this kind of task badly (as opposed to
+// limits, outages or bad requests, which say nothing about the task).
+const TASK_FAILURES = new Set([KINDS.EMPTY, KINDS.INVALID_OUTPUT, KINDS.TRUNCATED]);
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
@@ -83,6 +88,7 @@ const TRUNCATED_HEADROOM = 2;
 function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, now = Date.now() } = {}) {
   const policy = policyFor(error);
   if (error.kind === KINDS.ABORTED) return policy;
+  if (TASK_FAILURES.has(error.kind)) experience.recordOutcome(entry.ref, entry.task, false, now);
   if (error.kind === KINDS.TRUNCATED && maxTokens) stats.raiseMinOutputTokens(entry.ref, Math.ceil(maxTokens * TRUNCATED_HEADROOM), now);
   if (error.kind === KINDS.CONTEXT_LENGTH) {
     learnContextWindow(entry, estimatedTokens);
@@ -125,6 +131,7 @@ function onSlow(entry, elapsedMs, now = Date.now()) {
 
 function onSuccess(entry, measurement, headers, now = Date.now()) {
   stats.recordSuccess(entry.ref, measurement, now);
+  experience.recordOutcome(entry.ref, entry.task, true, now);
   concurrency.onSuccess(entry, { now });
   if (headers) {
     quota.observeHeaders(entry, headers, now);

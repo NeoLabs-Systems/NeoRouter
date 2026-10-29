@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
 import 'main_dashboard.dart';
+import 'main_routing.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
@@ -550,6 +551,7 @@ class _RequestDetails extends StatelessWidget {
       (t.detailTokens, t.tokensInOut(formatCount(log.inputTokens), formatCount(log.outputTokens))),
       (t.detailCost, log.isFree ? t.free : formatUsd(log.costUsd)),
       if (log.capability != 'chat') (t.activityKind, capabilityInfo(log.capability).label(t)),
+      if (log.task != null) (t.detailTask, taskLabel(t, log.task)),
       (t.detailFormat, '${log.apiFormat}${log.stream ? ' · stream' : ''}'),
       (t.detailTime, formatTime(log.createdAt)),
     ];

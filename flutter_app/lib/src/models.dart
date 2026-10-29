@@ -282,6 +282,8 @@ class RequestLog {
   String get requestedModel => raw['requestedModel'] as String? ?? '';
   String? get model => raw['model'] as String?;
   String get capability => raw['capability'] as String? ?? 'chat';
+  /// The kind of task routing recognised (chat only).
+  String? get task => raw['task'] as String?;
   bool get success => raw['status'] == 'success';
   int? get httpStatus => _int(raw['httpStatus']);
   String? get errorCode => raw['errorCode'] as String?;

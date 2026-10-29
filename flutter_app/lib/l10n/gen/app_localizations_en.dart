@@ -3059,6 +3059,72 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String get taskChat => 'Small talk';
+
+  @override
+  String get taskCoding => 'Coding';
+
+  @override
+  String get taskMath => 'Math';
+
+  @override
+  String get taskReasoning => 'Reasoning';
+
+  @override
+  String get taskWriting => 'Writing';
+
+  @override
+  String get taskTranslation => 'Translation';
+
+  @override
+  String get taskSummarization => 'Summarizing';
+
+  @override
+  String get taskExtraction => 'Extracting data';
+
+  @override
+  String get taskAgent => 'Agent work with tools';
+
+  @override
+  String get taskVision => 'Images';
+
+  @override
+  String get taskLongContext => 'Long documents';
+
+  @override
+  String get taskKnowledge => 'Knowledge question';
+
+  @override
+  String get taskGeneral => 'General';
+
+  @override
+  String get taskEasy => 'easy';
+
+  @override
+  String get taskMedium => 'medium';
+
+  @override
+  String get taskHard => 'hard';
+
+  @override
+  String taskRecognised(String task, String difficulty) {
+    return 'Recognised as $task · $difficulty';
+  }
+
+  @override
+  String get previewPromptLabel => 'Try a prompt';
+
+  @override
+  String get previewPromptHint =>
+      'NeoRouter reads what a prompt asks for and how hard it is, then weighs each model\'s benchmarks and track record for that kind of task.';
+
+  @override
+  String get previewPromptTry => 'Try';
+
+  @override
+  String get detailTask => 'Task';
+
+  @override
   String get homeCapacityTitle => 'Around the clock';
 
   @override

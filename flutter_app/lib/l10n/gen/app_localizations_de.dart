@@ -3079,6 +3079,72 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
+  String get taskChat => 'Smalltalk';
+
+  @override
+  String get taskCoding => 'Programmieren';
+
+  @override
+  String get taskMath => 'Mathe';
+
+  @override
+  String get taskReasoning => 'Nachdenken';
+
+  @override
+  String get taskWriting => 'Schreiben';
+
+  @override
+  String get taskTranslation => 'Übersetzen';
+
+  @override
+  String get taskSummarization => 'Zusammenfassen';
+
+  @override
+  String get taskExtraction => 'Daten herausziehen';
+
+  @override
+  String get taskAgent => 'Agentenarbeit mit Tools';
+
+  @override
+  String get taskVision => 'Bilder';
+
+  @override
+  String get taskLongContext => 'Lange Dokumente';
+
+  @override
+  String get taskKnowledge => 'Wissensfrage';
+
+  @override
+  String get taskGeneral => 'Allgemein';
+
+  @override
+  String get taskEasy => 'leicht';
+
+  @override
+  String get taskMedium => 'mittel';
+
+  @override
+  String get taskHard => 'schwer';
+
+  @override
+  String taskRecognised(String task, String difficulty) {
+    return 'Erkannt als $task · $difficulty';
+  }
+
+  @override
+  String get previewPromptLabel => 'Prompt ausprobieren';
+
+  @override
+  String get previewPromptHint =>
+      'NeoRouter liest, worum es in einem Prompt geht und wie schwer er ist, und wägt dann die Benchmarks und Erfahrungswerte jedes Modells für diese Art von Aufgabe ab.';
+
+  @override
+  String get previewPromptTry => 'Ausprobieren';
+
+  @override
+  String get detailTask => 'Aufgabe';
+
+  @override
   String get homeCapacityTitle => 'Rund um die Uhr';
 
   @override

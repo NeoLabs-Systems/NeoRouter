@@ -3,6 +3,8 @@
 const stats = require('./stats_store');
 const loadTracker = require('./load_tracker');
 const concurrency = require('./concurrency');
+const { taskIntelligence } = require('./task/skills');
+const experience = require('./task/experience');
 
 // Feature scaling ranges (log scale). Centralized so they can be tuned.
 const TPS_RANGE = [10, 1500];
@@ -87,11 +89,29 @@ function cost(entry) {
   return 1 - (logScale(price, PRICE_RANGE) ?? 0);
 }
 
-// Shifts weight toward intelligence for demanding requests (long context,
-// tools, code) when the profile allows adaptive routing.
-function adaptWeights(weights, complexity, adaptive) {
-  if (!adaptive || complexity < 0.5) return weights;
-  const shift = 0.3 * (complexity - 0.5);
+// Difficulty-aware weights (when the profile is adaptive): hard requests
+// lean towards intelligence, easy ones ("hi", a quick translation) towards
+// speed and price, so frontier models are only paid for when a prompt needs
+// them. Between the two bands the profile's weights stand.
+const EASY_BELOW = 0.3;
+const HARD_ABOVE = 0.5;
+const MAX_EASY_SHIFT = 0.5;
+
+function adaptWeights(weights, difficulty, adaptive) {
+  if (!adaptive || difficulty === null || difficulty === undefined) return weights;
+  if (difficulty < EASY_BELOW) {
+    const moved = weights.intelligence * MAX_EASY_SHIFT * ((EASY_BELOW - difficulty) / EASY_BELOW);
+    const targets = weights.speed + weights.cost;
+    const speedShare = targets > 0 ? weights.speed / targets : 0.5;
+    return {
+      intelligence: weights.intelligence - moved,
+      speed: weights.speed + moved * speedShare,
+      reliability: weights.reliability,
+      cost: weights.cost + moved * (1 - speedShare),
+    };
+  }
+  if (difficulty <= HARD_ABOVE) return weights;
+  const shift = 0.3 * (difficulty - HARD_ABOVE);
   const others = weights.speed + weights.reliability + weights.cost;
   if (others === 0) return weights;
   const scale = Math.max(0, 1 - shift / others);
@@ -103,12 +123,16 @@ function adaptWeights(weights, complexity, adaptive) {
   };
 }
 
-function score(entry, { weights, quotaFactor = 1, random, sample = true, now = Date.now() }) {
+// `task` (classifier.js) makes intelligence task-aware (benchmark skills and
+// feedback) and reliability lean on the model's track record for this kind
+// of task.
+function score(entry, { weights, quotaFactor = 1, random, sample = true, now = Date.now(), task = null }) {
   const snapshot = stats.snapshot(entry.ref, now);
+  const learned = experience.adjust(task ? entry.ref : null, task?.primary, reliability(snapshot, { sample, random }), now);
   const features = {
-    intelligence: entry.intelligence ?? DEFAULT_INTELLIGENCE,
+    intelligence: Math.min(1, taskIntelligence(entry.intelligence ?? DEFAULT_INTELLIGENCE, entry.skills, task?.skills) * learned.quality),
     speed: speed(entry, snapshot),
-    reliability: reliability(snapshot, { sample, random }),
+    reliability: learned.reliability,
     cost: cost(entry),
   };
   const totalWeight = weights.intelligence + weights.speed + weights.reliability + weights.cost;

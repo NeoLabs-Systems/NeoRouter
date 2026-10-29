@@ -5,6 +5,8 @@ const { requireRouterKey } = require('../../middleware/router_key_auth');
 const { execute } = require('./executor');
 const catalog = require('../../services/catalog/catalog_service');
 const accounts = require('../../services/providers/account_service');
+const experience = require('../../services/routing/task/experience');
+const { getDatabase } = require('../../db/database');
 const { allowedByKey, kindAllowed, modelKind, MODEL_KINDS } = require('../../services/routing/router');
 const profiles = require('../../services/routing/profiles');
 const { createLogger } = require('../../utils/logger');
@@ -150,6 +152,21 @@ router.get('/models/:model(*)', requireRouterKey, (req, res, next) => {
   const entry = modelsVisibleTo(req.routerKey).find((item) => item.id === req.params.model);
   if (!entry) return gatewayErrorHandler('openai_chat')(Object.assign(new Error(`Model ${req.params.model} not found.`), { status: 404, code: 'MODEL_NOT_FOUND' }), req, res, next);
   return res.json({ id: entry.id, object: 'model', created: Math.floor(Date.now() / 1000), owned_by: entry.providerSlug });
+});
+
+// Feedback on an answer ("good" or "bad") teaches routing how the model that
+// gave it does on that kind of task. `request_id` is the X-Request-Id header
+// of the answer.
+router.post('/feedback', requireRouterKey, (req, res) => {
+  const requestId = String(req.body?.request_id || '');
+  const rating = req.body?.rating;
+  if (!['good', 'bad', 1, -1].includes(rating)) {
+    return res.status(400).json({ error: { message: 'rating must be "good" or "bad".', type: 'invalid_request_error', code: 'INVALID_RATING' } });
+  }
+  const row = getDatabase().prepare("SELECT model_ref, model_label, task FROM requests WHERE id = ? AND router_key_id = ? AND status = 'success'").get(requestId, req.routerKey.id);
+  if (!row?.model_ref) return res.status(404).json({ error: { message: 'No answer with this request id for this key.', type: 'invalid_request_error', code: 'REQUEST_NOT_FOUND' } });
+  experience.recordFeedback(row.model_ref, row.task || 'general', rating === 'good' || rating === 1);
+  return res.json({ ok: true, model: row.model_label, task: row.task || 'general' });
 });
 
 router.post('/chat/completions', requireRouterKey, asyncRoute((req, res) => execute({ req, res, key: req.routerKey, format: 'openai_chat', body: req.body })), gatewayErrorHandler('openai_chat'));

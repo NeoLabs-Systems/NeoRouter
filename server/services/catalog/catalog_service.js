@@ -157,7 +157,7 @@ function bulkSetEnabled(userId, { accountId, enabled, onlyFree }) {
 // provider data; provider data wins over canonical metadata.
 const SELECT_ENTRY = `SELECT m.*, a.slug, a.user_id, a.definition_id, a.billing_mode, a.enabled account_enabled, a.status account_status, a.prepaid account_prepaid,
     md.intelligence, md.intelligence_source, md.intelligence_confidence, md.speed_tps, md.context_window md_context,
-    md.supports_tools md_tools, md.supports_vision md_vision, md.supports_reasoning md_reasoning, md.release_date, md.params_b,
+    md.supports_tools md_tools, md.supports_vision md_vision, md.supports_reasoning md_reasoning, md.release_date, md.params_b, md.skills_json,
     s.successes, s.failures, s.decayed_at, s.latency_ms, s.ttft_ms, s.tps, s.samples, s.penalty, s.penalty_at,
     s.cooldown_until, s.cooldown_reason, s.breaker_open_until, s.last_error, s.last_success_at, s.last_failure_at
   FROM models m
@@ -207,6 +207,8 @@ function toEntry(row) {
     planOverflow: row.account_prepaid === 2,
     freeReason: row.free_reason,
     intelligence: pick(overrides.intelligence, row.intelligence, null),
+    // Score per skill (coding, math, …) from benchmarks; null when unknown.
+    skills: row.skills_json ? JSON.parse(row.skills_json) : null,
     intelligenceSource: overrides.intelligence !== undefined ? 'manual' : row.intelligence_source,
     intelligenceConfidence: row.intelligence_confidence,
     speedPriorTps: row.speed_tps,

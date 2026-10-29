@@ -217,8 +217,11 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   const inputTokens = estimateInputTokens(canonical);
   const plan = new RoutingPlan({
     userId: key.user_id, key, request: canonical, requestedModel, needs, inputTokens, freeOnly: freeOnly || budgetExhausted,
+    // Apps that know what they ask for can say so (one of the task kinds).
+    taskHint: req.get?.('x-neorouter-task') || null,
   });
   if (plan.pacing) res.set('X-NeoRouter-Budget-Pace', plan.pacing.state);
+  if (plan.task) res.set('X-NeoRouter-Task', `${plan.task.primary}; difficulty=${plan.task.difficulty}`);
 
   const config = getConfig();
   const clientAbort = new AbortController();
@@ -241,6 +244,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
         trail_json: JSON.stringify(trail),
         redacted_count: processingStats.redacted,
         compression_saved_tokens: processingStats.compression.savedTokens,
+        task: plan.task?.primary ?? null,
         latency_ms: Date.now() - startedAt,
         input_tokens: 0,
         output_tokens: 0,

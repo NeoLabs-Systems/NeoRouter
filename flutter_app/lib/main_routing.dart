@@ -33,6 +33,25 @@ IconData presetIcon(String id) => switch (id) {
       _ => Icons.auto_fix_high_outlined,
     };
 
+/// A task kind routing recognises (server: services/routing/task/kinds.js).
+String taskLabel(AppL10n t, String? id) => switch (id) {
+      'chat' => t.taskChat,
+      'coding' => t.taskCoding,
+      'math' => t.taskMath,
+      'reasoning' => t.taskReasoning,
+      'writing' => t.taskWriting,
+      'translation' => t.taskTranslation,
+      'summarization' => t.taskSummarization,
+      'extraction' => t.taskExtraction,
+      'agent' => t.taskAgent,
+      'vision' => t.taskVision,
+      'long_context' => t.taskLongContext,
+      'knowledge' => t.taskKnowledge,
+      _ => t.taskGeneral,
+    };
+
+String difficultyLabel(AppL10n t, num difficulty) => difficulty < 0.3 ? t.taskEasy : difficulty > 0.5 ? t.taskHard : t.taskMedium;
+
 String profileLabel(AppL10n t, RoutingProfile profile) => profile.preset ? presetLabel(t, profile.id) : profile.name;
 
 class RoutingScreen extends StatefulWidget {
@@ -51,6 +70,7 @@ class _RoutingScreenState extends State<RoutingScreen> {
   String _selected = 'balanced';
 
   bool _previewFree = true;
+  final TextEditingController _previewPrompt = TextEditingController();
   Map<String, dynamic>? _preview;
   bool _previewing = false;
   bool _showSkipped = false;
@@ -59,6 +79,12 @@ class _RoutingScreenState extends State<RoutingScreen> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _previewPrompt.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -92,7 +118,7 @@ class _RoutingScreenState extends State<RoutingScreen> {
       final result = await widget.controller.api.preview(<String, Object?>{
         'profile': _selected,
         'mode': _previewFree ? 'free_only' : 'both',
-        'prompt': t.previewDefaultPrompt,
+        'prompt': _previewPrompt.text.trim().isEmpty ? t.previewDefaultPrompt : _previewPrompt.text.trim(),
       });
       setState(() => _preview = result);
     } on ApiException catch (error) {
@@ -233,6 +259,7 @@ class _RoutingScreenState extends State<RoutingScreen> {
     final candidates = ((_preview?['candidates'] as List?) ?? const <Object>[]).cast<Map>();
     final chosen = candidates.where((item) => item['rejected'] == null).take(3).toList();
     final skipped = candidates.where((item) => item['rejected'] != null).toList();
+    final task = _preview?['task'] is Map ? Map<String, dynamic>.from(_preview!['task'] as Map) : null;
     return SettingsGroup(
       title: t.previewTitle,
       description: t.previewHint(profileLabel(t, profile)),
@@ -246,6 +273,48 @@ class _RoutingScreenState extends State<RoutingScreen> {
               setState(() => _previewFree = value);
               _runPreview();
             },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(t.previewPromptLabel, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
+              const SizedBox(height: 2),
+              Text(t.previewPromptHint, style: TextStyle(fontSize: 12.5, color: palette.textSoft, height: 1.4)),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: TextField(
+                      controller: _previewPrompt,
+                      minLines: 1,
+                      maxLines: 4,
+                      decoration: InputDecoration(isDense: true, hintText: t.previewDefaultPrompt),
+                      onSubmitted: (_) => _runPreview(),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  OutlinedButton(onPressed: _previewing ? null : _runPreview, child: Text(t.previewPromptTry)),
+                ],
+              ),
+              if (task != null) ...<Widget>[
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: <Widget>[
+                    Icon(Icons.label_outline_rounded, size: 16, color: palette.accent),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        t.taskRecognised(taskLabel(t, task['primary'] as String?), difficultyLabel(t, (task['difficulty'] as num?) ?? 0.3)),
+                        style: TextStyle(fontSize: 13, color: palette.text, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
           ),
         ),
         if (chosen.isEmpty)

@@ -5479,6 +5479,132 @@ abstract class AppL10n {
   /// **'{actor} left {subject}\'s team'**
   String teamEventLeave(String actor, String subject);
 
+  /// No description provided for @taskChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Small talk'**
+  String get taskChat;
+
+  /// No description provided for @taskCoding.
+  ///
+  /// In en, this message translates to:
+  /// **'Coding'**
+  String get taskCoding;
+
+  /// No description provided for @taskMath.
+  ///
+  /// In en, this message translates to:
+  /// **'Math'**
+  String get taskMath;
+
+  /// No description provided for @taskReasoning.
+  ///
+  /// In en, this message translates to:
+  /// **'Reasoning'**
+  String get taskReasoning;
+
+  /// No description provided for @taskWriting.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing'**
+  String get taskWriting;
+
+  /// No description provided for @taskTranslation.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation'**
+  String get taskTranslation;
+
+  /// No description provided for @taskSummarization.
+  ///
+  /// In en, this message translates to:
+  /// **'Summarizing'**
+  String get taskSummarization;
+
+  /// No description provided for @taskExtraction.
+  ///
+  /// In en, this message translates to:
+  /// **'Extracting data'**
+  String get taskExtraction;
+
+  /// No description provided for @taskAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent work with tools'**
+  String get taskAgent;
+
+  /// No description provided for @taskVision.
+  ///
+  /// In en, this message translates to:
+  /// **'Images'**
+  String get taskVision;
+
+  /// No description provided for @taskLongContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Long documents'**
+  String get taskLongContext;
+
+  /// No description provided for @taskKnowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'Knowledge question'**
+  String get taskKnowledge;
+
+  /// No description provided for @taskGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get taskGeneral;
+
+  /// No description provided for @taskEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'easy'**
+  String get taskEasy;
+
+  /// No description provided for @taskMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'medium'**
+  String get taskMedium;
+
+  /// No description provided for @taskHard.
+  ///
+  /// In en, this message translates to:
+  /// **'hard'**
+  String get taskHard;
+
+  /// No description provided for @taskRecognised.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognised as {task} · {difficulty}'**
+  String taskRecognised(String task, String difficulty);
+
+  /// No description provided for @previewPromptLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a prompt'**
+  String get previewPromptLabel;
+
+  /// No description provided for @previewPromptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter reads what a prompt asks for and how hard it is, then weighs each model\'s benchmarks and track record for that kind of task.'**
+  String get previewPromptHint;
+
+  /// No description provided for @previewPromptTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try'**
+  String get previewPromptTry;
+
+  /// No description provided for @detailTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Task'**
+  String get detailTask;
+
   /// No description provided for @homeCapacityTitle.
   ///
   /// In en, this message translates to:

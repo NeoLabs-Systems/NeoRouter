@@ -1713,6 +1713,37 @@
       }
     }
   },
+  "taskChat": "Small talk",
+  "taskCoding": "Coding",
+  "taskMath": "Math",
+  "taskReasoning": "Reasoning",
+  "taskWriting": "Writing",
+  "taskTranslation": "Translation",
+  "taskSummarization": "Summarizing",
+  "taskExtraction": "Extracting data",
+  "taskAgent": "Agent work with tools",
+  "taskVision": "Images",
+  "taskLongContext": "Long documents",
+  "taskKnowledge": "Knowledge question",
+  "taskGeneral": "General",
+  "taskEasy": "easy",
+  "taskMedium": "medium",
+  "taskHard": "hard",
+  "taskRecognised": "Recognised as {task} · {difficulty}",
+  "@taskRecognised": {
+    "placeholders": {
+      "task": {
+        "type": "String"
+      },
+      "difficulty": {
+        "type": "String"
+      }
+    }
+  },
+  "previewPromptLabel": "Try a prompt",
+  "previewPromptHint": "NeoRouter reads what a prompt asks for and how hard it is, then weighs each model's benchmarks and track record for that kind of task.",
+  "previewPromptTry": "Try",
+  "detailTask": "Task",
   "homeCapacityTitle": "Around the clock",
   "homeCapacityValue": "{count} requests a day",
   "@homeCapacityValue": {

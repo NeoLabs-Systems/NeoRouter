@@ -115,12 +115,18 @@ test('budget reservations block concurrent overspend and settle actual cost', ()
   assert.equal(budget.costOf({ isFree: true, priceIn: 1, priceOut: 2 }, { prompt_tokens: 1e6, completion_tokens: 1e6 }), 0);
 });
 
-test('adaptive weights shift toward intelligence for complex requests only', () => {
-  const weights = profiles.PRESETS.fast.weights;
-  assert.deepEqual(scoring.adaptWeights(weights, 0.2, true), weights);
-  const shifted = scoring.adaptWeights(weights, 1, true);
-  assert.ok(shifted.intelligence > weights.intelligence);
-  assert.ok(Math.abs(shifted.intelligence + shifted.speed + shifted.reliability + shifted.cost - 1) < 1e-9);
+test('adaptive weights lean on intelligence for hard requests and on speed and price for easy ones', () => {
+  const weights = profiles.PRESETS.balanced.weights;
+  const sum = (w) => w.intelligence + w.speed + w.reliability + w.cost;
+  assert.deepEqual(scoring.adaptWeights(weights, 0.4, true), weights, 'in between, the profile stands');
+  const hard = scoring.adaptWeights(weights, 1, true);
+  assert.ok(hard.intelligence > weights.intelligence);
+  const easy = scoring.adaptWeights(weights, 0.05, true);
+  assert.ok(easy.intelligence < weights.intelligence);
+  assert.ok(easy.cost > weights.cost && easy.speed > weights.speed);
+  for (const shifted of [hard, easy]) assert.ok(Math.abs(sum(shifted) - sum(weights)) < 1e-9);
+  assert.deepEqual(scoring.adaptWeights(weights, 0.05, false), weights, 'a style can turn it off');
+  assert.deepEqual(scoring.adaptWeights(weights, null, true), weights, 'requests without a prompt keep the weights');
 });
 
 test('Gemini schema sanitizer keeps supported keys only', () => {

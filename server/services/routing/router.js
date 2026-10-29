@@ -11,6 +11,7 @@ const profiles = require('./profiles');
 const budget = require('../budget/budget_service');
 const pacing = require('../budget/pacing');
 const plans = require('./plans');
+const { classify } = require('./task/classifier');
 const { getConfig } = require('../../config/env');
 const { HttpError } = require('../../middleware/error_handler');
 
@@ -18,7 +19,6 @@ const AUTO = 'auto';
 const DEFAULT_OUTPUT_TOKENS = 1024;
 const MIN_OUTPUT_RESERVE = 256;
 const UNKNOWN_CAPABILITY_FACTOR = 0.85;
-const COMPLEXITY_TOKEN_RANGE = [200, 30000];
 const UNKNOWN_CONTEXT_LIMIT = 131072;
 const RELATIVE_FEATURES = ['intelligence', 'speed', 'cost'];
 const RELATIVE_BLEND = 0.5;
@@ -39,16 +39,6 @@ function allowedByKey(entry, key) {
   const patterns = JSON.parse(key.allowed_models_json || '[]');
   if (!patterns.length) return true;
   return patterns.some((pattern) => globToRegExp(pattern).test(entry.id));
-}
-
-// Rough request difficulty in [0, 1]; only used to shift weights when the
-// profile is adaptive.
-function complexityOf(request, inputTokens) {
-  const tokenSignal = scoring.logScale(inputTokens, COMPLEXITY_TOKEN_RANGE) ?? 0;
-  const text = JSON.stringify(request.messages).slice(-20000);
-  const codeSignal = /```|function\s|class\s|def\s|SELECT\s|=>/.test(text) ? 1 : 0;
-  const toolSignal = request.tools?.length ? 1 : 0;
-  return Math.min(1, 0.5 * tokenSignal + 0.25 * codeSignal + 0.25 * toolSignal);
 }
 
 // The kinds of model an auto variant can be limited to.
@@ -244,7 +234,8 @@ function explainNoModel(rejected, capability = 'chat') {
 }
 
 class RoutingPlan {
-  constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null }) {
+  // taskHint: a task kind the client named (X-NeoRouter-Task).
+  constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null, taskHint = null }) {
     this.capability = capability;
     // Non-chat kinds price per image, second or character; they pass their own estimate.
     this.estimateCost = estimateCost;
@@ -261,7 +252,10 @@ class RoutingPlan {
     const profileRef = named || key.profile || 'balanced';
     this.profile = profiles.resolve(userId, profileRef);
     if (!this.profile) throw new HttpError(400, 'UNKNOWN_PROFILE', `Unknown routing profile "${profileRef}".`);
-    this.complexity = complexityOf(request, inputTokens);
+    // What a chat request asks for (kind mix, skills, difficulty); other
+    // capabilities have no prompt to read.
+    this.task = capability === 'chat' && request?.messages?.length ? classify(request, { inputTokens, hint: taskHint }) : null;
+    this.complexity = this.task?.difficulty ?? null;
     this.weights = scoring.adaptWeights(this.profile.weights, this.complexity, this.profile.constraints.adaptive !== false);
     // A budget that would run out before the period ends shifts weight to
     // cost; one with plenty left lets quality and speed count for more.
@@ -271,6 +265,8 @@ class RoutingPlan {
     }
     this.tokenLimitReached = budget.tokenLimitReached(key);
     this.entries = catalog.listForUser(userId, { capability }).map((entry) => plans.effective(entry));
+    // Outcomes are learned per kind of task (learning.js).
+    if (this.task) for (const entry of this.entries) entry.task = this.task.primary;
     this.primaryRefs = new Set();
     if (!this.parsed.auto) this.scopeToRequestedModel();
   }
@@ -310,7 +306,7 @@ class RoutingPlan {
         continue;
       }
       const quotaState = quota.evaluate(entry, this.inputTokens, now);
-      const result = scoring.score(entry, { weights: this.weights, quotaFactor: quotaState.factor, random: this.random, sample, now });
+      const result = scoring.score(entry, { weights: this.weights, quotaFactor: quotaState.factor, random: this.random, sample, now, task: this.task });
       ranked.push({ entry, details: result, quota: quotaState });
     }
     // Absolute intelligence, speed and cost estimates sit close together for
@@ -426,6 +422,7 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
     profile: plan.profile,
     weights: plan.weights,
     complexity: plan.complexity,
+    task: plan.task,
     candidates: ranked.slice(0, limit * 3).map((item) => ({
       id: item.entry.id,
       ref: item.entry.ref,

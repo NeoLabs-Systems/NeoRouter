@@ -12,6 +12,7 @@ const { createLogger } = require('../../utils/logger');
 const modelsDev = require('./metadata/models_dev');
 const openrouterPublic = require('./metadata/openrouter_public');
 const artificialAnalysis = require('./metadata/artificial_analysis');
+const taskSkills = require('../routing/task/skills');
 const artificialAnalysisMedia = require('./metadata/artificial_analysis_media');
 const mteb = require('./metadata/mteb');
 
@@ -133,6 +134,7 @@ function mapScore(curve, x) {
   return yn;
 }
 
+// Returns the per-benchmark fits, which also turn benchmark scores into skills.
 function deriveIndexes(records) {
   const indexed = records.filter((record) => record.intelligenceIndex && !record.indexDerived && record.benchmarks);
   const fits = {};
@@ -159,6 +161,20 @@ function deriveIndexes(records) {
       record.indexDerived = true;
     }
   }
+  return fits;
+}
+
+// A model's score per skill (coding, math, …) on its intelligence scale: each
+// benchmark mapped through the same fit that derives the index.
+function skillsOf(record) {
+  if (!record?.benchmarks) return null;
+  const mapped = {};
+  for (const [name, value] of Object.entries(record.benchmarks)) {
+    const fit = indexes.fits?.[name];
+    if (fit && Number.isFinite(value)) mapped[name] = mapScore(fit.curve, value) / (indexes.aaScale || AA_INDEX_SCALE);
+  }
+  const skills = taskSkills.skillsFromBenchmarks(mapped);
+  return Object.keys(skills).length ? skills : null;
 }
 
 function buildIndexes() {
@@ -170,12 +186,12 @@ function buildIndexes() {
   }
   for (const record of state.openrouter || []) addToIndex(byCanonical, canonicalId(record.id), { source: 'openrouter', ...record });
   const aaMax = Math.max(0, ...(state.artificialAnalysis || []).filter((record) => !record.indexDerived).map((record) => record.intelligenceIndex || 0));
-  deriveIndexes(state.artificialAnalysis || []);
+  const fits = deriveIndexes(state.artificialAnalysis || []);
   const aa = new Map();
   for (const record of state.artificialAnalysis || []) {
     for (const key of [canonicalId(record.slug), canonicalId(record.name)]) if (key && !aa.has(key)) aa.set(key, record);
   }
-  indexes = { byCanonical, aa, aaScale: aaMax > 0 ? aaMax : AA_INDEX_SCALE, calibration: null, benchmark: buildBenchmarkKeys(state.artificialAnalysis || []), media: artificialAnalysisMedia.buildIndexes(state.artificialAnalysisMedia) };
+  indexes = { byCanonical, aa, fits, aaScale: aaMax > 0 ? aaMax : AA_INDEX_SCALE, calibration: null, benchmark: buildBenchmarkKeys(state.artificialAnalysis || []), media: artificialAnalysisMedia.buildIndexes(state.artificialAnalysisMedia) };
   indexes.calibration = fitCalibration();
 }
 
@@ -448,6 +464,7 @@ function computeCanonical(canonical, sampleModelIds = [], capability = 'chat') {
     supports_reasoning: toFlag(reasoning),
     release_date: releaseDate || arena?.releaseDate || null,
     params_b: params,
+    skills_json: aa && skillsOf(aa) ? JSON.stringify(skillsOf(aa)) : null,
     sources_json: JSON.stringify([...new Set([...records.map((record) => record.source), ...(aa ? ['artificial_analysis'] : []), ...(arena ? ['artificial_analysis_arena'] : [])])]),
   };
 }
@@ -459,15 +476,15 @@ function toFlag(value) {
 function upsertCanonical(record) {
   getDatabase().prepare(`INSERT INTO model_metadata
     (canonical_id, intelligence, intelligence_source, intelligence_confidence, speed_tps, context_window, max_output,
-     price_in, price_out, supports_tools, supports_vision, supports_reasoning, release_date, params_b, sources_json, updated_at)
+     price_in, price_out, supports_tools, supports_vision, supports_reasoning, release_date, params_b, skills_json, sources_json, updated_at)
     VALUES (@canonical_id, @intelligence, @intelligence_source, @intelligence_confidence, @speed_tps, @context_window, @max_output,
-     @price_in, @price_out, @supports_tools, @supports_vision, @supports_reasoning, @release_date, @params_b, @sources_json,
+     @price_in, @price_out, @supports_tools, @supports_vision, @supports_reasoning, @release_date, @params_b, @skills_json, @sources_json,
      strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     ON CONFLICT(canonical_id) DO UPDATE SET intelligence = excluded.intelligence, intelligence_source = excluded.intelligence_source,
       intelligence_confidence = excluded.intelligence_confidence, speed_tps = excluded.speed_tps, context_window = excluded.context_window,
       max_output = excluded.max_output, price_in = excluded.price_in, price_out = excluded.price_out,
       supports_tools = excluded.supports_tools, supports_vision = excluded.supports_vision, supports_reasoning = excluded.supports_reasoning,
-      release_date = excluded.release_date, params_b = excluded.params_b, sources_json = excluded.sources_json, updated_at = excluded.updated_at`)
+      release_date = excluded.release_date, params_b = excluded.params_b, skills_json = excluded.skills_json, sources_json = excluded.sources_json, updated_at = excluded.updated_at`)
     .run(record);
 }
 
