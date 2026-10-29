@@ -4,6 +4,7 @@ const express = require('express');
 const { requireRouterKey } = require('../../middleware/router_key_auth');
 const { execute } = require('./executor');
 const catalog = require('../../services/catalog/catalog_service');
+const accounts = require('../../services/providers/account_service');
 const { allowedByKey, kindAllowed } = require('../../services/routing/router');
 const profiles = require('../../services/routing/profiles');
 const { createLogger } = require('../../utils/logger');
@@ -42,13 +43,21 @@ function modelsVisibleTo(key, capability = 'chat') {
     .filter((entry) => entry.enabled && entry.accountEnabled && allowedByKey(entry, key) && !kindAllowed(entry, key));
 }
 
+// openai_live, openai_realtime or gemini_live (capabilities/live/dialects.js).
+function liveProtocols(entry) {
+  const runtime = accounts.getRuntime(entry.accountId);
+  return runtime ? accounts.adapterFor(runtime).definition.live : [];
+}
+
 router.get('/models', requireRouterKey, (req, res) => {
   const key = req.routerKey;
   // ?type=embedding (or image, speech, transcription, moderation, video) lists another kind.
   const kind = KINDS.has(req.query.type) ? req.query.type : 'chat';
   const entries = modelsVisibleTo(key, kind);
   const created = Math.floor(Date.now() / 1000);
-  const autos = profiles.list(key.user_id).map((profile) => ({
+  // A live session's protocol depends on the provider, so live models are
+  // listed one by one with the protocols that reach them.
+  const autos = kind === 'live' ? [] : profiles.list(key.user_id).map((profile) => ({
     id: profile.id === 'balanced' ? 'auto' : `auto:${profile.id}`,
     name: `Auto (${profile.name})`,
   }));
@@ -69,7 +78,11 @@ router.get('/models', requireRouterKey, (req, res) => {
         name: entry.name,
         context_length: entry.contextWindow,
         pricing: entry.isFree || entry.isPlan ? { prompt: '0', completion: '0' } : { prompt: entry.priceIn === null ? null : String(entry.priceIn / 1e6), completion: entry.priceOut === null ? null : String(entry.priceOut / 1e6) },
-        neorouter: { kind, free: entry.isFree, plan: entry.isPlan, intelligence: entry.intelligence, tools: entry.tools, vision: entry.vision, ...(entry.priceUnit ? { unit_price: entry.unitPrice, price_unit: entry.priceUnit } : {}) },
+        neorouter: {
+          kind, free: entry.isFree, plan: entry.isPlan, intelligence: entry.intelligence, tools: entry.tools, vision: entry.vision,
+          ...(entry.priceUnit ? { unit_price: entry.unitPrice, price_unit: entry.priceUnit } : {}),
+          ...(kind === 'live' ? { protocols: liveProtocols(entry) } : {}),
+        },
       })),
     ],
   });

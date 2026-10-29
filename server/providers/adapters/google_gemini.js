@@ -176,6 +176,11 @@ class GoogleGeminiAdapter extends BaseAdapter {
           models.push(normalizeModel({ ...entry, id, name: entry.displayName || id, type: 'embedding' }, { contextWindow: entry.inputTokenLimit || null }));
           continue;
         }
+        // Gemini Live models only speak the bidirectional WebSocket API.
+        if (methods.includes('bidiGenerateContent') && !methods.includes('generateContent')) {
+          models.push(normalizeModel({ ...entry, id, name: entry.displayName || id, type: 'live' }, { contextWindow: entry.inputTokenLimit || null }));
+          continue;
+        }
         if (!methods.includes('generateContent')) continue;
         models.push(normalizeModel({ ...entry, id, name: entry.displayName || id }, {
           tools: !/gemma|tts|image|embedding|aqa/i.test(id),

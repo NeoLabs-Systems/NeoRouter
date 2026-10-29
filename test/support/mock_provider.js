@@ -1,6 +1,7 @@
 'use strict';
 
 const express = require('express');
+const WebSocket = require('ws');
 
 // A fake OpenAI-compatible upstream. Behaviour is selected by model id:
 //   ok-*      answers normally          fail-*   HTTP 500
@@ -13,6 +14,8 @@ const express = require('express');
 //   *guard*   answers like Llama Guard ("unsafe\nS9" when the text mentions a bomb)
 // Media endpoints (embeddings, images, speech, transcriptions, videos) fail
 // for models starting with fail-, like chat.
+// Live sockets (/v1/live/sessions, /v1/realtime) refuse fail-* models with
+// HTTP 500, echo every client event and report usage for audio appends.
 function createMockProvider({ models, prices = {}, port = 0, failSearch = false, maxConcurrent = null } = {}) {
   const app = express();
   app.use(express.json());
@@ -142,7 +145,38 @@ function createMockProvider({ models, prices = {}, port = 0, failSearch = false,
   app.get('/v1/videos/:id/content', (req, res) => res.set('content-type', 'video/mp4').send(Buffer.from('fake-mp4')));
   return new Promise((resolve) => {
     const server = app.listen(port, '127.0.0.1', () => {
-      resolve({ url: `http://127.0.0.1:${server.address().port}/v1`, calls, close: () => new Promise((done) => server.close(done)) });
+      const close = () => new Promise((done) => {
+        for (const client of live.clients) client.terminate();
+        server.close(done);
+      });
+      resolve({ url: `http://127.0.0.1:${server.address().port}/v1`, calls, close });
+    });
+    const live = new WebSocket.Server({ noServer: true });
+    server.on('upgrade', (request, socket, head) => {
+      const url = new URL(request.url, 'http://local');
+      const refuse = (status) => {
+        socket.write(`HTTP/1.1 ${status} Refused\r\nContent-Type: application/json\r\n\r\n{"error":{"message":"live refused"}}`);
+        socket.destroy();
+      };
+      if (request.headers.authorization !== 'Bearer good-key') return refuse(401);
+      const model = url.searchParams.get('model');
+      if (model?.startsWith('fail-')) return refuse(500);
+      return live.handleUpgrade(request, socket, head, (client) => {
+        calls.push({ kind: 'live', path: url.pathname, model, at: Date.now() });
+        if (url.pathname === '/v1/realtime') client.send(JSON.stringify({ type: 'session.created', session: { model } }));
+        client.on('message', (data) => {
+          const event = JSON.parse(String(data));
+          calls.push({ kind: 'live_event', event, at: Date.now() });
+          if (event.type === 'session.start') {
+            // A live model that fails once the session starts.
+            if (event.session.model.startsWith('fail-')) return client.close(1011, 'model failed');
+            return client.send(JSON.stringify({ type: 'session.started', session: { model: event.session.model } }));
+          }
+          client.send(JSON.stringify({ type: 'echo', event }));
+          if (event.type === 'session.input_audio.append') client.send(JSON.stringify({ type: 'response.done', response: { usage: { input_tokens: 10, output_tokens: 5 } } }));
+          return null;
+        });
+      });
     });
   });
 }

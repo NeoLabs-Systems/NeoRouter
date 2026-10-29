@@ -36,6 +36,8 @@ module.exports = [
     editableBaseUrl: true,
     keyOptional: true,
     billing: { defaultMode: 'paid', freeTierAll: true, note: 'Choose "free" only if this endpoint never charges you.' },
+    // Proxies and other routers often relay OpenAI's live sockets too.
+    live: ['openai_live', 'openai_realtime'],
   },
   {
     id: 'custom_anthropic',

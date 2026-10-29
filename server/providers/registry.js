@@ -57,6 +57,8 @@ const definitionSchema = z.object({
     createVideo: z.union([z.string(), z.literal(true)]).optional(),
     search: z.literal(true).optional(),
   }).default({}),
+  // Live voice WebSocket protocols the provider speaks (capabilities/live/dialects.js).
+  live: z.array(z.enum(['openai_live', 'openai_realtime', 'gemini_live'])).default([]),
   baseUrl: z.string().default(''),
   editableBaseUrl: z.boolean().default(false),
   auth: z.object({

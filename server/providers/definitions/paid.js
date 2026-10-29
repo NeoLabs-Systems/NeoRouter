@@ -14,6 +14,7 @@ module.exports = [
     baseUrl: 'https://api.openai.com/v1',
     billing: { defaultMode: 'paid' },
     quirks: { maxTokensField: 'max_completion_tokens' },
+    live: ['openai_live', 'openai_realtime'],
   },
   {
     id: 'anthropic',

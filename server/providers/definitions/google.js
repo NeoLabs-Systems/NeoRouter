@@ -8,6 +8,8 @@ module.exports = {
   website: 'https://ai.google.dev',
   keyUrl: 'https://aistudio.google.com/apikey',
   adapter: 'google_gemini',
+  // Live sessions: the WebSocket dialects this provider speaks (capabilities/live).
+  live: ['gemini_live'],
   baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
   billing: {
     defaultMode: 'free_tier',

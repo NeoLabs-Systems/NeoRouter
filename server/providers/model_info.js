@@ -11,7 +11,9 @@ const NON_CHAT_PATTERNS = [
   // Audio is split by direction: speech-to-text and text-to-speech.
   ['transcription', /whisper|transcri|(^|[-_/])asr([-_]|$)|parakeet|canary-/i],
   ['speech', /tts|text-to-speech|orpheus|playai|melotts|kokoro|voice-design/i],
-  ['other', /lyria|music|audio|native-audio|live|realtime/i],
+  // Speech-to-speech sessions over a WebSocket (GPT-Live, Realtime, Gemini Live).
+  ['live', /(^|[-_/.])live([-_/.]|$)|realtime|native-audio/i],
+  ['other', /lyria|music|audio/i],
   // Editing models need an input video, which /v1/videos does not take.
   ['other', /video-(edit|upscale)|(^|\/)aleph|detector/i],
   ['image', /dall-e|stable-diffusion|sdxl|flux|imagen|image-gen|gpt-image|kolors|seedream|nano-banana|-image(-|$)/i],
@@ -28,6 +30,7 @@ function detectKind(id, raw = {}) {
   const declared = String(raw.type || raw.object_type || raw.task || '').toLowerCase();
   if (/embed/.test(declared)) return 'embedding';
   if (declared === 'search') return 'search';
+  if (declared === 'live') return 'live';
   if (/image/.test(declared) && !/text/.test(declared)) return 'image';
   if (raw.supported_durations || raw.supported_resolutions) return 'video';
   const outputs = raw.architecture?.output_modalities;

@@ -112,7 +112,12 @@ test('model kinds separate chat from embeddings, audio and images', () => {
   assert.equal(normalizeModel({ id: 'canopylabs/orpheus-v1-english' }).kind, 'speech');
   assert.equal(normalizeModel({ id: 'gemini-3.8-flash-tts' }).kind, 'speech');
   assert.equal(normalizeModel({ id: 'black-forest-labs/flux.2-klein-4b' }).kind, 'image');
-  assert.equal(normalizeModel({ id: 'gpt-realtime' }).kind, 'other');
+  assert.equal(normalizeModel({ id: 'gpt-realtime' }).kind, 'live');
+  assert.equal(normalizeModel({ id: 'gemini-3.8-flash-live' }).kind, 'live');
+  assert.equal(normalizeModel({ id: 'gemini-2.5-flash-native-audio-preview' }).kind, 'live');
+  assert.equal(normalizeModel({ id: 'gpt-live-1' }).kind, 'live');
+  assert.equal(normalizeModel({ id: 'olive-7b' }).kind, 'chat');
+  assert.equal(normalizeModel({ id: 'lyria-2' }).kind, 'other');
   assert.equal(normalizeModel({ id: 'nvidia/nemotron-3.5-embed-1b', architecture: { output_modalities: ['embeddings'] } }).kind, 'embedding');
   assert.equal(normalizeModel({ id: 'x-ai/grok-imagine-video-1.5-lite', supported_durations: [4, 8] }).kind, 'video');
   assert.equal(normalizeModel({ id: 'prompt-guard-2-86m' }).kind, 'moderation');

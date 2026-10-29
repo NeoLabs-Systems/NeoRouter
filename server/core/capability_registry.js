@@ -15,10 +15,12 @@ const CAPABILITIES = [
   { id: 'moderation', label: 'System One', routes: mediaRoutes },
   { id: 'video', label: 'Video', routes: mediaRoutes },
   { id: 'search', label: 'Web search', routes: mediaRoutes },
+  // Live voice sessions are WebSockets, attached to the HTTP server (capabilities/live).
+  { id: 'live', label: 'Live voice', routes: null },
 ];
 
 function mount(router) {
-  for (const routes of new Set(CAPABILITIES.map((capability) => capability.routes))) router.use(routes());
+  for (const routes of new Set(CAPABILITIES.map((capability) => capability.routes).filter(Boolean))) router.use(routes());
 }
 
 function list() {

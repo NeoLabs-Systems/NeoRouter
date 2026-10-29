@@ -26,6 +26,8 @@ const app = createApp();
 const server = app.listen(config.port, config.host, () => {
   logger.info('NeoRouter listening', { host: config.host, port: config.port });
 });
+// Live voice sessions arrive as WebSocket upgrades.
+require('./capabilities/live/gateway').attach(server);
 server.requestTimeout = 0;
 server.headersTimeout = 65_000;
 scheduler.start();
