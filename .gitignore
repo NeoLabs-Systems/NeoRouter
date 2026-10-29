@@ -108,3 +108,6 @@ __pycache__/
 
 # Local agent and preview config
 .claude/
+
+# Static API docs (scripts/build_api_docs.js)
+build/pages/

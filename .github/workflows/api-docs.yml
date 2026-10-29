@@ -1,0 +1,52 @@
+# Publishes the GET /api reference to GitHub Pages at <pages-url>/api/
+# (scripts/build_api_docs.js). Needs Settings → Pages → Source: GitHub Actions.
+name: API docs
+
+on:
+  push:
+    branches: [beta]
+    paths:
+      - server/routes/api_docs.js
+      - server/core/capability_registry.js
+      - server/services/routing/profiles.js
+      - scripts/build_api_docs.js
+      - .github/workflows/api-docs.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build:api-docs
+        env:
+          # Set a repository variable to show your own server in the examples.
+          NEOROUTER_DOCS_ORIGIN: ${{ vars.NEOROUTER_DOCS_ORIGIN }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/pages
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}api/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
