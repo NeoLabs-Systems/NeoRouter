@@ -156,7 +156,7 @@ class _RoutingScreenState extends State<RoutingScreen> {
   Widget _detail(BuildContext context, RoutingProfile profile) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    final modelName = 'auto:${profile.id}';
+    final modelName = 'auto:${profile.slug}';
     final weights = profile.weights;
     final total = (weights.intelligence + weights.speed + weights.reliability + weights.cost).clamp(0.0001, double.infinity);
     return Column(

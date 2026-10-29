@@ -65,19 +65,38 @@ function rowToProfile(row) {
   };
 }
 
-function list(userId) {
-  const presets = Object.entries(PRESETS).map(([id, preset]) => ({ id, name: preset.label, preset: true, weights: preset.weights, constraints: { ...DEFAULT_CONSTRAINTS } }));
-  const custom = getDatabase().prepare('SELECT * FROM routing_profiles WHERE user_id = ? ORDER BY created_at').all(userId).map(rowToProfile);
-  return [...presets, ...custom];
+// Names reserved for presets, aliases and plain auto.
+const RESERVED_SLUGS = new Set([...Object.keys(PRESETS), ...Object.keys(ALIASES), 'default', 'custom']);
+
+function slugify(name) {
+  return String(name || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'style';
 }
 
-// Resolves "balanced", "fast", … or a custom profile id owned by the user.
+// A user's own styles, each with the readable name used in model ids
+// ("auto:paid-first"); clashes with presets or each other get a number.
+function customProfiles(userId) {
+  const taken = new Set(RESERVED_SLUGS);
+  return getDatabase().prepare('SELECT * FROM routing_profiles WHERE user_id = ? ORDER BY created_at').all(userId).map((row) => {
+    const base = slugify(row.name);
+    let slug = taken.has(base) ? `${base}-2` : base;
+    for (let index = 3; taken.has(slug); index += 1) slug = `${base}-${index}`;
+    taken.add(slug);
+    return { ...rowToProfile(row), slug };
+  });
+}
+
+function list(userId) {
+  const presets = Object.entries(PRESETS).map(([id, preset]) => ({ id, slug: id, name: preset.label, preset: true, weights: preset.weights, constraints: { ...DEFAULT_CONSTRAINTS } }));
+  return [...presets, ...customProfiles(userId)];
+}
+
+// Resolves "balanced", "fast", … or one of the user's own styles by its
+// readable name ("paid-first") or its id.
 function resolve(userId, reference) {
   const key = ALIASES[reference] || String(reference || 'balanced');
-  if (PRESETS[key]) return { id: key, name: PRESETS[key].label, preset: true, weights: PRESETS[key].weights, constraints: { ...DEFAULT_CONSTRAINTS } };
-  const row = getDatabase().prepare('SELECT * FROM routing_profiles WHERE id = ? AND user_id = ?').get(key, userId);
-  if (!row) return null;
-  return rowToProfile(row);
+  if (PRESETS[key]) return { id: key, slug: key, name: PRESETS[key].label, preset: true, weights: PRESETS[key].weights, constraints: { ...DEFAULT_CONSTRAINTS } };
+  return customProfiles(userId).find((profile) => profile.id === key || profile.slug === key) || null;
 }
 
 function create(userId, { name, weights, constraints = {} }, createdBy = userId) {

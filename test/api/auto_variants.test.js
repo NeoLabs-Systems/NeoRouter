@@ -109,6 +109,16 @@ test('a custom style chooses kinds of model and how much each counts', async () 
   assert.equal(style.status, 201, JSON.stringify(style.body));
   const secret = await keyFor({ allowFree: true, allowPlan: true, allowPaid: true });
   for (let i = 0; i < 4; i += 1) assert.equal((await chat(secret, `auto:${style.body.profile.id}`)).headers['x-neorouter-model'], 'paid/ok-paid', 'free models are left out');
+  // Own styles appear by their name, only for this account's keys.
+  const listed = await ids(secret);
+  assert.ok(listed.includes('auto:paid-first'), listed.join(','));
+  assert.ok(!listed.some((id) => id.includes('custom_')));
+  assert.equal((await chat(secret, 'auto:paid-first')).headers['x-neorouter-model'], 'paid/ok-paid');
+  await api('patch', '/admin/settings').send({ registrationOpen: true });
+  const other = (await request(app).post('/api/v1/auth/register').send({ username: 'variants2', email: 'variants2@example.test', password: 'correct-horse-battery' })).body.session.token;
+  const otherKey = (await request(app).post('/api/v1/keys').set('Authorization', `Bearer ${other}`).send({ name: 'other', mode: 'free_only' })).body.secret;
+  assert.ok(!(await ids(otherKey)).includes('auto:paid-first'), 'another account does not see it');
+  assert.equal((await chat(otherKey, 'auto:paid-first')).status, 400, 'nor can it use it');
   const leaning = await api('post', '/routing/profiles').send({ name: 'Mostly paid', weights: { intelligence: 0.4, speed: 0.2, reliability: 0.3, cost: 0.1 }, constraints: { kinds: { free: 0.05, plan: 0, paid: 1 } } });
   for (let i = 0; i < 4; i += 1) assert.equal((await chat(secret, `auto:${leaning.body.profile.id}`)).headers['x-neorouter-model'], 'paid/ok-paid', 'a small weight makes free a fallback');
 });

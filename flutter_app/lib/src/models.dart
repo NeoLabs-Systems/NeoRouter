@@ -264,6 +264,8 @@ class RoutingProfile {
   String get id => raw['id'] as String;
   String get name => raw['name'] as String;
   bool get preset => raw['preset'] == true;
+  /// The readable name used in model ids ("auto:paid-first").
+  String get slug => raw['slug'] as String? ?? id;
   RoutingWeights get weights => RoutingWeights.fromJson(_map(raw['weights']));
   Map<String, dynamic> get constraints => _map(raw['constraints']);
   TeamUser? get createdBy => TeamUser.from(raw['createdBy']);

@@ -90,7 +90,7 @@ function autoModels(key, entries, type) {
     list.push({ id: base, name: `Auto (key default: ${keyProfile.name}${only})`, neorouter: { auto: true, profile: keyProfile.id, keyDefault: true, kinds: scope ? [scope] : kinds, ...extra } });
     for (const profile of profiles.list(key.user_id)) {
       list.push({
-        id: `${base}:${profile.id}`,
+        id: `${base}:${profile.slug}`,
         name: `Auto (${profile.name}${only})`,
         neorouter: { auto: true, profile: profile.id, kinds: scope ? [scope] : kinds, ...extra },
       });
