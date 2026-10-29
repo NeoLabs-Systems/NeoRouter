@@ -147,6 +147,8 @@ function normalizeModel(raw, overrides = {}) {
     vision: Array.isArray(inputs) ? inputs.includes('image') : flag(raw.supports_vision ?? raw.capabilities?.vision),
     json: params ? params.includes('response_format') || params.includes('structured_outputs') : null,
     reasoning: params ? params.includes('reasoning') || params.includes('include_reasoning') : flag(raw.capabilities?.reasoning),
+    // System One decision models (POST /v1/systemone), listed under OpenRouter's decisions modality.
+    decision: (raw.architecture?.output_modalities || []).includes('decisions'),
     raw,
     ...overrides,
   };

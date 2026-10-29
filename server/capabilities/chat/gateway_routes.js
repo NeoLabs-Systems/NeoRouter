@@ -43,6 +43,21 @@ function modelsVisibleTo(key, capability = 'chat') {
     .filter((entry) => entry.enabled && entry.accountEnabled && allowedByKey(entry, key) && !kindAllowed(entry, key));
 }
 
+// Models of this kind the key's free/plan/paid choice leaves out, so an app
+// can tell "nothing there" from "not allowed for this key".
+// System One lists count decision models apart from classifiers.
+function modelsHiddenFrom(key, capability) {
+  const hidden = { free: 0, plan: 0, paid: 0 };
+  const decisions = { free: 0, plan: 0, paid: 0 };
+  for (const entry of catalog.listForUser(key.user_id, { capability })) {
+    if (!entry.enabled || !entry.accountEnabled || !allowedByKey(entry, key) || !kindAllowed(entry, key)) continue;
+    const kind = entry.isFree ? 'free' : entry.isPlan ? 'plan' : 'paid';
+    hidden[kind] += 1;
+    if (entry.decision) decisions[kind] += 1;
+  }
+  return capability === 'moderation' ? { ...hidden, decision_models: decisions } : hidden;
+}
+
 // openai_live, openai_realtime or gemini_live (capabilities/live/dialects.js).
 function liveProtocols(entry) {
   const runtime = accounts.getRuntime(entry.accountId);
@@ -82,9 +97,11 @@ router.get('/models', requireRouterKey, (req, res) => {
           kind, free: entry.isFree, plan: entry.isPlan, intelligence: entry.intelligence, tools: entry.tools, vision: entry.vision,
           ...(entry.priceUnit ? { unit_price: entry.unitPrice, price_unit: entry.priceUnit } : {}),
           ...(kind === 'live' ? { protocols: liveProtocols(entry) } : {}),
+          ...(kind === 'moderation' ? { decision: entry.decision } : {}),
         },
       })),
     ],
+    neorouter: { not_allowed_for_key: modelsHiddenFrom(key, kind) },
   });
 });
 

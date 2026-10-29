@@ -58,7 +58,7 @@ async function syncAccount(accountId) {
         price_source: model.priceKnown ? 'listing' : priceFromFacts ? 'models.dev' : null,
         is_free: 0,
         free_reason: null,
-        raw_json: JSON.stringify({ freeHint: model.freeHint, priceKnown: model.priceKnown }),
+        raw_json: JSON.stringify({ freeHint: model.freeHint, priceKnown: model.priceKnown, ...(model.decision ? { decision: true } : {}) }),
         price_unit: model.priceUnit || null,
         price_per_unit: model.unitPrice ?? null,
       });
@@ -199,6 +199,8 @@ function toEntry(row) {
     priceUnit: pick(overrides.priceUnit, row.price_unit, null),
     unitPrice: pick(overrides.unitPrice, row.price_per_unit, null),
     isFree: Boolean(row.is_free),
+    // Answers typed questions (decision model) rather than classifying text.
+    decision: row.capability === 'moderation' && JSON.parse(row.raw_json || '{}').decision === true,
     // Included in a prepaid plan: no extra cost per request.
     isPlan: !row.is_free && Boolean(row.account_prepaid),
     // After the plan is used up: billed per use (true) or unavailable.

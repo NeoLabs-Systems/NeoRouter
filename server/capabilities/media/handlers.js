@@ -266,7 +266,8 @@ async function moderations({ req, res, key, body, freeOnly = false }) {
   await runCapability({
     req, res, key, capability: 'moderation', method: 'chat', requestedModel: input.model, freeOnly, inputTokens: tokens, units: inputs.length,
     // A model named explicitly is taken at its word; auto picks a family that fits the check.
-    filter: input.model === 'auto' || input.model.startsWith('auto:') ? (entry) => CHECK_FAMILIES[input.check].has(systemOne.family(entry.modelId)) : null,
+    // Decision models answer other questions and never stand in for a check.
+    filter: input.model === 'auto' || input.model.startsWith('auto:') ? (entry) => !entry.decision && CHECK_FAMILIES[input.check].has(systemOne.family(entry.modelId)) : (entry) => !entry.decision,
     estimateCost: (entry) => tokenCost(entry, tokens + 400 * inputs.length),
     invoke: ({ adapter, entry, signal, timeoutMs }) => systemOne.classify(adapter, { inputs, policy: input.policy }, { modelId: entry.modelId, signal, timeoutMs }),
     costOf: (entry, result) => tokenCost(entry, result.inputTokens || tokens) || 0,
@@ -289,7 +290,7 @@ async function decide({ req, res, key, body, freeOnly = false }) {
   const tokens = estimateTokens([JSON.stringify(input.state ?? ''), JSON.stringify(input.questions)]);
   await runCapability({
     req, res, key, capability: 'moderation', method: 'decide', requestedModel: input.model, freeOnly, inputTokens: tokens, units: 1,
-    filter: (entry) => systemOne.family(entry.modelId) === 'decision',
+    filter: (entry) => entry.decision,
     estimateCost: (entry) => tokenCost(entry, tokens + 200),
     invoke: ({ adapter, entry, signal, timeoutMs }) => adapter.decide({ state: input.state, questions: input.questions }, { modelId: entry.modelId, signal, timeoutMs }),
     costOf: (entry, result) => tokenCost(entry, result.inputTokens || tokens) || 0,

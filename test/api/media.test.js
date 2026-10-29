@@ -145,6 +145,16 @@ test('System One decision models answer typed questions', async () => {
   // Classifier checks never pick a decision model.
   const moderated = await gateway('post', '/moderations').send({ input: 'hello' });
   assert.equal(moderated.body.model, 'mock/llama-guard-ok');
+  const listed = await gateway('get', '/models?type=moderation');
+  assert.equal(listed.body.data.find((model) => model.id === 'mock/jev-1.13').neorouter.decision, true);
+  assert.equal(listed.body.data.find((model) => model.id === 'mock/llama-guard-ok').neorouter.decision, false);
+});
+
+test('model lists say how many models the key is not allowed to use', async () => {
+  const paidKey = await request(app).post('/api/v1/keys').set('Authorization', `Bearer ${session}`).send({ name: 'plans only', allowFree: false, allowPlan: true, allowPaid: false });
+  const listed = await request(app).get('/v1/models?type=embedding').set('Authorization', `Bearer ${paidKey.body.secret}`);
+  assert.equal(listed.body.data.filter((model) => !model.id.startsWith('auto')).length, 0);
+  assert.ok(listed.body.neorouter.not_allowed_for_key.free >= 2, JSON.stringify(listed.body.neorouter));
 });
 
 test('video jobs stay bound to their provider and finish by polling', async () => {
