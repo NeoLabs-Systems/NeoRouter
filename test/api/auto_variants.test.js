@@ -35,8 +35,31 @@ test.after(async () => {
 
 test('a key that may use free and paid models gets auto variants for each kind', async () => {
   const listed = await ids(await keyFor({ allowFree: true, allowPlan: true, allowPaid: true }));
-  for (const id of ['auto', 'auto:fast', 'auto-free', 'auto-free:fast', 'auto-paid', 'auto-paid:best']) assert.ok(listed.includes(id), `${id} in ${listed.join(',')}`);
+  for (const id of ['auto', 'auto:fast', 'auto-free', 'auto-free:fast', 'auto-paid', 'auto-paid:smart']) assert.ok(listed.includes(id), `${id} in ${listed.join(',')}`);
   assert.ok(!listed.some((id) => id.startsWith('auto-plan')), 'no subscription models, so no subscription variants');
+});
+
+test('plain auto follows the key profile and every profile is listed by name', async () => {
+  const listed = await ids(await keyFor({ allowFree: true, allowPlan: false, allowPaid: false }));
+  assert.deepEqual(listed.filter((id) => id.startsWith('auto')), ['auto', 'auto:balanced', 'auto:fast', 'auto:smart']);
+  const secret = await keyFor({ allowFree: true, allowPlan: false, allowPaid: false, profile: 'fast' });
+  const models = (await request(app).get('/v1/models').set('Authorization', `Bearer ${secret}`)).body.data;
+  assert.equal(models.find((model) => model.id === 'auto').neorouter.profile, 'fast');
+  assert.equal((await chat(secret, 'auto:default')).status, 200, 'auto:default is plain auto');
+});
+
+test('of two similar models the cheaper one is chosen, whatever the profile', async () => {
+  const secret = await keyFor({ allowFree: true, allowPlan: true, allowPaid: true });
+  for (const model of ['auto:smart', 'auto:fast', 'auto']) {
+    for (let i = 0; i < 4; i += 1) assert.equal((await chat(secret, model)).headers['x-neorouter-model'], 'free/ok-free', model);
+  }
+});
+
+test('an empty choice explains why', async () => {
+  const freeOnly = await keyFor({ allowFree: false, allowPlan: true, allowPaid: false });
+  const response = await chat(freeOnly, 'auto');
+  assert.equal(response.status, 503);
+  assert.match(response.body.error.message, /2 are not allowed for this key/);
 });
 
 test('a key limited to one kind gets only the plain auto entries', async () => {

@@ -6,16 +6,16 @@ const { getDatabase } = require('../../db/database');
 const { HttpError } = require('../../middleware/error_handler');
 const teamMembers = require('../teams/members');
 
-// Weights are relative; scoring normalizes them. Presets are the positions
-// of the routing slider in the UI.
+// Weights are relative; scoring normalizes them. Reliability counts in every
+// preset, and among models of similar quality the router takes the cheaper
+// one anyway (router.js), so three presets cover it.
 const PRESETS = Object.freeze({
-  balanced: { label: 'Balanced', weights: { intelligence: 0.3, speed: 0.2, reliability: 0.3, cost: 0.2 } },
-  reliable: { label: 'Most reliable', weights: { intelligence: 0.15, speed: 0.1, reliability: 0.65, cost: 0.1 } },
-  fast: { label: 'Fastest', weights: { intelligence: 0.1, speed: 0.6, reliability: 0.25, cost: 0.05 } },
-  smart: { label: 'Smartest', weights: { intelligence: 0.7, speed: 0.05, reliability: 0.2, cost: 0.05 } },
-  best: { label: 'Best', weights: { intelligence: 0.5, speed: 0.1, reliability: 0.35, cost: 0.05 } },
-  cheap: { label: 'Cheapest', weights: { intelligence: 0.1, speed: 0.1, reliability: 0.25, cost: 0.55 } },
+  balanced: { label: 'Balanced', weights: { intelligence: 0.35, speed: 0.2, reliability: 0.3, cost: 0.15 } },
+  fast: { label: 'Fastest', weights: { intelligence: 0.15, speed: 0.5, reliability: 0.3, cost: 0.05 } },
+  smart: { label: 'Smartest', weights: { intelligence: 0.6, speed: 0.05, reliability: 0.3, cost: 0.05 } },
 });
+// Earlier presets, still accepted in keys, model names (auto:best) and apps.
+const ALIASES = Object.freeze({ reliable: 'balanced', cheap: 'balanced', best: 'smart' });
 
 const DEFAULT_CONSTRAINTS = Object.freeze({
   minIntelligence: null,
@@ -67,7 +67,7 @@ function list(userId) {
 
 // Resolves "balanced", "fast", … or a custom profile id owned by the user.
 function resolve(userId, reference) {
-  const key = String(reference || 'balanced');
+  const key = ALIASES[reference] || String(reference || 'balanced');
   if (PRESETS[key]) return { id: key, name: PRESETS[key].label, preset: true, weights: PRESETS[key].weights, constraints: { ...DEFAULT_CONSTRAINTS } };
   const row = getDatabase().prepare('SELECT * FROM routing_profiles WHERE id = ? AND user_id = ?').get(key, userId);
   if (!row) return null;
@@ -99,4 +99,4 @@ function remove(userId, id) {
   getDatabase().prepare("UPDATE router_keys SET profile = 'balanced' WHERE user_id = ? AND profile = ?").run(userId, id);
 }
 
-module.exports = { PRESETS, DEFAULT_CONSTRAINTS, list, resolve, create, update, remove, weightsSchema, constraintsSchema };
+module.exports = { PRESETS, ALIASES, DEFAULT_CONSTRAINTS, list, resolve, create, update, remove, weightsSchema, constraintsSchema };

@@ -889,19 +889,10 @@ class AppL10nDe extends AppL10n {
   String get presetBalanced => 'Ausgewogen';
 
   @override
-  String get presetReliable => 'Am zuverlässigsten';
-
-  @override
   String get presetFast => 'Am schnellsten';
 
   @override
   String get presetSmart => 'Am klügsten';
-
-  @override
-  String get presetBest => 'Insgesamt am besten';
-
-  @override
-  String get presetCheap => 'Am günstigsten';
 
   @override
   String get presetCustom => 'Mein Stil';
@@ -2131,25 +2122,25 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get presetBalancedHint =>
-      'Eine gute Mischung aus Qualität, Tempo und Kosten. Standard, wenn nichts anderes eingestellt ist.';
+      'Eine gute Mischung aus Qualität, Tempo, Zuverlässigkeit und Kosten. Standard, wenn nichts anderes eingestellt ist.';
 
   @override
-  String get presetFastHint => 'Die kürzeste Wartezeit auf eine Antwort.';
+  String get presetFastHint =>
+      'Die kürzeste Wartezeit auf eine Antwort, von Modellen, die selten ausfallen.';
 
   @override
   String get presetSmartHint =>
       'Die fähigsten Modelle, auch wenn sie länger brauchen.';
 
   @override
-  String get presetReliableHint => 'Modelle, die fast nie ausfallen.';
+  String get presetCheaperNote =>
+      'Egal welches Profil: Von zwei Modellen mit ähnlicher Qualität wird das günstigere genutzt.';
 
   @override
-  String get presetBestHint =>
-      'Hohe Qualität von Modellen, die auch zuverlässig laufen.';
+  String get autoKeyDefault => 'Auto (Standard des Keys)';
 
   @override
-  String get presetCheapHint =>
-      'Die geringsten Kosten – Gratis-Modelle zuerst.';
+  String get presetBalancedDefault => 'Ausgewogen (Standard)';
 
   @override
   String get stylesTitle => 'Routing-Stile';

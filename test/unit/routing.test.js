@@ -36,7 +36,10 @@ test('presets favour the dimension they are named after', () => {
   const cheap = entry({ intelligence: 0.3, isFree: true });
   const score = (item, preset) => scoring.score(item, { weights: profiles.PRESETS[preset].weights, sample: false, random: fixedRandom }).score;
   assert.ok(score(smart, 'smart') > score(cheap, 'smart'));
-  assert.ok(score(cheap, 'cheap') > score(smart, 'cheap'));
+  assert.deepEqual(Object.keys(profiles.PRESETS), ['balanced', 'fast', 'smart']);
+  // Earlier preset names still resolve.
+  assert.equal(profiles.resolve(null, 'best').id, 'smart');
+  assert.equal(profiles.resolve(null, 'cheap').id, 'balanced');
 });
 
 test('failures lower reliability and successes restore it', () => {

@@ -83,11 +83,15 @@ function autoModels(key, entries, type) {
     const extra = type === 'live'
       ? { protocols: [...new Set(inScope.flatMap(liveProtocols))] }
       : type === 'moderation' ? { decision: inScope.some((entry) => entry.decision) } : {};
+    const base = scope ? `auto-${scope}` : 'auto';
+    const only = scope ? `, ${KIND_LABELS[scope]} only` : '';
+    // Plain auto follows the key's own profile; every profile is also listed by name.
+    const keyProfile = profiles.resolve(key.user_id, key.profile) || profiles.resolve(key.user_id, 'balanced');
+    list.push({ id: base, name: `Auto (key default: ${keyProfile.name}${only})`, neorouter: { auto: true, profile: keyProfile.id, keyDefault: true, kinds: scope ? [scope] : kinds, ...extra } });
     for (const profile of profiles.list(key.user_id)) {
-      const base = scope ? `auto-${scope}` : 'auto';
       list.push({
-        id: profile.id === 'balanced' ? base : `${base}:${profile.id}`,
-        name: scope ? `Auto (${profile.name}, ${KIND_LABELS[scope]} only)` : `Auto (${profile.name})`,
+        id: `${base}:${profile.id}`,
+        name: `Auto (${profile.name}${only})`,
         neorouter: { auto: true, profile: profile.id, kinds: scope ? [scope] : kinds, ...extra },
       });
     }

@@ -171,6 +171,46 @@ function kindAllowed(entry, key, freeOnly = false) {
   return freeOnly || key.mode === 'free_only' ? 'not_free' : null;
 }
 
+// Among the leading candidates, a model that is clearly more expensive than
+// another of about the same quality (intelligence, speed and reliability as
+// the profile weighs them) drops behind it: similar quality goes to the
+// cheaper model, whatever the profile.
+const CHEAPER_CANDIDATES = 40;
+const SIMILAR_QUALITY = 0.03;
+const CLEARLY_CHEAPER = 0.05;
+const PRICIER_EQUAL_FACTOR = 0.6;
+
+function preferCheaperEquals(scored) {
+  const leading = [...scored].sort((a, b) => b.score - a.score).slice(0, CHEAPER_CANDIDATES);
+  const priced = leading.map((item) => ({ item, cost: item.details.features.cost, quality: item.quality }));
+  for (const candidate of priced) {
+    const cheaperEqual = priced.some((other) => other.cost >= candidate.cost + CLEARLY_CHEAPER && other.quality >= candidate.quality * (1 - SIMILAR_QUALITY));
+    if (cheaperEqual) candidate.item.score *= PRICIER_EQUAL_FACTOR;
+  }
+}
+
+// Why no model could take a request, in words: groups of rejection reasons
+// with their counts, largest first.
+const REJECTION_GROUPS = [
+  ['key', ['not_free', 'not_allowed_for_key', 'other_kind', 'price_unknown', 'budget_exhausted'], 'are not allowed for this key'],
+  ['busy', ['quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'plan_used_up', 'not_available'], 'are used up, rate-limited or cooling down for now'],
+  ['fit', ['no_tools', 'no_vision', 'context_too_small', 'context_unknown', 'needs_more_tokens', 'incompatible'], 'cannot handle this request (tools, images or its size)'],
+  ['profile', ['below_min_intelligence', 'too_expensive', 'too_slow', 'provider_not_included', 'provider_excluded', 'model_excluded'], "are left out by the routing profile's limits"],
+];
+
+function explainNoModel(rejected, capability = 'chat') {
+  const counts = new Map();
+  for (const [reason, count] of Object.entries(rejected || {})) {
+    const group = REJECTION_GROUPS.find(([, reasons]) => reasons.includes(reason) || (reason.startsWith('quota') && reasons.includes('quota_exhausted')));
+    const label = group ? group[2] : 'are switched off or unavailable';
+    counts.set(label, (counts.get(label) || 0) + count);
+  }
+  const kind = capability === 'chat' ? '' : `${capability} `;
+  if (!counts.size) return `There is no ${kind}model in your catalog yet.`;
+  const parts = [...counts].sort((a, b) => b[1] - a[1]).map(([label, count]) => `${count} ${label}`);
+  return `No ${kind}model can take this request right now: ${parts.join('; ')}.`;
+}
+
 class RoutingPlan {
   constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null }) {
     this.capability = capability;
@@ -184,7 +224,9 @@ class RoutingPlan {
     this.freeOnly = freeOnly;
     this.tried = new Set();
     this.parsed = parseModel(requestedModel);
-    const profileRef = this.parsed.profile || key.profile || 'balanced';
+    // "auto:default" is plain auto for apps that cannot send a bare "auto".
+    const named = this.parsed.profile === 'default' ? null : this.parsed.profile;
+    const profileRef = named || key.profile || 'balanced';
     this.profile = profiles.resolve(userId, profileRef);
     if (!this.profile) throw new HttpError(400, 'UNKNOWN_PROFILE', `Unknown routing profile "${profileRef}".`);
     this.complexity = complexityOf(request, inputTokens);
@@ -248,6 +290,7 @@ class RoutingPlan {
       span[feature] = { min: Math.min(...values), max: Math.max(...values) };
     }
     const totalWeight = Object.values(this.weights).reduce((sum, value) => sum + value, 0) || 1;
+    const qualityWeight = (totalWeight - (this.weights.cost || 0)) || 1;
     const qualityProfile = this.weights.intelligence / totalWeight >= QUALITY_PROFILE_SHARE;
     let bestIntelligence = 0;
     for (const item of scored) {
@@ -267,6 +310,9 @@ class RoutingPlan {
       // matters; one very weak axis cannot be made up by the others.
       const base = Math.exp(Object.entries(this.weights)
         .reduce((sum, [feature, weight]) => sum + (weight / totalWeight) * Math.log(Math.max(features[feature], FEATURE_FLOOR)), 0));
+      // The same without cost: what the model is worth apart from its price.
+      item.quality = Math.exp(Object.entries(this.weights).filter(([feature]) => feature !== 'cost')
+        .reduce((sum, [feature, weight]) => sum + (weight / qualityWeight) * Math.log(Math.max(features[feature], FEATURE_FLOOR)), 0));
       const { quota: quotaFactor, penalty, load } = item.details.factors;
       let value = base * quotaFactor * penalty * load;
       if (qualityProfile && features.intelligence < bestIntelligence - QUALITY_GAP) value *= QUALITY_GATE_FACTOR;
@@ -280,6 +326,7 @@ class RoutingPlan {
       item.score = value;
       item.details = { ...item.details, base, features };
     }
+    preferCheaperEquals(scored);
     spreadAcrossAccounts(scored);
     // The model (or account) the client asked for comes first.
     for (const item of scored) if (this.primaryRefs.has(item.entry.ref)) item.score += 10;
@@ -345,4 +392,4 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
   };
 }
 
-module.exports = { RoutingPlan, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor };
+module.exports = { RoutingPlan, explainNoModel, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor };

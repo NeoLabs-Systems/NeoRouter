@@ -198,7 +198,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
   }
 
   String _modelLabel(AppL10n t) {
-    if (_model == 'auto') return presetLabel(t, 'balanced');
+    if (_model == 'auto') return t.autoKeyDefault;
     if (_model.startsWith('auto:')) return presetLabel(t, _model.substring(5));
     return shortModelName(_model);
   }
@@ -503,9 +503,20 @@ class _RoutingChips extends StatelessWidget {
         tooltip: t.modelPicker,
         onSelected: onModel,
         itemBuilder: (_) => <PopupMenuEntry<String>>[
+          // Plain auto follows the key's own profile.
+          PopupMenuItem<String>(
+            value: 'auto',
+            child: Row(
+              children: <Widget>[
+                Icon(Icons.auto_awesome_outlined, size: 17, color: palette.textSoft),
+                const SizedBox(width: 12),
+                Text(t.autoKeyDefault),
+              ],
+            ),
+          ),
           for (final id in presetOrder)
             PopupMenuItem<String>(
-              value: id == 'balanced' ? 'auto' : 'auto:$id',
+              value: 'auto:$id',
               child: Row(
                 children: <Widget>[
                   Icon(presetIcon(id), size: 17, color: palette.textSoft),

@@ -6,7 +6,7 @@ const webSearch = require('./web_search');
 const { HttpError } = require('../../middleware/error_handler');
 const { ProviderError, KINDS, fromNetworkError } = require('../../providers/provider_error');
 const accounts = require('../../services/providers/account_service');
-const { RoutingPlan, maxOutputFor } = require('../../services/routing/router');
+const { RoutingPlan, explainNoModel, maxOutputFor } = require('../../services/routing/router');
 const learning = require('../../services/routing/learning');
 const stats = require('../../services/routing/stats_store');
 const loadTracker = require('../../services/routing/load_tracker');
@@ -475,7 +475,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
         : trail.length === 0 ? 503 : 502;
   const code = trail.length === 0 ? 'NO_MODEL_AVAILABLE' : 'ALL_ATTEMPTS_FAILED';
   const message = trail.length === 0
-    ? 'No model in your catalog can serve this request right now (filters, quotas, cooldowns or budget).'
+    ? explainNoModel(rejected)
     : `All ${trail.length} attempt(s) failed. Last error: ${lastError?.message || 'unknown'}`;
   finish({ status: 'error', http_status: status, error_code: code, error_message: message });
   throw new HttpError(status, code, message, { trail, rejected });

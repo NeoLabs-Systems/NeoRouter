@@ -429,7 +429,8 @@ class _KeyFormState extends State<_KeyForm> {
                   initialValue: widget.profiles.any((item) => item.id == _profile) ? _profile : 'balanced',
                   decoration: InputDecoration(labelText: t.defaultProfile),
                   items: <DropdownMenuItem<String>>[
-                    for (final profile in widget.profiles) DropdownMenuItem<String>(value: profile.id, child: Text(profileLabel(t, profile))),
+                    for (final profile in widget.profiles)
+                      DropdownMenuItem<String>(value: profile.id, child: Text(profile.id == 'balanced' ? t.presetBalancedDefault : profileLabel(t, profile))),
                   ],
                   onChanged: (value) => setState(() => _profile = value ?? _profile),
                 ),

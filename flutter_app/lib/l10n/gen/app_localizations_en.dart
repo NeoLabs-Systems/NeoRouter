@@ -882,19 +882,10 @@ class AppL10nEn extends AppL10n {
   String get presetBalanced => 'Balanced';
 
   @override
-  String get presetReliable => 'Most reliable';
-
-  @override
   String get presetFast => 'Fastest';
 
   @override
   String get presetSmart => 'Smartest';
-
-  @override
-  String get presetBest => 'Best overall';
-
-  @override
-  String get presetCheap => 'Cheapest';
 
   @override
   String get presetCustom => 'My style';
@@ -2114,24 +2105,25 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get presetBalancedHint =>
-      'A good mix of quality, speed and cost. Used when nothing else is set.';
+      'A good mix of quality, speed, reliability and cost. Used when nothing else is set.';
 
   @override
-  String get presetFastHint => 'The shortest wait for an answer.';
+  String get presetFastHint =>
+      'The shortest wait for an answer, from models that rarely fail.';
 
   @override
   String get presetSmartHint =>
       'The most capable models, even if they take longer.';
 
   @override
-  String get presetReliableHint => 'Models that almost never fail.';
+  String get presetCheaperNote =>
+      'Whatever the profile, of two models with similar quality the cheaper one is used.';
 
   @override
-  String get presetBestHint =>
-      'High quality from models that also work reliably.';
+  String get autoKeyDefault => 'Auto (key default)';
 
   @override
-  String get presetCheapHint => 'The lowest cost – free models first.';
+  String get presetBalancedDefault => 'Balanced (default)';
 
   @override
   String get stylesTitle => 'Routing styles';

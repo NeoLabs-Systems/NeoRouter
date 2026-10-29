@@ -10,35 +10,26 @@ import 'main_theme.dart';
 import 'src/backend_client.dart';
 import 'src/models.dart';
 
-const List<String> presetOrder = <String>['balanced', 'fast', 'smart', 'reliable', 'best', 'cheap'];
+const List<String> presetOrder = <String>['balanced', 'fast', 'smart'];
 
 String presetLabel(AppL10n t, String id) => switch (id) {
-      'reliable' => t.presetReliable,
       'fast' => t.presetFast,
       'balanced' => t.presetBalanced,
-      'best' => t.presetBest,
       'smart' => t.presetSmart,
-      'cheap' => t.presetCheap,
       _ => t.presetCustom,
     };
 
 String presetHint(AppL10n t, String id) => switch (id) {
-      'reliable' => t.presetReliableHint,
       'fast' => t.presetFastHint,
       'balanced' => t.presetBalancedHint,
-      'best' => t.presetBestHint,
       'smart' => t.presetSmartHint,
-      'cheap' => t.presetCheapHint,
       _ => '',
     };
 
 IconData presetIcon(String id) => switch (id) {
-      'reliable' => Icons.verified_outlined,
       'fast' => Icons.bolt_outlined,
       'balanced' => Icons.tune_rounded,
-      'best' => Icons.workspace_premium_outlined,
       'smart' => Icons.psychology_outlined,
-      'cheap' => Icons.savings_outlined,
       _ => Icons.auto_fix_high_outlined,
     };
 
@@ -165,7 +156,7 @@ class _RoutingScreenState extends State<RoutingScreen> {
   Widget _detail(BuildContext context, RoutingProfile profile) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    final modelName = profile.id == 'balanced' ? 'auto' : 'auto:${profile.id}';
+    final modelName = 'auto:${profile.id}';
     final weights = profile.weights;
     final total = (weights.intelligence + weights.speed + weights.reliability + weights.cost).clamp(0.0001, double.infinity);
     return Column(
@@ -190,6 +181,8 @@ class _RoutingScreenState extends State<RoutingScreen> {
           const SizedBox(height: 8),
           Text(presetHint(t, profile.id), style: TextStyle(color: palette.textSoft, fontSize: 14.5, height: 1.45)),
         ],
+        const SizedBox(height: AppSpacing.sm),
+        InlineHint(message: t.presetCheaperNote, icon: Icons.savings_outlined),
         const SizedBox(height: AppSpacing.lg),
         SettingsGroup(
           title: t.styleUseTitle,

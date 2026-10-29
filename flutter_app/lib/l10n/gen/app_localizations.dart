@@ -1669,12 +1669,6 @@ abstract class AppL10n {
   /// **'Balanced'**
   String get presetBalanced;
 
-  /// No description provided for @presetReliable.
-  ///
-  /// In en, this message translates to:
-  /// **'Most reliable'**
-  String get presetReliable;
-
   /// No description provided for @presetFast.
   ///
   /// In en, this message translates to:
@@ -1686,18 +1680,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Smartest'**
   String get presetSmart;
-
-  /// No description provided for @presetBest.
-  ///
-  /// In en, this message translates to:
-  /// **'Best overall'**
-  String get presetBest;
-
-  /// No description provided for @presetCheap.
-  ///
-  /// In en, this message translates to:
-  /// **'Cheapest'**
-  String get presetCheap;
 
   /// No description provided for @presetCustom.
   ///
@@ -3850,13 +3832,13 @@ abstract class AppL10n {
   /// No description provided for @presetBalancedHint.
   ///
   /// In en, this message translates to:
-  /// **'A good mix of quality, speed and cost. Used when nothing else is set.'**
+  /// **'A good mix of quality, speed, reliability and cost. Used when nothing else is set.'**
   String get presetBalancedHint;
 
   /// No description provided for @presetFastHint.
   ///
   /// In en, this message translates to:
-  /// **'The shortest wait for an answer.'**
+  /// **'The shortest wait for an answer, from models that rarely fail.'**
   String get presetFastHint;
 
   /// No description provided for @presetSmartHint.
@@ -3865,23 +3847,23 @@ abstract class AppL10n {
   /// **'The most capable models, even if they take longer.'**
   String get presetSmartHint;
 
-  /// No description provided for @presetReliableHint.
+  /// No description provided for @presetCheaperNote.
   ///
   /// In en, this message translates to:
-  /// **'Models that almost never fail.'**
-  String get presetReliableHint;
+  /// **'Whatever the profile, of two models with similar quality the cheaper one is used.'**
+  String get presetCheaperNote;
 
-  /// No description provided for @presetBestHint.
+  /// No description provided for @autoKeyDefault.
   ///
   /// In en, this message translates to:
-  /// **'High quality from models that also work reliably.'**
-  String get presetBestHint;
+  /// **'Auto (key default)'**
+  String get autoKeyDefault;
 
-  /// No description provided for @presetCheapHint.
+  /// No description provided for @presetBalancedDefault.
   ///
   /// In en, this message translates to:
-  /// **'The lowest cost – free models first.'**
-  String get presetCheapHint;
+  /// **'Balanced (default)'**
+  String get presetBalancedDefault;
 
   /// No description provided for @stylesTitle.
   ///
