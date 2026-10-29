@@ -62,9 +62,12 @@
   window.addEventListener('scroll', onProgress, { passive: true });
   onProgress();
 
-  /* ---------- hide sign-in on static GitHub Pages hosts ---------- */
+  /* ---------- static GitHub Pages hosts have no app ---------- */
   if (location.hostname.includes('github.io')) {
     document.querySelectorAll('a.signin').forEach((a) => { a.style.display = 'none'; });
+    document.querySelectorAll('a[data-start]').forEach((a) => {
+      a.href = 'https://github.com/NeoLabs-Systems/NeoRouter#-install';
+    });
   }
 
   /* ---------- pointer tilt on framed surfaces ---------- */
