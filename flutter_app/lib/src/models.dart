@@ -3,10 +3,8 @@
 double? _double(Object? value) => value is num ? value.toDouble() : null;
 int? _int(Object? value) => value is num ? value.toInt() : null;
 bool? _bool(Object? value) => value is bool ? value : null;
-List<String> _strings(Object? value) =>
-    value is List ? value.map((item) => '$item').toList() : const <String>[];
-Map<String, dynamic> _map(Object? value) =>
-    value is Map ? Map<String, dynamic>.from(value) : <String, dynamic>{};
+List<String> _strings(Object? value) => value is List ? value.map((item) => '$item').toList() : const <String>[];
+Map<String, dynamic> _map(Object? value) => value is Map ? Map<String, dynamic>.from(value) : <String, dynamic>{};
 
 class AppUser {
   AppUser(this.raw);
@@ -97,8 +95,7 @@ class ProviderDefinition {
   String get baseUrl => raw['baseUrl'] as String? ?? '';
   bool get editableBaseUrl => raw['editableBaseUrl'] == true;
   bool get keyOptional => raw['keyOptional'] == true;
-  List<ProviderField> get fields =>
-      (raw['fields'] as List? ?? const <Object>[]).map((item) => ProviderField(_map(item))).toList();
+  List<ProviderField> get fields => (raw['fields'] as List? ?? const <Object>[]).map((item) => ProviderField(_map(item))).toList();
   Map<String, dynamic> get billing => _map(raw['billing']);
   String get defaultBillingMode => billing['defaultMode'] as String? ?? 'paid';
   bool get freeTierAvailable => billing['freeTierAvailable'] == true;
@@ -205,23 +202,18 @@ class RoutingWeights {
   RoutingWeights({required this.intelligence, required this.speed, required this.reliability, required this.cost});
 
   factory RoutingWeights.fromJson(Map<String, dynamic> raw) => RoutingWeights(
-        intelligence: _double(raw['intelligence']) ?? 0,
-        speed: _double(raw['speed']) ?? 0,
-        reliability: _double(raw['reliability']) ?? 0,
-        cost: _double(raw['cost']) ?? 0,
-      );
+    intelligence: _double(raw['intelligence']) ?? 0,
+    speed: _double(raw['speed']) ?? 0,
+    reliability: _double(raw['reliability']) ?? 0,
+    cost: _double(raw['cost']) ?? 0,
+  );
 
   double intelligence;
   double speed;
   double reliability;
   double cost;
 
-  Map<String, double> toJson() => <String, double>{
-        'intelligence': intelligence,
-        'speed': speed,
-        'reliability': reliability,
-        'cost': cost,
-      };
+  Map<String, double> toJson() => <String, double>{'intelligence': intelligence, 'speed': speed, 'reliability': reliability, 'cost': cost};
 
   RoutingWeights copy() => RoutingWeights(intelligence: intelligence, speed: speed, reliability: reliability, cost: cost);
 }
@@ -261,6 +253,5 @@ class RequestLog {
   int? get ttftMs => _int(raw['ttftMs']);
   int get attempts => _int(raw['attempts']) ?? 1;
   bool get stream => raw['stream'] == true;
-  List<Map<String, dynamic>> get trail =>
-      (raw['trail'] as List? ?? const <Object>[]).map(_map).toList();
+  List<Map<String, dynamic>> get trail => (raw['trail'] as List? ?? const <Object>[]).map(_map).toList();
 }

@@ -99,6 +99,10 @@ function parseUnitPricing(raw) {
       .filter((value) => value >= 0);
     if (seconds.length) return { priceUnit: 'second', unitPrice: Math.min(...seconds) };
   }
+  const perMinute = toNumber(raw.price_per_minute);
+  if (perMinute !== null && perMinute >= 0) return { priceUnit: 'minute', unitPrice: perMinute };
+  const perMchar = toNumber(raw.price_per_mchar);
+  if (perMchar !== null && perMchar >= 0) return { priceUnit: 'mchar', unitPrice: perMchar };
   const perSearch = toNumber(raw.price_per_search);
   if (perSearch !== null && perSearch >= 0) return { priceUnit: 'search', unitPrice: perSearch };
   const perImage = toNumber(raw.price_per_image ?? raw.pricing?.per_image);

@@ -2,6 +2,8 @@
 
 const catalog = require('../catalog/catalog_service');
 const { canonicalId } = require('../catalog/model_identity');
+const loadTracker = require('./load_tracker');
+const concurrency = require('./concurrency');
 const quota = require('../quota/quota_service');
 const stats = require('./stats_store');
 const scoring = require('./scoring');
@@ -90,9 +92,49 @@ function rejection(entry, ctx, now) {
   if (request.max_tokens && minOutput && request.max_tokens < minOutput && !ctx.primaryRefs.has(entry.ref)) return 'needs_more_tokens';
   const available = stats.availability(entry.ref, now);
   if (!available.available) return available.reason;
+  // An account at its (learned or documented) concurrency limit takes no more work right now.
+  const parallel = concurrency.limitFor(entry, now);
+  if (parallel && loadTracker.inflight(entry).account >= parallel.limit) return 'account_busy';
   const quotaState = quota.evaluate(entry, inputTokens, now);
   if (quotaState.blocked) return `quota_${quotaState.blocked.metric}`;
   return null;
+}
+
+// The same model on several accounts (two Groq keys, say): prefer the copy
+// with more allowance left and more free capacity, so accounts wear evenly
+// and a busy one hands work to its siblings. Only copies of one model are
+// compared, so this never changes which model is chosen.
+const SIBLING_FLOOR = 0.55;
+const ACCOUNT_SOFT_CAPACITY = 8;
+
+function freeCapacity(entry) {
+  const inflight = loadTracker.inflight(entry).account;
+  const parallel = concurrency.limitFor(entry);
+  if (parallel) return Math.max(0, 1 - inflight / parallel.limit);
+  return 1 / (1 + inflight / ACCOUNT_SOFT_CAPACITY);
+}
+
+function spreadAcrossAccounts(scored) {
+  const groups = new Map();
+  for (const item of scored) {
+    if (!groups.has(item.entry.canonicalId)) groups.set(item.entry.canonicalId, []);
+    groups.get(item.entry.canonicalId).push(item);
+  }
+  for (const group of groups.values()) {
+    if (new Set(group.map((item) => item.entry.accountId)).size < 2) continue;
+    // Small speed differences between copies are noise; health (penalties),
+    // allowance left and free capacity are what tell them apart.
+    const top = Math.max(...group.map((item) => item.score));
+    const healthiest = Math.max(...group.map((item) => item.details.factors.penalty));
+    const share = (item) => (item.quota?.headroom ?? 1) * freeCapacity(item.entry);
+    const best = Math.max(...group.map(share));
+    if (best <= 0) continue;
+    for (const item of group) {
+      const factor = SIBLING_FLOOR + (1 - SIBLING_FLOOR) * (share(item) / best);
+      item.score = top * (item.details.factors.penalty / healthiest) * factor;
+      item.details = { ...item.details, factors: { ...item.details.factors, sibling: factor } };
+    }
+  }
 }
 
 class RoutingPlan {
@@ -189,10 +231,12 @@ class RoutingPlan {
       let value = base * quotaFactor * penalty * load;
       if (qualityProfile && features.intelligence < bestIntelligence - QUALITY_GAP) value *= QUALITY_GATE_FACTOR;
       if ((this.needs.tools && item.entry.tools === null) || (this.needs.json && item.entry.json === false)) value *= UNKNOWN_CAPABILITY_FACTOR;
-      if (this.primaryRefs.has(item.entry.ref)) value += 10;
       item.score = value;
       item.details = { ...item.details, base, features };
     }
+    spreadAcrossAccounts(scored);
+    // The model (or account) the client asked for comes first.
+    for (const item of scored) if (this.primaryRefs.has(item.entry.ref)) item.score += 10;
     ranked.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
     return ranked;
   }
@@ -203,8 +247,11 @@ class RoutingPlan {
     const ranked = this.rank({ now }).filter((item) => !filter || filter(item.entry));
     if (!ranked.length) return null;
     let choice = ranked[0];
-    if (!this.primaryRefs.has(choice.entry.ref)) {
-      const pool = ranked.slice(0, getConfig().routing.topK);
+    // Among copies of the requested model (several accounts) the draw stays
+    // within those copies; otherwise among the top-k.
+    const primary = this.primaryRefs.has(choice.entry.ref);
+    const pool = primary ? ranked.filter((item) => this.primaryRefs.has(item.entry.ref)) : ranked.slice(0, getConfig().routing.topK);
+    if (pool.length > 1) {
       const temperature = Math.max(0.01, this.profile.constraints.exploration ?? 0.08);
       const top = pool[0].score;
       const weights = pool.map((item) => Math.exp((item.score - top) / temperature));

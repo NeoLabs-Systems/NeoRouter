@@ -13,7 +13,7 @@ const express = require('express');
 //   *guard*   answers like Llama Guard ("unsafe\nS9" when the text mentions a bomb)
 // Media endpoints (embeddings, images, speech, transcriptions, videos) fail
 // for models starting with fail-, like chat.
-function createMockProvider({ models, prices = {}, port = 0, failSearch = false } = {}) {
+function createMockProvider({ models, prices = {}, port = 0, failSearch = false, maxConcurrent = null } = {}) {
   const app = express();
   app.use(express.json());
   const calls = [];
@@ -24,7 +24,17 @@ function createMockProvider({ models, prices = {}, port = 0, failSearch = false 
       data: models.map((id) => ({ id, object: 'model', context_length: 32768, ...(prices[id] ? { pricing: prices[id] } : {}) })),
     });
   });
-  app.post('/v1/chat/completions', async (req, res) => {
+  // maxConcurrent: answer 429 like a provider with a concurrency cap.
+  let active = 0;
+  app.post('/v1/chat/completions', async (req, res, next) => {
+    if (maxConcurrent && active >= maxConcurrent) {
+      calls.push({ model: req.body.model, rejected: true, at: Date.now() });
+      return res.status(429).json({ error: { message: 'Too many concurrent requests for this account.' } });
+    }
+    active += 1;
+    res.on('close', () => { active -= 1; });
+    return next();
+  }, async (req, res) => {
     const { model, stream, tools } = req.body;
     calls.push({ model, stream: Boolean(stream), at: Date.now(), messages: req.body.messages });
     if (model.startsWith('fail-')) return res.status(500).json({ error: { message: 'upstream exploded' } });

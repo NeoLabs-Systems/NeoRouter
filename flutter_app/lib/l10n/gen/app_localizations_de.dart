@@ -1913,11 +1913,32 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get limitsDescription =>
-      'Wie viel vom Kontingent jedes Anbieters verbraucht ist. Jeder Anbieter setzt seine Limits nach eigenem Zeitplan zurück; NeoRouter wechselt rechtzeitig zu einem anderen Modell.';
+      'Was vom Kontingent jedes Anbieters heute noch übrig ist. Minutenlimits setzen sich von selbst zurück und NeoRouter weicht ihnen aus, daher siehst du nur Tageskontingente und Modelle, die knapp werden.';
 
   @override
   String limitResets(String time) {
     return 'zurückgesetzt $time';
+  }
+
+  @override
+  String get limitConcurrent => 'Gleichzeitige Anfragen';
+
+  @override
+  String limitConcurrentValue(String count) {
+    return 'bis $count, aus den Antworten gelernt';
+  }
+
+  @override
+  String limitConcurrentDocumented(String count) {
+    return 'bis $count';
+  }
+
+  @override
+  String get addAnotherAccount => 'Weiteres Konto hinzufügen';
+
+  @override
+  String limitsModelsRoom(String room, String total) {
+    return '$room von $total Modellen haben heute noch Kontingent';
   }
 
   @override

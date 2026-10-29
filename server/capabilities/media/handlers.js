@@ -198,7 +198,8 @@ async function transcription({ req, res, key, fields, file, translate = false, f
   const tokensFor = (mins) => Math.ceil(mins * 60 * 32); // Gemini counts about 32 tokens per second of audio
   await runCapability({
     req, res, key, capability: 'transcription', method: 'transcribe', requestedModel: input.model, freeOnly, inputTokens: tokensFor(minutes), units: minutes,
-    filter: timestampFilter,
+    // Translation only goes to models that can translate (not Deepgram or ElevenLabs).
+    filter: (entry, adapter) => (!translate || adapter.transcribeTranslate !== false) && (!timestampFilter || timestampFilter(entry, adapter)),
     // Audio is not text in a context window (Whisper lists 448 tokens).
     contextTokens: input.prompt ? estimateTokens([input.prompt]) : 0,
     estimateCost: (entry) => priced(unitCost(entry, 'minute', minutes), tokenCost(entry, tokensFor(minutes))),

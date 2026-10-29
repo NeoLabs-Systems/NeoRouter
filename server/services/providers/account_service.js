@@ -57,7 +57,7 @@ function publicAccount(row) {
   const definition = registry.get(row.definition_id);
   const runtime = rowToRuntime(row);
   const counts = getDatabase().prepare(`SELECT COUNT(*) total, SUM(is_free) free, SUM(enabled) enabled
-    FROM models WHERE account_id = ? AND available = 1 AND capability = 'chat'`).get(row.id);
+    FROM models WHERE account_id = ? AND available = 1 AND capability NOT IN ('router', 'other')`).get(row.id);
   return {
     id: row.id,
     definitionId: row.definition_id,
@@ -157,10 +157,13 @@ async function create(userId, input, createdBy = userId) {
   }
   const id = crypto.randomUUID();
   const slug = uniqueSlug(userId, input.slug || definition.id);
+  // A second account of the same provider is "Groq 2" unless named.
+  const siblings = getDatabase().prepare('SELECT COUNT(*) count FROM provider_accounts WHERE user_id = ? AND definition_id = ?').get(userId, definition.id).count;
+  const label = input.label || (siblings ? `${definition.label} ${siblings + 1}` : definition.label);
   getDatabase().prepare(`INSERT INTO provider_accounts
     (id, user_id, definition_id, slug, label, base_url, secret_encrypted, options_json, billing_mode, status, status_message, last_validated_at, created_by_user_id)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'), ?)`)
-    .run(id, userId, definition.id, slug, input.label || definition.label, baseUrl,
+    .run(id, userId, definition.id, slug, label, baseUrl,
       input.secret ? encryptString(input.secret) : null, JSON.stringify(options), billingMode,
       result.status === 'healthy' ? 'healthy' : 'error', result.message || null, createdBy);
   return { account: publicAccount(getRow(userId, id)), validation: result };

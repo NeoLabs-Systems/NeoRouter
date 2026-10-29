@@ -2,6 +2,7 @@
 
 const stats = require('./stats_store');
 const loadTracker = require('./load_tracker');
+const concurrency = require('./concurrency');
 
 // Feature scaling ranges (log scale). Centralized so they can be tuned.
 const TPS_RANGE = [10, 1500];
@@ -115,7 +116,9 @@ function score(entry, { weights, quotaFactor = 1, random, sample = true, now = D
     + weights.reliability * features.reliability + weights.cost * features.cost) / totalWeight;
   const penaltyFactor = 1 - PENALTY_IMPACT * Math.min(snapshot.penalty, MAX_PENALTY) / MAX_PENALTY;
   const load = loadTracker.inflight(entry);
-  const loadFactor = 1 / (1 + load.model / DEFAULT_CAPACITY + load.account / (DEFAULT_CAPACITY * 4));
+  // A known concurrency limit is the account's real capacity.
+  const accountCapacity = concurrency.limitFor(entry)?.limit || DEFAULT_CAPACITY * 4;
+  const loadFactor = 1 / (1 + load.model / DEFAULT_CAPACITY + load.account / accountCapacity);
   return {
     score: base * quotaFactor * penaltyFactor * loadFactor,
     base,

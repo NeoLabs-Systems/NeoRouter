@@ -2,6 +2,7 @@
 
 const { KINDS } = require('../../providers/provider_error');
 const stats = require('./stats_store');
+const concurrency = require('./concurrency');
 const quota = require('../quota/quota_service');
 const billing = require('../providers/billing_check');
 const { getDatabase } = require('../../db/database');
@@ -86,11 +87,15 @@ function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, now = 
     learnContextWindow(entry, estimatedTokens);
     return policy;
   }
+  // "Too many concurrent requests" says nothing about the per-minute rate:
+  // the account is busy, not used up, so no cooldown and no exhausted rpm.
+  const busy = error.kind === KINDS.RATE_LIMIT && concurrency.onRateLimited(entry, error, { now });
   const current = stats.snapshot(entry.ref, now);
-  const cooldown = cooldownFor(error, current, now);
+  const cooldown = busy ? null : cooldownFor(error, current, now);
   stats.recordFailure(entry.ref, {
-    weight: policy.weight,
-    penalty: policy.penalty,
+    // Busy is not unreliable: it neither costs reliability nor earns a penalty.
+    weight: busy ? 0 : policy.weight,
+    penalty: busy ? 0 : policy.penalty,
     message: `${error.kind}: ${error.message}`,
     countsForBreaker: policy.breaker,
     cooldownUntil: cooldown?.until || 0,
@@ -103,7 +108,7 @@ function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, now = 
   }
   if (error.learned?.value) quota.learnLimit(entry, error.learned);
   if (error.kind === KINDS.QUOTA_EXHAUSTED) billing.observeFailure(entry, error);
-  if (error.kind === KINDS.QUOTA_EXHAUSTED || error.kind === KINDS.RATE_LIMIT) {
+  if (error.kind === KINDS.QUOTA_EXHAUSTED || (error.kind === KINDS.RATE_LIMIT && !busy)) {
     quota.markExhausted(entry, error.kind === KINDS.QUOTA_EXHAUSTED ? 'rpd' : 'rpm', cooldown?.until || null, now);
   }
   return policy;
@@ -118,6 +123,7 @@ function onSlow(entry, elapsedMs, now = Date.now()) {
 
 function onSuccess(entry, measurement, headers, now = Date.now()) {
   stats.recordSuccess(entry.ref, measurement, now);
+  concurrency.onSuccess(entry, { now });
   if (headers) {
     quota.observeHeaders(entry, headers, now);
     billing.observeHeaders(entry, headers);

@@ -1078,11 +1078,40 @@
       }
     }
   },
-  "limitsDescription": "How much of each provider's allowance is used. Every provider resets its limits on its own schedule; NeoRouter switches to another model before one runs out.",
+  "limitsDescription": "What is left of each provider's allowance today. Per-minute limits reset on their own and NeoRouter routes around them, so only daily allowances and models running low are shown.",
   "limitResets": "resets {time}",
   "@limitResets": {
     "placeholders": {
       "time": {
+        "type": "String"
+      }
+    }
+  },
+  "limitConcurrent": "Requests at once",
+  "limitConcurrentValue": "up to {count}, learned from its answers",
+  "@limitConcurrentValue": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "limitConcurrentDocumented": "up to {count}",
+  "@limitConcurrentDocumented": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "addAnotherAccount": "Add another account",
+  "limitsModelsRoom": "{room} of {total} models have room today",
+  "@limitsModelsRoom": {
+    "placeholders": {
+      "room": {
+        "type": "String"
+      },
+      "total": {
         "type": "String"
       }
     }

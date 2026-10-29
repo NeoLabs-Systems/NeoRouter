@@ -2,6 +2,8 @@
 
 const express = require('express');
 const usage = require('../services/usage/usage_service');
+const capabilities = require('../core/capability_registry');
+const concurrency = require('../services/routing/concurrency');
 const catalog = require('../services/catalog/catalog_service');
 const accounts = require('../services/providers/account_service');
 const quota = require('../services/quota/quota_service');
@@ -26,8 +28,12 @@ router.get('/logs', (req, res) => res.json({
 // Quota overview: per provider account, shared pool windows plus every model
 // that has a known limit, with usage, remaining and the limit's source.
 router.get('/quotas', (req, res) => {
-  const entries = catalog.listForUser(req.space.ownerId);
-  const byAccount = new Map(accounts.list(req.space.ownerId).map((account) => [account.id, { account, pool: [], models: [], probes: quota.accountState(account.id) }]));
+  // Every kind counts against a provider's allowance, not only chat.
+  const entries = capabilities.list().flatMap((kind) => catalog.listForUser(req.space.ownerId, { capability: kind.id }));
+  const byAccount = new Map(accounts.list(req.space.ownerId).map((account) => [account.id, {
+    account, pool: [], models: [], probes: quota.accountState(account.id),
+    concurrency: concurrency.limitFor({ accountId: account.id, definitionId: account.definitionId }),
+  }]));
   for (const entry of entries) {
     const group = byAccount.get(entry.accountId);
     if (!group) continue;

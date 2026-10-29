@@ -38,7 +38,7 @@ const HEDGE_RETRY_MS = 2000;
 const QUEUE_POLL_MS = 1000;
 // Rejections that clear by themselves within seconds to minutes. When every
 // candidate is blocked only by these, the request waits instead of failing.
-const TEMPORARY_REJECTIONS = new Set(['rate_limited', 'quota_exhausted', 'circuit_open', 'cooldown']);
+const TEMPORARY_REJECTIONS = new Set(['rate_limited', 'quota_exhausted', 'circuit_open', 'cooldown', 'account_busy']);
 
 const KEY_POLICY_REJECTIONS = new Set(['not_free', 'not_allowed_for_key', 'price_unknown']);
 // Rejections that do not change within the lifetime of one request.

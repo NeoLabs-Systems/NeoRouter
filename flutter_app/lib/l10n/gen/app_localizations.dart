@@ -3472,7 +3472,7 @@ abstract class AppL10n {
   /// No description provided for @limitsDescription.
   ///
   /// In en, this message translates to:
-  /// **'How much of each provider\'s allowance is used. Every provider resets its limits on its own schedule; NeoRouter switches to another model before one runs out.'**
+  /// **'What is left of each provider\'s allowance today. Per-minute limits reset on their own and NeoRouter routes around them, so only daily allowances and models running low are shown.'**
   String get limitsDescription;
 
   /// No description provided for @limitResets.
@@ -3480,6 +3480,36 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'resets {time}'**
   String limitResets(String time);
+
+  /// No description provided for @limitConcurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests at once'**
+  String get limitConcurrent;
+
+  /// No description provided for @limitConcurrentValue.
+  ///
+  /// In en, this message translates to:
+  /// **'up to {count}, learned from its answers'**
+  String limitConcurrentValue(String count);
+
+  /// No description provided for @limitConcurrentDocumented.
+  ///
+  /// In en, this message translates to:
+  /// **'up to {count}'**
+  String limitConcurrentDocumented(String count);
+
+  /// No description provided for @addAnotherAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add another account'**
+  String get addAnotherAccount;
+
+  /// No description provided for @limitsModelsRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'{room} of {total} models have room today'**
+  String limitsModelsRoom(String room, String total);
 
   /// No description provided for @filterProvider.
   ///

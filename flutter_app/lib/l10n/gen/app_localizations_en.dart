@@ -1898,11 +1898,32 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get limitsDescription =>
-      'How much of each provider\'s allowance is used. Every provider resets its limits on its own schedule; NeoRouter switches to another model before one runs out.';
+      'What is left of each provider\'s allowance today. Per-minute limits reset on their own and NeoRouter routes around them, so only daily allowances and models running low are shown.';
 
   @override
   String limitResets(String time) {
     return 'resets $time';
+  }
+
+  @override
+  String get limitConcurrent => 'Requests at once';
+
+  @override
+  String limitConcurrentValue(String count) {
+    return 'up to $count, learned from its answers';
+  }
+
+  @override
+  String limitConcurrentDocumented(String count) {
+    return 'up to $count';
+  }
+
+  @override
+  String get addAnotherAccount => 'Add another account';
+
+  @override
+  String limitsModelsRoom(String room, String total) {
+    return '$room of $total models have room today';
   }
 
   @override

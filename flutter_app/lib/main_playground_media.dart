@@ -217,6 +217,7 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
     'speech' => t.pgSpeechHint,
     'transcription' => t.pgTranscribeHint,
     'moderation' => t.pgCheckHint,
+    'search' => t.pgSearchHint,
     _ => t.pgVideoHint,
   };
 
@@ -226,6 +227,7 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
     'speech' => t.pgSpeechRun,
     'transcription' => t.pgTranscribeRun,
     'moderation' => t.pgCheckRun,
+    'search' => t.pgSearchRun,
     _ => t.pgVideoRun,
   };
 
@@ -233,7 +235,11 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
     bindings: <ShortcutActivator, VoidCallback>{const SingleActivator(LogicalKeyboardKey.enter, meta: true): _run},
     child: TextField(
       controller: _input(widget.kind),
-      minLines: widget.kind == 'embedding' ? 3 : widget.kind == 'search' ? 1 : 2,
+      minLines: widget.kind == 'embedding'
+          ? 3
+          : widget.kind == 'search'
+          ? 1
+          : 2,
       maxLines: 10,
       style: const TextStyle(fontSize: 14.5, height: 1.45),
       decoration: const InputDecoration(filled: false, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),

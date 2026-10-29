@@ -8,6 +8,8 @@ const { AnthropicAdapter } = require('./adapters/anthropic');
 const { GoogleGeminiAdapter } = require('./adapters/google_gemini');
 const { CloudflareAdapter } = require('./adapters/cloudflare');
 const { SearchAdapter } = require('./adapters/search_engines');
+const { DeepgramAdapter } = require('./adapters/deepgram');
+const { ElevenLabsAdapter } = require('./adapters/elevenlabs');
 
 const ADAPTERS = {
   openai_compatible: OpenAICompatibleAdapter,
@@ -15,9 +17,13 @@ const ADAPTERS = {
   google_gemini: GoogleGeminiAdapter,
   cloudflare: CloudflareAdapter,
   search: SearchAdapter,
+  deepgram: DeepgramAdapter,
+  elevenlabs: ElevenLabsAdapter,
 };
 
 const limitSchema = z.object({
+  // Requests that may run at once (account level only).
+  concurrent: z.number().int().positive().optional(),
   rpm: z.number().int().positive().optional(),
   rpd: z.number().int().positive().optional(),
   tpm: z.number().int().positive().optional(),

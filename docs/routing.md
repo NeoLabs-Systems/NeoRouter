@@ -85,3 +85,14 @@ the price unit differ. Endpoints follow the OpenAI API: `/v1/embeddings`,
 - **Prices:** per image, per second of video, per minute of audio or per
   million characters (`price_unit`), or per token where the provider bills
   that way.
+
+## Several accounts of one provider
+
+Each account's copy of a model is its own candidate with its own stats,
+cooldowns and quota pool. Copies of the same model compete only on health,
+allowance left and free capacity (`spreadAcrossAccounts` in `router.js`), so
+accounts wear evenly without changing which model wins. Concurrency limits are
+learned (`concurrency.js`): a 429 while several requests run on an account sets
+its limit below that count, steady success at the limit probes one higher, and
+learned limits fade after an hour. An account at its limit is skipped
+(`account_busy`) and chat requests wait briefly if every copy is busy.

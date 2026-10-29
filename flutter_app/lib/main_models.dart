@@ -59,6 +59,7 @@ String unitLabel(AppL10n t, String unit) => switch (unit) {
   'image' => t.unitImage,
   'second' => t.unitSecond,
   'minute' => t.unitMinute,
+  'search' => t.unitSearch,
   _ => t.unitMchar,
 };
 
@@ -67,6 +68,7 @@ String defaultUnitFor(String capability) => switch (capability) {
   'image' => 'image',
   'video' => 'second',
   'transcription' => 'minute',
+  'search' => 'search',
   _ => 'mchar',
 };
 

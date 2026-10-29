@@ -104,6 +104,21 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
     }
   }
 
+  // A second key for the same provider: NeoRouter spreads requests over both.
+  Future<void> _addAnother(ProviderAccount account) async {
+    final definition = _definitions.where((item) => item.id == account.definitionId).firstOrNull;
+    if (definition == null) return;
+    final added = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _ProviderForm(controller: widget.controller, definition: definition),
+    );
+    if (added != null && mounted) {
+      showSnack(context, added);
+      await _load();
+    }
+  }
+
   Future<void> _edit(ProviderAccount account) async {
     final definition = _definitions.where((item) => item.id == account.definitionId).firstOrNull;
     if (definition == null) return;
@@ -139,6 +154,8 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
         });
       case _AccountAction.edit:
         await _edit(account);
+      case _AccountAction.another:
+        await _addAnother(account);
       case _AccountAction.remove:
         final confirmed = await confirmAction(
           context,
@@ -167,7 +184,9 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
       header: ScreenHeader(
         title: t.providersTitle,
         description: t.providersDescription,
-        trailing: canManage ? FilledButton.icon(onPressed: _definitions.isEmpty ? null : _add, icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.addProvider)) : null,
+        trailing: canManage
+            ? FilledButton.icon(onPressed: _definitions.isEmpty ? null : _add, icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.addProvider))
+            : null,
       ),
       children: <Widget>[
         if (_accounts.isNotEmpty && showLimits)
@@ -192,7 +211,13 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
                       icon: Icons.link_rounded,
                       title: t.noProvidersTitle,
                       message: t.noProvidersMessage,
-                      action: canManage ? FilledButton.icon(onPressed: _definitions.isEmpty ? null : _add, icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.addProvider)) : null,
+                      action: canManage
+                          ? FilledButton.icon(
+                              onPressed: _definitions.isEmpty ? null : _add,
+                              icon: const Icon(Icons.add_rounded, size: 18),
+                              label: Text(t.addProvider),
+                            )
+                          : null,
                     ),
                   )
                 : SettingsCardList(
@@ -218,7 +243,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
   }
 }
 
-enum _AccountAction { check, sync, balance, edit, remove }
+enum _AccountAction { check, sync, balance, edit, another, remove }
 
 /// One connection: who, how many models, whether it is free and working.
 class _AccountRow extends StatelessWidget {
@@ -309,22 +334,23 @@ class _AccountRow extends StatelessWidget {
             else
               Switch(value: account.enabled, onChanged: canManage ? onToggle : null),
             if (canManage || canDelete)
-            PopupMenuButton<_AccountAction>(
-              tooltip: t.moreActions,
-              enabled: !busy,
-              icon: const Icon(Icons.more_horiz_rounded, size: 20),
-              onSelected: onAction,
-              itemBuilder: (context) => <PopupMenuEntry<_AccountAction>>[
-                if (canManage) ...<PopupMenuEntry<_AccountAction>>[
-                  _menuItem(_AccountAction.check, Icons.verified_user_outlined, t.revalidate),
-                  _menuItem(_AccountAction.sync, Icons.sync_rounded, t.syncModels),
-                  _menuItem(_AccountAction.balance, Icons.account_balance_wallet_outlined, t.probeQuota),
-                  _menuItem(_AccountAction.edit, Icons.edit_outlined, t.editProvider),
+              PopupMenuButton<_AccountAction>(
+                tooltip: t.moreActions,
+                enabled: !busy,
+                icon: const Icon(Icons.more_horiz_rounded, size: 20),
+                onSelected: onAction,
+                itemBuilder: (context) => <PopupMenuEntry<_AccountAction>>[
+                  if (canManage) ...<PopupMenuEntry<_AccountAction>>[
+                    _menuItem(_AccountAction.check, Icons.verified_user_outlined, t.revalidate),
+                    _menuItem(_AccountAction.sync, Icons.sync_rounded, t.syncModels),
+                    _menuItem(_AccountAction.balance, Icons.account_balance_wallet_outlined, t.probeQuota),
+                    _menuItem(_AccountAction.edit, Icons.edit_outlined, t.editProvider),
+                    _menuItem(_AccountAction.another, Icons.add_rounded, t.addAnotherAccount),
+                  ],
+                  if (canManage && canDelete) const PopupMenuDivider(),
+                  if (canDelete) _menuItem(_AccountAction.remove, Icons.delete_outline_rounded, t.removeProvider, destructive: palette.error),
                 ],
-                if (canManage && canDelete) const PopupMenuDivider(),
-                if (canDelete) _menuItem(_AccountAction.remove, Icons.delete_outline_rounded, t.removeProvider, destructive: palette.error),
-              ],
-            ),
+              ),
           ],
         ),
       ),
@@ -555,8 +581,10 @@ class _ProviderFormState extends State<_ProviderForm> {
       }
       final result = await widget.controller.api.createAccount(<String, Object?>{
         'definitionId': widget.definition.id,
-        'label': _label.text.trim(),
-        'slug': _slug.text.trim(),
+        // Unchanged defaults are left to the server, which numbers a second
+        // account of the same provider ("Groq 2", groq-2).
+        if (_label.text.trim() != widget.definition.label) 'label': _label.text.trim(),
+        if (_slug.text.trim() != widget.definition.id.replaceAll('_', '-')) 'slug': _slug.text.trim(),
         if (_secret.text.trim().isNotEmpty) 'secret': _secret.text.trim(),
         if (widget.definition.editableBaseUrl) 'baseUrl': _baseUrl.text.trim(),
         if (options.isNotEmpty) 'options': options,
@@ -865,6 +893,22 @@ class _LimitsViewState extends State<_LimitsView> {
   }
 }
 
+/// Daily metrics matter to people; per-minute windows reset before anyone
+/// could act on them and the router already avoids them.
+const Set<String> _dailyMetrics = <String>{'rpd', 'tpd'};
+const double _lowFraction = 0.8;
+
+double _usedFraction(Map window) {
+  final limit = (window['limit'] as num?)?.toDouble();
+  if (limit == null || limit <= 0) return 0;
+  final remaining = (window['remaining'] as num?)?.toDouble();
+  final used = remaining == null ? (window['used'] as num? ?? 0).toDouble() : limit - remaining;
+  return (used / limit).clamp(0, 1).toDouble();
+}
+
+/// Windows worth showing: daily ones, and any that is used up right now.
+bool _worthShowing(Map window) => _dailyMetrics.contains('${window['metric']}') || _usedFraction(window) >= 1;
+
 class _AccountLimits extends StatelessWidget {
   const _AccountLimits({required this.group});
 
@@ -875,19 +919,43 @@ class _AccountLimits extends StatelessWidget {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final account = Map<String, dynamic>.from(group['account'] as Map);
-    final pool = (group['pool'] as List).cast<Map>();
+    final pool = (group['pool'] as List).cast<Map>().where(_worthShowing).toList();
     final probes = (group['probes'] as List).cast<Map>();
-    final models = (group['models'] as List).cast<Map>().where((model) => (model['windows'] as List).isNotEmpty).toList();
+    final models = (group['models'] as List).cast<Map>();
+    // The fullest window of each model decides whether it is running low.
+    final low = <({Map model, Map window, double fraction})>[];
+    for (final model in models) {
+      final windows = (model['windows'] as List).cast<Map>().where(_worthShowing).toList();
+      if (windows.isEmpty) continue;
+      windows.sort((a, b) => _usedFraction(b).compareTo(_usedFraction(a)));
+      final fraction = _usedFraction(windows.first);
+      if (fraction >= _lowFraction) low.add((model: model, window: windows.first, fraction: fraction));
+    }
+    low.sort((a, b) => b.fraction.compareTo(a.fraction));
     final rows = <Widget>[
       for (final probe in probes)
         SettingsRow(
           label: metricLabel(t, '${probe['metric']}'),
           control: Text('${probe['remaining'] ?? '—'}${probe['limit'] == null ? '' : ' / ${probe['limit']}'}', style: TextStyle(color: palette.text)),
         ),
+      if (group['concurrency'] is Map)
+        SettingsRow(
+          label: t.limitConcurrent,
+          control: Text(
+            (group['concurrency'] as Map)['source'] == 'learned'
+                ? t.limitConcurrentValue('${(group['concurrency'] as Map)['limit']}')
+                : t.limitConcurrentDocumented('${(group['concurrency'] as Map)['limit']}'),
+            style: TextStyle(color: palette.textSoft, fontSize: 13),
+          ),
+        ),
       for (final window in pool) _WindowRow(title: metricLabel(t, '${window['metric']}'), window: window),
-      for (final model in models.take(8))
-        for (final window in (model['windows'] as List).cast<Map>())
-          _WindowRow(title: '${shortModelName('${model['id']}')} · ${metricLabel(t, '${window['metric']}')}', window: window),
+      if (models.isNotEmpty)
+        SettingsRow(
+          label: t.limitsModelsRoom('${models.length - low.where((item) => item.fraction >= 1).length}', '${models.length}'),
+          control: low.isEmpty ? Icon(Icons.check_rounded, size: 18, color: palette.success) : const SizedBox.shrink(),
+        ),
+      for (final item in low.take(6))
+        _WindowRow(title: '${shortModelName('${item.model['id']}')} · ${metricLabel(t, '${item.window['metric']}')}', window: item.window),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
