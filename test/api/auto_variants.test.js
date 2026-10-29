@@ -113,6 +113,7 @@ test('a custom style chooses kinds of model and how much each counts', async () 
   const listed = await ids(secret);
   assert.ok(listed.includes('auto:paid-first'), listed.join(','));
   assert.ok(!listed.some((id) => id.includes('custom_')));
+  assert.ok(!listed.some((id) => /^auto-(free|plan|paid):paid-first$/.test(id)), 'own styles get no kind variants');
   assert.equal((await chat(secret, 'auto:paid-first')).headers['x-neorouter-model'], 'paid/ok-paid');
   await api('patch', '/admin/settings').send({ registrationOpen: true });
   const other = (await request(app).post('/api/v1/auth/register').send({ username: 'variants2', email: 'variants2@example.test', password: 'correct-horse-battery' })).body.session.token;

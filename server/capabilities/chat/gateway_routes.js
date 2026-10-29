@@ -74,6 +74,12 @@ const KIND_LABELS = { free: 'free models', plan: 'subscriptions', paid: 'paid mo
 // Live autos list the protocols their models speak (each live endpoint
 // routes only over its own protocol); System One autos say whether they can
 // answer /v1/systemone, which needs decision models.
+// The kinds a style routes over: those it gives any weight, of those in reach.
+function styleKinds(profile, kinds) {
+  const weights = profile.constraints?.kinds;
+  return weights ? kinds.filter((kind) => weights[kind] > 0) : kinds;
+}
+
 function autoModels(key, entries, type) {
   const kinds = MODEL_KINDS.filter((item) => entries.some((entry) => modelKind(entry) === item));
   const scopes = kinds.length > 1 ? [null, ...kinds] : [null];
@@ -86,13 +92,18 @@ function autoModels(key, entries, type) {
     const base = scope ? `auto-${scope}` : 'auto';
     const only = scope ? `, ${KIND_LABELS[scope]} only` : '';
     // Plain auto follows the key's own profile; every profile is also listed by name.
+    // An own style already says which kinds of model it uses, so it gets no
+    // free/plan/paid variants (nor does plain auto when it follows one).
     const keyProfile = profiles.resolve(key.user_id, key.profile) || profiles.resolve(key.user_id, 'balanced');
-    list.push({ id: base, name: `Auto (key default: ${keyProfile.name}${only})`, neorouter: { auto: true, profile: keyProfile.id, keyDefault: true, kinds: scope ? [scope] : kinds, ...extra } });
+    if (!scope || keyProfile.preset) {
+      list.push({ id: base, name: `Auto (key default: ${keyProfile.name}${only})`, neorouter: { auto: true, profile: keyProfile.id, keyDefault: true, kinds: scope ? [scope] : styleKinds(keyProfile, kinds), ...extra } });
+    }
     for (const profile of profiles.list(key.user_id)) {
+      if (scope && !profile.preset) continue;
       list.push({
         id: `${base}:${profile.slug}`,
         name: `Auto (${profile.name}${only})`,
-        neorouter: { auto: true, profile: profile.id, kinds: scope ? [scope] : kinds, ...extra },
+        neorouter: { auto: true, profile: profile.id, kinds: scope ? [scope] : styleKinds(profile, kinds), ...extra },
       });
     }
   }
