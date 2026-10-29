@@ -5431,6 +5431,78 @@ abstract class AppL10n {
   /// **'{actor} left {subject}\'s team'**
   String teamEventLeave(String actor, String subject);
 
+  /// No description provided for @keyLimitsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Limits'**
+  String get keyLimitsTitle;
+
+  /// No description provided for @keyNoLimitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave a field empty for no limit.'**
+  String get keyNoLimitHint;
+
+  /// No description provided for @keyRateLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate limit'**
+  String get keyRateLimit;
+
+  /// No description provided for @keyRequestsPerMinute.
+  ///
+  /// In en, this message translates to:
+  /// **'requests per minute'**
+  String get keyRequestsPerMinute;
+
+  /// No description provided for @keyTokenLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Token limit'**
+  String get keyTokenLimit;
+
+  /// No description provided for @keyTokensPer.
+  ///
+  /// In en, this message translates to:
+  /// **'tokens per'**
+  String get keyTokensPer;
+
+  /// No description provided for @keyTokenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Counts the tokens used on free and subscription models. Once reached, the key waits until it resets.'**
+  String get keyTokenHint;
+
+  /// No description provided for @keyTokenFallsBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Counts the tokens used on free and subscription models. Once reached, paid models take over within the budget.'**
+  String get keyTokenFallsBack;
+
+  /// No description provided for @tokensUsedOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {limit} tokens'**
+  String tokensUsedOf(String used, String limit);
+
+  /// No description provided for @styleKindsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Kinds of model'**
+  String get styleKindsTitle;
+
+  /// No description provided for @styleKindsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Which kinds this style uses and how much each counts. A kind at a low share is only used when the others cannot answer.'**
+  String get styleKindsHint;
+
+  /// No description provided for @styleKindOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used'**
+  String get styleKindOff;
+
   /// No description provided for @pgLiveHint.
   ///
   /// In en, this message translates to:

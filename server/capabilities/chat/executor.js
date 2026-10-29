@@ -472,8 +472,10 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   const status = lastError?.kind === KINDS.BAD_REQUEST && badRequests >= MAX_CONSECUTIVE_BAD_REQUESTS ? 400
     : lastError?.kind === KINDS.CONTEXT_LENGTH ? 400
       : trail.length === 0 && budgetExhausted ? 402
+        : trail.length === 0 && rejected.token_limit ? 429
         : trail.length === 0 ? 503 : 502;
-  const code = trail.length === 0 ? 'NO_MODEL_AVAILABLE' : 'ALL_ATTEMPTS_FAILED';
+  // Free and subscription models are past the key's token limit.
+  const code = trail.length === 0 ? (rejected.token_limit ? 'TOKEN_LIMIT_REACHED' : 'NO_MODEL_AVAILABLE') : 'ALL_ATTEMPTS_FAILED';
   const message = trail.length === 0
     ? explainNoModel(rejected)
     : `All ${trail.length} attempt(s) failed. Last error: ${lastError?.message || 'unknown'}`;

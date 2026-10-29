@@ -224,6 +224,9 @@ function issueKey(request, approval, origin) {
     allowPaid: access.allowPaid,
     budgetUsd: access.allowPaid ? access.budgetUsd ?? null : null,
     budgetPeriod: access.budgetPeriod,
+    rpmLimit: access.rpmLimit ?? null,
+    tokenLimit: access.allowFree || access.allowPlan ? access.tokenLimit ?? null : null,
+    tokenPeriod: access.tokenPeriod,
   }, approval.actorId, { name: request.name, origin: request.redirect?.host || null, scopes: request.scopes });
   return {
     access_token: secret,

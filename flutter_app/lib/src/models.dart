@@ -203,6 +203,10 @@ class RouterKey {
   String? get paceState => (raw['pacing'] as Map?)?['state'] as String?;
   double? get paceForecast => _double((raw['pacing'] as Map?)?['forecast']);
   int? get rpmLimit => _int(raw['rpmLimit']);
+  int? get tokenLimit => _int(raw['tokenLimit']);
+  String get tokenPeriod => raw['tokenPeriod'] as String? ?? 'monthly';
+  int? get tokensUsed => _int(raw['tokensUsed']);
+  String? get tokenResetsAt => raw['tokenResetsAt'] as String?;
   List<String> get allowedModels => _strings(raw['allowedModels']);
   String get profile => raw['profile'] as String? ?? 'balanced';
   String? get expiresAt => raw['expiresAt'] as String?;

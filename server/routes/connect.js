@@ -55,6 +55,9 @@ const access = z.object({
   allowPaid: z.boolean(),
   budgetUsd: z.number().min(0).nullable().optional(),
   budgetPeriod: z.enum(['total', 'monthly', 'daily']).optional(),
+  rpmLimit: z.number().int().positive().nullable().optional(),
+  tokenLimit: z.number().int().positive().nullable().optional(),
+  tokenPeriod: z.enum(['total', 'monthly', 'daily']).optional(),
 });
 
 approval.get('/requests/:reference', (req, res) => res.json({ request: apps.describe(req.params.reference) }));

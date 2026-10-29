@@ -3028,6 +3028,47 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String get keyLimitsTitle => 'Limits';
+
+  @override
+  String get keyNoLimitHint => 'Leave a field empty for no limit.';
+
+  @override
+  String get keyRateLimit => 'Rate limit';
+
+  @override
+  String get keyRequestsPerMinute => 'requests per minute';
+
+  @override
+  String get keyTokenLimit => 'Token limit';
+
+  @override
+  String get keyTokensPer => 'tokens per';
+
+  @override
+  String get keyTokenHint =>
+      'Counts the tokens used on free and subscription models. Once reached, the key waits until it resets.';
+
+  @override
+  String get keyTokenFallsBack =>
+      'Counts the tokens used on free and subscription models. Once reached, paid models take over within the budget.';
+
+  @override
+  String tokensUsedOf(String used, String limit) {
+    return '$used of $limit tokens';
+  }
+
+  @override
+  String get styleKindsTitle => 'Kinds of model';
+
+  @override
+  String get styleKindsHint =>
+      'Which kinds this style uses and how much each counts. A kind at a low share is only used when the others cannot answer.';
+
+  @override
+  String get styleKindOff => 'Not used';
+
+  @override
   String get pgLiveHint =>
       'Live voice is a spoken conversation in real time over a WebSocket. Apps such as NeoAgent connect to the address for the protocol they speak, with a router key; NeoRouter picks the model and falls back if a provider refuses.';
 

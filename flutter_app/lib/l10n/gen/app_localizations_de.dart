@@ -3049,6 +3049,47 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
+  String get keyLimitsTitle => 'Limits';
+
+  @override
+  String get keyNoLimitHint => 'Lass ein Feld leer für kein Limit.';
+
+  @override
+  String get keyRateLimit => 'Rate-Limit';
+
+  @override
+  String get keyRequestsPerMinute => 'Anfragen pro Minute';
+
+  @override
+  String get keyTokenLimit => 'Token-Limit';
+
+  @override
+  String get keyTokensPer => 'Tokens pro';
+
+  @override
+  String get keyTokenHint =>
+      'Zählt die Tokens auf Gratis- und Abo-Modellen. Ist es erreicht, wartet der Key bis zum Zurücksetzen.';
+
+  @override
+  String get keyTokenFallsBack =>
+      'Zählt die Tokens auf Gratis- und Abo-Modellen. Ist es erreicht, übernehmen Bezahl-Modelle im Rahmen des Budgets.';
+
+  @override
+  String tokensUsedOf(String used, String limit) {
+    return '$used von $limit Tokens';
+  }
+
+  @override
+  String get styleKindsTitle => 'Arten von Modellen';
+
+  @override
+  String get styleKindsHint =>
+      'Welche Arten dieser Stil nutzt und wie stark jede zählt. Eine Art mit kleinem Anteil kommt nur dran, wenn die anderen nicht antworten können.';
+
+  @override
+  String get styleKindOff => 'Nicht genutzt';
+
+  @override
   String get pgLiveHint =>
       'Live-Sprache ist ein gesprochenes Gespräch in Echtzeit über einen WebSocket. Apps wie NeoAgent verbinden sich mit der Adresse für ihr Protokoll und einem Router-Key; NeoRouter wählt das Modell und weicht aus, wenn ein Anbieter ablehnt.';
 

@@ -29,6 +29,9 @@ class ConnectAppScreen extends StatefulWidget {
 class _ConnectAppScreenState extends State<ConnectAppScreen> {
   final TextEditingController _code = TextEditingController();
   final TextEditingController _budget = TextEditingController();
+  final TextEditingController _rpm = TextEditingController();
+  final TextEditingController _tokens = TextEditingController();
+  String _tokenPeriod = 'monthly';
   _ConnectStep _step = _ConnectStep.loading;
   ConnectRequest? _request;
   String? _error;
@@ -58,6 +61,8 @@ class _ConnectAppScreenState extends State<ConnectAppScreen> {
   void dispose() {
     _code.dispose();
     _budget.dispose();
+    _rpm.dispose();
+    _tokens.dispose();
     super.dispose();
   }
 
@@ -104,6 +109,9 @@ class _ConnectAppScreenState extends State<ConnectAppScreen> {
                 'allowPaid': _paid,
                 'budgetUsd': _paid ? double.tryParse(_budget.text.trim().replaceAll(',', '.')) : null,
                 'budgetPeriod': _period,
+                'rpmLimit': int.tryParse(_rpm.text.trim()),
+                'tokenLimit': _free || _plan ? int.tryParse(_tokens.text.trim().replaceAll(RegExp(r'[^0-9]'), '')) : null,
+                'tokenPeriod': _tokenPeriod,
               }
             : null,
       );
@@ -252,10 +260,14 @@ class _ConnectAppScreenState extends State<ConnectAppScreen> {
           paid: _paid,
           budget: _budget,
           period: _period,
+          rpm: _rpm,
+          tokens: _tokens,
+          tokenPeriod: _tokenPeriod,
           onFree: (value) => setState(() => _free = value),
           onPlan: (value) => setState(() => _plan = value),
           onPaid: (value) => setState(() => _paid = value),
           onPeriod: (value) => setState(() => _period = value),
+          onTokenPeriod: (value) => setState(() => _tokenPeriod = value),
         ),
         if (owner != null) ...<Widget>[const SizedBox(height: AppSpacing.sm), InlineHint(message: t.connectInSpace(t.spaceOf(owner.displayName)))],
         if (_error != null) ...<Widget>[const SizedBox(height: AppSpacing.sm), InlineError(message: _error!)],

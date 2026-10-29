@@ -156,8 +156,10 @@ async function runCapability({ req, res = null, key, capability, method, request
   }
   const status = lastError?.kind === KINDS.BAD_REQUEST && badRequests >= MAX_CONSECUTIVE_BAD_REQUESTS ? 400
     : trail.length === 0 && budgetExhausted ? 402
-      : trail.length === 0 ? 503 : 502;
-  const code = trail.length === 0 ? 'NO_MODEL_AVAILABLE' : 'ALL_ATTEMPTS_FAILED';
+      : trail.length === 0 && rejected.token_limit ? 429
+        : trail.length === 0 ? 503 : 502;
+  // Free and subscription models are past the key's token limit.
+  const code = trail.length === 0 ? (rejected.token_limit ? 'TOKEN_LIMIT_REACHED' : 'NO_MODEL_AVAILABLE') : 'ALL_ATTEMPTS_FAILED';
   const message = trail.length === 0
     ? explainNoModel(rejected, capability)
     : `All ${trail.length} attempt(s) failed. Last error: ${lastError?.message || 'unknown'}`;

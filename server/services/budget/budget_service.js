@@ -27,6 +27,20 @@ function spent(key, now = Date.now()) {
   return row.total;
 }
 
+// Tokens the key used on models that cost it nothing per request (free and
+// subscription models) in its token period.
+function tokensUsed(key, now = Date.now()) {
+  const row = getDatabase().prepare(`SELECT COALESCE(SUM(input_tokens + output_tokens), 0) total FROM requests
+    WHERE router_key_id = ? AND created_at >= ? AND status = 'success' AND cost_usd = 0`)
+    .get(key.id, periodStart(key.token_period || 'monthly', now));
+  return row.total;
+}
+
+// Whether the key's token limit is used up: free and subscription models stop.
+function tokenLimitReached(key, now = Date.now()) {
+  return key.token_limit !== null && key.token_limit !== undefined && tokensUsed(key, now) >= key.token_limit;
+}
+
 function reserved(keyId) {
   return reservations.get(keyId) || 0;
 }
@@ -74,4 +88,4 @@ function record(key, amount, requestId, now = Date.now()) {
     .run(key.id, requestId || null, amount, now);
 }
 
-module.exports = { periodStart, periodEnd, spent, remaining, reserved, costOf, estimateMaxCost, reserve, record };
+module.exports = { periodStart, periodEnd, spent, tokensUsed, tokenLimitReached, remaining, reserved, costOf, estimateMaxCost, reserve, record };

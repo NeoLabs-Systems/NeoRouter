@@ -274,6 +274,26 @@ class _KeyRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(fontSize: 13, color: palette.textMuted),
                 ),
+                if (key.tokenLimit != null && !key.revoked) ...<Widget>[
+                  const SizedBox(height: 10),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 360),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Text(
+                          <String>[
+                            t.tokensUsedOf(formatCount(key.tokensUsed ?? 0), formatCount(key.tokenLimit!)),
+                            if (key.tokenResetsAt != null) t.resetsAt(formatTime(DateTime.parse(key.tokenResetsAt!).toLocal())),
+                          ].join(' · '),
+                          style: TextStyle(fontSize: 12.5, color: palette.textSoft),
+                        ),
+                        const SizedBox(height: 6),
+                        UsageBar(fraction: key.tokenLimit == 0 ? 1 : (key.tokensUsed ?? 0) / key.tokenLimit!, height: 4),
+                      ],
+                    ),
+                  ),
+                ],
                 if (budget != null && !key.revoked) ...<Widget>[
                   const SizedBox(height: 10),
                   ConstrainedBox(
@@ -332,6 +352,8 @@ class _KeyFormState extends State<_KeyForm> {
   late final TextEditingController _name = TextEditingController(text: widget.existing?.name ?? '');
   late final TextEditingController _budget = TextEditingController(text: widget.existing?.budgetUsd?.toString() ?? '');
   late final TextEditingController _rpm = TextEditingController(text: widget.existing?.rpmLimit?.toString() ?? '');
+  late final TextEditingController _tokens = TextEditingController(text: widget.existing?.tokenLimit?.toString() ?? '');
+  late String _tokenPeriod = widget.existing?.tokenPeriod ?? 'monthly';
   late final TextEditingController _allowed = TextEditingController(text: widget.existing?.allowedModels.join('\n') ?? '');
   late bool _free = widget.existing?.allowFree ?? true;
   late bool _plan = widget.existing?.allowPlan ?? true;
@@ -347,6 +369,7 @@ class _KeyFormState extends State<_KeyForm> {
     _name.dispose();
     _budget.dispose();
     _rpm.dispose();
+    _tokens.dispose();
     _allowed.dispose();
     super.dispose();
   }
@@ -368,6 +391,8 @@ class _KeyFormState extends State<_KeyForm> {
       'budgetUsd': _paid ? double.tryParse(_budget.text.trim().replaceAll(',', '.')) : null,
       'budgetPeriod': _period,
       'rpmLimit': int.tryParse(_rpm.text.trim()),
+      'tokenLimit': _free || _plan ? int.tryParse(_tokens.text.trim().replaceAll(RegExp(r'[^0-9]'), '')) : null,
+      'tokenPeriod': _tokenPeriod,
       'allowedModels': _allowed.text.split('\n').map((line) => line.trim()).where((line) => line.isNotEmpty).toList(),
       'profile': _profile,
     };
@@ -410,10 +435,14 @@ class _KeyFormState extends State<_KeyForm> {
                 paid: _paid,
                 budget: _budget,
                 period: _period,
+                rpm: _rpm,
+                tokens: _tokens,
+                tokenPeriod: _tokenPeriod,
                 onFree: (value) => setState(() => _free = value),
                 onPlan: (value) => setState(() => _plan = value),
                 onPaid: (value) => setState(() => _paid = value),
                 onPeriod: (value) => setState(() => _period = value),
+                onTokenPeriod: (value) => setState(() => _tokenPeriod = value),
               ),
               const SizedBox(height: AppSpacing.sm),
               Align(
@@ -433,12 +462,6 @@ class _KeyFormState extends State<_KeyForm> {
                       DropdownMenuItem<String>(value: profile.id, child: Text(profile.id == 'balanced' ? t.presetBalancedDefault : profileLabel(t, profile))),
                   ],
                   onChanged: (value) => setState(() => _profile = value ?? _profile),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                TextField(
-                  controller: _rpm,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: t.rpmLimit),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 TextField(
@@ -481,10 +504,14 @@ class KeyAccessFields extends StatelessWidget {
     required this.paid,
     required this.budget,
     required this.period,
+    required this.rpm,
+    required this.tokens,
+    required this.tokenPeriod,
     required this.onFree,
     required this.onPlan,
     required this.onPaid,
     required this.onPeriod,
+    required this.onTokenPeriod,
   });
 
   final bool free;
@@ -492,16 +519,21 @@ class KeyAccessFields extends StatelessWidget {
   final bool paid;
   final TextEditingController budget;
   final String period;
+  final TextEditingController rpm;
+  final TextEditingController tokens;
+  final String tokenPeriod;
   final ValueChanged<bool> onFree;
   final ValueChanged<bool> onPlan;
   final ValueChanged<bool> onPaid;
   final ValueChanged<String> onPeriod;
+  final ValueChanged<String> onTokenPeriod;
 
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final label = TextStyle(fontWeight: FontWeight.w600, color: palette.text);
+    final hint = TextStyle(fontSize: 12, color: palette.textMuted, height: 1.4);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -510,40 +542,73 @@ class KeyAccessFields extends StatelessWidget {
         _KindCheck(title: t.kindFree, description: t.kindFreeHint, value: free, onChanged: onFree),
         _KindCheck(title: t.kindPlan, description: t.kindPlanHint, value: plan, onChanged: onPlan),
         _KindCheck(title: t.kindPaid, description: t.kindPaidHint, value: paid, onChanged: onPaid),
+        const SizedBox(height: AppSpacing.md),
+        Text(t.keyLimitsTitle, style: label),
+        const SizedBox(height: 2),
+        Text(t.keyNoLimitHint, style: hint),
+        const SizedBox(height: AppSpacing.sm),
+        // Every key: how many requests a minute.
+        _LimitRow(label: t.keyRateLimit, controller: rpm, unit: t.keyRequestsPerMinute),
+        // Paid models: a spending limit.
         if (paid) ...<Widget>[
-          const SizedBox(height: AppSpacing.md),
-          Text(t.keyBudgetTitle, style: label),
-          const SizedBox(height: AppSpacing.xs),
-          Row(
-            children: <Widget>[
-              SizedBox(
-                width: 140,
-                child: TextField(
-                  controller: budget,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(prefixText: r'$ ', isDense: true),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text(t.spendingLimitPer, style: TextStyle(color: palette.textSoft)),
-              const SizedBox(width: AppSpacing.sm),
-              DropdownButton<String>(
-                value: period,
-                onChanged: (value) => onPeriod(value ?? period),
-                items: <DropdownMenuItem<String>>[
-                  DropdownMenuItem<String>(value: 'daily', child: Text(t.periodDaily)),
-                  DropdownMenuItem<String>(value: 'monthly', child: Text(t.periodMonthly)),
-                  DropdownMenuItem<String>(value: 'total', child: Text(t.periodTotal)),
-                ],
-              ),
+          const SizedBox(height: AppSpacing.sm),
+          _LimitRow(label: t.keyBudgetTitle, controller: budget, prefix: r'$ ', decimal: true, unit: t.spendingLimitPer, period: period, onPeriod: onPeriod),
+          const SizedBox(height: 4),
+          Text(free || plan ? t.budgetFallsBack : t.budgetStops, style: hint),
+        ],
+        // Free and subscription models: a token limit.
+        if (free || plan) ...<Widget>[
+          const SizedBox(height: AppSpacing.sm),
+          _LimitRow(label: t.keyTokenLimit, controller: tokens, unit: t.keyTokensPer, period: tokenPeriod, onPeriod: onTokenPeriod),
+          const SizedBox(height: 4),
+          Text(paid ? t.keyTokenFallsBack : t.keyTokenHint, style: hint),
+        ],
+      ],
+    );
+  }
+}
+
+/// "Label  [ value ]  unit  [ period ]" for one limit.
+class _LimitRow extends StatelessWidget {
+  const _LimitRow({required this.label, required this.controller, required this.unit, this.prefix, this.decimal = false, this.period, this.onPeriod});
+
+  final String label;
+  final TextEditingController controller;
+  final String unit;
+  final String? prefix;
+  final bool decimal;
+  final String? period;
+  final ValueChanged<String>? onPeriod;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.xs,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: <Widget>[
+        SizedBox(width: 120, child: Text(label, style: TextStyle(color: palette.textSoft))),
+        SizedBox(
+          width: 120,
+          child: TextField(
+            controller: controller,
+            keyboardType: TextInputType.numberWithOptions(decimal: decimal),
+            decoration: InputDecoration(prefixText: prefix, isDense: true, hintText: '—'),
+          ),
+        ),
+        Text(unit, style: TextStyle(color: palette.textSoft)),
+        if (period != null && onPeriod != null)
+          DropdownButton<String>(
+            value: period,
+            onChanged: (value) => onPeriod!(value ?? period!),
+            items: <DropdownMenuItem<String>>[
+              DropdownMenuItem<String>(value: 'daily', child: Text(t.periodDaily)),
+              DropdownMenuItem<String>(value: 'monthly', child: Text(t.periodMonthly)),
+              DropdownMenuItem<String>(value: 'total', child: Text(t.periodTotal)),
             ],
           ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            free || plan ? t.budgetFallsBack : t.budgetStops,
-            style: TextStyle(fontSize: 12, color: palette.textMuted, height: 1.4),
-          ),
-        ],
       ],
     );
   }

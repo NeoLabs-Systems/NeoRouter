@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 const { createApp } = require('../../server/app');
 const { createMockProvider } = require('../support/mock_provider');
+const stats = require('../../server/services/routing/stats_store');
 
 let app;
 let free;
@@ -51,7 +52,11 @@ test('plain auto follows the key profile and every profile is listed by name', a
 test('of two similar models the cheaper one is chosen, whatever the profile', async () => {
   const secret = await keyFor({ allowFree: true, allowPlan: true, allowPaid: true });
   for (const model of ['auto:smart', 'auto:fast', 'auto']) {
-    for (let i = 0; i < 4; i += 1) assert.equal((await chat(secret, model)).headers['x-neorouter-model'], 'free/ok-free', model);
+    for (let i = 0; i < 4; i += 1) {
+      // Equal learned speed and reliability: only the price tells them apart.
+      stats.resetForTests();
+      assert.equal((await chat(secret, model)).headers['x-neorouter-model'], 'free/ok-free', model);
+    }
   }
 });
 
@@ -76,4 +81,34 @@ test('a kind variant routes only to that kind of model', async () => {
   }
   const freeOnly = await keyFor({ allowFree: true, allowPlan: false, allowPaid: false });
   assert.notEqual((await chat(freeOnly, 'auto-paid')).status, 200, 'a variant never widens what the key may use');
+});
+
+test('a token limit stops free and subscription models until it resets', async () => {
+  const created = await api('post', '/keys').send({ name: 'tokens', allowFree: true, allowPlan: false, allowPaid: false, tokenLimit: 20, tokenPeriod: 'daily' });
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  assert.equal(created.body.key.tokenLimit, 20);
+  const secret = created.body.secret;
+  assert.equal((await chat(secret, 'auto')).status, 200, 'the first request fits (the mock reports 18 tokens)');
+  assert.equal((await chat(secret, 'auto')).status, 200, '18 of 20 used, still under the limit');
+  const blocked = await chat(secret, 'auto');
+  assert.equal(blocked.status, 429);
+  assert.equal(blocked.body.error.code, 'TOKEN_LIMIT_REACHED');
+  const listed = (await api('get', '/keys')).body.keys.find((key) => key.id === created.body.key.id);
+  assert.equal(listed.tokensUsed, 36);
+  assert.ok(listed.tokenResetsAt);
+
+  // With paid models allowed, the key carries on there.
+  await api('patch', `/keys/${created.body.key.id}`).send({ allowPaid: true });
+  const paidOn = await chat(secret, 'auto');
+  assert.equal(paidOn.status, 200);
+  assert.equal(paidOn.headers['x-neorouter-model'], 'paid/ok-paid');
+});
+
+test('a custom style chooses kinds of model and how much each counts', async () => {
+  const style = await api('post', '/routing/profiles').send({ name: 'Paid first', weights: { intelligence: 0.4, speed: 0.2, reliability: 0.3, cost: 0.1 }, constraints: { kinds: { free: 0, plan: 0, paid: 1 } } });
+  assert.equal(style.status, 201, JSON.stringify(style.body));
+  const secret = await keyFor({ allowFree: true, allowPlan: true, allowPaid: true });
+  for (let i = 0; i < 4; i += 1) assert.equal((await chat(secret, `auto:${style.body.profile.id}`)).headers['x-neorouter-model'], 'paid/ok-paid', 'free models are left out');
+  const leaning = await api('post', '/routing/profiles').send({ name: 'Mostly paid', weights: { intelligence: 0.4, speed: 0.2, reliability: 0.3, cost: 0.1 }, constraints: { kinds: { free: 0.05, plan: 0, paid: 1 } } });
+  for (let i = 0; i < 4; i += 1) assert.equal((await chat(secret, `auto:${leaning.body.profile.id}`)).headers['x-neorouter-model'], 'paid/ok-paid', 'a small weight makes free a fallback');
 });

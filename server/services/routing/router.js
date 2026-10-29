@@ -84,7 +84,9 @@ function rejection(entry, ctx, now) {
   if (!allowedByKey(entry, key)) return 'not_allowed_for_key';
   const kind = kindAllowed(entry, key, freeOnly);
   if (kind) return kind;
+  if (ctx.tokenLimitReached && (entry.isFree || entry.isPlan)) return 'token_limit';
   if (ctx.onlyKind && modelKind(entry) !== ctx.onlyKind) return 'other_kind';
+  if (constraints.kinds && !(constraints.kinds[modelKind(entry)] > 0)) return 'kind_not_in_style';
   if (needs.tools && entry.tools === false) return 'no_tools';
   if (needs.vision && entry.vision !== true) return 'no_vision';
   const reserve = Math.max(MIN_OUTPUT_RESERVE, Math.min(request.max_tokens || MIN_OUTPUT_RESERVE, 32000));
@@ -180,12 +182,25 @@ const SIMILAR_QUALITY = 0.03;
 const CLEARLY_CHEAPER = 0.05;
 const PRICIER_EQUAL_FACTOR = 0.6;
 
-function preferCheaperEquals(scored) {
+// Relative to the kind the style likes most, so the favourite keeps its score.
+function kindWeight(kinds, entry) {
+  const top = Math.max(kinds.free, kinds.plan, kinds.paid) || 1;
+  return (kinds[modelKind(entry)] || 0) / top;
+}
+
+// A custom style that weighs a kind of model lower does not count it as the
+// cheaper equal (`weightOf`).
+function preferCheaperEquals(scored, weightOf = () => 1) {
   const leading = [...scored].sort((a, b) => b.score - a.score).slice(0, CHEAPER_CANDIDATES);
-  const priced = leading.map((item) => ({ item, cost: item.details.features.cost, quality: item.quality }));
+  const priced = leading.map((item) => ({ item, cost: item.ownCost, quality: item.quality, weight: weightOf(item.entry) }));
   for (const candidate of priced) {
-    const cheaperEqual = priced.some((other) => other.cost >= candidate.cost + CLEARLY_CHEAPER && other.quality >= candidate.quality * (1 - SIMILAR_QUALITY));
-    if (cheaperEqual) candidate.item.score *= PRICIER_EQUAL_FACTOR;
+    const cheaperEqual = priced.some((other) => other.cost >= candidate.cost + CLEARLY_CHEAPER && other.quality >= candidate.quality * (1 - SIMILAR_QUALITY)
+      && other.weight >= candidate.weight);
+    if (cheaperEqual) {
+      candidate.item.score *= PRICIER_EQUAL_FACTOR;
+      // Kept out of the random draw while a cheaper equal can answer.
+      candidate.item.pricierEqual = true;
+    }
   }
 }
 
@@ -193,9 +208,10 @@ function preferCheaperEquals(scored) {
 // with their counts, largest first.
 const REJECTION_GROUPS = [
   ['key', ['not_free', 'not_allowed_for_key', 'other_kind', 'price_unknown', 'budget_exhausted'], 'are not allowed for this key'],
+  ['tokens', ['token_limit'], "are past this key's token limit until it resets"],
   ['busy', ['quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'plan_used_up', 'not_available'], 'are used up, rate-limited or cooling down for now'],
   ['fit', ['no_tools', 'no_vision', 'context_too_small', 'context_unknown', 'needs_more_tokens', 'incompatible'], 'cannot handle this request (tools, images or its size)'],
-  ['profile', ['below_min_intelligence', 'too_expensive', 'too_slow', 'provider_not_included', 'provider_excluded', 'model_excluded'], "are left out by the routing profile's limits"],
+  ['profile', ['below_min_intelligence', 'too_expensive', 'too_slow', 'provider_not_included', 'provider_excluded', 'model_excluded', 'kind_not_in_style'], "are left out by the routing style"],
 ];
 
 function explainNoModel(rejected, capability = 'chat') {
@@ -237,6 +253,7 @@ class RoutingPlan {
     if (this.pacing && this.pacing.costShift !== 1) {
       this.weights = { ...this.weights, cost: Math.max(this.weights.cost, PACED_COST_FLOOR) * this.pacing.costShift };
     }
+    this.tokenLimitReached = budget.tokenLimitReached(key);
     this.entries = catalog.listForUser(userId, { capability }).map((entry) => plans.effective(entry));
     this.primaryRefs = new Set();
     if (!this.parsed.auto) this.scopeToRequestedModel();
@@ -263,7 +280,7 @@ class RoutingPlan {
   }
 
   context() {
-    return { onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost };
+    return { tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost };
   }
 
   rank({ includeRejected = false, sample = true, now = Date.now() } = {}) {
@@ -310,13 +327,19 @@ class RoutingPlan {
       // matters; one very weak axis cannot be made up by the others.
       const base = Math.exp(Object.entries(this.weights)
         .reduce((sum, [feature, weight]) => sum + (weight / totalWeight) * Math.log(Math.max(features[feature], FEATURE_FLOOR)), 0));
-      // The same without cost: what the model is worth apart from its price.
+      // What the model is worth apart from its price, from its own (not
+      // field-relative) values, so small differences stay small.
+      // Reliability as its average, not this request's random sample.
+      const own = { ...item.details.features, reliability: scoring.reliability(stats.snapshot(item.entry.ref, now), { sample: false }) };
       item.quality = Math.exp(Object.entries(this.weights).filter(([feature]) => feature !== 'cost')
-        .reduce((sum, [feature, weight]) => sum + (weight / qualityWeight) * Math.log(Math.max(features[feature], FEATURE_FLOOR)), 0));
+        .reduce((sum, [feature, weight]) => sum + (weight / qualityWeight) * Math.log(Math.max(own[feature], FEATURE_FLOOR)), 0));
+      item.ownCost = own.cost;
       const { quota: quotaFactor, penalty, load } = item.details.factors;
       let value = base * quotaFactor * penalty * load;
       if (qualityProfile && features.intelligence < bestIntelligence - QUALITY_GAP) value *= QUALITY_GATE_FACTOR;
       value *= plans.factor(item.entry);
+      // A custom style's preference between free, subscription and paid models.
+      if (this.profile.constraints.kinds) value *= kindWeight(this.profile.constraints.kinds, item.entry);
       if ((this.needs.tools && item.entry.tools === null) || (this.needs.json && item.entry.json === false)) value *= UNKNOWN_CAPABILITY_FACTOR;
       // Far more than this request's fair share of the budget: last resort only.
       if (this.pacing && !item.entry.isFree && !item.entry.isPlan) {
@@ -326,7 +349,8 @@ class RoutingPlan {
       item.score = value;
       item.details = { ...item.details, base, features };
     }
-    preferCheaperEquals(scored);
+    const kinds = this.profile.constraints.kinds;
+    preferCheaperEquals(scored, kinds ? (entry) => kindWeight(kinds, entry) : undefined);
     spreadAcrossAccounts(scored);
     // The model (or account) the client asked for comes first.
     for (const item of scored) if (this.primaryRefs.has(item.entry.ref)) item.score += 10;
@@ -343,7 +367,10 @@ class RoutingPlan {
     // Among copies of the requested model (several accounts) the draw stays
     // within those copies; otherwise among the top-k.
     const primary = this.primaryRefs.has(choice.entry.ref);
-    const pool = primary ? ranked.filter((item) => this.primaryRefs.has(item.entry.ref)) : ranked.slice(0, getConfig().routing.topK);
+    const leading = primary ? ranked.filter((item) => this.primaryRefs.has(item.entry.ref)) : ranked.slice(0, getConfig().routing.topK);
+    const cheaperFirst = leading.filter((item) => !item.pricierEqual);
+    const pool = cheaperFirst.length ? cheaperFirst : leading;
+    choice = pool[0];
     if (pool.length > 1) {
       const temperature = Math.max(0.01, this.profile.constraints.exploration ?? 0.08);
       const top = pool[0].score;

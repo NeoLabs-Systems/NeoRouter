@@ -459,6 +459,10 @@ class _StyleEditorState extends State<_StyleEditor> {
   late double _minIntelligence = (_constraints['minIntelligence'] as num?)?.toDouble() ?? 0;
   late double _exploration = (_constraints['exploration'] as num?)?.toDouble() ?? 0.08;
   late bool _adaptive = _constraints['adaptive'] != false;
+  // How much free, subscription and paid models count (0 = not used).
+  late final Map<String, double> _kinds = <String, double>{
+    for (final kind in const <String>['free', 'plan', 'paid']) kind: ((_constraints['kinds'] as Map?)?[kind] as num?)?.toDouble() ?? 1,
+  };
   bool _advanced = false;
   String? _error;
 
@@ -476,6 +480,10 @@ class _StyleEditorState extends State<_StyleEditor> {
         'excludeProviders': _exclude.text.split(',').map((item) => item.trim()).where((item) => item.isNotEmpty).toList(),
         'adaptive': _adaptive,
         'exploration': _exploration,
+        // Every kind at full weight is the same as no preference.
+        'kinds': _kinds.values.every((value) => value >= 1)
+            ? null
+            : <String, double>{for (final entry in _kinds.entries) entry.key: entry.value < 0.01 ? 0 : entry.value},
       };
 
   Future<void> _save() async {
@@ -530,6 +538,25 @@ class _StyleEditorState extends State<_StyleEditor> {
               _slider(t.speed, _weights.speed, (value) => _weights.speed = value),
               _slider(t.reliability, _weights.reliability, (value) => _weights.reliability = value),
               _slider(t.cost, _weights.cost, (value) => _weights.cost = value),
+              const SizedBox(height: AppSpacing.md),
+              Text(t.styleKindsTitle, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
+              const SizedBox(height: 2),
+              Text(t.styleKindsHint, style: TextStyle(fontSize: 12.5, color: palette.textSoft)),
+              const SizedBox(height: AppSpacing.xs),
+              for (final (kind, label) in <(String, String)>[('free', t.kindFree), ('plan', t.kindPlan), ('paid', t.kindPaid)])
+                Row(
+                  children: <Widget>[
+                    Expanded(child: _slider(label, _kinds[kind]!, (value) => _kinds[kind] = value)),
+                    SizedBox(
+                      width: 92,
+                      child: Text(
+                        _kinds[kind]! < 0.01 ? t.styleKindOff : '${(_kinds[kind]! * 100).round()} %',
+                        textAlign: TextAlign.end,
+                        style: TextStyle(fontSize: 12.5, color: palette.textMuted),
+                      ),
+                    ),
+                  ],
+                ),
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(

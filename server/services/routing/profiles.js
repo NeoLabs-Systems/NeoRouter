@@ -26,6 +26,9 @@ const DEFAULT_CONSTRAINTS = Object.freeze({
   excludeModels: [],
   adaptive: true,
   exploration: 0.08,
+  // Custom styles: how much each kind of model counts (0 = never used).
+  // Null means every kind the key allows, equally.
+  kinds: null,
 });
 
 const weightsSchema = z.object({
@@ -44,6 +47,9 @@ const constraintsSchema = z.object({
   excludeModels: z.array(z.string()).optional(),
   adaptive: z.boolean().optional(),
   exploration: z.number().min(0).max(1).optional(),
+  kinds: z.object({ free: z.number().min(0).max(1), plan: z.number().min(0).max(1), paid: z.number().min(0).max(1) })
+    .refine((value) => value.free + value.plan + value.paid > 0, 'At least one kind of model must count.')
+    .nullable().optional(),
 });
 
 function rowToProfile(row) {

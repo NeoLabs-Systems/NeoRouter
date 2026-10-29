@@ -931,6 +931,21 @@ S = {
   'teamEventRelease': ('{actor} removed {subject} from the team', '{actor} hat {subject} aus dem Team entfernt'),
   'teamEventLeave': ("{actor} left {subject}'s team", '{actor} hat das Team von {subject} verlassen'),
 
+  # key limits
+  'keyLimitsTitle': ('Limits', 'Limits'),
+  'keyNoLimitHint': ('Leave a field empty for no limit.', 'Lass ein Feld leer für kein Limit.'),
+  'keyRateLimit': ('Rate limit', 'Rate-Limit'),
+  'keyRequestsPerMinute': ('requests per minute', 'Anfragen pro Minute'),
+  'keyTokenLimit': ('Token limit', 'Token-Limit'),
+  'keyTokensPer': ('tokens per', 'Tokens pro'),
+  'keyTokenHint': ('Counts the tokens used on free and subscription models. Once reached, the key waits until it resets.', 'Zählt die Tokens auf Gratis- und Abo-Modellen. Ist es erreicht, wartet der Key bis zum Zurücksetzen.'),
+  'keyTokenFallsBack': ('Counts the tokens used on free and subscription models. Once reached, paid models take over within the budget.', 'Zählt die Tokens auf Gratis- und Abo-Modellen. Ist es erreicht, übernehmen Bezahl-Modelle im Rahmen des Budgets.'),
+  'tokensUsedOf': ('{used} of {limit} tokens', '{used} von {limit} Tokens'),
+  # routing styles: kinds of model
+  'styleKindsTitle': ('Kinds of model', 'Arten von Modellen'),
+  'styleKindsHint': ('Which kinds this style uses and how much each counts. A kind at a low share is only used when the others cannot answer.', 'Welche Arten dieser Stil nutzt und wie stark jede zählt. Eine Art mit kleinem Anteil kommt nur dran, wenn die anderen nicht antworten können.'),
+  'styleKindOff': ('Not used', 'Nicht genutzt'),
+
   # playground: live voice
   'pgLiveHint': ('Live voice is a spoken conversation in real time over a WebSocket. Apps such as NeoAgent connect to the address for the protocol they speak, with a router key; NeoRouter picks the model and falls back if a provider refuses.', 'Live-Sprache ist ein gesprochenes Gespräch in Echtzeit über einen WebSocket. Apps wie NeoAgent verbinden sich mit der Adresse für ihr Protokoll und einem Router-Key; NeoRouter wählt das Modell und weicht aus, wenn ein Anbieter ablehnt.'),
   'pgLiveEndpoints': ('Where apps connect', 'Wohin Apps sich verbinden'),
