@@ -274,6 +274,29 @@ async function moderations({ req, res, key, body, freeOnly = false }) {
   });
 }
 
+// ------------------------------------------------------- System One decisions
+
+const decisionSchema = z.object({
+  model: z.string().max(300).default('auto'),
+  state: z.unknown(),
+  questions: z.union([z.record(z.unknown()), z.array(z.unknown())]),
+});
+
+// POST /v1/systemone: TypeSafe's decision API (state + typed questions →
+// answers), routed over the decision models of every connected provider.
+async function decide({ req, res, key, body, freeOnly = false }) {
+  const input = parseBody(decisionSchema, body);
+  const tokens = estimateTokens([JSON.stringify(input.state ?? ''), JSON.stringify(input.questions)]);
+  await runCapability({
+    req, res, key, capability: 'moderation', method: 'decide', requestedModel: input.model, freeOnly, inputTokens: tokens, units: 1,
+    filter: (entry) => systemOne.family(entry.modelId) === 'decision',
+    estimateCost: (entry) => tokenCost(entry, tokens + 200),
+    invoke: ({ adapter, entry, signal, timeoutMs }) => adapter.decide({ state: input.state, questions: input.questions }, { modelId: entry.modelId, signal, timeoutMs }),
+    costOf: (entry, result) => tokenCost(entry, result.inputTokens || tokens) || 0,
+    respond: (result, entry) => res.json({ model: entry.id, answers: result.answers, usage: result.usage }),
+  });
+}
+
 // --------------------------------------------------------------------- video
 
 const videoSchema = z.object({
@@ -327,4 +350,4 @@ async function search({ req, res, key, body, freeOnly = false }) {
   res.json({ object: 'search', model: entry.id, query: input.query, results: result.results });
 }
 
-module.exports = { search, searchWeb, embeddings, images, speech, transcription, moderations, createVideo, subtitles, float32Base64 };
+module.exports = { search, searchWeb, embeddings, images, speech, transcription, moderations, decide, createVideo, subtitles, float32Base64 };

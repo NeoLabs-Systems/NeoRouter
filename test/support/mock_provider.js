@@ -24,7 +24,11 @@ function createMockProvider({ models, prices = {}, port = 0, failSearch = false,
     if (req.get('authorization') !== 'Bearer good-key') return res.status(401).json({ error: { message: 'Invalid API key' } });
     return res.json({
       object: 'list',
-      data: models.map((id) => ({ id, object: 'model', context_length: 32768, ...(prices[id] ? { pricing: prices[id] } : {}) })),
+      data: models.map((id) => ({
+        id, object: 'model', context_length: 32768, ...(prices[id] ? { pricing: prices[id] } : {}),
+        // jev-* are System One decision models, listed like OpenRouter does.
+        ...(id.startsWith('jev') ? { architecture: { output_modalities: ['decisions'] } } : {}),
+      })),
     });
   });
   // maxConcurrent: answer 429 like a provider with a concurrency cap.
@@ -129,6 +133,12 @@ function createMockProvider({ models, prices = {}, port = 0, failSearch = false,
       { title: `Result for ${req.query.q}`, url: 'https://example.com/a', content: 'First result text.' },
       { title: 'Second', url: 'https://www.other.org/b', content: 'Second result text.' },
     ] });
+  });
+  // TypeSafe-style System One decisions: one answer per question.
+  app.post('/v1/systemone', (req, res) => {
+    calls.push({ kind: 'decide', model: req.body.model, at: Date.now() });
+    const names = Array.isArray(req.body.questions) ? req.body.questions.map((item) => item.id) : Object.keys(req.body.questions || {});
+    res.json({ model: req.body.model, answers: Object.fromEntries(names.map((name) => [name, true])), usage: { prompt_tokens: 20 } });
   });
   const videos = new Map();
   app.post('/v1/videos', media('video'), (req, res) => {

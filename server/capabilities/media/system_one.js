@@ -29,6 +29,8 @@ function family(modelId) {
   if (/topic-control/.test(id)) return 'topic_control';
   if (/shieldgemma/.test(id)) return 'shieldgemma';
   if (/moderation/.test(id)) return 'native';
+  // Decision models (POST /v1/systemone), not classifiers.
+  if (/(^|\/)jev|decide/.test(id)) return 'decision';
   return 'generic';
 }
 

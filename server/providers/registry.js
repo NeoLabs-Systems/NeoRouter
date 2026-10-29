@@ -55,6 +55,7 @@ const definitionSchema = z.object({
     moderate: z.union([z.string(), z.literal(true)]).optional(),
     classify: z.union([z.string(), z.literal(true)]).optional(),
     createVideo: z.union([z.string(), z.literal(true)]).optional(),
+    decide: z.union([z.string(), z.literal(true)]).optional(),
     search: z.literal(true).optional(),
   }).default({}),
   // Live voice WebSocket protocols the provider speaks (capabilities/live/dialects.js).

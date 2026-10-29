@@ -15,7 +15,7 @@ let session;
 let secret;
 let keyId;
 
-const MODELS = ['ok-chat', 'ok-embed-small', 'fail-embed-large', 'flux-ok', 'tts-ok', 'whisper-ok', 'fail-whisper', 'llama-guard-ok', 'sora-ok'];
+const MODELS = ['ok-chat', 'ok-embed-small', 'fail-embed-large', 'flux-ok', 'tts-ok', 'whisper-ok', 'fail-whisper', 'llama-guard-ok', 'sora-ok', 'jev-1.13'];
 
 test.before(async () => {
   app = createApp();
@@ -135,6 +135,16 @@ test('System One models answer in the moderation format', async () => {
   assert.equal(response.body.results[0].flagged, true);
   assert.equal(response.body.results[0].categories['illicit/violent'], true);
   assert.equal(response.body.results[1].flagged, false);
+});
+
+test('System One decision models answer typed questions', async () => {
+  const response = await gateway('post', '/systemone').send({ state: { message: 'hi' }, questions: { reply_needed: { type: 'boolean' } } });
+  assert.equal(response.status, 200, JSON.stringify(response.body));
+  assert.equal(response.body.model, 'mock/jev-1.13');
+  assert.deepEqual(response.body.answers, { reply_needed: true });
+  // Classifier checks never pick a decision model.
+  const moderated = await gateway('post', '/moderations').send({ input: 'hello' });
+  assert.equal(moderated.body.model, 'mock/llama-guard-ok');
 });
 
 test('video jobs stay bound to their provider and finish by polling', async () => {

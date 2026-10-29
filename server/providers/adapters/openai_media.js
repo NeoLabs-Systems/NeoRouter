@@ -16,6 +16,7 @@ const DEFAULT_PATHS = Object.freeze({
   transcribe: '/audio/transcriptions',
   moderate: '/moderations',
   createVideo: '/videos',
+  decide: '/systemone',
 });
 
 function mediaPath(adapter, method, modelId) {
@@ -104,6 +105,14 @@ const methods = {
     const result = typeof data === 'string' ? { text: data } : data || {};
     if (typeof result.text !== 'string') throw new ProviderError(KINDS.INVALID_OUTPUT, 'The provider returned no transcript.');
     return { text: result.text, language: result.language || language || null, duration: result.duration ?? null, segments: result.segments || null, headers };
+  },
+
+  // System One decision models (Jev and others): typed answers to questions
+  // about a state, in TypeSafe's request shape, which OpenRouter also speaks.
+  async decide({ state, questions }, { modelId, signal, timeoutMs }) {
+    const { data, headers } = await this.http(mediaPath(this, 'decide'), { method: 'POST', body: { model: modelId, state, questions }, signal, timeoutMs });
+    if (!data?.answers || typeof data.answers !== 'object') throw new ProviderError(KINDS.INVALID_OUTPUT, 'The decision model returned no answers.');
+    return { answers: data.answers, usage: data.usage || {}, inputTokens: data.usage?.prompt_tokens ?? data.usage?.input_tokens, headers };
   },
 
   async moderate({ input }, { modelId, signal, timeoutMs }) {

@@ -37,6 +37,8 @@ function detectKind(id, raw = {}) {
   if (Array.isArray(outputs) && outputs.length && !outputs.includes('text')) {
     if (outputs.includes('embeddings') || outputs.includes('embedding')) return 'embedding';
     if (outputs.includes('video')) return 'video';
+    // Decision models answer typed questions: a System One kind.
+    if (outputs.includes('decisions')) return 'moderation';
     return outputs.includes('image') ? 'image' : outputs.includes('audio') ? 'speech' : 'other';
   }
   for (const [kind, pattern] of NON_CHAT_PATTERNS) {

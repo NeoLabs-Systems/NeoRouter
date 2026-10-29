@@ -12,8 +12,9 @@ module.exports = {
   headers: { 'HTTP-Referer': 'https://github.com/NeoLabs-Systems/NeoRouter', 'X-Title': 'NeoRouter' },
   validate: { path: '/key' },
   // Embedding, image and video models live in their own listings.
-  models: { extraPaths: ['/embeddings/models', '/images/models', '/videos/models'] },
-  media: { embed: '/embeddings', generateImage: '/images', speech: '/audio/speech', transcribe: '/audio/transcriptions', createVideo: '/videos' },
+  // System One decision models (Jev) are listed under the decisions modality.
+  models: { extraPaths: ['/embeddings/models', '/images/models', '/videos/models', '/models?output_modalities=decisions'] },
+  media: { embed: '/embeddings', generateImage: '/images', speech: '/audio/speech', transcribe: '/audio/transcriptions', createVideo: '/videos', decide: '/systemone' },
   quirks: { transcriptionJson: true, noImageResponseFormat: true },
   billing: {
     defaultMode: 'paid',
