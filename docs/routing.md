@@ -52,12 +52,12 @@ recency and reasoning support. Users can override it per model.
 
 ## Other kinds
 
-Embeddings, images, speech, transcription, System One (moderation) and video
-use the same plan, learning, quotas and budgets
+Embeddings, images, speech, transcription, System One (moderation), video
+and web search use the same plan, learning, quotas and budgets
 (`server/capabilities/shared/run_capability.js`); only the adapter method and
 the price unit differ. Endpoints follow the OpenAI API: `/v1/embeddings`,
 `/v1/images/generations`, `/v1/audio/speech`, `/v1/audio/transcriptions`
-(and `/translations`), `/v1/moderations` and `/v1/videos`. `GET
+(and `/translations`), `/v1/moderations`, `/v1/videos` and `/v1/search`. `GET
 /v1/models?type=embedding` lists a kind.
 
 - **Embeddings:** "auto" pins a key to the first model and size it used, since
@@ -71,6 +71,15 @@ the price unit differ. Endpoints follow the OpenAI API: `/v1/embeddings`,
   `prompt_injection` or `topic` (with a `policy`).
 - **Video:** jobs stay bound to the provider that accepted them and are polled
   on `GET /v1/videos/:id`.
+- **Web search:** each search engine is one `search` model
+  (`server/providers/definitions/search.js`). Chat requests that ask for
+  built-in search (`web_search_options`, OpenRouter's `plugins: [{ id: 'web' }]`
+  or a `:online` model, a Responses `web_search` tool, an Anthropic
+  `web_search_*` tool) get a `web_search` function; NeoRouter runs its calls
+  through the search engines (up to 5 per request, `max_uses` up to 20, domain
+  filters honoured) and loops until the model answers
+  (`server/capabilities/chat/web_search.js`). Without a search engine the
+  request runs as before. Queries pass the privacy shield again first.
 - **Quality:** image, speech and video models are scored by Artificial
   Analysis arena ELO; other kinds by size and age within their kind.
 - **Prices:** per image, per second of video, per minute of audio or per

@@ -27,6 +27,7 @@ const NON_CHAT_PATTERNS = [
 function detectKind(id, raw = {}) {
   const declared = String(raw.type || raw.object_type || raw.task || '').toLowerCase();
   if (/embed/.test(declared)) return 'embedding';
+  if (declared === 'search') return 'search';
   if (/image/.test(declared) && !/text/.test(declared)) return 'image';
   if (raw.supported_durations || raw.supported_resolutions) return 'video';
   const outputs = raw.architecture?.output_modalities;
@@ -98,6 +99,8 @@ function parseUnitPricing(raw) {
       .filter((value) => value >= 0);
     if (seconds.length) return { priceUnit: 'second', unitPrice: Math.min(...seconds) };
   }
+  const perSearch = toNumber(raw.price_per_search);
+  if (perSearch !== null && perSearch >= 0) return { priceUnit: 'search', unitPrice: perSearch };
   const perImage = toNumber(raw.price_per_image ?? raw.pricing?.per_image);
   if (perImage !== null && perImage >= 0) return { priceUnit: 'image', unitPrice: perImage };
   return { priceUnit: null, unitPrice: null };

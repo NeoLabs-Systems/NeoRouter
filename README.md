@@ -97,7 +97,14 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
     <td valign="top"><b>🎨 Images, speech, video</b><br>Image generation, text to speech, transcription with subtitles and video jobs, all routed with fallback.</td>
     <td valign="top"><b>⚡ System One models</b><br>Fast guard models (Llama Guard, NemoGuard, gpt-oss-safeguard, Prompt Guard) behind one <code>/v1/moderations</code>.</td>
   </tr>
+  <tr>
+    <td valign="top"><b>🔎 Web search</b><br>Tavily, Exa, Linkup, Parallel, Firecrawl, Serper, Brave, Jina and your own SearXNG behind <code>/v1/search</code>, with fallback.</td>
+    <td valign="top"><b>🌐 Search for any model</b><br>Turn on web search in OpenAI, OpenRouter, Responses or Anthropic style; NeoRouter runs the searches for whichever model answers.</td>
+    <td valign="top"></td>
+  </tr>
 </table>
+
+**Search engines:** Tavily, Exa, Linkup, Parallel, Firecrawl, Serper, Brave Search, Jina and self-hosted SearXNG.
 
 **Providers:** Groq, Google Gemini, Cerebras, Mistral, OpenRouter, NVIDIA NIM, Cloudflare, Cohere, Z.ai, SiliconFlow, Hugging Face, Ollama Cloud, Kilo, OpenAI, Anthropic, xAI, DeepSeek, Together, Fireworks, DeepInfra, Nous, local Ollama and LM Studio, and any OpenAI- or Anthropic-compatible endpoint.
 

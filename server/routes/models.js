@@ -46,7 +46,7 @@ router.patch('/:ref', validate(z.object({
     tools: z.boolean().nullable().optional(),
     vision: z.boolean().nullable().optional(),
     intelligence: z.number().min(0).max(1).nullable().optional(),
-    priceUnit: z.enum(['image', 'second', 'minute', 'mchar']).nullable().optional(),
+    priceUnit: z.enum(['image', 'second', 'minute', 'mchar', 'search']).nullable().optional(),
     unitPrice: z.number().min(0).max(1000).nullable().optional(),
     // Evidence learned from traffic can only be cleared, never set by hand.
     billedAt: z.null().optional(),

@@ -189,6 +189,11 @@ function heuristicIntelligence(records, sampleModelIds = [], aa = null) {
   return { value: total + HEURISTIC_PRIOR * (1 - weightSum), weightSum };
 }
 
+const SEARCH_QUALITY = {
+  'exa-search': 0.85, 'parallel-search': 0.85, 'tavily-search': 0.8, 'linkup-standard': 0.8, 'serper-google': 0.75,
+  'brave-web-search': 0.75, 'firecrawl-search': 0.7, 'jina-search': 0.65, searxng: 0.6,
+};
+
 // Parameter ranges (billions) from small to large within each kind.
 const KIND_PARAMS = { embedding: [0.1, 10], moderation: [0.02, 20], transcription: [0.05, 5], speech: [0.05, 5], image: [1, 30], video: [1, 30] };
 
@@ -283,6 +288,12 @@ function computeCanonical(canonical, sampleModelIds = [], capability = 'chat') {
     intelligence = arena.score;
     source = 'artificial_analysis_arena';
     confidence = 0.85;
+  } else if (capability === 'search' && SEARCH_QUALITY[sampleModelIds[0]]) {
+    // No public index compares search APIs; a curated ranking from agent
+    // search evaluations (accuracy of answers built on the results).
+    intelligence = SEARCH_QUALITY[sampleModelIds[0]];
+    source = 'curated';
+    confidence = 0.5;
   } else if (capability !== 'chat') {
     // Without arena data, size and age within the kind are the best guide;
     // the chat calibration means nothing for embedders or guards.

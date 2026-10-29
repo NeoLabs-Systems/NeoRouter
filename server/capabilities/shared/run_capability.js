@@ -32,21 +32,21 @@ function trailItem(entry, outcome, extra = {}) {
  * @param {(ctx) => Promise<object>} options.invoke   calls the adapter: ({ adapter, entry, signal, timeoutMs }) => result
  * @param {(entry, result) => number} options.costOf  actual cost in USD
  * @param {(entry) => number|null} options.estimateCost  worst-case cost before the call (null = unknown)
- * @param {(result, entry) => void} options.respond   writes the HTTP response
+ * @param {(result, entry) => void} [options.respond]  writes the HTTP response; omitted → returns { result, entry }
  * @param {number} [options.inputTokens]  size estimate for quota checks and the log
  * @param {number} [options.contextTokens]  text that must fit the model's context (defaults to inputTokens)
  * @param {number} [options.units]        billed units (images, seconds, …) for the log
  * @param {(entry, adapter) => boolean} [options.filter]  extra candidate filter (embedding pins, timestamps)
  * @param {() => HttpError|null} [options.onNoCandidate]  explains an empty candidate list
  */
-async function runCapability({ req, res, key, capability, method, requestedModel = 'auto', invoke, costOf, estimateCost, respond, inputTokens = 0, units = 0, format = capability, freeOnly = false, filter = null, onNoCandidate = null, contextTokens = inputTokens }) {
+async function runCapability({ req, res = null, key, capability, method, requestedModel = 'auto', invoke, costOf, estimateCost, respond, inputTokens = 0, units = 0, format = capability, freeOnly = false, filter = null, onNoCandidate = null, contextTokens = inputTokens }) {
   const requestId = req.id || crypto.randomUUID();
   const startedAt = Date.now();
   const trail = [];
 
   const rpm = routerKeys.consumeRpm(key);
   if (!rpm.allowed) {
-    res.set('Retry-After', String(rpm.retryAfterSeconds));
+    res?.set('Retry-After', String(rpm.retryAfterSeconds));
     throw new HttpError(429, 'KEY_RATE_LIMITED', 'This router key exceeded its requests-per-minute limit.', { retryAfterSeconds: rpm.retryAfterSeconds });
   }
   const remaining = budget.remaining(key);
@@ -108,14 +108,18 @@ async function runCapability({ req, res, key, capability, method, requestedModel
       reservation.settle(cost, requestId);
       learning.onSuccess(entry, { latencyMs, ttftMs: null, outputTokens: 0, generationMs: latencyMs }, result.headers || null);
       trail.push(trailItem(entry, 'success', { ms: latencyMs }));
-      res.set('X-NeoRouter-Model', entry.id);
-      res.set('X-NeoRouter-Trail', trail.map((item) => item.model).join(','));
+      if (res) {
+        res.set('X-NeoRouter-Model', entry.id);
+        res.set('X-NeoRouter-Trail', trail.map((item) => item.model).join(','));
+      }
       finish({
         status: 'success', http_status: 200, model_ref: entry.ref, model_label: entry.id, account_id: entry.accountId,
         cost_usd: cost, is_free: entry.isFree ? 1 : 0, units: result.units ?? units, input_tokens: result.inputTokens ?? inputTokens,
       });
+      // Without respond (internal callers such as chat web search) the result is returned.
+      if (!respond) return { result, entry };
       await respond(result, entry);
-      return;
+      return { result, entry };
     } catch (caught) {
       reservation.release();
       const error = caught instanceof ProviderError ? caught : caught instanceof HttpError ? caught : fromNetworkError(caught);

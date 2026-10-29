@@ -70,7 +70,7 @@ String defaultUnitFor(String capability) => switch (capability) {
   _ => 'mchar',
 };
 
-const Set<String> kUnitPricedKinds = <String>{'image', 'video', 'speech', 'transcription'};
+const Set<String> kUnitPricedKinds = <String>{'image', 'video', 'speech', 'transcription', 'search'};
 
 /// "Free", "$0.04 per image" or "$0.15 / $0.60 per 1M tokens".
 String modelPriceLabel(AppL10n t, CatalogModel model) {
@@ -652,7 +652,7 @@ class _ModelDialogState extends State<_ModelDialog> {
                         value: _unit,
                         onChanged: (value) => setState(() => _unit = value ?? _unit),
                         items: <DropdownMenuItem<String>>[
-                          for (final unit in const <String>['image', 'second', 'minute', 'mchar'])
+                          for (final unit in const <String>['image', 'second', 'minute', 'mchar', 'search'])
                             DropdownMenuItem<String>(value: unit, child: Text(unitLabel(t, unit))),
                         ],
                       ),

@@ -14,32 +14,34 @@ class CapabilityInfo {
   final IconData icon;
 
   String label(AppL10n t) => switch (id) {
-        'chat' => t.capChat,
-        'embedding' => t.capEmbedding,
-        'rerank' => t.capRerank,
-        'image' => t.capImage,
-        'audio' => t.capAudio,
-        'speech' => t.capSpeech,
-        'transcription' => t.capTranscription,
-        'video' => t.capVideo,
-        'moderation' => t.capModeration,
-        'router' => t.capRouter,
-        _ => t.capOther,
-      };
+    'chat' => t.capChat,
+    'embedding' => t.capEmbedding,
+    'rerank' => t.capRerank,
+    'image' => t.capImage,
+    'audio' => t.capAudio,
+    'speech' => t.capSpeech,
+    'search' => t.capSearch,
+    'transcription' => t.capTranscription,
+    'video' => t.capVideo,
+    'moderation' => t.capModeration,
+    'router' => t.capRouter,
+    _ => t.capOther,
+  };
 
   String description(AppL10n t) => switch (id) {
-        'chat' => t.capChatHint,
-        'embedding' => t.capEmbeddingHint,
-        'rerank' => t.capRerankHint,
-        'image' => t.capImageHint,
-        'audio' => t.capAudioHint,
-        'speech' => t.capSpeechHint,
-        'transcription' => t.capTranscriptionHint,
-        'video' => t.capVideoHint,
-        'moderation' => t.capModerationHint,
-        'router' => t.capRouterHint,
-        _ => t.capOtherHint,
-      };
+    'chat' => t.capChatHint,
+    'embedding' => t.capEmbeddingHint,
+    'rerank' => t.capRerankHint,
+    'image' => t.capImageHint,
+    'audio' => t.capAudioHint,
+    'speech' => t.capSpeechHint,
+    'search' => t.capSearchHint,
+    'transcription' => t.capTranscriptionHint,
+    'video' => t.capVideoHint,
+    'moderation' => t.capModerationHint,
+    'router' => t.capRouterHint,
+    _ => t.capOtherHint,
+  };
 }
 
 const List<CapabilityInfo> kCapabilities = <CapabilityInfo>[
@@ -51,13 +53,13 @@ const List<CapabilityInfo> kCapabilities = <CapabilityInfo>[
   CapabilityInfo('transcription', Icons.subtitles_outlined),
   CapabilityInfo('audio', Icons.graphic_eq_rounded),
   CapabilityInfo('video', Icons.movie_outlined),
+  CapabilityInfo('search', Icons.travel_explore_outlined),
   CapabilityInfo('moderation', Icons.bolt_outlined),
   CapabilityInfo('router', Icons.alt_route_outlined),
   CapabilityInfo('other', Icons.category_outlined),
 ];
 
-CapabilityInfo capabilityInfo(String id) =>
-    kCapabilities.firstWhere((item) => item.id == id, orElse: () => kCapabilities.last);
+CapabilityInfo capabilityInfo(String id) => kCapabilities.firstWhere((item) => item.id == id, orElse: () => kCapabilities.last);
 
 /// One kind as it exists in the user's catalog.
 class CapabilitySummary {

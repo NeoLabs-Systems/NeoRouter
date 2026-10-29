@@ -2,6 +2,7 @@
 
 const crypto = require('node:crypto');
 const { getConfig } = require('../../config/env');
+const webSearch = require('./web_search');
 const { HttpError } = require('../../middleware/error_handler');
 const { ProviderError, KINDS, fromNetworkError } = require('../../providers/provider_error');
 const accounts = require('../../services/providers/account_service');
@@ -159,21 +160,39 @@ async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs
   return { buffered, rest, accumulator, headers, ttftMs, startedAt, controller };
 }
 
-async function execute({ req, res, key, format, body, freeOnly = false }) {
+/**
+ * canonical: an already translated request (web search turns); internal:
+ * a turn of a request that already passed the key's rate limit.
+ */
+async function execute({ req, res, key, format, body, freeOnly = false, canonical: preset = null, internal = false }) {
   const translator = translators[format];
-  const requestId = req.id || crypto.randomUUID();
+  // Built-in web search runs the request as several turns (web_search.js).
+  if (!preset) {
+    const search = webSearch.requested(format, body || {});
+    if (search && webSearch.available(key.user_id)) {
+      const rpm = routerKeys.consumeRpm(key);
+      if (!rpm.allowed) {
+        res.set('Retry-After', String(rpm.retryAfterSeconds));
+        throw new HttpError(429, 'KEY_RATE_LIMITED', 'This router key exceeded its requests-per-minute limit.', { retryAfterSeconds: rpm.retryAfterSeconds });
+      }
+      return webSearch.executeWithSearch({ execute, req, res, key, format, spec: search, freeOnly, translator: safeTranslator(translator) });
+    }
+    // Without a search engine the marker is dropped, as before.
+    if (search) body = search.body;
+  }
+  const requestId = (internal ? null : req.id) || crypto.randomUUID();
   const startedAt = Date.now();
-  const requestedModel = String(body?.model || 'auto');
+  const requestedModel = String(body?.model || preset?.model || 'auto');
   let canonical;
   try {
-    canonical = translator.toCanonical(body || {});
+    canonical = preset ? structuredClone(preset) : translator.toCanonical(body || {});
   } catch (error) {
     if (error instanceof HttpError) throw error;
     throw new HttpError(400, 'INVALID_REQUEST', `The request body could not be read: ${error.message}`);
   }
   if (!canonical.messages.length) throw new HttpError(400, 'INVALID_REQUEST', 'The request contains no messages.');
 
-  const rpm = routerKeys.consumeRpm(key);
+  const rpm = internal ? { allowed: true } : routerKeys.consumeRpm(key);
   if (!rpm.allowed) {
     res.set('Retry-After', String(rpm.retryAfterSeconds));
     throw new HttpError(429, 'KEY_RATE_LIMITED', 'This router key exceeded its requests-per-minute limit.', { retryAfterSeconds: rpm.retryAfterSeconds });
@@ -456,6 +475,21 @@ async function execute({ req, res, key, format, body, freeOnly = false }) {
     : `All ${trail.length} attempt(s) failed. Last error: ${lastError?.message || 'unknown'}`;
   finish({ status: 'error', http_status: status, error_code: code, error_message: message });
   throw new HttpError(status, code, message, { trail, rejected });
+}
+
+// Translation errors become 400s, as in execute().
+function safeTranslator(translator) {
+  return {
+    ...translator,
+    toCanonical(body) {
+      try {
+        return translator.toCanonical(body);
+      } catch (error) {
+        if (error instanceof HttpError) throw error;
+        throw new HttpError(400, 'INVALID_REQUEST', `The request body could not be read: ${error.message}`);
+      }
+    },
+  };
 }
 
 module.exports = { execute, translators };

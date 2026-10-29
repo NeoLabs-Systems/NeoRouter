@@ -9,10 +9,11 @@ const express = require('express');
 //   hang-*    answers after 5 s          think-*  reasoning only, no answer
 //   trunc-*   spends max_tokens on reasoning (finish_reason length)
 //   echo-*    answers with the last user message (streams it in small pieces)
+//   searcher-* calls the web_search tool once, then answers from its result
 //   *guard*   answers like Llama Guard ("unsafe\nS9" when the text mentions a bomb)
 // Media endpoints (embeddings, images, speech, transcriptions, videos) fail
 // for models starting with fail-, like chat.
-function createMockProvider({ models, prices = {}, port = 0 } = {}) {
+function createMockProvider({ models, prices = {}, port = 0, failSearch = false } = {}) {
   const app = express();
   app.use(express.json());
   const calls = [];
@@ -35,7 +36,14 @@ function createMockProvider({ models, prices = {}, port = 0 } = {}) {
       : null;
     const lastUser = [...(req.body.messages || [])].reverse().find((message) => message.role === 'user');
     const guard = model.includes('guard') ? (/bomb/i.test(String(lastUser?.content)) ? 'unsafe\nS9' : 'safe') : null;
-    const plain = model.startsWith('echo-') ? String(lastUser?.content || '') : model.startsWith('empty-') || model.startsWith('think-') ? '' : `hello from ${model}`;
+    if (model.startsWith('searcher-') && (tools || []).some((tool) => tool.function?.name === 'web_search')) {
+      const toolMessage = (req.body.messages || []).find((message) => message.role === 'tool');
+      if (!toolMessage) {
+        return res.json({ id: 'cmpl-s', object: 'chat.completion', created: 1, model, choices: [{ index: 0, message: { role: 'assistant', content: null, tool_calls: [{ id: 'call_s1', type: 'function', function: { name: 'web_search', arguments: JSON.stringify({ query: 'neorouter release' }) } }] }, finish_reason: 'tool_calls' }], usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 } });
+      }
+    }
+    const searchAnswer = model.startsWith('searcher-') ? `Answer from: ${String((req.body.messages || []).find((message) => message.role === 'tool')?.content || 'nothing').split('\n')[0]}` : null;
+    const plain = searchAnswer ?? (model.startsWith('echo-') ? String(lastUser?.content || '') : model.startsWith('empty-') || model.startsWith('think-') ? '' : `hello from ${model}`);
     const content = guard ?? plain;
     if (model.startsWith('trunc-') && !stream) {
       return res.json({ id: 'cmpl-1', object: 'chat.completion', created: 1, model, choices: [{ index: 0, message: { role: 'assistant', content: '', reasoning: 'thinking and thinking' }, finish_reason: 'length' }], usage: { prompt_tokens: 5, completion_tokens: 50, total_tokens: 55 } });
@@ -99,6 +107,15 @@ function createMockProvider({ models, prices = {}, port = 0 } = {}) {
     calls.push({ model, kind: 'transcribe', at: Date.now(), bytes: file?.size, responseFormat: form.get('response_format') });
     if (String(model).startsWith('fail-')) return res.status(500).json({ error: { message: 'upstream exploded' } });
     return res.json({ task: 'transcribe', language: 'english', duration: 2.5, text: 'hello world', segments: [{ id: 0, start: 0, end: 1.2, text: ' hello' }, { id: 1, start: 1.2, end: 2.5, text: ' world' }] });
+  });
+  // SearXNG-style search: GET /v1/search?q=…&format=json. failSearch makes it fail.
+  app.get('/v1/search', (req, res) => {
+    calls.push({ kind: 'search', q: req.query.q, at: Date.now() });
+    if (failSearch) return res.status(500).json({ error: 'search exploded' });
+    return res.json({ results: [
+      { title: `Result for ${req.query.q}`, url: 'https://example.com/a', content: 'First result text.' },
+      { title: 'Second', url: 'https://www.other.org/b', content: 'Second result text.' },
+    ] });
   });
   const videos = new Map();
   app.post('/v1/videos', media('video'), (req, res) => {

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
@@ -90,6 +91,9 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
       case 'video':
         if (text.isEmpty) return;
         body.addAll(<String, Object?>{'prompt': text, 'seconds': _seconds});
+      case 'search':
+        if (text.isEmpty) return;
+        body.addAll(<String, Object?>{'query': text, 'max_results': 8});
     }
     setState(() {
       _running = true;
@@ -229,7 +233,7 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
     bindings: <ShortcutActivator, VoidCallback>{const SingleActivator(LogicalKeyboardKey.enter, meta: true): _run},
     child: TextField(
       controller: _input(widget.kind),
-      minLines: widget.kind == 'embedding' ? 3 : 2,
+      minLines: widget.kind == 'embedding' ? 3 : widget.kind == 'search' ? 1 : 2,
       maxLines: 10,
       style: const TextStyle(fontSize: 14.5, height: 1.45),
       decoration: const InputDecoration(filled: false, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
@@ -439,6 +443,45 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
               _meta(model),
             ],
           ),
+        );
+      case 'search':
+        final results = ((result['results'] as List?) ?? const <Object>[]).cast<Map>();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            if (results.isEmpty) Text(t.pgNoResults, style: TextStyle(color: palette.textSoft)),
+            for (final item in results)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: AppCard(
+                  padding: const EdgeInsets.all(16),
+                  onTap: () => launchUrl(Uri.parse('${item['url']}')),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text('${item['title']}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5)),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${item['url']}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: palette.textMuted, fontSize: 12),
+                      ),
+                      if ('${item['snippet'] ?? ''}'.isNotEmpty) ...<Widget>[
+                        const SizedBox(height: 6),
+                        Text(
+                          '${item['snippet']}',
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: palette.textSoft, height: 1.45, fontSize: 13),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            _meta(model),
+          ],
         );
       default:
         final status = '${result['status']}';

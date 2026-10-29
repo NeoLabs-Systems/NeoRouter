@@ -367,6 +367,9 @@ class AppL10nEn extends AppL10n {
   String get categoryCommunity => 'Community';
 
   @override
+  String get categorySearch => 'Web search';
+
+  @override
   String get apiKey => 'API key';
 
   @override
@@ -1550,6 +1553,9 @@ class AppL10nEn extends AppL10n {
   String get capSpeech => 'Speech';
 
   @override
+  String get capSearch => 'Web search';
+
+  @override
   String get capTranscription => 'Transcription';
 
   @override
@@ -1579,6 +1585,10 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get capSpeechHint => 'Read text aloud in a natural voice.';
+
+  @override
+  String get capSearchHint =>
+      'Find current pages on the web, for you and as a tool for chat models.';
 
   @override
   String get capTranscriptionHint => 'Turn recordings into text and subtitles.';
@@ -2577,6 +2587,19 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get unitMchar => 'per million characters';
+
+  @override
+  String get unitSearch => 'per search';
+
+  @override
+  String get pgSearchHint =>
+      'Search the web through your search engines. Chat models use the same engines when a request turns web search on.';
+
+  @override
+  String get pgSearchRun => 'Search';
+
+  @override
+  String get pgNoResults => 'No results.';
 
   @override
   String get activityKind => 'Kind';

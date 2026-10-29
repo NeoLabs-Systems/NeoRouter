@@ -14,6 +14,7 @@ const CAPABILITIES = [
   { id: 'transcription', label: 'Transcription', routes: mediaRoutes },
   { id: 'moderation', label: 'System One', routes: mediaRoutes },
   { id: 'video', label: 'Video', routes: mediaRoutes },
+  { id: 'search', label: 'Web search', routes: mediaRoutes },
 ];
 
 function mount(router) {

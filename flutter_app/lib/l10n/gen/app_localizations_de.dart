@@ -368,6 +368,9 @@ class AppL10nDe extends AppL10n {
   String get categoryCommunity => 'Community';
 
   @override
+  String get categorySearch => 'Websuche';
+
+  @override
   String get apiKey => 'API-Key';
 
   @override
@@ -1563,6 +1566,9 @@ class AppL10nDe extends AppL10n {
   String get capSpeech => 'Sprachausgabe';
 
   @override
+  String get capSearch => 'Websuche';
+
+  @override
   String get capTranscription => 'Transkription';
 
   @override
@@ -1593,6 +1599,10 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get capSpeechHint => 'Lesen Text mit natürlicher Stimme vor.';
+
+  @override
+  String get capSearchHint =>
+      'Finden aktuelle Seiten im Web, für dich und als Werkzeug für Chat-Modelle.';
 
   @override
   String get capTranscriptionHint =>
@@ -2596,6 +2606,19 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get unitMchar => 'pro Million Zeichen';
+
+  @override
+  String get unitSearch => 'pro Suche';
+
+  @override
+  String get pgSearchHint =>
+      'Durchsuche das Web mit deinen Suchmaschinen. Chat-Modelle nutzen dieselben, wenn eine Anfrage die Websuche einschaltet.';
+
+  @override
+  String get pgSearchRun => 'Suchen';
+
+  @override
+  String get pgNoResults => 'Keine Treffer.';
 
   @override
   String get activityKind => 'Art';

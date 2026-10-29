@@ -763,6 +763,12 @@ abstract class AppL10n {
   /// **'Community'**
   String get categoryCommunity;
 
+  /// No description provided for @categorySearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Web search'**
+  String get categorySearch;
+
   /// No description provided for @apiKey.
   ///
   /// In en, this message translates to:
@@ -2881,6 +2887,12 @@ abstract class AppL10n {
   /// **'Speech'**
   String get capSpeech;
 
+  /// No description provided for @capSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Web search'**
+  String get capSearch;
+
   /// No description provided for @capTranscription.
   ///
   /// In en, this message translates to:
@@ -2940,6 +2952,12 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Read text aloud in a natural voice.'**
   String get capSpeechHint;
+
+  /// No description provided for @capSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Find current pages on the web, for you and as a tool for chat models.'**
+  String get capSearchHint;
 
   /// No description provided for @capTranscriptionHint.
   ///
@@ -4662,6 +4680,30 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'per million characters'**
   String get unitMchar;
+
+  /// No description provided for @unitSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'per search'**
+  String get unitSearch;
+
+  /// No description provided for @pgSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search the web through your search engines. Chat models use the same engines when a request turns web search on.'**
+  String get pgSearchHint;
+
+  /// No description provided for @pgSearchRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get pgSearchRun;
+
+  /// No description provided for @pgNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results.'**
+  String get pgNoResults;
 
   /// No description provided for @activityKind.
   ///

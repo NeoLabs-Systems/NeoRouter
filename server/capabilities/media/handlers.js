@@ -296,4 +296,34 @@ async function createVideo({ req, res, key, body, freeOnly = false }) {
   });
 }
 
-module.exports = { embeddings, images, speech, transcription, moderations, createVideo, subtitles, float32Base64 };
+// -------------------------------------------------------------------- search
+
+const searchSchema = z.object({
+  model: z.string().max(300).default('auto'),
+  query: z.string().trim().min(1).max(400),
+  max_results: z.number().int().min(1).max(20).default(5),
+  include_domains: z.array(z.string().min(1).max(253)).max(50).default([]),
+  exclude_domains: z.array(z.string().min(1).max(253)).max(50).default([]),
+  recency: z.enum(['day', 'week', 'month', 'year']).optional(),
+});
+
+/** Runs one web search through the search engines in the catalog. */
+async function searchWeb({ req, res = null, key, input, freeOnly = false, format = 'search' }) {
+  return runCapability({
+    req, res, key, capability: 'search', method: 'search', requestedModel: input.model || 'auto', freeOnly, format,
+    inputTokens: estimateTokens([input.query]), contextTokens: 0, units: 1,
+    estimateCost: (entry) => unitCost(entry, 'search', 1),
+    invoke: ({ adapter, entry, signal, timeoutMs }) => adapter.search({
+      query: input.query, maxResults: input.max_results || 5, includeDomains: input.include_domains || [], excludeDomains: input.exclude_domains || [], recency: input.recency || null,
+    }, { modelId: entry.modelId, signal, timeoutMs }),
+    costOf: (entry) => unitCost(entry, 'search', 1) || 0,
+  });
+}
+
+async function search({ req, res, key, body, freeOnly = false }) {
+  const input = parseBody(searchSchema, body);
+  const { result, entry } = await searchWeb({ req, res, key, input, freeOnly });
+  res.json({ object: 'search', model: entry.id, query: input.query, results: result.results });
+}
+
+module.exports = { search, searchWeb, embeddings, images, speech, transcription, moderations, createVideo, subtitles, float32Base64 };

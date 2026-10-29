@@ -7,12 +7,14 @@ const { OpenAICompatibleAdapter } = require('./adapters/openai_compatible');
 const { AnthropicAdapter } = require('./adapters/anthropic');
 const { GoogleGeminiAdapter } = require('./adapters/google_gemini');
 const { CloudflareAdapter } = require('./adapters/cloudflare');
+const { SearchAdapter } = require('./adapters/search_engines');
 
 const ADAPTERS = {
   openai_compatible: OpenAICompatibleAdapter,
   anthropic: AnthropicAdapter,
   google_gemini: GoogleGeminiAdapter,
   cloudflare: CloudflareAdapter,
+  search: SearchAdapter,
 };
 
 const limitSchema = z.object({
@@ -26,7 +28,9 @@ const definitionSchema = z.object({
   id: z.string().regex(/^[a-z0-9][a-z0-9_-]*$/),
   label: z.string().min(1),
   description: z.string().default(''),
-  category: z.enum(['free', 'paid', 'aggregator', 'local', 'custom', 'community']),
+  category: z.enum(['free', 'paid', 'aggregator', 'local', 'custom', 'community', 'search']),
+  // Web search engines: which dialect the search adapter speaks.
+  search: z.object({ engine: z.enum(['tavily', 'exa', 'linkup', 'parallel', 'firecrawl', 'serper', 'brave', 'jina', 'searxng']) }).optional(),
   website: z.string().url().optional(),
   keyUrl: z.string().url().optional(),
   adapter: z.enum(Object.keys(ADAPTERS)),
@@ -41,6 +45,7 @@ const definitionSchema = z.object({
     moderate: z.union([z.string(), z.literal(true)]).optional(),
     classify: z.union([z.string(), z.literal(true)]).optional(),
     createVideo: z.union([z.string(), z.literal(true)]).optional(),
+    search: z.literal(true).optional(),
   }).default({}),
   baseUrl: z.string().default(''),
   editableBaseUrl: z.boolean().default(false),

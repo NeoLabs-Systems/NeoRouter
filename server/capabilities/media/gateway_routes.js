@@ -41,6 +41,7 @@ router.get('/embeddings/pin', requireRouterKey, (req, res) => res.json({ pin: pi
 router.post('/images/generations', ...keyed(handlers.images));
 router.post('/audio/speech', ...keyed(handlers.speech));
 router.post('/moderations', ...keyed(handlers.moderations));
+router.post('/search', ...keyed(handlers.search));
 
 for (const [path, translate] of [['/audio/transcriptions', false], ['/audio/translations', true]]) {
   router.post(path, requireRouterKey, multipart, asyncRoute(async (req, res) => {
