@@ -943,8 +943,9 @@ S = {
   'homeCapacityTitle': ('Around the clock', 'Rund um die Uhr'),
   'homeCapacityValue': ('{count} requests a day', '{count} Anfragen am Tag'),
   'homeCapacityCaption': ('What your free models could answer if used non-stop: about {hour} an hour, from the usage limits of {providers} providers.', 'So viel könnten deine Gratis-Modelle im Dauerbetrieb beantworten: etwa {hour} pro Stunde, nach den Nutzungslimits von {providers} Anbietern.'),
+  'homeCapacityPerMinute': ('Plus up to {count} requests a minute from providers that only publish a per-minute limit.', 'Dazu bis zu {count} Anfragen pro Minute von Anbietern, die nur ein Minutenlimit nennen.'),
   'homeCapacityUnknown': ('{models} more free models publish no limit and are not counted.', '{models} weitere Gratis-Modelle nennen kein Limit und sind nicht mitgezählt.'),
-  'homeCapacityNone': ('None of your free models has a known usage limit yet, so there is nothing to add up.', 'Für keines deiner Gratis-Modelle ist bisher ein Nutzungslimit bekannt, daher lässt sich nichts zusammenrechnen.'),
+  'homeCapacityNone': ('None of your free models has a known daily limit yet, so there is no daily total.', 'Für keines deiner Gratis-Modelle ist bisher ein Tageslimit bekannt, daher gibt es keine Tagessumme.'),
 
   # key limits
   'keyLimitsTitle': ('Limits', 'Limits'),

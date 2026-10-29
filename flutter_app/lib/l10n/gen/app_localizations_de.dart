@@ -3092,13 +3092,18 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
+  String homeCapacityPerMinute(String count) {
+    return 'Dazu bis zu $count Anfragen pro Minute von Anbietern, die nur ein Minutenlimit nennen.';
+  }
+
+  @override
   String homeCapacityUnknown(String models) {
     return '$models weitere Gratis-Modelle nennen kein Limit und sind nicht mitgezählt.';
   }
 
   @override
   String get homeCapacityNone =>
-      'Für keines deiner Gratis-Modelle ist bisher ein Nutzungslimit bekannt, daher lässt sich nichts zusammenrechnen.';
+      'Für keines deiner Gratis-Modelle ist bisher ein Tageslimit bekannt, daher gibt es keine Tagessumme.';
 
   @override
   String get keyLimitsTitle => 'Limits';

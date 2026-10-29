@@ -5497,6 +5497,12 @@ abstract class AppL10n {
   /// **'What your free models could answer if used non-stop: about {hour} an hour, from the usage limits of {providers} providers.'**
   String homeCapacityCaption(String hour, String providers);
 
+  /// No description provided for @homeCapacityPerMinute.
+  ///
+  /// In en, this message translates to:
+  /// **'Plus up to {count} requests a minute from providers that only publish a per-minute limit.'**
+  String homeCapacityPerMinute(String count);
+
   /// No description provided for @homeCapacityUnknown.
   ///
   /// In en, this message translates to:
@@ -5506,7 +5512,7 @@ abstract class AppL10n {
   /// No description provided for @homeCapacityNone.
   ///
   /// In en, this message translates to:
-  /// **'None of your free models has a known usage limit yet, so there is nothing to add up.'**
+  /// **'None of your free models has a known daily limit yet, so there is no daily total.'**
   String get homeCapacityNone;
 
   /// No description provided for @keyLimitsTitle.

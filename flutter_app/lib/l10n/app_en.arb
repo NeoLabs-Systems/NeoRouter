@@ -1733,6 +1733,14 @@
       }
     }
   },
+  "homeCapacityPerMinute": "Plus up to {count} requests a minute from providers that only publish a per-minute limit.",
+  "@homeCapacityPerMinute": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "homeCapacityUnknown": "{models} more free models publish no limit and are not counted.",
   "@homeCapacityUnknown": {
     "placeholders": {
@@ -1741,7 +1749,7 @@
       }
     }
   },
-  "homeCapacityNone": "None of your free models has a known usage limit yet, so there is nothing to add up.",
+  "homeCapacityNone": "None of your free models has a known daily limit yet, so there is no daily total.",
   "keyLimitsTitle": "Limits",
   "keyNoLimitHint": "Leave a field empty for no limit.",
   "keyRateLimit": "Rate limit",

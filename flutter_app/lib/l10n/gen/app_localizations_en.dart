@@ -3072,13 +3072,18 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String homeCapacityPerMinute(String count) {
+    return 'Plus up to $count requests a minute from providers that only publish a per-minute limit.';
+  }
+
+  @override
   String homeCapacityUnknown(String models) {
     return '$models more free models publish no limit and are not counted.';
   }
 
   @override
   String get homeCapacityNone =>
-      'None of your free models has a known usage limit yet, so there is nothing to add up.';
+      'None of your free models has a known daily limit yet, so there is no daily total.';
 
   @override
   String get keyLimitsTitle => 'Limits';

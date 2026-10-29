@@ -115,14 +115,17 @@ test('a custom style chooses kinds of model and how much each counts', async () 
 
 test('capacity adds up what the free models could take around the clock', async () => {
   const quota = require('../../server/services/quota/quota_service');
-  // The mock's rate-limit headers (1000 requests) are already learned as a minute limit.
+  // The mock's rate-limit headers (1000 requests) are learned as a minute limit:
+  // given per minute, not stretched over a day.
   const before = (await api('get', '/usage/capacity')).body;
-  assert.equal(before.perDay, 1000 * 1440);
+  assert.equal(before.perDay, 0);
+  assert.equal(before.perMinuteOnly, 1000);
   const free = (await api('get', '/models')).body.models.find((model) => model.id === 'free/ok-free');
   quota.setLimit(`m:${free.ref}`, 'rpm', 2, 'learned');
   quota.setLimit(`m:${free.ref}`, 'rpd', 1000, 'learned');
   const after = (await api('get', '/usage/capacity')).body;
-  assert.equal(after.perDay, 1000, 'the lower of the daily limit and the minute limit kept up all day');
+  assert.equal(after.perDay, 1000, 'a daily limit counts as it is');
+  assert.equal(after.perMinuteOnly, 0);
   assert.equal(after.perHour, 42);
   assert.equal(after.providersCounted, 1);
 });
