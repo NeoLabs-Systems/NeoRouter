@@ -440,6 +440,13 @@ class AppL10nEn extends AppL10n {
   String get chatgptConnected => 'ChatGPT connected';
 
   @override
+  String get claudeCliSteps =>
+      'On the NeoRouter server, install Claude Code and run `claude auth login` with your Claude account, as the user NeoRouter runs as. Then connect here.';
+
+  @override
+  String get claudeCliConnect => 'Connect Claude';
+
+  @override
   String get apiKey => 'API key';
 
   @override

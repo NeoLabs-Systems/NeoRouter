@@ -134,6 +134,8 @@
   "chatgptWaiting": "Warte auf deine Bestätigung…",
   "chatgptExpired": "Der Code ist abgelaufen. Starte neu.",
   "chatgptConnected": "ChatGPT verbunden",
+  "claudeCliSteps": "Installiere auf dem NeoRouter-Server Claude Code und führe `claude auth login` mit deinem Claude-Konto aus, als der Benutzer, unter dem NeoRouter läuft. Verbinde danach hier.",
+  "claudeCliConnect": "Claude verbinden",
   "apiKey": "API-Key",
   "apiKeyOptional": "API-Key (optional)",
   "apiKeyKeep": "API-Key (leer lassen, um den aktuellen zu behalten)",

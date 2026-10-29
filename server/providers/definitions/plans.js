@@ -46,6 +46,35 @@ module.exports = [
     quirks: { timeoutMs: 300000 },
   },
   {
+    id: 'claude_code',
+    label: 'Claude',
+    description: 'Your Claude plan (Pro, Max) through Claude Code on the NeoRouter server.',
+    category: 'plan',
+    website: 'https://code.claude.com',
+    adapter: 'claude_cli',
+    connect: 'claude_cli',
+    keyOptional: true,
+    fields: [{ key: 'claudePath', label: 'Path to claude (optional)', required: false, placeholder: '/opt/homebrew/bin/claude' }],
+    models: {
+      static: [
+        { id: 'claude-opus-5-5', name: 'Claude Opus 5.5' },
+        { id: 'claude-sonnet-5-5', name: 'Claude Sonnet 5.5' },
+        { id: 'claude-haiku-5-5', name: 'Claude Haiku 5.5' },
+        { id: 'claude-fable-5-1', name: 'Claude Fable 5.1' },
+      ],
+    },
+    billing: {
+      defaultMode: 'plan',
+      plan: { note: 'Uses your Claude plan limits. Claude Code says when a window is used up, and NeoRouter waits until it resets.' },
+      note: 'Runs the official Claude Code program, signed in on the server with `claude auth login` (Anthropic allows this; copying its sign-in into other tools is not allowed). Chat only, without tools or images. Meant for your own plan, not shared between people.',
+      source: 'https://code.claude.com/docs/en/legal-and-compliance',
+      checkedAt: '2026-10-29',
+    },
+    // Every request starts a Claude Code process.
+    limits: { pool: 'account', account: { concurrent: 3 } },
+    quirks: { timeoutMs: 300000, noTools: true },
+  },
+  {
     id: 'synthetic',
     label: 'Synthetic',
     description: 'Open models on a flat subscription, for any OpenAI-compatible tool.',

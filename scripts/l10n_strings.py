@@ -151,6 +151,8 @@ S = {
   'chatgptWaiting': ('Waiting for you to confirm…', 'Warte auf deine Bestätigung…'),
   'chatgptExpired': ('The code expired. Start again.', 'Der Code ist abgelaufen. Starte neu.'),
   'chatgptConnected': ('ChatGPT connected', 'ChatGPT verbunden'),
+  'claudeCliSteps': ('On the NeoRouter server, install Claude Code and run `claude auth login` with your Claude account, as the user NeoRouter runs as. Then connect here.', 'Installiere auf dem NeoRouter-Server Claude Code und führe `claude auth login` mit deinem Claude-Konto aus, als der Benutzer, unter dem NeoRouter läuft. Verbinde danach hier.'),
+  'claudeCliConnect': ('Connect Claude', 'Claude verbinden'),
   'apiKey': ('API key', 'API-Key'),
   'apiKeyOptional': ('API key (optional)', 'API-Key (optional)'),
   'apiKeyKeep': ('API key (leave empty to keep the current one)', 'API-Key (leer lassen, um den aktuellen zu behalten)'),

@@ -11,6 +11,7 @@ const { SearchAdapter } = require('./adapters/search_engines');
 const { DeepgramAdapter } = require('./adapters/deepgram');
 const { ElevenLabsAdapter } = require('./adapters/elevenlabs');
 const { CodexAdapter } = require('./adapters/codex');
+const { ClaudeCliAdapter } = require('./adapters/claude_cli');
 
 const ADAPTERS = {
   openai_compatible: OpenAICompatibleAdapter,
@@ -21,6 +22,7 @@ const ADAPTERS = {
   deepgram: DeepgramAdapter,
   elevenlabs: ElevenLabsAdapter,
   codex: CodexAdapter,
+  claude_cli: ClaudeCliAdapter,
 };
 
 const limitSchema = z.object({
@@ -39,7 +41,7 @@ const definitionSchema = z.object({
   category: z.enum(['free', 'paid', 'aggregator', 'plan', 'local', 'custom', 'community', 'search']),
   // Web search engines: which dialect the search adapter speaks.
   // Connected by signing in instead of pasting a key.
-  connect: z.enum(['codex_device']).optional(),
+  connect: z.enum(['codex_device', 'claude_cli']).optional(),
   search: z.object({ engine: z.enum(['tavily', 'exa', 'linkup', 'parallel', 'firecrawl', 'serper', 'brave', 'jina', 'searxng']) }).optional(),
   website: z.string().url().optional(),
   keyUrl: z.string().url().optional(),

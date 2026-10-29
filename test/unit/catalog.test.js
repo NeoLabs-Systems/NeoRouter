@@ -14,7 +14,8 @@ test('every provider definition is valid and ids are unique', () => {
   const definitions = registry.list();
   assert.ok(definitions.length > 60);
   for (const definition of definitions) {
-    assert.ok(definition.baseUrl || definition.editableBaseUrl, `${definition.id} needs a base URL`);
+    // Connections that run a local program (Claude Code) have no URL.
+    assert.ok(definition.baseUrl || definition.editableBaseUrl || definition.adapter === 'claude_cli', `${definition.id} needs a base URL`);
     for (const pattern of definition.billing.alwaysFree) assert.doesNotThrow(() => new RegExp(pattern));
   }
 });

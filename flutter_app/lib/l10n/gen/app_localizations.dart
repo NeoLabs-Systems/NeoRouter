@@ -901,6 +901,18 @@ abstract class AppL10n {
   /// **'ChatGPT connected'**
   String get chatgptConnected;
 
+  /// No description provided for @claudeCliSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'On the NeoRouter server, install Claude Code and run `claude auth login` with your Claude account, as the user NeoRouter runs as. Then connect here.'**
+  String get claudeCliSteps;
+
+  /// No description provided for @claudeCliConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Claude'**
+  String get claudeCliConnect;
+
   /// No description provided for @apiKey.
   ///
   /// In en, this message translates to:
