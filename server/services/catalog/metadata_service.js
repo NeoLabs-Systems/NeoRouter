@@ -333,11 +333,6 @@ async function refreshSources() {
     tasks.push(['artificialAnalysis', () => artificialAnalysis.fetchSource({ apiKey: aaKey })]);
     tasks.push(['artificialAnalysisMedia', () => artificialAnalysisMedia.fetchSource({ apiKey: aaKey })]);
   }
-  // MTEB for the embedding models in the catalog (cached per model for a week).
-  tasks.push(['mteb', async () => {
-    const ids = getDatabase().prepare("SELECT DISTINCT model_id FROM models WHERE capability = 'embedding' AND available = 1").all().map((row) => row.model_id);
-    return mteb.fetchScores(ids, state.mteb || {});
-  }]);
   const results = {};
   for (const [key, run] of tasks) {
     try {
@@ -352,6 +347,19 @@ async function refreshSources() {
   buildIndexes();
   saveState();
   recomputeAll();
+  // MTEB is slow and sometimes flaky, so it runs after the other sources are
+  // saved and applied: embedding models are rated once it is done.
+  try {
+    const ids = getDatabase().prepare("SELECT DISTINCT model_id FROM models WHERE capability = 'embedding' AND available = 1").all().map((row) => row.model_id);
+    state.mteb = await mteb.fetchScores(ids, state.mteb || {});
+    state.fetchedAt.mteb = new Date().toISOString();
+    saveState();
+    recomputeAll();
+    results.mteb = 'ok';
+  } catch (error) {
+    results.mteb = error.message;
+    logger.warn('Metadata source failed', { source: 'mteb', error: error.message });
+  }
   return results;
 }
 
