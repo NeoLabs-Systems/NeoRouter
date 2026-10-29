@@ -81,6 +81,9 @@ test('a GPT-Live session is relayed with the model rewritten and usage logged', 
   const echoed = await client.next('echo');
   assert.equal(echoed.event.audio, 'AAAA');
   await client.next('response.done');
+  client.socket.send(JSON.stringify({ type: 'usage.binary' }));
+  await client.next('echo');
+  await new Promise((resolve) => setTimeout(resolve, 50));
   client.socket.close();
   await client.closed;
   await new Promise((resolve) => setTimeout(resolve, 50));
@@ -88,6 +91,8 @@ test('a GPT-Live session is relayed with the model rewritten and usage logged', 
   const row = JSON.stringify(logged);
   assert.match(row, /openai_live/, row.slice(0, 600));
   assert.match(row, /gpt-live-1/);
+  const live = logged.logs.find((item) => item.capability === 'live' || /openai_live/.test(JSON.stringify(item)));
+  assert.equal(live.inputTokens ?? live.input_tokens, 17, 'JSON and binary usage reports both count');
 });
 
 test('the realtime protocol takes the model from the URL', async () => {

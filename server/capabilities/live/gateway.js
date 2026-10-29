@@ -95,7 +95,7 @@ class LiveSession {
 
   start() {
     const fromUrl = this.dialect.modelFromUrl(this.url);
-    this.client.on('close', () => this.end('client_closed'));
+    this.client.on('close', (code, reason) => this.end('client_closed', null, { code, reason: String(reason) }));
     this.client.on('error', () => this.end('client_error'));
     if (fromUrl !== null) {
       this.client.on('message', (data, binary) => this.forward(data, binary));
@@ -203,7 +203,7 @@ class LiveSession {
         this.answered = true;
         this.queue = [];
       }
-      if (!binary) this.count(data);
+      this.count(data, binary);
       if (this.client.readyState === WebSocket.OPEN) this.client.send(data, { binary });
     };
     upstream.release();
@@ -213,7 +213,7 @@ class LiveSession {
       if (this.upstream !== upstream) return;
       if (!this.answered && !this.closed) return this.hungUp(entry, code, String(reason), attachedAt);
       if (this.client.readyState === WebSocket.OPEN) this.client.close(code === 1005 || code === 1006 ? 1011 : code, reason);
-      return this.end('provider_closed');
+      return this.end('provider_closed', null, { code, reason: String(reason) });
     });
     upstream.on('error', (error) => logger.warn('Provider socket error', { model: entry.id, error: error.message }));
   }
@@ -231,7 +231,10 @@ class LiveSession {
     return this.fail(`The provider closed the session: ${error.message}`, 'provider_closed');
   }
 
-  count(data) {
+  // Gemini sends its JSON as binary frames; audio-only binary frames do not
+  // parse and are skipped.
+  count(data, binary = false) {
+    if (binary && data?.[0] !== 0x7b) return;
     let event;
     try { event = JSON.parse(String(data)); } catch { return; }
     const reported = usageOf(event);
@@ -250,9 +253,15 @@ class LiveSession {
     return null;
   }
 
-  end(reason, errorMessage = null) {
+  // `close` is the closing side's WebSocket code and reason, for the log.
+  end(reason, errorMessage = null, close = null) {
     if (this.closed) return;
     this.closed = true;
+    logger.info('Live session ended', {
+      sessionId: this.id, model: this.entry?.id || null, by: reason, seconds: Math.round((Date.now() - this.startedAt) / 1000),
+      ...(close ? { code: close.code, closeReason: close.reason.slice(0, 200) } : {}), ...(errorMessage ? { error: errorMessage.slice(0, 200) } : {}),
+      inputTokens: this.tokens.input, outputTokens: this.tokens.output,
+    });
     this.release?.();
     if (this.upstream && this.upstream.readyState !== WebSocket.CLOSED) this.upstream.close();
     const entry = this.entry;

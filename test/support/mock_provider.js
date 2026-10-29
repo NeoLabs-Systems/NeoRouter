@@ -184,6 +184,8 @@ function createMockProvider({ models, prices = {}, port = 0, failSearch = false,
           }
           client.send(JSON.stringify({ type: 'echo', event }));
           if (event.type === 'session.input_audio.append') client.send(JSON.stringify({ type: 'response.done', response: { usage: { input_tokens: 10, output_tokens: 5 } } }));
+          // Gemini-style usage, sent as a binary frame like Gemini does.
+          if (event.type === 'usage.binary') client.send(Buffer.from(JSON.stringify({ usageMetadata: { promptTokenCount: 7, responseTokenCount: 3 } })), { binary: true });
           return null;
         });
       });
