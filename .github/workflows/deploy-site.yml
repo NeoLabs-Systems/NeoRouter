@@ -5,7 +5,7 @@ name: Deploy Site
 on:
   push:
     branches:
-      - beta
+      - main
     paths:
       - landing/**
       - server/routes/api_docs.js
