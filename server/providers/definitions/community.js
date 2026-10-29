@@ -31,7 +31,7 @@ module.exports = [
   community('volcengine', 'Volcengine Ark', 'https://ark.cn-beijing.volces.com/api/v3', { website: 'https://www.volcengine.com' }),
   community('xfyun', 'iFlytek Spark', 'https://spark-api-open.xf-yun.com/v1', { website: 'https://xinghuo.xfyun.cn' }),
   community('bai', 'B.AI', 'https://api.b.ai/v1'),
-  community('anyapi', 'AnyAPI', 'https://api.anyapi.ai/v1'),
+  community('anyapi', 'AnyAPI', 'https://api.anyapi.ai/v1', { website: 'https://anyapi.ai', billing: { defaultMode: 'free_tier', freeTierModels: [':free$'], note: 'Free plan without a card: the models ending in :free, about 100,000 tokens a day. Other models need credits.', source: 'https://anyapi.ai/pricing', checkedAt: '2026-10-29' } }),
   community('radeon', 'AMD Radeon Cloud', 'https://developer.amd.com.cn/radeon/api/v1', { quirks: { singleToolCall: true, timeoutMs: 600000 } }),
   community('agnes', 'Agnes AI', 'https://apihub.agnes-ai.com/v1'),
   community('routeway', 'Routeway', 'https://api.routeway.ai/v1', { quirks: { userAgent: BROWSER_UA } }),
