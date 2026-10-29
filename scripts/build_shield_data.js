@@ -17,6 +17,7 @@ const BIP39 = 'https://raw.githubusercontent.com/bitcoin/bips/master/bip-0039/en
 
 const LAST_NAMES_FROM_CENSUS = 15000;
 const COMMON_WORDS_PER_LANGUAGE = 20000;
+const FREQUENT_WORDS_PER_LANGUAGE = 600;
 
 // First names of older generations, which the Berlin newborn lists miss.
 const CLASSIC_GERMAN_FIRST_NAMES = `
@@ -113,13 +114,21 @@ async function main() {
 
   const lastLower = new Set([...censusLast, ...germanLast].map((name) => name.toLowerCase()));
   const common = [];
+  const frequent = [];
   for (const language of ['de', 'en']) {
     const lines = (await get(`${FREQUENCY}/${language}/${language}_50k.txt`)).split('\n').slice(0, COMMON_WORDS_PER_LANGUAGE);
-    for (const line of lines) {
+    for (const [rank, line] of lines.entries()) {
       const word = line.split(' ')[0];
+      if (rank < FREQUENT_WORDS_PER_LANGUAGE && word) frequent.push(word);
       if (word && word.length >= 2 && /^\p{Ll}+$/u.test(word) && ((!firstLower.has(word) && !lastLower.has(word)) || ambiguous.has(word))) common.push(word);
     }
   }
+  write('frequent_words', [
+    'The most frequent German and English words, names included ("in", "so", "das", "you").',
+    'A name written in lowercase or capitals is only trusted when it is none of these.',
+    `Source: Hermit Dave, FrequencyWords (OpenSubtitles 2018), top ${FREQUENT_WORDS_PER_LANGUAGE} per language, CC BY-SA 4.0.`,
+    'Built by scripts/build_shield_data.js.',
+  ], frequent);
   write('common_words', [
     'Frequent German and English words. A capitalised one after a first name is no last name ("Max Bescheid").',
     `Source: Hermit Dave, FrequencyWords (OpenSubtitles 2018), top ${COMMON_WORDS_PER_LANGUAGE} per language,`,
