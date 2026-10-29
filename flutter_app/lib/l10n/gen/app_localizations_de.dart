@@ -3058,6 +3058,24 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
+  String get pgLiveHint =>
+      'Live-Sprache ist ein gesprochenes Gespräch in Echtzeit über einen WebSocket. Apps wie NeoAgent verbinden sich mit der Adresse für ihr Protokoll und einem Router-Key; NeoRouter wählt das Modell und weicht aus, wenn ein Anbieter ablehnt.';
+
+  @override
+  String get pgLiveEndpoints => 'Wohin Apps sich verbinden';
+
+  @override
+  String get pgLiveModelHint =>
+      'Nutze „auto“ als Modell oder eines der Modelle unten.';
+
+  @override
+  String get pgLiveModels => 'Live-Modelle';
+
+  @override
+  String get pgLiveNoModels =>
+      'Noch keine Live-Modelle. Gemini- (AI Studio) und OpenAI-Verbindungen bringen welche mit.';
+
+  @override
   String connectTitle(String name) {
     return '$name verbinden?';
   }

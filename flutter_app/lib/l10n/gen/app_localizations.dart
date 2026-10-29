@@ -5449,6 +5449,36 @@ abstract class AppL10n {
   /// **'{actor} left {subject}\'s team'**
   String teamEventLeave(String actor, String subject);
 
+  /// No description provided for @pgLiveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Live voice is a spoken conversation in real time over a WebSocket. Apps such as NeoAgent connect to the address for the protocol they speak, with a router key; NeoRouter picks the model and falls back if a provider refuses.'**
+  String get pgLiveHint;
+
+  /// No description provided for @pgLiveEndpoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Where apps connect'**
+  String get pgLiveEndpoints;
+
+  /// No description provided for @pgLiveModelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use \"auto\" as the model, or one of the models below.'**
+  String get pgLiveModelHint;
+
+  /// No description provided for @pgLiveModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Live models'**
+  String get pgLiveModels;
+
+  /// No description provided for @pgLiveNoModels.
+  ///
+  /// In en, this message translates to:
+  /// **'No live models yet. Gemini (AI Studio) and OpenAI connections bring them.'**
+  String get pgLiveNoModels;
+
   /// No description provided for @connectTitle.
   ///
   /// In en, this message translates to:

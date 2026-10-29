@@ -1694,6 +1694,11 @@
       }
     }
   },
+  "pgLiveHint": "Live voice is a spoken conversation in real time over a WebSocket. Apps such as NeoAgent connect to the address for the protocol they speak, with a router key; NeoRouter picks the model and falls back if a provider refuses.",
+  "pgLiveEndpoints": "Where apps connect",
+  "pgLiveModelHint": "Use \"auto\" as the model, or one of the models below.",
+  "pgLiveModels": "Live models",
+  "pgLiveNoModels": "No live models yet. Gemini (AI Studio) and OpenAI connections bring them.",
   "connectTitle": "Connect {name}?",
   "@connectTitle": {
     "placeholders": {

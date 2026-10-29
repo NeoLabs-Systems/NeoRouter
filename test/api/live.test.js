@@ -68,7 +68,8 @@ test('live models are their own kind in the catalog', async () => {
   const listed = await request(app).get('/v1/models?type=live').set('Authorization', `Bearer ${secret}`);
   const model = listed.body.data.find((item) => item.id.endsWith('/gpt-live-1'));
   assert.deepEqual(model.neorouter.protocols, ['openai_live', 'openai_realtime']);
-  assert.ok(!listed.body.data.some((item) => item.id === 'auto'), 'no auto entry: the protocol depends on the model');
+  const auto = listed.body.data.find((item) => item.id === 'auto');
+  assert.deepEqual(auto.neorouter.protocols, ['openai_live', 'openai_realtime'], 'auto lists the protocols that reach its models');
 });
 
 test('a GPT-Live session is relayed with the model rewritten and usage logged', async () => {

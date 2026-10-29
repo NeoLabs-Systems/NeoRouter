@@ -71,17 +71,24 @@ function liveProtocols(entry) {
 // use, or that have no models of this type, get no entries.
 const KIND_LABELS = { free: 'free models', plan: 'subscriptions', paid: 'paid models' };
 
-function autoModels(key, entries) {
+// Live autos list the protocols their models speak (each live endpoint
+// routes only over its own protocol); System One autos say whether they can
+// answer /v1/systemone, which needs decision models.
+function autoModels(key, entries, type) {
   const kinds = MODEL_KINDS.filter((item) => entries.some((entry) => modelKind(entry) === item));
   const scopes = kinds.length > 1 ? [null, ...kinds] : [null];
   const list = [];
   for (const scope of scopes) {
+    const inScope = scope ? entries.filter((entry) => modelKind(entry) === scope) : entries;
+    const extra = type === 'live'
+      ? { protocols: [...new Set(inScope.flatMap(liveProtocols))] }
+      : type === 'moderation' ? { decision: inScope.some((entry) => entry.decision) } : {};
     for (const profile of profiles.list(key.user_id)) {
       const base = scope ? `auto-${scope}` : 'auto';
       list.push({
         id: profile.id === 'balanced' ? base : `${base}:${profile.id}`,
         name: scope ? `Auto (${profile.name}, ${KIND_LABELS[scope]} only)` : `Auto (${profile.name})`,
-        neorouter: { auto: true, profile: profile.id, kinds: scope ? [scope] : kinds },
+        neorouter: { auto: true, profile: profile.id, kinds: scope ? [scope] : kinds, ...extra },
       });
     }
   }
@@ -94,9 +101,7 @@ router.get('/models', requireRouterKey, (req, res) => {
   const kind = KINDS.has(req.query.type) ? req.query.type : 'chat';
   const entries = modelsVisibleTo(key, kind);
   const created = Math.floor(Date.now() / 1000);
-  // A live session's protocol depends on the provider, so live models are
-  // listed one by one with the protocols that reach them.
-  const autos = kind === 'live' ? [] : autoModels(key, entries);
+  const autos = autoModels(key, entries, kind);
   if (req.get('anthropic-version')) {
     const data = [...autos.map((auto) => ({ type: 'model', id: auto.id, display_name: auto.name, created_at: new Date().toISOString() })),
       ...entries.map((entry) => ({ type: 'model', id: entry.id, display_name: entry.name, created_at: new Date().toISOString() }))];

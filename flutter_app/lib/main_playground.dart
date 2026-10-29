@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
+import 'main_playground_live.dart';
 import 'main_playground_media.dart';
 import 'main_routing.dart';
 import 'main_shared.dart';
@@ -252,6 +253,8 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                   )
                 : _mode == 'chat'
                 ? _chat(context)
+                : _mode == 'live'
+                ? LivePlayground(controller: widget.controller)
                 : MediaPlayground(
                     controller: widget.controller,
                     kind: _mode,

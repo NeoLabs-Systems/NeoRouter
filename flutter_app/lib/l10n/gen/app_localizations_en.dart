@@ -3036,6 +3036,24 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String get pgLiveHint =>
+      'Live voice is a spoken conversation in real time over a WebSocket. Apps such as NeoAgent connect to the address for the protocol they speak, with a router key; NeoRouter picks the model and falls back if a provider refuses.';
+
+  @override
+  String get pgLiveEndpoints => 'Where apps connect';
+
+  @override
+  String get pgLiveModelHint =>
+      'Use \"auto\" as the model, or one of the models below.';
+
+  @override
+  String get pgLiveModels => 'Live models';
+
+  @override
+  String get pgLiveNoModels =>
+      'No live models yet. Gemini (AI Studio) and OpenAI connections bring them.';
+
+  @override
   String connectTitle(String name) {
     return 'Connect $name?';
   }

@@ -143,6 +143,8 @@ class CatalogModel {
   String get modelId => raw['modelId'] as String;
   String get name => raw['name'] as String? ?? modelId;
   String get providerSlug => raw['providerSlug'] as String;
+  /// Live models: the WebSocket protocols that reach them.
+  List<String> get liveProtocols => _strings(raw['liveProtocols']);
   String get definitionId => raw['definitionId'] as String;
   String get accountId => raw['accountId'] as String;
   bool get enabled => raw['enabled'] == true;

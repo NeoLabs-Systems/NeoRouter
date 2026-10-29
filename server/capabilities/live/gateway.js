@@ -90,6 +90,9 @@ class LiveSession {
     this.upstream = null;
     this.entry = null;
     this.tokens = { input: 0, output: 0 };
+    // Messages each way, for the log: a call where the client sent nothing
+    // points at the app, one where the provider said nothing at the model.
+    this.traffic = { fromClient: 0, fromProvider: 0 };
     this.closed = false;
   }
 
@@ -107,6 +110,7 @@ class LiveSession {
     timer.unref?.();
     this.client.once('message', (data) => {
       clearTimeout(timer);
+      this.traffic.fromClient += 1;
       let first;
       try { first = JSON.parse(String(data)); } catch { first = null; }
       const model = this.dialect.modelFromFirst(first);
@@ -117,6 +121,7 @@ class LiveSession {
   }
 
   forward(data, binary) {
+    this.traffic.fromClient += 1;
     if (this.upstream?.readyState === WebSocket.OPEN) this.upstream.send(data, { binary });
     if (!this.answered) this.queue.push([data, binary]);
   }
@@ -203,6 +208,7 @@ class LiveSession {
         this.answered = true;
         this.queue = [];
       }
+      this.traffic.fromProvider += 1;
       this.count(data, binary);
       if (this.client.readyState === WebSocket.OPEN) this.client.send(data, { binary });
     };
@@ -260,7 +266,8 @@ class LiveSession {
     logger.info('Live session ended', {
       sessionId: this.id, model: this.entry?.id || null, by: reason, seconds: Math.round((Date.now() - this.startedAt) / 1000),
       ...(close ? { code: close.code, closeReason: close.reason.slice(0, 200) } : {}), ...(errorMessage ? { error: errorMessage.slice(0, 200) } : {}),
-      inputTokens: this.tokens.input, outputTokens: this.tokens.output,
+      // Field names with "token" in them are redacted by the logger.
+      usageIn: this.tokens.input, usageOut: this.tokens.output, ...this.traffic,
     });
     this.release?.();
     if (this.upstream && this.upstream.readyState !== WebSocket.CLOSED) this.upstream.close();

@@ -934,6 +934,13 @@ S = {
   'teamEventRelease': ('{actor} removed {subject} from the team', '{actor} hat {subject} aus dem Team entfernt'),
   'teamEventLeave': ("{actor} left {subject}'s team", '{actor} hat das Team von {subject} verlassen'),
 
+  # playground: live voice
+  'pgLiveHint': ('Live voice is a spoken conversation in real time over a WebSocket. Apps such as NeoAgent connect to the address for the protocol they speak, with a router key; NeoRouter picks the model and falls back if a provider refuses.', 'Live-Sprache ist ein gesprochenes Gespräch in Echtzeit über einen WebSocket. Apps wie NeoAgent verbinden sich mit der Adresse für ihr Protokoll und einem Router-Key; NeoRouter wählt das Modell und weicht aus, wenn ein Anbieter ablehnt.'),
+  'pgLiveEndpoints': ('Where apps connect', 'Wohin Apps sich verbinden'),
+  'pgLiveModelHint': ('Use "auto" as the model, or one of the models below.', 'Nutze „auto“ als Modell oder eines der Modelle unten.'),
+  'pgLiveModels': ('Live models', 'Live-Modelle'),
+  'pgLiveNoModels': ('No live models yet. Gemini (AI Studio) and OpenAI connections bring them.', 'Noch keine Live-Modelle. Gemini- (AI Studio) und OpenAI-Verbindungen bringen welche mit.'),
+
   # connect an app (OAuth)
   'connectTitle': ('Connect {name}?', '{name} verbinden?'),
   'connectSubtitle': ('{name} wants its own key for your NeoRouter. You choose what it may use and can disconnect it any time under API keys.', '{name} möchte einen eigenen Key für deinen NeoRouter. Du bestimmst, was die App nutzen darf, und kannst sie jederzeit unter API-Keys trennen.'),

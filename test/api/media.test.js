@@ -148,6 +148,7 @@ test('System One decision models answer typed questions', async () => {
   const listed = await gateway('get', '/models?type=moderation');
   assert.equal(listed.body.data.find((model) => model.id === 'mock/jev-1.13').neorouter.decision, true);
   assert.equal(listed.body.data.find((model) => model.id === 'mock/llama-guard-ok').neorouter.decision, false);
+  assert.equal(listed.body.data.find((model) => model.id === 'auto').neorouter.decision, true, 'auto can answer /v1/systemone');
 });
 
 test('model lists say how many models the key is not allowed to use', async () => {

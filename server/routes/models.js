@@ -5,6 +5,7 @@ const { z } = require('zod');
 const catalog = require('../services/catalog/catalog_service');
 const stats = require('../services/routing/stats_store');
 const scoring = require('../services/routing/scoring');
+const accounts = require('../services/providers/account_service');
 const { validate } = require('../middleware/validate');
 const { requirePermission } = require('../middleware/space');
 
@@ -12,11 +13,19 @@ const capabilities = require('../core/capability_registry');
 
 const router = express.Router();
 
+// Live models: the WebSocket protocols that reach them (capabilities/live).
+function liveProtocols(entry) {
+  if (entry.capability !== 'live') return undefined;
+  const runtime = accounts.getRuntime(entry.accountId);
+  return runtime ? accounts.adapterFor(runtime).definition.live : [];
+}
+
 function present(entry) {
   const snapshot = stats.snapshot(entry.ref);
   const availability = stats.availability(entry.ref);
   return {
     ...entry,
+    liveProtocols: liveProtocols(entry),
     reliability: scoring.reliability(snapshot, { sample: false }),
     speedScore: scoring.speed(entry, snapshot),
     costScore: scoring.cost(entry),
