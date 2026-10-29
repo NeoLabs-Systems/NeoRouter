@@ -40,7 +40,12 @@ module.exports = [
   community('navy', 'api.navy', 'https://api.navy/v1', { quirks: { userAgent: BROWSER_UA } }),
   community('nara', 'Nara Router', 'https://router.bynara.id/v1'),
   community('orcarouter', 'OrcaRouter', 'https://api.orcarouter.ai/v1'),
-  community('unorouter', 'UnoRouter', 'https://api.unorouter.com/v1'),
+  // Most models have a free variant ending in ":free", limited to about one
+  // request a minute per model (unorouter.com, October 2026).
+  community('unorouter', 'UnoRouter', 'https://api.unorouter.com/v1', {
+    billing: { freeTierModels: [':free$'], note: 'Only models ending in ":free" are free, about one request a minute each; all others are billed.', source: 'https://unorouter.com', checkedAt: '2026-10-29' },
+    limits: { models: [{ match: ':free$', rpm: 1 }] },
+  }),
   community('xkiro', 'xKiro', 'https://api.xkiro.com/v1', { validate: { path: '/usage' } }),
   community('opencode', 'OpenCode Zen', 'https://opencode.ai/zen/v1', { headers: { 'x-opencode-session': 'neorouter' } }),
   community('airforce', 'api.airforce', 'https://api.airforce/v1'),
