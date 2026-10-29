@@ -96,3 +96,13 @@ learned (`concurrency.js`): a 429 while several requests run on an account sets
 its limit below that count, steady success at the limit probes one higher, and
 learned limits fade after an hour. An account at its limit is skipped
 (`account_busy`) and chat requests wait briefly if every copy is busy.
+
+## Budget pacing
+
+A key with a daily or monthly budget is paced (`services/budget/pacing.js`):
+the spend so far plus the recent rate (this period blended with the last week)
+forecasts the spend at the reset. Over pace, the cost weight grows (up to 4×) and
+paid models whose typical request would take far more than its fair share of
+what is left are ranked last; well under pace, the cost weight shrinks so better
+models win. One-time budgets only get the per-request share. Responses carry
+`X-NeoRouter-Budget-Pace` (`ahead`, `on_track`, `tight`, `over`).

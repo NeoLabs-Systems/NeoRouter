@@ -9,6 +9,7 @@ const stats = require('./stats_store');
 const scoring = require('./scoring');
 const profiles = require('./profiles');
 const budget = require('../budget/budget_service');
+const pacing = require('../budget/pacing');
 const { getConfig } = require('../../config/env');
 const { HttpError } = require('../../middleware/error_handler');
 
@@ -105,6 +106,10 @@ function rejection(entry, ctx, now) {
 // and a busy one hands work to its siblings. Only copies of one model are
 // compared, so this never changes which model is chosen.
 const SIBLING_FLOOR = 0.55;
+// Budget pacing (services/budget/pacing.js).
+const PACED_COST_FLOOR = 0.1;
+const OVER_PACE_FACTOR = 0.15;
+const TYPICAL_OUTPUT_TOKENS = 1500;
 const ACCOUNT_SOFT_CAPACITY = 8;
 
 function freeCapacity(entry) {
@@ -155,6 +160,12 @@ class RoutingPlan {
     if (!this.profile) throw new HttpError(400, 'UNKNOWN_PROFILE', `Unknown routing profile "${profileRef}".`);
     this.complexity = complexityOf(request, inputTokens);
     this.weights = scoring.adaptWeights(this.profile.weights, this.complexity, this.profile.constraints.adaptive !== false);
+    // A budget that would run out before the period ends shifts weight to
+    // cost; one with plenty left lets quality and speed count for more.
+    this.pacing = freeOnly ? null : pacing.pacing(key);
+    if (this.pacing && this.pacing.costShift !== 1) {
+      this.weights = { ...this.weights, cost: Math.max(this.weights.cost, PACED_COST_FLOOR) * this.pacing.costShift };
+    }
     this.entries = catalog.listForUser(userId, { capability });
     this.primaryRefs = new Set();
     if (!this.parsed.auto) this.scopeToRequestedModel();
@@ -231,6 +242,11 @@ class RoutingPlan {
       let value = base * quotaFactor * penalty * load;
       if (qualityProfile && features.intelligence < bestIntelligence - QUALITY_GAP) value *= QUALITY_GATE_FACTOR;
       if ((this.needs.tools && item.entry.tools === null) || (this.needs.json && item.entry.json === false)) value *= UNKNOWN_CAPABILITY_FACTOR;
+      // Far more than this request's fair share of the budget: last resort only.
+      if (this.pacing && !item.entry.isFree) {
+        const typical = this.estimateCost ? this.estimateCost(item.entry) : budget.estimateMaxCost(item.entry, this.inputTokens, Math.min(maxOutputFor(this.request, item.entry), TYPICAL_OUTPUT_TOKENS));
+        if (typical !== null && typical > this.pacing.perRequestCap) value *= OVER_PACE_FACTOR;
+      }
       item.score = value;
       item.details = { ...item.details, base, features };
     }

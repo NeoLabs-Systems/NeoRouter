@@ -389,9 +389,22 @@
   "modeBoth": "All models, then free ones",
   "budget": "Limit in USD (empty = no limit)",
   "budgetPeriod": "Budget period",
-  "periodTotal": "In total",
-  "periodMonthly": "Monthly",
-  "periodDaily": "Daily",
+  "periodTotal": "One-time",
+  "periodMonthly": "Per month",
+  "periodDaily": "Per day",
+  "budgetResets": "Budget applies",
+  "budgetResetsHint": "A one-time budget does not refill.",
+  "paceAhead": "Plenty left: better models are allowed",
+  "paceOnTrack": "On track for the period",
+  "paceTight": "At this pace about {forecast} by the reset: NeoRouter prefers cheaper models",
+  "@paceTight": {
+    "placeholders": {
+      "forecast": {
+        "type": "String"
+      }
+    }
+  },
+  "paceOver": "Used up until the reset",
   "rpmLimit": "Requests per minute (empty = no limit)",
   "allowedModels": "Allowed models – glob patterns, one per line (empty = all)",
   "defaultProfile": "Routing style for \"auto\"",

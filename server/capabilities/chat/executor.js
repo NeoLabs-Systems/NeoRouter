@@ -216,6 +216,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   const plan = new RoutingPlan({
     userId: key.user_id, key, request: canonical, requestedModel, needs, inputTokens, freeOnly: freeOnly || budgetExhausted,
   });
+  if (plan.pacing) res.set('X-NeoRouter-Budget-Pace', plan.pacing.state);
 
   const config = getConfig();
   const clientAbort = new AbortController();

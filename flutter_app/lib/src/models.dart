@@ -189,6 +189,9 @@ class RouterKey {
   double get spentUsd => _double(raw['spentUsd']) ?? 0;
   double? get remainingUsd => _double(raw['remainingUsd']);
   String? get periodResetsAt => raw['periodResetsAt'] as String?;
+  // Budget pacing: ahead, on_track, tight or over (none for one-time budgets).
+  String? get paceState => (raw['pacing'] as Map?)?['state'] as String?;
+  double? get paceForecast => _double((raw['pacing'] as Map?)?['forecast']);
   int? get rpmLimit => _int(raw['rpmLimit']);
   List<String> get allowedModels => _strings(raw['allowedModels']);
   String get profile => raw['profile'] as String? ?? 'balanced';

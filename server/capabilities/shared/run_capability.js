@@ -66,6 +66,7 @@ async function runCapability({ req, res = null, key, capability, method, request
     capability,
     estimateCost,
   });
+  if (plan.pacing) res?.set('X-NeoRouter-Budget-Pace', plan.pacing.state);
 
   const finish = (fields) => {
     try {

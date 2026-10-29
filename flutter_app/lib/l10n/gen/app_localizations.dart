@@ -1390,20 +1390,56 @@ abstract class AppL10n {
   /// No description provided for @periodTotal.
   ///
   /// In en, this message translates to:
-  /// **'In total'**
+  /// **'One-time'**
   String get periodTotal;
 
   /// No description provided for @periodMonthly.
   ///
   /// In en, this message translates to:
-  /// **'Monthly'**
+  /// **'Per month'**
   String get periodMonthly;
 
   /// No description provided for @periodDaily.
   ///
   /// In en, this message translates to:
-  /// **'Daily'**
+  /// **'Per day'**
   String get periodDaily;
+
+  /// No description provided for @budgetResets.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget applies'**
+  String get budgetResets;
+
+  /// No description provided for @budgetResetsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A one-time budget does not refill.'**
+  String get budgetResetsHint;
+
+  /// No description provided for @paceAhead.
+  ///
+  /// In en, this message translates to:
+  /// **'Plenty left: better models are allowed'**
+  String get paceAhead;
+
+  /// No description provided for @paceOnTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'On track for the period'**
+  String get paceOnTrack;
+
+  /// No description provided for @paceTight.
+  ///
+  /// In en, this message translates to:
+  /// **'At this pace about {forecast} by the reset: NeoRouter prefers cheaper models'**
+  String paceTight(String forecast);
+
+  /// No description provided for @paceOver.
+  ///
+  /// In en, this message translates to:
+  /// **'Used up until the reset'**
+  String get paceOver;
 
   /// No description provided for @rpmLimit.
   ///

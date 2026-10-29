@@ -724,13 +724,34 @@ class AppL10nDe extends AppL10n {
   String get budgetPeriod => 'Budget-Zeitraum';
 
   @override
-  String get periodTotal => 'Insgesamt';
+  String get periodTotal => 'Einmalig';
 
   @override
-  String get periodMonthly => 'Monatlich';
+  String get periodMonthly => 'Pro Monat';
 
   @override
-  String get periodDaily => 'Täglich';
+  String get periodDaily => 'Pro Tag';
+
+  @override
+  String get budgetResets => 'Budget gilt';
+
+  @override
+  String get budgetResetsHint =>
+      'Ein einmaliges Budget füllt sich nicht wieder auf.';
+
+  @override
+  String get paceAhead => 'Viel übrig: bessere Modelle sind erlaubt';
+
+  @override
+  String get paceOnTrack => 'Im Plan für den Zeitraum';
+
+  @override
+  String paceTight(String forecast) {
+    return 'Bei diesem Tempo etwa $forecast bis zum Reset: NeoRouter bevorzugt günstigere Modelle';
+  }
+
+  @override
+  String get paceOver => 'Bis zum Reset aufgebraucht';
 
   @override
   String get rpmLimit => 'Requests pro Minute (leer = unbegrenzt)';

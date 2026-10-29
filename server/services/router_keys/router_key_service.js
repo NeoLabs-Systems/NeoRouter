@@ -4,12 +4,15 @@ const crypto = require('node:crypto');
 const { getDatabase } = require('../../db/database');
 const { HttpError } = require('../../middleware/error_handler');
 const { randomToken, sha256 } = require('../../utils/crypto');
+const pacing = require('../budget/pacing');
 const budget = require('../budget/budget_service');
 const profiles = require('../routing/profiles');
 const teamMembers = require('../teams/members');
 
 const PREFIX = 'nrt';
 const rpmWindows = new Map();
+
+const pick = (value, fields) => (value ? Object.fromEntries(fields.map((field) => [field, typeof value[field] === 'number' ? Number(value[field].toFixed(6)) : value[field]])) : null);
 
 function publicKey(row) {
   const spent = budget.spent(row);
@@ -23,6 +26,8 @@ function publicKey(row) {
     spentUsd: Number(spent.toFixed(6)),
     remainingUsd: row.budget_usd === null ? null : Number(Math.max(0, row.budget_usd - spent).toFixed(6)),
     periodResetsAt: budget.periodEnd(row.budget_period) ? new Date(budget.periodEnd(row.budget_period)).toISOString() : null,
+    // Whether the budget will last the period at the current pace.
+    pacing: row.mode === 'free_only' ? null : pick(pacing.pacing(row), ['state', 'forecast']),
     rpmLimit: row.rpm_limit,
     allowedModels: JSON.parse(row.allowed_models_json || '[]'),
     profile: row.profile,

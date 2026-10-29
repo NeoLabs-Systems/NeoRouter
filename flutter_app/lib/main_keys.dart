@@ -12,16 +12,16 @@ import 'src/backend_client.dart';
 import 'src/models.dart';
 
 String keyModeLabel(AppL10n t, String mode) => switch (mode) {
-      'free_only' => t.modeFreeOnly,
-      'paid' => t.modePaid,
-      _ => t.modeBoth,
-    };
+  'free_only' => t.modeFreeOnly,
+  'paid' => t.modePaid,
+  _ => t.modeBoth,
+};
 
 String keyModeHint(AppL10n t, String mode) => switch (mode) {
-      'free_only' => t.modeFreeOnlyHint,
-      'paid' => t.modePaidHint,
-      _ => t.modeBothHint,
-    };
+  'free_only' => t.modeFreeOnlyHint,
+  'paid' => t.modePaidHint,
+  _ => t.modeBothHint,
+};
 
 class KeysScreen extends StatefulWidget {
   const KeysScreen({super.key, required this.controller});
@@ -61,7 +61,10 @@ class _KeysScreenState extends State<KeysScreen> {
   }
 
   Future<void> _open([RouterKey? key]) async {
-    final secret = await showDialog<String>(context: context, builder: (_) => _KeyForm(controller: widget.controller, profiles: _profiles, existing: key));
+    final secret = await showDialog<String>(
+      context: context,
+      builder: (_) => _KeyForm(controller: widget.controller, profiles: _profiles, existing: key),
+    );
     await _load();
     if (secret != null && mounted) await _showSecret(secret);
   }
@@ -87,7 +90,9 @@ class _KeysScreenState extends State<KeysScreen> {
                 decoration: BoxDecoration(color: palette.surfaceRaised, borderRadius: BorderRadius.circular(AppRadius.control)),
                 child: Row(
                   children: <Widget>[
-                    Expanded(child: SelectableText(secret, style: GoogleFonts.geistMono(fontSize: 13, color: palette.text))),
+                    Expanded(
+                      child: SelectableText(secret, style: GoogleFonts.geistMono(fontSize: 13, color: palette.text)),
+                    ),
                     IconButton(
                       tooltip: t.copy,
                       icon: const Icon(Icons.copy_rounded, size: 17),
@@ -132,22 +137,24 @@ class _KeysScreenState extends State<KeysScreen> {
     final controller = widget.controller;
     final canCreate = controller.can('keys.create');
     Widget row(RouterKey key) => _KeyRow(
-          routerKey: key,
-          profiles: _profiles,
-          showCreator: controller.showCreators,
-          canEdit: controller.can('keys.edit'),
-          canDelete: controller.can('keys.delete'),
-          onAction: (action) => switch (action) {
-            'edit' => _open(key),
-            'revoke' => _revoke(key),
-            _ => _delete(key),
-          },
-        );
+      routerKey: key,
+      profiles: _profiles,
+      showCreator: controller.showCreators,
+      canEdit: controller.can('keys.edit'),
+      canDelete: controller.can('keys.delete'),
+      onAction: (action) => switch (action) {
+        'edit' => _open(key),
+        'revoke' => _revoke(key),
+        _ => _delete(key),
+      },
+    );
     return PageScaffold(
       header: ScreenHeader(
         title: t.keysTitle,
         description: t.keysDescription,
-        trailing: canCreate ? FilledButton.icon(onPressed: _loading ? null : () => _open(), icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.createKey)) : null,
+        trailing: canCreate
+            ? FilledButton.icon(onPressed: _loading ? null : () => _open(), icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.createKey))
+            : null,
       ),
       children: <Widget>[
         AsyncBody(
@@ -163,7 +170,9 @@ class _KeysScreenState extends State<KeysScreen> {
                     icon: Icons.key_outlined,
                     title: t.noKeysTitle,
                     message: t.noKeysMessage,
-                    action: canCreate ? FilledButton.icon(onPressed: () => _open(), icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.createKey)) : null,
+                    action: canCreate
+                        ? FilledButton.icon(onPressed: () => _open(), icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.createKey))
+                        : null,
                   ),
                 )
               else
@@ -214,15 +223,15 @@ class _KeyRow extends StatelessWidget {
     final key = routerKey;
     final budget = key.budgetUsd;
     final used = key.lastUsedAt == null ? t.keyNeverUsed : t.keyUsed(formatAgo(t, DateTime.parse(key.lastUsedAt!).toLocal()));
-    final subtitle = <String>[
-      if (key.revoked) t.revoked else keyModeLabel(t, key.mode),
-      used,
-      if (showCreator) createdByLabel(t, key.createdBy),
-    ].join(' · ');
+    final subtitle = <String>[if (key.revoked) t.revoked else keyModeLabel(t, key.mode), used, if (showCreator) createdByLabel(t, key.createdBy)].join(' · ');
     final actions = <PopupMenuEntry<String>>[
       if (!key.revoked && canEdit) PopupMenuItem<String>(value: 'edit', child: Text(t.edit)),
       if (!key.revoked && canEdit) PopupMenuItem<String>(value: 'revoke', child: Text(t.revoke)),
-      if (canDelete) PopupMenuItem<String>(value: 'delete', child: Text(t.delete, style: TextStyle(color: palette.error))),
+      if (canDelete)
+        PopupMenuItem<String>(
+          value: 'delete',
+          child: Text(t.delete, style: TextStyle(color: palette.error)),
+        ),
     ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
@@ -242,13 +251,25 @@ class _KeyRow extends StatelessWidget {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    Flexible(child: Text(key.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: palette.text))),
+                    Flexible(
+                      child: Text(
+                        key.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: palette.text),
+                      ),
+                    ),
                     const SizedBox(width: 10),
                     Text('${key.prefix}…', style: GoogleFonts.geistMono(fontSize: 12, color: palette.textMuted)),
                   ],
                 ),
                 const SizedBox(height: 3),
-                Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, color: palette.textMuted)),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, color: palette.textMuted),
+                ),
                 if (budget != null && !key.revoked) ...<Widget>[
                   const SizedBox(height: 10),
                   ConstrainedBox(
@@ -265,6 +286,13 @@ class _KeyRow extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         UsageBar(fraction: budget == 0 ? 1 : key.spentUsd / budget, height: 4),
+                        if (_paceText(t, key) != null) ...<Widget>[
+                          const SizedBox(height: 6),
+                          Text(
+                            _paceText(t, key)!,
+                            style: TextStyle(fontSize: 12, color: key.paceState == 'tight' || key.paceState == 'over' ? palette.warning : palette.textMuted),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -360,7 +388,11 @@ class _KeyFormState extends State<_KeyForm> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              TextField(controller: _name, autofocus: true, decoration: InputDecoration(labelText: t.keyName, hintText: t.keyNameHint)),
+              TextField(
+                controller: _name,
+                autofocus: true,
+                decoration: InputDecoration(labelText: t.keyName, hintText: t.keyNameHint),
+              ),
               const SizedBox(height: AppSpacing.lg),
               Text(t.keyAccessTitle, style: label),
               const SizedBox(height: AppSpacing.xs),
@@ -385,6 +417,13 @@ class _KeyFormState extends State<_KeyForm> {
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: <Widget>[
+                    Text(t.budgetResets, style: TextStyle(fontSize: 13, color: neoRouterPaletteOf(context).textSoft)),
+                    const SizedBox(width: AppSpacing.sm),
                     SegmentedButton<String>(
                       showSelectedIcon: false,
                       segments: <ButtonSegment<String>>[
@@ -397,6 +436,10 @@ class _KeyFormState extends State<_KeyForm> {
                     ),
                   ],
                 ),
+                if (_period == 'total') ...<Widget>[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(t.budgetResetsHint, style: TextStyle(fontSize: 12, color: neoRouterPaletteOf(context).textMuted, height: 1.4)),
+                ],
               ],
               const SizedBox(height: AppSpacing.sm),
               Align(
@@ -417,9 +460,18 @@ class _KeyFormState extends State<_KeyForm> {
                   onChanged: (value) => setState(() => _profile = value ?? _profile),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                TextField(controller: _rpm, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: t.rpmLimit)),
+                TextField(
+                  controller: _rpm,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(labelText: t.rpmLimit),
+                ),
                 const SizedBox(height: AppSpacing.sm),
-                TextField(controller: _allowed, minLines: 2, maxLines: 5, decoration: InputDecoration(labelText: t.allowedModels, hintText: 'groq/*\nopenrouter/*:free')),
+                TextField(
+                  controller: _allowed,
+                  minLines: 2,
+                  maxLines: 5,
+                  decoration: InputDecoration(labelText: t.allowedModels, hintText: 'groq/*\nopenrouter/*:free'),
+                ),
               ],
               if (_error != null) ...<Widget>[const SizedBox(height: AppSpacing.sm), InlineError(message: _error!)],
             ],
@@ -462,13 +514,20 @@ class _OptionCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Icon(selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded, size: 18, color: selected ? palette.accent : palette.textMuted),
+                Icon(
+                  selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
+                  size: 18,
+                  color: selected ? palette.accent : palette.textMuted,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
+                      Text(
+                        title,
+                        style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
+                      ),
                       const SizedBox(height: 2),
                       Text(description, style: TextStyle(fontSize: 12.5, color: palette.textSoft, height: 1.4)),
                     ],
@@ -482,3 +541,11 @@ class _OptionCard extends StatelessWidget {
     );
   }
 }
+
+String? _paceText(AppL10n t, RouterKey key) => switch (key.paceState) {
+  'ahead' => t.paceAhead,
+  'on_track' => t.paceOnTrack,
+  'tight' => t.paceTight(formatUsd(key.paceForecast ?? 0)),
+  'over' => t.paceOver,
+  _ => null,
+};
