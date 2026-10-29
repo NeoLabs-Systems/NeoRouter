@@ -137,7 +137,7 @@ function freeCapacity(entry) {
 function spreadAcrossAccounts(scored) {
   const groups = new Map();
   for (const item of scored) {
-    const copy = `${item.entry.canonicalId}|${modelKind(item.entry)}|${item.ownCost.toFixed(2)}`;
+    const copy = `${item.entry.canonicalId}|${modelKind(item.entry)}|${scoring.blendedPrice(item.entry)}`;
     if (!groups.has(copy)) groups.set(copy, []);
     groups.get(copy).push(item);
   }

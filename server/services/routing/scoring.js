@@ -3,6 +3,7 @@
 const stats = require('./stats_store');
 const loadTracker = require('./load_tracker');
 const concurrency = require('./concurrency');
+const plans = require('./plans');
 const { taskIntelligence, enoughIntelligence } = require('./task/skills');
 const experience = require('./task/experience');
 
@@ -78,7 +79,9 @@ function blendedPrice(entry) {
   return (entry.priceIn * 3 + entry.priceOut) / 4;
 }
 
-function cost(entry) {
+function cost(entry, now = Date.now()) {
+  // Plan models spend an allowance instead of money (plans.js).
+  if (entry.isPlan) return 1 - plans.allowanceCost(entry, now);
   // Media models priced per image, second, minute or million characters.
   if (!entry.isFree && !entry.isPlan && entry.priceUnit && UNIT_PRICE_RANGES[entry.priceUnit] && entry.unitPrice !== null && entry.unitPrice !== undefined) {
     return entry.unitPrice === 0 ? 1 : 1 - (logScale(entry.unitPrice, UNIT_PRICE_RANGES[entry.priceUnit]) ?? 0);
@@ -91,8 +94,8 @@ function cost(entry) {
 
 // Difficulty-aware weights (when the profile is adaptive): hard requests
 // lean towards intelligence, easy ones ("hi", a quick translation) towards
-// speed and price, so frontier models are only paid for when a prompt needs
-// them. Between the two bands the profile's weights stand.
+// price, since an easy prompt is not worth paying more for. Between the two
+// bands the profile's weights stand.
 const EASY_BELOW = 0.3;
 const HARD_ABOVE = 0.5;
 const MAX_EASY_SHIFT = 0.5;
@@ -101,14 +104,7 @@ function adaptWeights(weights, difficulty, adaptive) {
   if (!adaptive || difficulty === null || difficulty === undefined) return weights;
   if (difficulty < EASY_BELOW) {
     const moved = weights.intelligence * MAX_EASY_SHIFT * ((EASY_BELOW - difficulty) / EASY_BELOW);
-    const targets = weights.speed + weights.cost;
-    const speedShare = targets > 0 ? weights.speed / targets : 0.5;
-    return {
-      intelligence: weights.intelligence - moved,
-      speed: weights.speed + moved * speedShare,
-      reliability: weights.reliability,
-      cost: weights.cost + moved * (1 - speedShare),
-    };
+    return { ...weights, intelligence: weights.intelligence - moved, cost: weights.cost + moved };
   }
   if (difficulty <= HARD_ABOVE) return weights;
   const shift = 0.3 * (difficulty - HARD_ABOVE);
@@ -136,7 +132,7 @@ function score(entry, { weights, quotaFactor = 1, random, sample = true, now = D
     intelligence: enoughIntelligence(capability, need, weights.intelligence / totalWeight),
     speed: speed(entry, snapshot),
     reliability: learned.reliability,
-    cost: cost(entry),
+    cost: cost(entry, now),
   };
   const base = (weights.intelligence * features.intelligence + weights.speed * features.speed
     + weights.reliability * features.reliability + weights.cost * features.cost) / totalWeight;

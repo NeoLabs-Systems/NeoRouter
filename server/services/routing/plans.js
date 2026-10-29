@@ -1,20 +1,36 @@
 'use strict';
 
-// Prepaid plans: the allowance is already paid for and does not roll over,
-// so routing prefers plan models while there is room, holds back as the
-// allowance runs low and skips the plan once it is used up until it renews.
-// Allowances come from the provider's quota endpoint (probed periodically) as
-// one or more windows: `plan_requests` counts requests (Synthetic),
-// `plan_5h` / `plan_week` are percentages left (MiniMax). Requests sent since
-// the last probe are subtracted from counted windows; the tightest window wins.
+// Prepaid plans: a request costs no money, but it spends an allowance that
+// is shared with the user's other use of the plan. Routing prices that
+// allowance by how fast it is going: nothing when it would expire unused
+// anyway (it does not roll over), a little when on schedule, more as it falls
+// behind, so free models that are good enough take easy prompts and the plan
+// is kept for prompts that need it. It holds back as the allowance runs low
+// and skips the plan once it is used up until it renews.
+// Allowances come from the provider's quota endpoint (probed periodically) or
+// response headers as one or more windows: `plan_requests` counts requests
+// (Synthetic), `plan_5h` / `plan_week` are percentages left (MiniMax,
+// ChatGPT). Requests sent since the last probe are subtracted from counted
+// windows; the tightest window wins.
 const quota = require('../quota/quota_service');
 
 const PLAN_METRICS = new Set(['plan_requests', 'plan_5h', 'plan_week', 'plan_month']);
 const COUNTED = 'plan_requests';
-// Plenty left: a mild preference. Running low: hold back.
-const PREFERENCE = 1.1;
+// Running low: hold back.
 const LOW_SHARE = 0.15;
 const LOW_FACTOR = 0.5;
+// Window lengths, to compare what is left with the time still to run.
+const WINDOW_MS = { plan_5h: 5 * 3_600_000, plan_week: 7 * 86_400_000, plan_month: 30 * 86_400_000 };
+const MIN_TIME_LEFT = 0.02;
+// What a request from the allowance costs, on the router's cost scale
+// (0 = free, 1 = the priciest models): on schedule or unknown, and far behind.
+// Above the router's "clearly cheaper" step (0.05), so a free model of the
+// same quality wins, and below the cheapest usual paid models, so the plan
+// still comes before paying.
+const ON_SCHEDULE_COST = 0.08;
+const BEHIND_COST = 0.2;
+// Well ahead of schedule (part of it would expire unused): lean on the plan.
+const SURPLUS_BONUS = 0.15;
 
 const sent = new Map();
 
@@ -36,6 +52,35 @@ function room(entry, now = Date.now()) {
     if (!tightest || share < tightest.share) tightest = { share, resetAt: window.resetAt && window.resetAt > now ? window.resetAt : null };
   }
   return tightest;
+}
+
+/**
+ * Share left divided by the share of the window still to run, for the
+ * tightest window: above 1 the allowance is ahead of schedule, below 1 it is
+ * used faster than it renews. Null when no window has a known length and
+ * reset time.
+ */
+function pace(entry, now = Date.now()) {
+  let tightest = null;
+  for (const window of windows(entry.accountId)) {
+    const length = WINDOW_MS[window.metric];
+    if (!length || !window.resetAt) continue;
+    const renewed = window.resetAt <= now;
+    const share = renewed ? 1 : Math.max(0, window.remaining ?? window.limit) / window.limit;
+    const timeLeft = renewed ? 1 : Math.min(1, Math.max(MIN_TIME_LEFT, (window.resetAt - now) / length));
+    const ratio = share / timeLeft;
+    if (tightest === null || ratio < tightest) tightest = ratio;
+  }
+  return tightest;
+}
+
+/** The allowance a request spends, priced by pace() (0 for models outside a plan). */
+function allowanceCost(entry, now = Date.now()) {
+  if (!entry.isPlan) return 0;
+  const ratio = pace(entry, now);
+  if (ratio === null) return ON_SCHEDULE_COST;
+  if (ratio >= 1) return ON_SCHEDULE_COST * Math.max(0, 2 - ratio);
+  return ON_SCHEDULE_COST + (BEHIND_COST - ON_SCHEDULE_COST) * (1 - ratio);
 }
 
 function onSent(entry) {
@@ -66,7 +111,9 @@ function rejection(entry, now = Date.now()) {
 function factor(entry, now = Date.now()) {
   if (!entry.isPlan) return 1;
   const left = room(entry, now);
-  return left && left.share < LOW_SHARE ? LOW_FACTOR : PREFERENCE;
+  if (left && left.share < LOW_SHARE) return LOW_FACTOR;
+  const ratio = pace(entry, now);
+  return ratio !== null && ratio > 1 ? 1 + SURPLUS_BONUS * Math.min(1, ratio - 1) : 1;
 }
 
 // ChatGPT (Codex) reports its plan windows on every response:
@@ -89,4 +136,4 @@ function resetForTests() {
   sent.clear();
 }
 
-module.exports = { room, onSent, effective, rejection, factor, observeHeaders, PLAN_METRICS, resetForTests };
+module.exports = { room, pace, allowanceCost, onSent, effective, rejection, factor, observeHeaders, PLAN_METRICS, resetForTests };
