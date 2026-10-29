@@ -1,9 +1,9 @@
 'use strict';
 
-// Builds the GET /api reference as a static site for GitHub Pages:
-//   <out>/api/index.md    the Markdown agents read
-//   <out>/api/index.html  the same, rendered for people
-//   <out>/index.html      a redirect to api/
+// Builds the GET /api reference as static files; the Pages workflow puts
+// them at /api/ next to the landing page:
+//   <out>/index.md    the Markdown agents read
+//   <out>/index.html  the same, rendered for people
 // Usage: node scripts/build_api_docs.js [out-dir]
 // NEOROUTER_DOCS_ORIGIN sets the server address the examples use.
 const fs = require('node:fs');
@@ -12,7 +12,7 @@ const { marked } = require('marked');
 const { reference } = require('../server/routes/api_docs');
 
 const ROOT = path.join(__dirname, '..');
-const out = path.resolve(process.argv[2] || path.join(ROOT, 'build', 'pages'));
+const out = path.resolve(process.argv[2] || path.join(ROOT, 'build', 'api-docs'));
 const origin = (process.env.NEOROUTER_DOCS_ORIGIN || 'https://neorouter.example.com').replace(/\/+$/, '');
 
 const markdown = reference(origin, { placeholder: true });
@@ -26,7 +26,7 @@ const page = `<!doctype html>
   <title>NeoRouter API</title>
   <meta name="description" content="Reference for the NeoRouter gateway API. Agents: read index.md.">
   <link rel="alternate" type="text/markdown" href="index.md">
-  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560&family=IBM+Plex+Mono:wght@450;500&family=Inter:wght@440;600&display=swap" rel="stylesheet">
@@ -69,24 +69,8 @@ const page = `<!doctype html>
 </html>
 `;
 
-const redirect = `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>NeoRouter API</title>
-  <meta http-equiv="refresh" content="0; url=api/">
-  <link rel="canonical" href="api/">
-</head>
-<body><a href="api/">NeoRouter API reference</a></body>
-</html>
-`;
-
 fs.rmSync(out, { recursive: true, force: true });
-fs.mkdirSync(path.join(out, 'api'), { recursive: true });
-fs.writeFileSync(path.join(out, 'api', 'index.md'), markdown);
-fs.writeFileSync(path.join(out, 'api', 'index.html'), page);
-fs.writeFileSync(path.join(out, 'index.html'), redirect);
-fs.copyFileSync(path.join(ROOT, 'landing', 'assets', 'favicon.png'), path.join(out, 'favicon.png'));
-// Serve files as they are, without a Jekyll build.
-fs.writeFileSync(path.join(out, '.nojekyll'), '');
+fs.mkdirSync(out, { recursive: true });
+fs.writeFileSync(path.join(out, 'index.md'), markdown);
+fs.writeFileSync(path.join(out, 'index.html'), page);
 console.log(`API docs written to ${out}`);

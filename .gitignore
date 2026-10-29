@@ -110,4 +110,4 @@ __pycache__/
 .claude/
 
 # Static API docs (scripts/build_api_docs.js)
-build/pages/
+build/api-docs/
