@@ -14,7 +14,7 @@ import 'main_theme.dart';
 import 'src/backend_client.dart';
 import 'src/models.dart';
 
-const List<String> _categoryOrder = <String>['free', 'plan', 'aggregator', 'paid', 'search', 'local', 'custom', 'community'];
+const List<String> _categoryOrder = <String>['free', 'plan', 'aggregator', 'paid', 'search', 'weather', 'local', 'custom', 'community'];
 
 String categoryLabel(AppL10n t, String category) => switch (category) {
   'free' => t.categoryFree,
@@ -23,6 +23,7 @@ String categoryLabel(AppL10n t, String category) => switch (category) {
   'local' => t.categoryLocal,
   'custom' => t.categoryCustom,
   'search' => t.categorySearch,
+  'weather' => t.categoryWeather,
   'plan' => t.categoryPlan,
   _ => t.categoryCommunity,
 };

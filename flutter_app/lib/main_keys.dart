@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
+import 'main_model_picker.dart';
 import 'main_routing.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
@@ -374,6 +375,15 @@ class _KeyFormState extends State<_KeyForm> {
     super.dispose();
   }
 
+  // Picked models join the typed lines; patterns like "groq/*" stay as they are.
+  Future<void> _pickAllowed() async {
+    final lines = _allowed.text.split('\n').map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
+    final picked = await showModelPicker(context, controller: widget.controller, selected: lines.where((line) => !line.contains('*')).toList(), multi: true);
+    if (picked == null) return;
+    final patterns = lines.where((line) => line.contains('*'));
+    setState(() => _allowed.text = <String>{...patterns, ...picked}.join('\n'));
+  }
+
   Future<void> _submit() async {
     if (!_free && !_plan && !_paid) {
       setState(() => _error = AppL10n.of(context).pickOneKind);
@@ -469,6 +479,10 @@ class _KeyFormState extends State<_KeyForm> {
                   minLines: 2,
                   maxLines: 5,
                   decoration: InputDecoration(labelText: t.allowedModels, hintText: 'groq/*\nopenrouter/*:free'),
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(onPressed: _pickAllowed, icon: const Icon(Icons.checklist_rounded, size: 17), label: Text(t.pickModels)),
                 ),
               ],
               if (_error != null) ...<Widget>[const SizedBox(height: AppSpacing.sm), InlineError(message: _error!)],

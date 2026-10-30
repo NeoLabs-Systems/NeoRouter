@@ -3973,6 +3973,48 @@ abstract class AppL10n {
   /// **'e.g. groq/openai/gpt-oss-120b'**
   String get modelSpecificHint;
 
+  /// No description provided for @pickModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a model'**
+  String get pickModel;
+
+  /// No description provided for @pickModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose models'**
+  String get pickModels;
+
+  /// No description provided for @pickModelNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No model matches.'**
+  String get pickModelNone;
+
+  /// No description provided for @pickModelsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} chosen'**
+  String pickModelsCount(String count);
+
+  /// No description provided for @pickModelContext.
+  ///
+  /// In en, this message translates to:
+  /// **'{tokens} context'**
+  String pickModelContext(String tokens);
+
+  /// No description provided for @pickModelReasoning.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinks before answering'**
+  String get pickModelReasoning;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
   /// No description provided for @systemPromptTitle.
   ///
   /// In en, this message translates to:
@@ -5106,6 +5148,66 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Search'**
   String get pgSearchRun;
+
+  /// No description provided for @categoryWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather'**
+  String get categoryWeather;
+
+  /// No description provided for @capWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather'**
+  String get capWeather;
+
+  /// No description provided for @capWeatherHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Current weather and forecasts for any place, from the weather services you connect.'**
+  String get capWeatherHint;
+
+  /// No description provided for @unitCall.
+  ///
+  /// In en, this message translates to:
+  /// **'per call'**
+  String get unitCall;
+
+  /// No description provided for @pgWeatherHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Look up the weather for a place name or coordinates such as 52.52, 13.41. The answer has the same shape whichever service replies.'**
+  String get pgWeatherHint;
+
+  /// No description provided for @pgWeatherRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Get weather'**
+  String get pgWeatherRun;
+
+  /// No description provided for @pgWeatherMetric.
+  ///
+  /// In en, this message translates to:
+  /// **'°C, km/h'**
+  String get pgWeatherMetric;
+
+  /// No description provided for @pgWeatherImperial.
+  ///
+  /// In en, this message translates to:
+  /// **'°F, mph'**
+  String get pgWeatherImperial;
+
+  /// No description provided for @pgWeatherHourly.
+  ///
+  /// In en, this message translates to:
+  /// **'Next hours'**
+  String get pgWeatherHourly;
+
+  /// No description provided for @pgWeatherNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Feels like {feels} · humidity {humidity}% · wind {wind}'**
+  String pgWeatherNow(String feels, String humidity, String wind);
 
   /// No description provided for @pgNoResults.
   ///

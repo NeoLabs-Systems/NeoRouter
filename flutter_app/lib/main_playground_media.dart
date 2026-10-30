@@ -45,6 +45,8 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
   int _seconds = 4;
   bool _translate = false;
   String _check = 'safety';
+  String _units = 'metric';
+  bool _hourly = false;
   bool _running = false;
   PickedFile? _file;
   ({Uint8List bytes, String mime})? _spoken;
@@ -116,6 +118,18 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
       case 'search':
         if (text.isEmpty) return;
         body.addAll(<String, Object?>{'query': text, 'max_results': 8});
+      case 'weather':
+        if (text.isEmpty) return;
+        // "52.52, 13.41" is read as coordinates, anything else as a place name.
+        final match = RegExp(r'^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$').firstMatch(text);
+        body.addAll(<String, Object?>{
+          'location': match == null ? text : <String, Object?>{'latitude': double.parse(match.group(1)!), 'longitude': double.parse(match.group(2)!)},
+          'current': true,
+          'daily': true,
+          'hourly': _hourly,
+          'days': 5,
+          'units': _units,
+        });
     }
     setState(() {
       _running = true;
@@ -240,6 +254,7 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
     'transcription' => t.pgTranscribeHint,
     'moderation' => _check == 'decide' ? t.pgDecideHint : t.pgCheckHint,
     'search' => t.pgSearchHint,
+    'weather' => t.pgWeatherHint,
     _ => t.pgVideoHint,
   };
 
@@ -250,6 +265,7 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
     'transcription' => t.pgTranscribeRun,
     'moderation' => _check == 'decide' ? t.pgDecideRun : t.pgCheckRun,
     'search' => t.pgSearchRun,
+    'weather' => t.pgWeatherRun,
     _ => t.pgVideoRun,
   };
 
@@ -259,7 +275,7 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
       controller: _input(widget.kind),
       minLines: widget.kind == 'embedding'
           ? 3
-          : widget.kind == 'search'
+          : widget.kind == 'search' || widget.kind == 'weather'
           ? 1
           : 2,
       maxLines: 10,
@@ -343,9 +359,93 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
               ChoiceChip(label: Text(t.pgSeconds('$seconds')), selected: _seconds == seconds, onSelected: (_) => setState(() => _seconds = seconds)),
           ],
         );
+      case 'weather':
+        return Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: <Widget>[
+            for (final (value, label) in <(String, String)>[('metric', t.pgWeatherMetric), ('imperial', t.pgWeatherImperial)])
+              ChoiceChip(label: Text(label), selected: _units == value, onSelected: (_) => setState(() => _units = value)),
+            FilterChip(label: Text(t.pgWeatherHourly), selected: _hourly, onSelected: (value) => setState(() => _hourly = value)),
+          ],
+        );
       default:
         return const SizedBox.shrink();
     }
+  }
+
+  // Weather: now, the next days and, when asked for, the next hours.
+  Widget _weather(AppL10n t, NeoRouterPalette palette, Map<String, dynamic> result, String? model) {
+    final imperial = result['units'] == 'imperial';
+    final degrees = imperial ? '°F' : '°C';
+    final speed = imperial ? 'mph' : 'km/h';
+    String number(Object? value) => value is num ? (value == value.roundToDouble() ? value.toInt().toString() : value.toStringAsFixed(1)) : '–';
+    final location = Map<String, dynamic>.from(result['location'] as Map? ?? const <String, dynamic>{});
+    final current = result['current'] is Map ? Map<String, dynamic>.from(result['current'] as Map) : null;
+    final daily = ((result['daily'] as List?) ?? const <Object>[]).cast<Map>();
+    final hourly = ((result['hourly'] as List?) ?? const <Object>[]).cast<Map>().take(24).toList();
+    final place = '${location['name'] ?? ''}'.isNotEmpty ? '${location['name']}' : '${number(location['latitude'])}, ${number(location['longitude'])}';
+    final soft = TextStyle(color: palette.textSoft, fontSize: 13);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        AppCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(place, style: TextStyle(color: palette.textMuted, fontSize: 12)),
+              if (current != null) ...<Widget>[
+                const SizedBox(height: 6),
+                Text('${number(current['temperature'])}$degrees', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 28)),
+                if (current['condition'] != null) Text('${current['condition']}', style: const TextStyle(fontSize: 14.5)),
+                const SizedBox(height: 6),
+                Text(
+                  t.pgWeatherNow(number(current['feels_like']) + degrees, number(current['humidity']), '${number(current['wind_speed'])} $speed'),
+                  style: soft,
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (daily.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 10),
+          AppCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              children: <Widget>[
+                for (final day in daily)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      children: <Widget>[
+                        SizedBox(width: 96, child: Text('${day['date']}', style: const TextStyle(fontSize: 13.5))),
+                        Expanded(child: Text('${day['condition'] ?? ''}', style: soft, overflow: TextOverflow.ellipsis)),
+                        if (day['precipitation_probability'] is num) Text('${number(day['precipitation_probability'])}%  ', style: soft),
+                        Text('${number(day['temperature_min'])}° / ${number(day['temperature_max'])}°', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+        if (hourly.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 10),
+          Text(t.pgWeatherHourly, style: TextStyle(color: palette.textMuted, fontSize: 12)),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: <Widget>[
+              for (final hour in hourly)
+                MetaPill(label: '${'${hour['time']}'.split('T').last.substring(0, 5)} · ${number(hour['temperature'])}°'),
+            ],
+          ),
+        ],
+        _meta(model),
+      ],
+    );
   }
 
   // A decision: the picked option (or yes / no) and how likely each one was.
@@ -569,6 +669,8 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
             _meta(model),
           ],
         );
+      case 'weather':
+        return _weather(t, palette, result, model);
       default:
         final status = '${result['status']}';
         final done = status == 'completed';

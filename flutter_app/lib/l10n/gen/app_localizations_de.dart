@@ -2206,6 +2206,31 @@ class AppL10nDe extends AppL10n {
   String get modelSpecificHint => 'z. B. groq/openai/gpt-oss-120b';
 
   @override
+  String get pickModel => 'Modell wählen';
+
+  @override
+  String get pickModels => 'Modelle wählen';
+
+  @override
+  String get pickModelNone => 'Kein Modell passt.';
+
+  @override
+  String pickModelsCount(String count) {
+    return '$count gewählt';
+  }
+
+  @override
+  String pickModelContext(String tokens) {
+    return '$tokens Kontext';
+  }
+
+  @override
+  String get pickModelReasoning => 'Denkt vor der Antwort nach';
+
+  @override
+  String get done => 'Fertig';
+
+  @override
   String get systemPromptTitle => 'Anweisungen';
 
   @override
@@ -2852,6 +2877,40 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get pgSearchRun => 'Suchen';
+
+  @override
+  String get categoryWeather => 'Wetter';
+
+  @override
+  String get capWeather => 'Wetter';
+
+  @override
+  String get capWeatherHint =>
+      'Aktuelles Wetter und Vorhersagen für jeden Ort, von den Wetterdiensten, die du verbindest.';
+
+  @override
+  String get unitCall => 'pro Abruf';
+
+  @override
+  String get pgWeatherHint =>
+      'Frag das Wetter für einen Ortsnamen oder Koordinaten wie 52.52, 13.41 ab. Die Antwort sieht gleich aus, egal welcher Dienst antwortet.';
+
+  @override
+  String get pgWeatherRun => 'Wetter abrufen';
+
+  @override
+  String get pgWeatherMetric => '°C, km/h';
+
+  @override
+  String get pgWeatherImperial => '°F, mph';
+
+  @override
+  String get pgWeatherHourly => 'Nächste Stunden';
+
+  @override
+  String pgWeatherNow(String feels, String humidity, String wind) {
+    return 'Gefühlt $feels · Luftfeuchte $humidity % · Wind $wind';
+  }
 
   @override
   String get pgNoResults => 'Keine Treffer.';

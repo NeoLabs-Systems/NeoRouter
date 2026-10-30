@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
+import 'main_model_picker.dart';
 import 'main_playground_live.dart';
 import 'main_playground_media.dart';
 import 'main_routing.dart';
@@ -129,29 +130,13 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
   }
 
   Future<void> _pickSpecificModel() async {
-    final t = AppL10n.of(context);
-    final controller = TextEditingController(text: _model.startsWith('auto') ? '' : _model);
-    final value = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(t.modelSpecific),
-        content: SizedBox(
-          width: 420,
-          child: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: InputDecoration(hintText: t.modelSpecificHint),
-            onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
-          ),
-        ),
-        actions: <Widget>[
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(t.cancel)),
-          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(controller.text), child: Text(t.save)),
-        ],
-      ),
+    final picked = await showModelPicker(
+      context,
+      controller: widget.controller,
+      capability: _mode,
+      selected: <String>[if (!_model.startsWith('auto')) _model],
     );
-    controller.dispose();
-    if (value != null && value.trim().isNotEmpty) setState(() => _model = value.trim());
+    if (picked != null && picked.isNotEmpty) setState(() => _model = picked.first);
   }
 
   Future<void> _editInstructions() async {
