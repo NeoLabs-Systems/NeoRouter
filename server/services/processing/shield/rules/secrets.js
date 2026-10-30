@@ -118,6 +118,26 @@ module.exports = [
     },
   },
   {
+    // "the temporary password from the onboarding email was X": the value a
+    // few words after the word, only when it looks like a password (letters
+    // with digits or symbols), so "the password is required" stays.
+    id: 'password_in_sentence',
+    label: { en: 'Password', de: 'Passwort' },
+    category: 'secret',
+    keywords: ['pass', 'pwd', 'kennwort', 'wachtwoord'],
+    pattern: /(?<![\p{L}\p{N}])(?:password|passwort|passphrase|kennwort|wachtwoord|pwd)(?![\p{L}\p{N}])(?:[^\S\n]+[\p{L}\p{N}'’-]+){0,8}?[^\S\n]+(?:was|is|were|war|ist|lautet|wäre)[^\S\n]*:?[^\S\n]+["'„“]?(?!\[)((?=[^\s]*\p{L})(?=[^\s]*[\p{N}\p{P}\p{S}])[^\s"'“”,;]{5,}[^\s"'“”,;.!?:)\]])/giu,
+    group: 1,
+    accept: 'notPlaceholder',
+    score: 0.85,
+    tests: {
+      match: [
+        { text: 'the temporary password from the onboarding email was RheinTech!2026#Reset.', value: 'RheinTech!2026#Reset' },
+        { text: 'Das neue Passwort für den Router ist Sommer2026!', value: 'Sommer2026' },
+      ],
+      ignore: ['the password is required for every login', 'my password was changed yesterday', 'the password is [SECRET_1]'],
+    },
+  },
+  {
     id: 'url_credentials',
     label: { en: 'Password in a URL', de: 'Passwort in einer URL' },
     category: 'secret',
