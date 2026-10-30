@@ -17,6 +17,10 @@ const keys = {};
 const api = (method, path) => request(app)[method](`/api/v1${path}`).set('Authorization', `Bearer ${session}`);
 
 test.before(async () => {
+  // Mid-month, so "gone long before the month ends" holds on any real date
+  // (near the 31st, even a heavy spend has no time left to overshoot).
+  const today = new Date();
+  test.mock.timers.enable({ apis: ['Date'], now: Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 10, 12) });
   app = createApp();
   mock = await createMockProvider({
     models: ['ok-cheap', 'ok-pricey'],
@@ -30,12 +34,15 @@ test.before(async () => {
     keys[name] = { id: created.body.key.id, secret: created.body.secret };
   }
   // The "spent" key burned 60 of its 100 USD in the last day: at that rate
-  // the budget is gone long before the month ends, whatever day it is.
+  // the budget is gone long before the month ends.
   getDatabase().prepare('INSERT INTO budget_ledger (router_key_id, request_id, amount_usd, created_at) VALUES (?, ?, ?, ?)').run(keys.spent.id, null, 60, Date.now() - 20 * 3_600_000);
   pacing.resetForTests();
 });
 
-test.after(() => mock.close());
+test.after(() => {
+  test.mock.timers.reset();
+  return mock.close();
+});
 
 async function picks(name, count = 20) {
   const counts = {};
