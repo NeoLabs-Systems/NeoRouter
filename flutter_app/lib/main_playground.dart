@@ -194,64 +194,93 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
     final palette = neoRouterPaletteOf(context);
     if (_loading) return const Center(child: SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2)));
     final padding = pagePadding(context);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(padding.left, padding.top, padding.right, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(child: Text(t.playgroundTitle, style: displayTitleStyle(palette, size: 24))),
-              if (_keys.isNotEmpty && _mode == 'chat') ...<Widget>[
-                if (_messages.isNotEmpty)
-                  TextButton.icon(onPressed: () => setState(_messages.clear), icon: const Icon(Icons.add_comment_outlined, size: 17), label: Text(t.newChat)),
-                IconButton(
-                  tooltip: t.systemPromptTitle,
-                  onPressed: _editInstructions,
-                  icon: Icon(Icons.tune_rounded, size: 20, color: _system.text.trim().isEmpty ? null : palette.accent),
-                ),
-              ],
-            ],
-          ),
-          if (_modes.length > 1) ...<Widget>[
-            const SizedBox(height: AppSpacing.sm),
-            PageTabs<String>(
-              tabs: <({String value, String label, int? count})>[for (final mode in _modes) (value: mode.id, label: mode.info.label(t), count: null)],
-              selected: _mode,
-              onChanged: (value) => setState(() {
-                _mode = value;
-                // A specific model belongs to one kind; each mode starts on auto.
-                if (!_model.startsWith('auto')) _model = 'auto';
-              }),
+    final mode = capabilityInfo(_mode);
+    final content = _keys.isEmpty
+        ? Center(
+            child: EmptyState(
+              icon: Icons.key_outlined,
+              title: t.noKeysTitle,
+              message: t.playgroundNeedsKey,
+              action: FilledButton(onPressed: () => widget.controller.go(AppPage.keys), child: Text(t.createKey)),
             ),
-          ],
-          const SizedBox(height: AppSpacing.md),
-          Expanded(
-            child: _keys.isEmpty
-                ? Center(
-                    child: EmptyState(
-                      icon: Icons.key_outlined,
-                      title: t.noKeysTitle,
-                      message: t.playgroundNeedsKey,
-                      action: FilledButton(onPressed: () => widget.controller.go(AppPage.keys), child: Text(t.createKey)),
+          )
+        : _mode == 'chat'
+        ? _chat(context)
+        : _mode == 'live'
+        ? LivePlayground(controller: widget.controller)
+        : MediaPlayground(
+            controller: widget.controller,
+            kind: _mode,
+            hasModels: _modes.any((item) => item.id == _mode),
+            routing: () => <String, Object?>{'keyId': _keyId, 'model': _model, 'freeOnly': _freeOnly},
+            controls: _routingChips(context, wrap: true),
+          );
+    return Padding(
+      padding: EdgeInsets.fromLTRB(padding.left, padding.top, padding.right, 16),
+      child: LayoutBuilder(
+        builder: (context, box) {
+          // Wide: the modes sit in a rail on the left. Narrow: one button opens them.
+          final rail = box.maxWidth >= 860 && _modes.length > 1;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(t.playgroundTitle, style: displayTitleStyle(palette, size: 24)),
+                        // The other modes explain themselves above their input.
+                        if (_mode == 'chat' || _mode == 'live') ...<Widget>[
+                          const SizedBox(height: 4),
+                          Text(mode.description(t), maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: palette.textSoft, height: 1.4)),
+                        ],
+                      ],
                     ),
-                  )
-                : _mode == 'chat'
-                ? _chat(context)
-                : _mode == 'live'
-                ? LivePlayground(controller: widget.controller)
-                : MediaPlayground(
-                    controller: widget.controller,
-                    kind: _mode,
-                    hasModels: _modes.any((mode) => mode.id == _mode),
-                    routing: () => <String, Object?>{'keyId': _keyId, 'model': _model, 'freeOnly': _freeOnly},
-                    controls: _routingChips(context, wrap: true),
                   ),
-          ),
-        ],
+                  if (_keys.isNotEmpty && _mode == 'chat') ...<Widget>[
+                    const SizedBox(width: 12),
+                    if (_messages.isNotEmpty)
+                      TextButton.icon(onPressed: () => setState(_messages.clear), icon: const Icon(Icons.add_comment_outlined, size: 17), label: Text(t.newChat)),
+                    TextButton.icon(
+                      onPressed: _editInstructions,
+                      icon: Icon(Icons.tune_rounded, size: 17, color: _system.text.trim().isEmpty ? null : palette.accent),
+                      label: Text(t.systemPromptTitle),
+                    ),
+                  ],
+                ],
+              ),
+              if (!rail && _modes.length > 1) ...<Widget>[
+                const SizedBox(height: AppSpacing.md),
+                Align(alignment: Alignment.centerLeft, child: _ModeButton(modes: _modes, selected: _mode, onChanged: _switchMode)),
+              ],
+              const SizedBox(height: AppSpacing.lg),
+              Expanded(
+                child: rail
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          SizedBox(width: 200, child: _ModeRail(modes: _modes, selected: _mode, onChanged: _switchMode)),
+                          const SizedBox(width: AppSpacing.xl),
+                          Expanded(child: content),
+                        ],
+                      )
+                    : content,
+              ),
+            ],
+          );
+        },
       ),
     );
   }
+
+  void _switchMode(String value) => setState(() {
+    _mode = value;
+    // A specific model belongs to one kind; each mode starts on auto.
+    if (!_model.startsWith('auto')) _model = 'auto';
+  });
 
   Widget _chat(BuildContext context) {
     final t = AppL10n.of(context);
@@ -297,7 +326,12 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                   ],
                 ),
               ),
-            _Composer(input: _input, focus: _inputFocus, sending: _sending, onSend: _send, chips: _routingChips(context)),
+            _Composer(input: _input, focus: _inputFocus, sending: _sending, onSend: _send, chips: _routingChips(context, wrap: true)),
+            if (MediaQuery.sizeOf(context).width >= AppBreakpoints.tablet)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(t.enterToSend, textAlign: TextAlign.center, style: GoogleFonts.geist(fontSize: 11.5, color: palette.textMuted)),
+              ),
           ],
         ),
       ),
@@ -426,21 +460,12 @@ class _Composer extends StatelessWidget {
             ),
           ),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
-              chips,
-              // The keyboard hint gives way first when the row gets narrow.
-              Expanded(
-                child: Text(
-                  t.enterToSend,
-                  maxLines: 1,
-                  overflow: TextOverflow.fade,
-                  softWrap: false,
-                  textAlign: TextAlign.end,
-                  style: GoogleFonts.geist(fontSize: 11.5, color: palette.textMuted),
-                ),
-              ),
+              Expanded(child: chips),
               const SizedBox(width: 10),
               IconButton.filled(
+                tooltip: t.enterToSend,
                 onPressed: sending ? null : () => onSend(),
                 style: IconButton.styleFrom(backgroundColor: palette.accent, foregroundColor: palette.onAccent, disabledBackgroundColor: palette.surfaceRaised),
                 icon: const Icon(Icons.arrow_upward_rounded, size: 19),
@@ -564,7 +589,7 @@ class _ComposerChip extends StatelessWidget {
           Icon(icon, size: 14, color: palette.textSoft),
           const SizedBox(width: 6),
           ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 180),
+            constraints: const BoxConstraints(maxWidth: 160),
             child: Text(
               label,
               maxLines: 1,
@@ -575,6 +600,149 @@ class _ComposerChip extends StatelessWidget {
           const SizedBox(width: 2),
           Icon(Icons.expand_more_rounded, size: 16, color: palette.textMuted),
         ],
+      ),
+    );
+  }
+}
+
+/// The playground's modes in groups, so ten kinds of models stay easy to scan.
+const List<(String, List<String>)> _modeGroups = <(String, List<String>)>[
+  ('text', <String>['chat', 'embedding', 'rerank', 'moderation']),
+  ('create', <String>['image', 'video', 'speech', 'audio']),
+  ('listen', <String>['transcription', 'live']),
+  ('lookup', <String>['search', 'weather']),
+];
+
+String _groupLabel(AppL10n t, String group) => switch (group) {
+  'text' => t.pgGroupText,
+  'create' => t.pgGroupCreate,
+  'listen' => t.pgGroupListen,
+  'lookup' => t.pgGroupLookup,
+  _ => t.pgGroupOther,
+};
+
+// The user's modes per group, in group order; kinds no group names go last.
+List<(String, List<CapabilitySummary>)> _grouped(List<CapabilitySummary> modes) {
+  final known = _modeGroups.expand((group) => group.$2).toSet();
+  return <(String, List<CapabilitySummary>)>[
+    for (final (group, ids) in _modeGroups) (group, <CapabilitySummary>[for (final id in ids) ...modes.where((mode) => mode.id == id)]),
+    ('other', modes.where((mode) => !known.contains(mode.id)).toList()),
+  ].where((group) => group.$2.isNotEmpty).toList();
+}
+
+class _ModeRail extends StatelessWidget {
+  const _ModeRail({required this.modes, required this.selected, required this.onChanged});
+
+  final List<CapabilitySummary> modes;
+  final String selected;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    return ListView(
+      children: <Widget>[
+        for (final (group, items) in _grouped(modes)) ...<Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 6),
+            child: Text(_groupLabel(t, group).toUpperCase(), style: sectionEyebrowStyle(palette)),
+          ),
+          for (final mode in items) _ModeTile(mode: mode, selected: mode.id == selected, onTap: () => onChanged(mode.id)),
+          const SizedBox(height: AppSpacing.md),
+        ],
+      ],
+    );
+  }
+}
+
+class _ModeTile extends StatelessWidget {
+  const _ModeTile({required this.mode, required this.selected, required this.onTap});
+
+  final CapabilitySummary mode;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Material(
+        color: selected ? palette.accentSoft : Colors.transparent,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            child: Row(
+              children: <Widget>[
+                Icon(mode.info.icon, size: 18, color: selected ? palette.accent : palette.textSoft),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    mode.info.label(t),
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: selected ? palette.text : palette.textSoft, fontWeight: selected ? FontWeight.w600 : FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Narrow screens: the current mode as a button that opens the grouped list.
+class _ModeButton extends StatelessWidget {
+  const _ModeButton({required this.modes, required this.selected, required this.onChanged});
+
+  final List<CapabilitySummary> modes;
+  final String selected;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final current = capabilityInfo(selected);
+    return PopupMenuButton<String>(
+      tooltip: t.pgMode,
+      onSelected: onChanged,
+      itemBuilder: (_) => <PopupMenuEntry<String>>[
+        for (final (index, (group, items)) in _grouped(modes).indexed) ...<PopupMenuEntry<String>>[
+          if (index > 0) const PopupMenuDivider(),
+          PopupMenuItem<String>(enabled: false, height: 32, child: Text(_groupLabel(t, group).toUpperCase(), style: sectionEyebrowStyle(palette))),
+          for (final mode in items)
+            PopupMenuItem<String>(
+              value: mode.id,
+              child: Row(
+                children: <Widget>[
+                  Icon(mode.info.icon, size: 18, color: mode.id == selected ? palette.accent : palette.textSoft),
+                  const SizedBox(width: 12),
+                  Text(mode.info.label(t)),
+                ],
+              ),
+            ),
+        ],
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(border: Border.all(color: palette.borderStrong), borderRadius: BorderRadius.circular(AppRadius.control)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(current.icon, size: 18, color: palette.accent),
+            const SizedBox(width: 10),
+            Text(current.label(t), style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
+            const SizedBox(width: 6),
+            Icon(Icons.expand_more_rounded, size: 18, color: palette.textMuted),
+          ],
+        ),
       ),
     );
   }

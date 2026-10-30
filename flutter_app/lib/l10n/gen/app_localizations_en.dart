@@ -2178,6 +2178,24 @@ class AppL10nEn extends AppL10n {
   String get newChat => 'New chat';
 
   @override
+  String get pgMode => 'Mode';
+
+  @override
+  String get pgGroupText => 'Text';
+
+  @override
+  String get pgGroupCreate => 'Create';
+
+  @override
+  String get pgGroupListen => 'Listen';
+
+  @override
+  String get pgGroupLookup => 'Look up';
+
+  @override
+  String get pgGroupOther => 'More';
+
+  @override
   String get modelPicker => 'Model';
 
   @override

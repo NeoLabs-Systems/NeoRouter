@@ -3955,6 +3955,42 @@ abstract class AppL10n {
   /// **'New chat'**
   String get newChat;
 
+  /// No description provided for @pgMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode'**
+  String get pgMode;
+
+  /// No description provided for @pgGroupText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get pgGroupText;
+
+  /// No description provided for @pgGroupCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get pgGroupCreate;
+
+  /// No description provided for @pgGroupListen.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen'**
+  String get pgGroupListen;
+
+  /// No description provided for @pgGroupLookup.
+  ///
+  /// In en, this message translates to:
+  /// **'Look up'**
+  String get pgGroupLookup;
+
+  /// No description provided for @pgGroupOther.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get pgGroupOther;
+
   /// No description provided for @modelPicker.
   ///
   /// In en, this message translates to:
