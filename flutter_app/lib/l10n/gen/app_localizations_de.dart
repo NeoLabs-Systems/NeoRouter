@@ -1711,6 +1711,62 @@ class AppL10nDe extends AppL10n {
   String get homeLast7Days => 'Letzte 7 Tage';
 
   @override
+  String get liveNow => 'Live';
+
+  @override
+  String get liveReplay => 'Letzte Anfragen im Rückblick';
+
+  @override
+  String get liveWaiting => 'Warte auf die erste Anfrage';
+
+  @override
+  String get liveOther => 'Andere';
+
+  @override
+  String get liveYourApp => 'Deine App';
+
+  @override
+  String get liveAddProvider => 'Verbindung hinzufügen';
+
+  @override
+  String get liveListening => 'wartet';
+
+  @override
+  String get liveRouting => 'leitet weiter';
+
+  @override
+  String liveScoring(String count) {
+    return 'bewertet $count';
+  }
+
+  @override
+  String liveInFlight(String count) {
+    return '$count unterwegs';
+  }
+
+  @override
+  String liveRequests(String count) {
+    return '$count Anfragen';
+  }
+
+  @override
+  String liveSummary(String count, String free, String caught, String ms) {
+    return 'Letzte $count: $free % gratis · $caught gerettet · Ø $ms ms';
+  }
+
+  @override
+  String get liveLegendRequest => 'Anfrage';
+
+  @override
+  String get liveLegendAnswer => 'Antwort';
+
+  @override
+  String get liveLegendFailure => 'Fehlversuch';
+
+  @override
+  String get liveMore => 'Details';
+
+  @override
   String get metricRequests => 'Anfragen';
 
   @override

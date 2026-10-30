@@ -3133,6 +3133,102 @@ abstract class AppL10n {
   /// **'Last 7 days'**
   String get homeLast7Days;
 
+  /// No description provided for @liveNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get liveNow;
+
+  /// No description provided for @liveReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Replaying recent requests'**
+  String get liveReplay;
+
+  /// No description provided for @liveWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the first request'**
+  String get liveWaiting;
+
+  /// No description provided for @liveOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get liveOther;
+
+  /// No description provided for @liveYourApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Your app'**
+  String get liveYourApp;
+
+  /// No description provided for @liveAddProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a connection'**
+  String get liveAddProvider;
+
+  /// No description provided for @liveListening.
+  ///
+  /// In en, this message translates to:
+  /// **'listening'**
+  String get liveListening;
+
+  /// No description provided for @liveRouting.
+  ///
+  /// In en, this message translates to:
+  /// **'routing'**
+  String get liveRouting;
+
+  /// No description provided for @liveScoring.
+  ///
+  /// In en, this message translates to:
+  /// **'scoring {count}'**
+  String liveScoring(String count);
+
+  /// No description provided for @liveInFlight.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} in flight'**
+  String liveInFlight(String count);
+
+  /// No description provided for @liveRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} requests'**
+  String liveRequests(String count);
+
+  /// No description provided for @liveSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Last {count}: {free}% free · {caught} rescued · {ms} ms avg'**
+  String liveSummary(String count, String free, String caught, String ms);
+
+  /// No description provided for @liveLegendRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'request'**
+  String get liveLegendRequest;
+
+  /// No description provided for @liveLegendAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'answer'**
+  String get liveLegendAnswer;
+
+  /// No description provided for @liveLegendFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'failed attempt'**
+  String get liveLegendFailure;
+
+  /// No description provided for @liveMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get liveMore;
+
   /// No description provided for @metricRequests.
   ///
   /// In en, this message translates to:

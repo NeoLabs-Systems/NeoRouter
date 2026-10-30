@@ -1695,6 +1695,62 @@ class AppL10nEn extends AppL10n {
   String get homeLast7Days => 'Last 7 days';
 
   @override
+  String get liveNow => 'Live';
+
+  @override
+  String get liveReplay => 'Replaying recent requests';
+
+  @override
+  String get liveWaiting => 'Waiting for the first request';
+
+  @override
+  String get liveOther => 'Others';
+
+  @override
+  String get liveYourApp => 'Your app';
+
+  @override
+  String get liveAddProvider => 'Add a connection';
+
+  @override
+  String get liveListening => 'listening';
+
+  @override
+  String get liveRouting => 'routing';
+
+  @override
+  String liveScoring(String count) {
+    return 'scoring $count';
+  }
+
+  @override
+  String liveInFlight(String count) {
+    return '$count in flight';
+  }
+
+  @override
+  String liveRequests(String count) {
+    return '$count requests';
+  }
+
+  @override
+  String liveSummary(String count, String free, String caught, String ms) {
+    return 'Last $count: $free% free · $caught rescued · $ms ms avg';
+  }
+
+  @override
+  String get liveLegendRequest => 'request';
+
+  @override
+  String get liveLegendAnswer => 'answer';
+
+  @override
+  String get liveLegendFailure => 'failed attempt';
+
+  @override
+  String get liveMore => 'Details';
+
+  @override
   String get metricRequests => 'Requests';
 
   @override

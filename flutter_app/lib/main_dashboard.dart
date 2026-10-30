@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
+import 'main_live_traffic.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
@@ -27,6 +28,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? _capacity;
   bool _loading = true;
   String? _error;
+  final ScrollController _scroll = ScrollController();
+  final GlobalKey _detailsKey = GlobalKey();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  // The hero's "More" button: down to the details under it.
+  void _showDetails() {
+    final target = _detailsKey.currentContext;
+    if (target != null) Scrollable.ensureVisible(target, duration: const Duration(milliseconds: 450), curve: Curves.easeOutCubic);
+  }
 
   @override
   void initState() {
@@ -72,62 +87,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final status = _loading
         ? ''
         : active.isEmpty
-            ? t.homeStatusEmpty
-            : problems.isEmpty
-                ? t.homeStatusOk('$working')
-                : t.homeStatusIssues('${problems.length}');
-    return PageScaffold(
-      header: ScreenHeader(
-        title: _greeting(t),
-        description: status,
-        trailing: setupDone ? FilledButton(onPressed: () => controller.go(AppPage.playground), child: Text(t.homeOpenPlayground)) : null,
-      ),
+        ? t.homeStatusEmpty
+        : problems.isEmpty
+        ? t.homeStatusOk('$working')
+        : t.homeStatusIssues('${problems.length}');
+    final padding = pagePadding(context);
+    // The live view fills the window; everything else waits below it.
+    final heroHeight = (MediaQuery.sizeOf(context).height - padding.top - 20).clamp(460.0, 1100.0);
+    return ListView(
+      controller: _scroll,
+      padding: padding,
       children: <Widget>[
-        AsyncBody(
-          loading: _loading,
-          error: _error,
-          onRetry: _load,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              for (final account in problems) ...<Widget>[
-                _ProblemNotice(account: account, onFix: () => controller.go(AppPage.providers)),
-                const SizedBox(height: AppSpacing.sm),
-              ],
-              if (problems.isNotEmpty) const SizedBox(height: AppSpacing.sm),
-              if (!setupDone) ...<Widget>[
-                _SetupChecklist(controller: controller, providers: _accounts.length, keys: _keys.length, requests: _logs.length),
-                const SizedBox(height: 28),
-              ],
-              if (_logs.isNotEmpty) ...<Widget>[
-                SettingsHeading(title: t.homeLast7Days),
-                _WeekStrip(totals: _totals),
-                const SizedBox(height: 28),
-              ],
-              if (active.isNotEmpty && _capacity != null) ...<Widget>[
-                _CapacityCard(capacity: _capacity!),
-                const SizedBox(height: 28),
-              ],
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final connections = _ConnectionsList(accounts: active, onAll: () => controller.go(AppPage.providers));
-                  final recent = _RecentList(logs: _logs, onAll: () => controller.go(AppPage.activity));
-                  if (constraints.maxWidth < 860) {
-                    return Column(children: <Widget>[recent, const SizedBox(height: 28), connections]);
-                  }
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Expanded(flex: 6, child: recent),
-                      const SizedBox(width: AppSpacing.lg),
-                      Expanded(flex: 4, child: connections),
-                    ],
-                  );
-                },
+        SizedBox(
+          height: heroHeight,
+          child: LiveTrafficHero(
+            controller: controller,
+            accounts: _accounts,
+            keys: _keys,
+            title: _greeting(t),
+            status: status,
+            action: setupDone ? FilledButton(onPressed: () => controller.go(AppPage.playground), child: Text(t.homeOpenPlayground)) : null,
+            onMore: _showDetails,
+          ),
+        ),
+        const SizedBox(height: 32),
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: kContentMaxWidth),
+            child: KeyedSubtree(
+              key: _detailsKey,
+              child: AsyncBody(
+                loading: _loading,
+                error: _error,
+                onRetry: _load,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    for (final account in problems) ...<Widget>[_ProblemNotice(account: account, onFix: () => controller.go(AppPage.providers)), const SizedBox(height: AppSpacing.sm)],
+                    if (problems.isNotEmpty) const SizedBox(height: AppSpacing.sm),
+                    if (!setupDone) ...<Widget>[_SetupChecklist(controller: controller, providers: _accounts.length, keys: _keys.length, requests: _logs.length), const SizedBox(height: 28)],
+                    if (_logs.isNotEmpty) ...<Widget>[SettingsHeading(title: t.homeLast7Days), _WeekStrip(totals: _totals), const SizedBox(height: 28)],
+                    if (active.isNotEmpty && _capacity != null) ...<Widget>[_CapacityCard(capacity: _capacity!), const SizedBox(height: 28)],
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final connections = _ConnectionsList(accounts: active, onAll: () => controller.go(AppPage.providers));
+                        final recent = _RecentList(logs: _logs, onAll: () => controller.go(AppPage.activity));
+                        if (constraints.maxWidth < 860) {
+                          return Column(children: <Widget>[recent, const SizedBox(height: 28), connections]);
+                        }
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Expanded(flex: 6, child: recent),
+                            const SizedBox(width: AppSpacing.lg),
+                            Expanded(flex: 4, child: connections),
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 28),
+                    _UseInApps(endpoint: controller.endpoint, onKeys: () => controller.go(AppPage.keys)),
+                  ],
+                ),
               ),
-              const SizedBox(height: 28),
-              _UseInApps(endpoint: controller.endpoint, onKeys: () => controller.go(AppPage.keys)),
-            ],
+            ),
           ),
         ),
       ],
@@ -155,7 +178,10 @@ class _ProblemNotice extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(t.problemTitle(account.label), style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
+                Text(
+                  t.problemTitle(account.label),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   account.status == 'invalid' ? t.problemKeyRejected : t.homeProblemHint,
@@ -198,14 +224,7 @@ class _SetupChecklist extends StatelessWidget {
         SettingsCardList(
           children: <Widget>[
             for (var i = 0; i < steps.length; i++)
-              _SetupStep(
-                number: i + 1,
-                title: steps[i].title,
-                body: steps[i].body,
-                done: steps[i].done,
-                current: i == current,
-                onStart: () => controller.go(steps[i].page),
-              ),
+              _SetupStep(number: i + 1, title: steps[i].title, body: steps[i].body, done: steps[i].done, current: i == current, onStart: () => controller.go(steps[i].page)),
           ],
         ),
       ],
@@ -242,7 +261,10 @@ class _SetupStep extends StatelessWidget {
             ),
             child: done
                 ? Icon(Icons.check_rounded, size: 16, color: palette.textSoft)
-                : Text('$number', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: current ? palette.text : palette.textMuted)),
+                : Text(
+                    '$number',
+                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: current ? palette.text : palette.textMuted),
+                  ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -258,10 +280,7 @@ class _SetupStep extends StatelessWidget {
                     decorationColor: palette.textMuted,
                   ),
                 ),
-                if (!done) ...<Widget>[
-                  const SizedBox(height: 2),
-                  Text(body, style: TextStyle(fontSize: 13, color: palette.textSoft, height: 1.4)),
-                ],
+                if (!done) ...<Widget>[const SizedBox(height: 2), Text(body, style: TextStyle(fontSize: 13, color: palette.textSoft, height: 1.4))],
               ],
             ),
           ),
@@ -337,14 +356,8 @@ class _CapacityCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(t.homeCapacityCaption(formatCount(perHour), '$providers'), style: TextStyle(color: palette.textSoft, height: 1.45)),
                 ],
-                if (perMinute > 0) ...<Widget>[
-                  const SizedBox(height: 4),
-                  Text(t.homeCapacityPerMinute(formatCount(perMinute)), style: TextStyle(color: palette.textSoft, fontSize: 13, height: 1.4)),
-                ],
-                if (uncounted > 0) ...<Widget>[
-                  const SizedBox(height: 4),
-                  Text(t.homeCapacityUnknown('$uncounted'), style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
-                ],
+                if (perMinute > 0) ...<Widget>[const SizedBox(height: 4), Text(t.homeCapacityPerMinute(formatCount(perMinute)), style: TextStyle(color: palette.textSoft, fontSize: 13, height: 1.4))],
+                if (uncounted > 0) ...<Widget>[const SizedBox(height: 4), Text(t.homeCapacityUnknown('$uncounted'), style: TextStyle(color: palette.textMuted, fontSize: 12.5))],
               ],
             ),
           ),
@@ -366,9 +379,14 @@ class _ConnectionsList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        SettingsHeading(title: t.navProviders, trailing: TextButton(onPressed: onAll, child: Text(t.homeSeeAll))),
+        SettingsHeading(
+          title: t.navProviders,
+          trailing: TextButton(onPressed: onAll, child: Text(t.homeSeeAll)),
+        ),
         if (accounts.isEmpty)
-          AppCard(child: Text(t.noProvidersMessage, style: TextStyle(color: neoRouterPaletteOf(context).textSoft)))
+          AppCard(
+            child: Text(t.noProvidersMessage, style: TextStyle(color: neoRouterPaletteOf(context).textSoft)),
+          )
         else
           SettingsCardList(
             children: <Widget>[
@@ -388,11 +406,16 @@ class _ConnectionsList extends StatelessWidget {
 }
 
 /// A provider's state as one dot with a tooltip.
-Widget accountStatusDot(ProviderAccount account) => Builder(builder: (context) {
-      final t = AppL10n.of(context);
-      final (label, tone) = accountStatus(t, account);
-      return Tooltip(message: label, child: ToneDot(tone: tone));
-    });
+Widget accountStatusDot(ProviderAccount account) => Builder(
+  builder: (context) {
+    final t = AppL10n.of(context);
+    final (label, tone) = accountStatus(t, account);
+    return Tooltip(
+      message: label,
+      child: ToneDot(tone: tone),
+    );
+  },
+);
 
 (String, PillTone) accountStatus(AppL10n t, ProviderAccount account) {
   if (!account.enabled) return (t.statusDisabled, PillTone.neutral);
@@ -417,9 +440,14 @@ class _RecentList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        SettingsHeading(title: t.homeRecentActivity, trailing: TextButton(onPressed: onAll, child: Text(t.homeSeeAll))),
+        SettingsHeading(
+          title: t.homeRecentActivity,
+          trailing: TextButton(onPressed: onAll, child: Text(t.homeSeeAll)),
+        ),
         if (logs.isEmpty)
-          AppCard(child: Text(t.homeNoRequests, style: TextStyle(color: palette.textSoft)))
+          AppCard(
+            child: Text(t.homeNoRequests, style: TextStyle(color: palette.textSoft)),
+          )
         else
           SettingsCardList(children: <Widget>[for (final log in logs) RequestRow(log: log)]),
       ],
@@ -439,19 +467,11 @@ class RequestRow extends StatelessWidget {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final model = log.model == null ? log.requestedModel : shortModelName(log.model!);
-    final subtitle = <String>[
-      formatAgo(t, log.createdAt),
-      if (log.keyName != null) log.keyName!,
-      if (log.success && !log.isFree) formatUsd(log.costUsd),
-    ].join(' · ');
+    final subtitle = <String>[formatAgo(t, log.createdAt), if (log.keyName != null) log.keyName!, if (log.success && !log.isFree) formatUsd(log.costUsd)].join(' · ');
     return ListRow(
       onTap: onTap,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-      leading: Icon(
-        log.success ? Icons.check_circle_outline_rounded : Icons.error_outline_rounded,
-        size: 18,
-        color: log.success ? palette.textMuted : palette.error,
-      ),
+      leading: Icon(log.success ? Icons.check_circle_outline_rounded : Icons.error_outline_rounded, size: 18, color: log.success ? palette.textMuted : palette.error),
       title: log.success ? model : t.requestFailed(log.errorCode ?? '${log.httpStatus ?? ''}'),
       subtitle: subtitle,
       trailing: Text(formatMs(log.latencyMs), style: TextStyle(fontSize: 12.5, color: palette.textMuted)),
@@ -525,9 +545,7 @@ class _UseInAppsState extends State<_UseInApps> {
               if (_showCode) ...<Widget>[
                 const SizedBox(height: 8),
                 PageTabs<int>(
-                  tabs: <({int value, String label, int? count})>[
-                    for (var i = 0; i < snippets.length; i++) (value: i, label: snippets[i].$1, count: null),
-                  ],
+                  tabs: <({int value, String label, int? count})>[for (var i = 0; i < snippets.length; i++) (value: i, label: snippets[i].$1, count: null)],
                   selected: _tab,
                   onChanged: (value) => setState(() => _tab = value),
                 ),
@@ -538,7 +556,9 @@ class _UseInAppsState extends State<_UseInApps> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Expanded(child: SelectableText(snippets[_tab].$2, style: GoogleFonts.geistMono(fontSize: 12.5, height: 1.6, color: palette.textSoft))),
+                      Expanded(
+                        child: SelectableText(snippets[_tab].$2, style: GoogleFonts.geistMono(fontSize: 12.5, height: 1.6, color: palette.textSoft)),
+                      ),
                       IconButton(tooltip: t.copy, icon: const Icon(Icons.copy_rounded, size: 16), onPressed: () => copy(snippets[_tab].$2)),
                     ],
                   ),
