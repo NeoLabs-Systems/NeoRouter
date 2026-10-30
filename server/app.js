@@ -74,6 +74,9 @@ function createApp() {
       return next(new HttpError(503, 'WEB_UI_MISSING', 'NeoRouter web UI assets are missing. Run `neorouter rebuild-web`.'));
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    // Only pages fall back to the app; a missing script or asset is a 404,
+    // never index.html run as JavaScript.
+    if (/\.[a-z0-9]+$/i.test(req.path) && !req.path.endsWith('.html')) return next();
     revalidate(res);
     // The callback also runs after a successful send; only a failure before
     // anything was sent may go on to the error handler.

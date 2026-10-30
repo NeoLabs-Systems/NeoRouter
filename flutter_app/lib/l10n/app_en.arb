@@ -1353,7 +1353,6 @@
   "privacyAiHint": "Everything above is found on your server in about a millisecond, without AI. OpenAI's privacy filter, also running on this server, can read each new message to find names, addresses and what the rules miss.",
   "privacyAiEnable": "Also look with AI",
   "privacyAiEnableHint": "Runs on this server, so no provider sees the text. Adds a fraction of a second to new messages; the first one after a quiet while waits for the model to load.",
-  "privacyAiUnavailable": "Your admin can turn this on under Admin → Server.",
   "privacyModelTitle": "AI privacy filter",
   "privacyModelHint": "OpenAI's open privacy filter runs on this server and finds names, addresses, account numbers and more that rules miss. No provider sees the text. Turning it on downloads about 1 GB once; it loads when used and frees its memory (about 2 GB) after 15 minutes without requests.",
   "privacyModelEnable": "Let users turn on the AI privacy filter",

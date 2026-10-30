@@ -2513,10 +2513,6 @@ class AppL10nDe extends AppL10n {
       'Läuft auf diesem Server, kein Anbieter sieht den Text. Kostet bei neuen Nachrichten Sekundenbruchteile; die erste nach einer ruhigen Weile wartet, bis das Modell geladen ist.';
 
   @override
-  String get privacyAiUnavailable =>
-      'Dein Admin kann das unter Admin → Server einschalten.';
-
-  @override
   String get privacyModelTitle => 'KI-Datenschutzfilter';
 
   @override

@@ -737,7 +737,6 @@
   "privacyAiHint": "Alles oben wird auf deinem Server in rund einer Millisekunde gefunden, ohne KI. OpenAIs Datenschutzfilter, ebenfalls auf diesem Server, kann zusätzlich jede neue Nachricht lesen und Namen, Adressen und das finden, was die Regeln übersehen.",
   "privacyAiEnable": "Zusätzlich per KI suchen",
   "privacyAiEnableHint": "Läuft auf diesem Server, kein Anbieter sieht den Text. Kostet bei neuen Nachrichten Sekundenbruchteile; die erste nach einer ruhigen Weile wartet, bis das Modell geladen ist.",
-  "privacyAiUnavailable": "Dein Admin kann das unter Admin → Server einschalten.",
   "privacyModelTitle": "KI-Datenschutzfilter",
   "privacyModelHint": "OpenAIs offener Datenschutzfilter läuft auf diesem Server und findet Namen, Adressen, Kontonummern und mehr, die Regeln übersehen. Kein Anbieter sieht den Text. Beim Einschalten wird einmalig etwa 1 GB geladen; das Modell startet bei Bedarf und gibt seinen Speicher (etwa 2 GB) nach 15 Minuten ohne Anfragen wieder frei.",
   "privacyModelEnable": "Nutzern den KI-Datenschutzfilter erlauben",

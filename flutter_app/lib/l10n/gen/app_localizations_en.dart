@@ -2495,10 +2495,6 @@ class AppL10nEn extends AppL10n {
       'Runs on this server, so no provider sees the text. Adds a fraction of a second to new messages; the first one after a quiet while waits for the model to load.';
 
   @override
-  String get privacyAiUnavailable =>
-      'Your admin can turn this on under Admin → Server.';
-
-  @override
   String get privacyModelTitle => 'AI privacy filter';
 
   @override

@@ -4519,12 +4519,6 @@ abstract class AppL10n {
   /// **'Runs on this server, so no provider sees the text. Adds a fraction of a second to new messages; the first one after a quiet while waits for the model to load.'**
   String get privacyAiEnableHint;
 
-  /// No description provided for @privacyAiUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Your admin can turn this on under Admin → Server.'**
-  String get privacyAiUnavailable;
-
   /// No description provided for @privacyModelTitle.
   ///
   /// In en, this message translates to:

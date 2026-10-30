@@ -220,16 +220,18 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                     ),
                   ],
                 ),
+                // Only there once an admin turned the privacy filter on.
+                if (_modelAvailable)
                 SettingsGroup(
                   title: t.privacyAiTitle,
                   description: t.privacyAiHint,
                   children: <Widget>[
                     SettingsRow(
                       label: t.privacyAiEnable,
-                      description: _modelAvailable ? t.privacyAiEnableHint : t.privacyAiUnavailable,
-                      control: Switch(value: ai['enabled'] == true && _modelAvailable, onChanged: _modelAvailable ? (value) => _update(() => ai['enabled'] = value) : null),
+                      description: t.privacyAiEnableHint,
+                      control: Switch(value: ai['enabled'] == true, onChanged: (value) => _update(() => ai['enabled'] = value)),
                     ),
-                    if (ai['enabled'] == true && _modelAvailable) for (final category in _aiOnly) _modeRow(context, category, modes),
+                    if (ai['enabled'] == true) for (final category in _aiOnly) _modeRow(context, category, modes),
                   ],
                 ),
               ],
