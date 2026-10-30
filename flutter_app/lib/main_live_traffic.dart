@@ -278,7 +278,14 @@ double _ease(double t) {
   return x < 0.5 ? 4 * x * x * x : 1 - math.pow(-2 * x + 2, 3).toDouble() / 2;
 }
 
-class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProviderStateMixin {
+class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  // Home is a scrolling list: without this, scrolling down to the details
+  // throws the view away and it starts over, empty, on the way back.
+  @override
+  bool get wantKeepAlive => true;
+
+  bool _loaded = false;
+
   final _Scene _scene = _Scene();
   late final Ticker _ticker;
   Duration _last = Duration.zero;
@@ -327,6 +334,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
     try {
       final logs = await widget.controller.api.logs(limit: _historySize);
       if (!mounted) return;
+      _loaded = true;
       final fresh = logs.where((log) => !_seen.contains(log.id)).toList();
       _seen.addAll(fresh.map((log) => log.id));
       final first = _history.isEmpty;
@@ -450,6 +458,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final palette = neoRouterPaletteOf(context);
     return Container(
       decoration: BoxDecoration(
@@ -469,7 +478,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
                 child: LayoutBuilder(
                   builder: (context, stage) {
                     final layout = _Layout(Size(stage.maxWidth, stage.maxHeight), math.max(1, _apps.length), math.max(1, _providers.length));
-                    return _Stage(scene: _scene, layout: layout, apps: _apps, providers: _providers, appRequests: _appRequests, lastModel: _lastModel, empty: _history.isEmpty);
+                    return _Stage(scene: _scene, layout: layout, apps: _apps, providers: _providers, appRequests: _appRequests, lastModel: _lastModel, empty: _history.isEmpty, loaded: _loaded);
                   },
                 ),
               ),
@@ -612,7 +621,7 @@ class _Footer extends StatelessWidget {
 /// The animated part: the painter underneath and the app and connection
 /// cards on top, both following the scene every frame.
 class _Stage extends StatelessWidget {
-  const _Stage({required this.scene, required this.layout, required this.apps, required this.providers, required this.appRequests, required this.lastModel, required this.empty});
+  const _Stage({required this.scene, required this.layout, required this.apps, required this.providers, required this.appRequests, required this.lastModel, required this.empty, required this.loaded});
 
   final _Scene scene;
   final _Layout layout;
@@ -621,13 +630,15 @@ class _Stage extends StatelessWidget {
   final Map<String, int> appRequests;
   final Map<int, String> lastModel;
   final bool empty;
+  final bool loaded;
 
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    final appNames = apps.isEmpty ? <String>[t.liveYourApp] : apps;
-    final providerNames = providers.isEmpty ? <String>[t.liveAddProvider] : providers;
+    // Placeholders only once there is really nothing, never while loading.
+    final appNames = apps.isEmpty ? (loaded ? <String>[t.liveYourApp] : <String>[]) : apps;
+    final providerNames = providers.isEmpty ? (loaded ? <String>[t.liveAddProvider] : <String>[]) : providers;
     return RepaintBoundary(
       child: AnimatedBuilder(
         animation: scene,
