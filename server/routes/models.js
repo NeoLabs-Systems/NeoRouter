@@ -41,7 +41,12 @@ router.get('/', (req, res) => {
 
 router.get('/capabilities', (req, res) => {
   const routable = new Set(capabilities.list().map((item) => item.id));
-  res.json({ capabilities: catalog.capabilitySummary(req.space.ownerId).map((item) => ({ ...item, routable: routable.has(item.id) })) });
+  const summary = catalog.capabilitySummary(req.space.ownerId);
+  // ?all=1 also lists the routable kinds nothing is connected for yet.
+  if (req.query.all === '1') {
+    for (const id of routable) if (!summary.some((item) => item.id === id)) summary.push({ id, total: 0, free: 0 });
+  }
+  res.json({ capabilities: summary.map((item) => ({ ...item, routable: routable.has(item.id) })) });
 });
 
 router.get('/:ref', (req, res) => res.json({ model: present(catalog.getModel(req.space.ownerId, Number(req.params.ref))) }));

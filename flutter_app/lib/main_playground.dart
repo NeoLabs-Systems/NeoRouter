@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
 import 'main_model_picker.dart';
-import 'main_playground_live.dart';
 import 'main_playground_media.dart';
 import 'main_routing.dart';
 import 'main_shared.dart';
@@ -16,12 +15,14 @@ import 'src/capabilities.dart';
 import 'src/models.dart';
 
 class _ChatMessage {
-  _ChatMessage(this.role, this.content, {this.meta, this.error = false});
+  _ChatMessage(this.role, this.content, {this.meta, this.problem});
 
   final String role;
   final String content;
   final String? meta;
-  final bool error;
+  final ApiException? problem;
+
+  bool get error => problem != null;
 }
 
 /// Try NeoRouter with one of your keys. One mode per kind of model the
@@ -50,6 +51,8 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
   final List<_ChatMessage> _messages = <_ChatMessage>[];
   bool _sending = false;
   bool _loading = true;
+  // Which layout was last built, to notice when a resize flips it.
+  bool? _rail;
 
   @override
   void initState() {
@@ -69,12 +72,15 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
   Future<void> _load() async {
     try {
       final api = widget.controller.api;
-      final results = await Future.wait(<Future<Object>>[api.keys(), api.capabilities()]);
+      final results = await Future.wait(<Future<Object>>[api.keys(), api.capabilities(all: true)]);
       final keys = (results[0] as List<RouterKey>).where((key) => !key.revoked).toList();
       setState(() {
         _keys = keys;
         _keyId = keys.isEmpty ? null : keys.first.id;
-        _modes = sortCapabilities((results[1] as List<CapabilitySummary>).where((item) => item.routable && item.total > 0).toList());
+        // Every routable kind, set up or not, so each one can be tried or
+        // connected from here. Live voice is a WebSocket for apps, not a playground.
+        _modes = sortCapabilities((results[1] as List<CapabilitySummary>).where((item) => item.routable && item.id != 'live').toList());
+        if (!_modes.any((mode) => mode.id == _mode)) _mode = 'chat';
         // ?page=playground&mode=image opens a mode directly.
         final linked = Uri.base.queryParameters['mode'];
         if (linked != null && _modes.any((mode) => mode.id == linked)) _mode = linked;
@@ -121,12 +127,23 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
         ),
       );
     } on ApiException catch (error) {
-      setState(() => _messages.add(_ChatMessage('assistant', error.message, error: true)));
+      setState(() => _messages.add(_ChatMessage('assistant', error.message, problem: error)));
     } finally {
       if (mounted) setState(() => _sending = false);
       _scrollToEnd();
       _inputFocus.requestFocus();
     }
+  }
+
+  // Sends the last question again, without the failed answer.
+  void _retryLast() {
+    final last = _messages.lastWhere((message) => message.role == 'user', orElse: () => _ChatMessage('user', ''));
+    if (last.content.isEmpty) return;
+    setState(() {
+      _messages.removeWhere((message) => message.problem != null);
+      _messages.remove(last);
+    });
+    _send(last.content);
   }
 
   Future<void> _pickSpecificModel() async {
@@ -206,12 +223,15 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
           )
         : _mode == 'chat'
         ? _chat(context)
-        : _mode == 'live'
-        ? LivePlayground(controller: widget.controller)
         : MediaPlayground(
             controller: widget.controller,
             kind: _mode,
-            hasModels: _modes.any((item) => item.id == _mode),
+            summary: _summary,
+            model: _model,
+            freeOnly: _effectiveFreeOnly,
+            onAllowPaid: _allowPaid,
+            onUseAuto: () => setState(() => _model = 'auto'),
+            onConnected: _load,
             routing: () => <String, Object?>{'keyId': _keyId, 'model': _model, 'freeOnly': _freeOnly},
             controls: _routingChips(context, wrap: true),
           );
@@ -221,6 +241,13 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
         builder: (context, box) {
           // Wide: the modes sit in a rail on the left. Narrow: one button opens them.
           final rail = box.maxWidth >= 860 && _modes.length > 1;
+          // A menu opened from the other layout has lost its button: close it.
+          if (_rail != null && _rail != rail) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) Navigator.of(context).popUntil((route) => route is! PopupRoute || route is RawDialogRoute);
+            });
+          }
+          _rail = rail;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -233,7 +260,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                       children: <Widget>[
                         Text(t.playgroundTitle, style: displayTitleStyle(palette, size: 24)),
                         // The other modes explain themselves above their input.
-                        if (_mode == 'chat' || _mode == 'live') ...<Widget>[
+                        if (_mode == 'chat') ...<Widget>[
                           const SizedBox(height: 4),
                           Text(mode.description(t), maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: palette.textSoft, height: 1.4)),
                         ],
@@ -258,16 +285,18 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
               ],
               const SizedBox(height: AppSpacing.lg),
               Expanded(
-                child: rail
-                    ? Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                          SizedBox(width: 200, child: _ModeRail(modes: _modes, selected: _mode, onChanged: _switchMode)),
-                          const SizedBox(width: AppSpacing.xl),
-                          Expanded(child: content),
-                        ],
-                      )
-                    : content,
+                // One Row in both layouts, content last, so a resize keeps
+                // what was typed or shown.
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    if (rail) ...<Widget>[
+                      SizedBox(width: 200, child: _ModeRail(modes: _modes, selected: _mode, onChanged: _switchMode)),
+                      const SizedBox(width: AppSpacing.xl),
+                    ],
+                    Expanded(key: const ValueKey<String>('content'), child: content),
+                  ],
+                ),
               ),
             ],
           );
@@ -275,6 +304,15 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
       ),
     );
   }
+
+  CapabilitySummary? get _summary => _modes.where((mode) => mode.id == _mode).firstOrNull;
+
+  bool get _keyFreeOnly => _keys.where((key) => key.id == _keyId).firstOrNull?.mode == 'free_only';
+
+  bool get _effectiveFreeOnly => _freeOnly || _keyFreeOnly;
+
+  // Null when the key itself only allows free models: then Free only stays.
+  VoidCallback? get _allowPaid => _keyFreeOnly ? null : () => setState(() => _freeOnly = false);
 
   void _switchMode(String value) => setState(() {
     _mode = value;
@@ -297,7 +335,21 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                       controller: _scroll,
                       padding: const EdgeInsets.only(bottom: 12),
                       children: <Widget>[
-                        for (final message in _messages) _Bubble(message: message),
+                        for (final message in _messages)
+                          if (message.problem != null)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: PlaygroundProblem(
+                                error: message.problem!,
+                                controller: widget.controller,
+                                freeOnly: _effectiveFreeOnly,
+                                onAllowPaid: _allowPaid,
+                                onUseAuto: () => setState(() => _model = 'auto'),
+                                onRetry: _retryLast,
+                              ),
+                            )
+                          else
+                            _Bubble(message: message),
                         if (_sending)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -326,6 +378,8 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                   ],
                 ),
               ),
+            if (_effectiveFreeOnly && _summary != null && _summary!.total > 0 && _summary!.free == 0)
+              Padding(padding: const EdgeInsets.only(bottom: AppSpacing.sm), child: FreeOnlyNotice(onAllowPaid: _allowPaid)),
             _Composer(input: _input, focus: _inputFocus, sending: _sending, onSend: _send, chips: _routingChips(context, wrap: true)),
             if (MediaQuery.sizeOf(context).width >= AppBreakpoints.tablet)
               Padding(
@@ -685,9 +739,14 @@ class _ModeTile extends StatelessWidget {
                   child: Text(
                     mode.info.label(t),
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: selected ? palette.text : palette.textSoft, fontWeight: selected ? FontWeight.w600 : FontWeight.w500),
+                    style: TextStyle(
+                      color: selected ? palette.text : (mode.total == 0 ? palette.textMuted : palette.textSoft),
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    ),
                   ),
                 ),
+                // Nothing connected yet: a small plus, so long names keep their room.
+                if (mode.total == 0) Tooltip(message: t.pgSetUp, child: Icon(Icons.add_circle_outline_rounded, size: 15, color: palette.textMuted)),
               ],
             ),
           ),

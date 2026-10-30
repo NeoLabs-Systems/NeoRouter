@@ -45,6 +45,9 @@ test('the catalog sorts models into kinds and reports them routable', async () =
     assert.ok(kinds[kind], `${kind} is in the catalog`);
     assert.equal(kinds[kind].routable, true, `${kind} is routable`);
   }
+  assert.equal(kinds.weather, undefined, 'kinds without models are left out by default');
+  const all = await request(app).get('/api/v1/models/capabilities?all=1').set('Authorization', `Bearer ${session}`);
+  assert.deepEqual(all.body.capabilities.find((item) => item.id === 'weather'), { id: 'weather', total: 0, free: 0, routable: true }, '?all=1 lists them too');
   const listed = await gateway('get', '/models?type=embedding');
   assert.ok(listed.body.data.some((model) => model.id === 'mock/ok-embed-small'));
   assert.ok(!listed.body.data.some((model) => model.id === 'mock/ok-chat'));
@@ -202,4 +205,6 @@ test('the playground runs every kind with a stored key', async () => {
   assert.equal(decision.status, 200, JSON.stringify(decision.body));
   assert.ok(decision.body.answers.answer);
   assert.equal((await play('nope', {})).status, 404);
+  const voices = await request(app).get('/api/v1/playground/voices?model=auto').set('Authorization', `Bearer ${session}`);
+  assert.ok(voices.body.voices.some((voice) => voice.id === 'alloy'), 'auto offers the portable OpenAI voices');
 });

@@ -2745,6 +2745,67 @@ class AppL10nEn extends AppL10n {
   String get pgVoiceDefault => 'Default voice';
 
   @override
+  String get pgVoiceLoading => 'Loading voices…';
+
+  @override
+  String get pgSetUp => 'Set up';
+
+  @override
+  String pgNotSetUpTitle(String kind) {
+    return '$kind isn\'t set up yet';
+  }
+
+  @override
+  String get pgConnectOpenMeteo => 'Connect Open-Meteo';
+
+  @override
+  String get pgConnectOpenMeteoHint =>
+      'Free and no key needed. It takes a second.';
+
+  @override
+  String get pgOtherProviders => 'Other weather services';
+
+  @override
+  String get pgNoFreeModels =>
+      'You have no free model for this, so Free only finds nothing here.';
+
+  @override
+  String get pgNoFreeModelsLocked =>
+      'You have no free model for this, and this key only allows free models.';
+
+  @override
+  String get pgAllowPaid => 'Allow paid models';
+
+  @override
+  String get pgUseAuto => 'Use auto';
+
+  @override
+  String get pgProblemNoFreeTitle => 'No free model could take this';
+
+  @override
+  String get pgProblemNoFreeBody =>
+      'Your free models for this are busy, past their limits or missing. Allow paid models, or try again in a minute.';
+
+  @override
+  String get pgProblemNoFreeBodyLocked =>
+      'This key only allows free models, and none could take this right now. Connect a free provider for it, or use a key that may use paid models.';
+
+  @override
+  String get pgProblemNoModelTitle => 'No model can take this right now';
+
+  @override
+  String get pgProblemFailedTitle => 'Every model that tried failed';
+
+  @override
+  String get pgProblemNotAllowedTitle => 'This key can\'t use that model';
+
+  @override
+  String get pgProblemLimitTitle => 'This key reached a limit';
+
+  @override
+  String get pgProblemTitle => 'That didn\'t work';
+
+  @override
   String get pgPlay => 'Play';
 
   @override
@@ -3444,24 +3505,6 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get styleSkipProvidersHint => 'Connections this style never uses.';
-
-  @override
-  String get pgLiveHint =>
-      'Live voice is a spoken conversation in real time over a WebSocket. Apps such as NeoAgent connect to the address for the protocol they speak, with a router key; NeoRouter picks the model and falls back if a provider refuses.';
-
-  @override
-  String get pgLiveEndpoints => 'Where apps connect';
-
-  @override
-  String get pgLiveModelHint =>
-      'Use \"auto\" as the model, or one of the models below.';
-
-  @override
-  String get pgLiveModels => 'Live models';
-
-  @override
-  String get pgLiveNoModels =>
-      'No live models yet. Gemini (AI Studio) and OpenAI connections bring them.';
 
   @override
   String connectTitle(String name) {

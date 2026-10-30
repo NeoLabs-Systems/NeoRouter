@@ -70,6 +70,16 @@ class ElevenLabsAdapter extends BaseAdapter {
     return this.voices.list.find((item) => String(item.name).toLowerCase() === value.toLowerCase())?.voice_id || DEFAULT_VOICE;
   }
 
+  // The account's voices, premade and its own, with what they sound like.
+  async voices() {
+    const { data } = await this.http('/voices', { timeoutMs: 15_000 });
+    return (data?.voices || []).map((item) => ({
+      id: item.voice_id,
+      name: item.name,
+      description: [item.labels?.gender, item.labels?.accent, item.labels?.description || item.labels?.descriptive].filter(Boolean).join(', ') || null,
+    }));
+  }
+
   async speech({ input, voice, format = 'mp3', speed }, { modelId, signal, timeoutMs }) {
     const target = FORMATS[format] || FORMATS.mp3;
     const body = { text: input, model_id: modelId };

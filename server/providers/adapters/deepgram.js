@@ -42,6 +42,10 @@ class DeepgramAdapter extends BaseAdapter {
     return (this.definition.models?.static || []).map((entry) => normalizeModel(entry, { kind: entry.kind }));
   }
 
+  async voices() {
+    return [...AURA_VOICES].map((id) => ({ id, name: id.charAt(0).toUpperCase() + id.slice(1) }));
+  }
+
   async speech({ input, voice, format = 'mp3', speed }, { modelId, signal, timeoutMs }) {
     const target = ENCODINGS[format] || ENCODINGS.mp3;
     const params = new URLSearchParams({ model: auraModel(modelId, voice), encoding: target.encoding });

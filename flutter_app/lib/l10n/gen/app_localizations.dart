@@ -4945,6 +4945,114 @@ abstract class AppL10n {
   /// **'Default voice'**
   String get pgVoiceDefault;
 
+  /// No description provided for @pgVoiceLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading voices…'**
+  String get pgVoiceLoading;
+
+  /// No description provided for @pgSetUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up'**
+  String get pgSetUp;
+
+  /// No description provided for @pgNotSetUpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} isn\'t set up yet'**
+  String pgNotSetUpTitle(String kind);
+
+  /// No description provided for @pgConnectOpenMeteo.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Open-Meteo'**
+  String get pgConnectOpenMeteo;
+
+  /// No description provided for @pgConnectOpenMeteoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Free and no key needed. It takes a second.'**
+  String get pgConnectOpenMeteoHint;
+
+  /// No description provided for @pgOtherProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'Other weather services'**
+  String get pgOtherProviders;
+
+  /// No description provided for @pgNoFreeModels.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no free model for this, so Free only finds nothing here.'**
+  String get pgNoFreeModels;
+
+  /// No description provided for @pgNoFreeModelsLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no free model for this, and this key only allows free models.'**
+  String get pgNoFreeModelsLocked;
+
+  /// No description provided for @pgAllowPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow paid models'**
+  String get pgAllowPaid;
+
+  /// No description provided for @pgUseAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Use auto'**
+  String get pgUseAuto;
+
+  /// No description provided for @pgProblemNoFreeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No free model could take this'**
+  String get pgProblemNoFreeTitle;
+
+  /// No description provided for @pgProblemNoFreeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your free models for this are busy, past their limits or missing. Allow paid models, or try again in a minute.'**
+  String get pgProblemNoFreeBody;
+
+  /// No description provided for @pgProblemNoFreeBodyLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'This key only allows free models, and none could take this right now. Connect a free provider for it, or use a key that may use paid models.'**
+  String get pgProblemNoFreeBodyLocked;
+
+  /// No description provided for @pgProblemNoModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No model can take this right now'**
+  String get pgProblemNoModelTitle;
+
+  /// No description provided for @pgProblemFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Every model that tried failed'**
+  String get pgProblemFailedTitle;
+
+  /// No description provided for @pgProblemNotAllowedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This key can\'t use that model'**
+  String get pgProblemNotAllowedTitle;
+
+  /// No description provided for @pgProblemLimitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This key reached a limit'**
+  String get pgProblemLimitTitle;
+
+  /// No description provided for @pgProblemTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'That didn\'t work'**
+  String get pgProblemTitle;
+
   /// No description provided for @pgPlay.
   ///
   /// In en, this message translates to:
@@ -6180,36 +6288,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Connections this style never uses.'**
   String get styleSkipProvidersHint;
-
-  /// No description provided for @pgLiveHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Live voice is a spoken conversation in real time over a WebSocket. Apps such as NeoAgent connect to the address for the protocol they speak, with a router key; NeoRouter picks the model and falls back if a provider refuses.'**
-  String get pgLiveHint;
-
-  /// No description provided for @pgLiveEndpoints.
-  ///
-  /// In en, this message translates to:
-  /// **'Where apps connect'**
-  String get pgLiveEndpoints;
-
-  /// No description provided for @pgLiveModelHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Use \"auto\" as the model, or one of the models below.'**
-  String get pgLiveModelHint;
-
-  /// No description provided for @pgLiveModels.
-  ///
-  /// In en, this message translates to:
-  /// **'Live models'**
-  String get pgLiveModels;
-
-  /// No description provided for @pgLiveNoModels.
-  ///
-  /// In en, this message translates to:
-  /// **'No live models yet. Gemini (AI Studio) and OpenAI connections bring them.'**
-  String get pgLiveNoModels;
 
   /// No description provided for @connectTitle.
   ///

@@ -29,6 +29,13 @@ async function binary(response) {
   return { data: Buffer.from(await response.arrayBuffer()), mime: response.headers.get('content-type') || 'application/octet-stream', headers: response.headers };
 }
 
+// OpenAI's voice names; other providers map them to voices of their own.
+const OPENAI_VOICES = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer', 'verse'];
+
+function voiceList(ids) {
+  return ids.map((id) => ({ id, name: id.charAt(0).toUpperCase() + id.slice(1) }));
+}
+
 const methods = {
   supports(method) {
     if (method === 'chat') return true;
@@ -67,6 +74,11 @@ const methods = {
       .filter((item) => item.b64 || item.url);
     if (!images.length) throw new ProviderError(KINDS.EMPTY, 'The provider returned no image.');
     return { images, headers };
+  },
+
+  // The voices this provider speaks: its own list, or OpenAI's names.
+  async voices() {
+    return voiceList(this.definition.quirks?.voices || OPENAI_VOICES);
   },
 
   async speech({ input, voice, format = 'mp3', speed }, { modelId, signal, timeoutMs }) {
@@ -194,4 +206,4 @@ function installOpenAIMedia(AdapterClass) {
   }
 }
 
-module.exports = { installOpenAIMedia, mediaPath, normalizeVideoStatus, aspectRatio, imageItem, DEFAULT_PATHS };
+module.exports = { installOpenAIMedia, OPENAI_VOICES, voiceList, mediaPath, normalizeVideoStatus, aspectRatio, imageItem, DEFAULT_PATHS };

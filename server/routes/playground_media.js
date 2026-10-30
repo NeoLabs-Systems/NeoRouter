@@ -8,6 +8,9 @@ const videoJobs = require('../capabilities/media/video_jobs');
 const { HttpError } = require('../middleware/error_handler');
 const { requirePermission } = require('../middleware/space');
 const { asyncRoute } = require('./helpers');
+const catalog = require('../services/catalog/catalog_service');
+const accounts = require('../services/providers/account_service');
+const { OPENAI_VOICES, voiceList } = require('../providers/adapters/openai_media');
 
 const router = express.Router();
 router.use(requirePermission('playground.use'));
@@ -47,6 +50,24 @@ router.post('/media/:kind', asyncRoute(async (req, res) => {
   if (!run) throw new HttpError(404, 'UNKNOWN_KIND', `Unknown kind "${req.params.kind}".`);
   const { key, body, freeOnly } = keyFor(req);
   await run({ req, res, key, body, freeOnly });
+}));
+
+// The voices a speech model offers. Auto may land on any provider, so it
+// offers OpenAI's names, which every speech adapter maps to a voice of its own.
+router.get('/voices', asyncRoute(async (req, res) => {
+  const model = typeof req.query.model === 'string' ? req.query.model : 'auto';
+  const entry = model.startsWith('auto') ? null : catalog.listForUser(req.space.ownerId, { capability: 'speech' }).find((item) => item.id === model);
+  const runtime = entry && accounts.getRuntime(entry.accountId);
+  const adapter = runtime && accounts.adapterFor(runtime);
+  let voices = voiceList(OPENAI_VOICES);
+  if (adapter?.voices) {
+    try {
+      voices = await adapter.voices({ modelId: entry.modelId });
+    } catch {
+      // The provider's list is optional: OpenAI's names still work.
+    }
+  }
+  res.json({ voices });
 }));
 
 // Video jobs as the dashboard sees them; the finished file comes back as

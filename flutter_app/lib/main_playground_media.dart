@@ -12,12 +12,25 @@ import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
 import 'src/backend_client.dart';
+import 'src/capabilities.dart';
 import 'src/web_media.dart';
 
 /// The playground's non-chat modes. One state serves every kind, so audio
 /// read aloud in Speech can be transcribed again in Transcription.
 class MediaPlayground extends StatefulWidget {
-  const MediaPlayground({super.key, required this.controller, required this.kind, required this.routing, required this.controls, required this.hasModels});
+  const MediaPlayground({
+    super.key,
+    required this.controller,
+    required this.kind,
+    required this.routing,
+    required this.controls,
+    required this.summary,
+    required this.model,
+    required this.freeOnly,
+    required this.onAllowPaid,
+    required this.onUseAuto,
+    required this.onConnected,
+  });
 
   final NeoRouterController controller;
   final String kind;
@@ -25,7 +38,18 @@ class MediaPlayground extends StatefulWidget {
   /// keyId, model and freeOnly for the next request.
   final Map<String, Object?> Function() routing;
   final Widget controls;
-  final bool hasModels;
+
+  /// How many models (and free ones) the user has for this kind.
+  final CapabilitySummary? summary;
+  final String model;
+  final bool freeOnly;
+
+  /// Turns Free only off; null while the key only allows free models.
+  final VoidCallback? onAllowPaid;
+  final VoidCallback onUseAuto;
+
+  /// A provider was connected from here: reload the modes.
+  final VoidCallback onConnected;
 
   @override
   State<MediaPlayground> createState() => _MediaPlaygroundState();
@@ -33,13 +57,20 @@ class MediaPlayground extends StatefulWidget {
 
 class _MediaPlaygroundState extends State<MediaPlayground> {
   final Map<String, TextEditingController> _inputs = <String, TextEditingController>{};
-  final TextEditingController _voice = TextEditingController();
+  // Speech: the voices of the chosen model, which one, and how fast.
+  List<Map<String, dynamic>>? _voices;
+  String? _voicesFor;
+  String? _voiceId;
+  double _speed = 1;
+  String _spokenText = '';
+  String? _spokenVoice;
+  bool _connecting = false;
   // System One: the rules for a topic check, or a question and its options.
   final TextEditingController _policy = TextEditingController();
   final TextEditingController _question = TextEditingController();
   final TextEditingController _choices = TextEditingController();
   final Map<String, Map<String, dynamic>> _results = <String, Map<String, dynamic>>{};
-  final Map<String, String> _errors = <String, String>{};
+  final Map<String, ApiException> _errors = <String, ApiException>{};
   final Map<String, int> _latency = <String, int>{};
   String _size = '1024x1024';
   int _seconds = 4;
@@ -60,7 +91,6 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
     for (final controller in _inputs.values) {
       controller.dispose();
     }
-    _voice.dispose();
     _policy.dispose();
     _question.dispose();
     _choices.dispose();
@@ -84,7 +114,9 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
         body.addAll(<String, Object?>{'prompt': text, 'size': _size});
       case 'speech':
         if (text.isEmpty) return;
-        body.addAll(<String, Object?>{'input': text, 'voice': _voice.text.trim().isEmpty ? null : _voice.text.trim()});
+        body.addAll(<String, Object?>{'input': text, 'voice': _voiceId, if (_speed != 1) 'speed': _speed});
+        _spokenText = text;
+        _spokenVoice = _voiceName(_voiceId);
       case 'transcription':
         final audio = _file?.bytes ?? _spoken?.bytes;
         if (audio == null) return;
@@ -146,7 +178,7 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
       });
       if (kind == 'video') _watchVideo('${result['id']}');
     } on ApiException catch (error) {
-      if (mounted) setState(() => _errors[kind] = error.message);
+      if (mounted) setState(() => _errors[kind] = error);
     } finally {
       if (mounted) setState(() => _running = false);
     }
@@ -186,6 +218,50 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
     });
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _loadVoices();
+  }
+
+  @override
+  void didUpdateWidget(MediaPlayground oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _loadVoices();
+  }
+
+  // The voice list follows the chosen model: each provider has its own voices.
+  Future<void> _loadVoices() async {
+    if (widget.kind != 'speech' || _voicesFor == widget.model || (widget.summary?.total ?? 0) == 0) return;
+    final model = widget.model;
+    _voicesFor = model;
+    try {
+      final voices = await widget.controller.api.playgroundVoices(model);
+      if (!mounted || model != widget.model) return;
+      setState(() {
+        _voices = voices;
+        if (!voices.any((voice) => voice['id'] == _voiceId)) _voiceId = null;
+      });
+    } on ApiException {
+      if (mounted) setState(() => _voices = const <Map<String, dynamic>>[]);
+    }
+  }
+
+  String? _voiceName(String? id) => id == null ? null : '${_voices?.firstWhere((voice) => voice['id'] == id, orElse: () => <String, dynamic>{'name': id})['name']}';
+
+  // Open-Meteo needs no key, so weather can start with one click.
+  Future<void> _connectOpenMeteo() async {
+    setState(() => _connecting = true);
+    try {
+      await widget.controller.api.createAccount(<String, Object?>{'definitionId': 'open_meteo', 'slug': 'open-meteo'});
+      widget.onConnected();
+    } on ApiException catch (error) {
+      if (mounted) showSnack(context, error.message);
+    } finally {
+      if (mounted) setState(() => _connecting = false);
+    }
+  }
+
   Future<void> _chooseFile() async {
     final picked = await pickFile(accept: 'audio/*,video/mp4,video/webm');
     if (picked != null) setState(() => _file = picked);
@@ -196,16 +272,8 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final kind = widget.kind;
-    if (!widget.hasModels) {
-      return Center(
-        child: EmptyState(
-          icon: Icons.extension_outlined,
-          title: t.pgNoModels,
-          message: '',
-          action: FilledButton(onPressed: () => widget.controller.go(AppPage.providers), child: Text(t.pgAddProvider)),
-        ),
-      );
-    }
+    final summary = widget.summary;
+    if (summary == null || summary.total == 0) return _notSetUp(t, palette);
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 780),
@@ -214,6 +282,10 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
           children: <Widget>[
             Text(_hint(t), style: TextStyle(color: palette.textSoft, height: 1.45)),
             const SizedBox(height: AppSpacing.md),
+            if (widget.freeOnly && summary.free == 0) ...<Widget>[
+              FreeOnlyNotice(onAllowPaid: widget.onAllowPaid),
+              const SizedBox(height: AppSpacing.md),
+            ],
             AppCard(
               padding: const EdgeInsets.fromLTRB(16, 8, 12, 12),
               child: Column(
@@ -238,9 +310,54 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
             ),
             if (_errors[kind] != null) ...<Widget>[
               const SizedBox(height: AppSpacing.md),
-              Text(_errors[kind]!, style: TextStyle(color: palette.error, height: 1.45)),
+              PlaygroundProblem(
+                error: _errors[kind]!,
+                controller: widget.controller,
+                freeOnly: widget.freeOnly,
+                onAllowPaid: widget.onAllowPaid,
+                onUseAuto: widget.onUseAuto,
+                onRetry: _run,
+              ),
             ],
             if (_results[kind] != null) ...<Widget>[const SizedBox(height: AppSpacing.lg), _result(context, kind, _results[kind]!)],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Nothing connected for this kind yet: say so, and offer the way in.
+  Widget _notSetUp(AppL10n t, NeoRouterPalette palette) {
+    final info = capabilityInfo(widget.kind);
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 440),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(color: palette.accentSoft, borderRadius: BorderRadius.circular(16)),
+              child: Icon(info.icon, color: palette.accent),
+            ),
+            const SizedBox(height: 16),
+            Text(t.pgNotSetUpTitle(info.label(t)), textAlign: TextAlign.center, style: displayTitleStyle(palette, size: 20)),
+            const SizedBox(height: 8),
+            Text(info.description(t), textAlign: TextAlign.center, style: TextStyle(color: palette.textSoft, height: 1.45)),
+            const SizedBox(height: 20),
+            if (widget.kind == 'weather') ...<Widget>[
+              FilledButton.icon(
+                onPressed: _connecting ? null : _connectOpenMeteo,
+                icon: _connecting ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.wb_sunny_outlined, size: 18),
+                label: Text(t.pgConnectOpenMeteo),
+              ),
+              const SizedBox(height: 6),
+              Text(t.pgConnectOpenMeteoHint, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+              const SizedBox(height: 12),
+              TextButton(onPressed: () => widget.controller.go(AppPage.providers), child: Text(t.pgOtherProviders)),
+            ] else
+              FilledButton(onPressed: () => widget.controller.go(AppPage.providers), child: Text(t.pgAddProvider)),
           ],
         ),
       ),
@@ -310,12 +427,52 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
           ],
         );
       case 'speech':
-        return SizedBox(
-          width: 220,
-          child: TextField(
-            controller: _voice,
-            decoration: InputDecoration(isDense: true, labelText: t.pgVoice, hintText: t.pgVoiceDefault),
-          ),
+        final palette = neoRouterPaletteOf(context);
+        return Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: <Widget>[
+            PopupMenuButton<String>(
+              tooltip: t.pgVoice,
+              enabled: _voices != null,
+              onSelected: (value) => setState(() => _voiceId = value.isEmpty ? null : value),
+              constraints: const BoxConstraints(maxHeight: 420, minWidth: 220),
+              itemBuilder: (_) => <PopupMenuEntry<String>>[
+                PopupMenuItem<String>(value: '', child: Text(t.pgVoiceDefault)),
+                const PopupMenuDivider(),
+                for (final voice in _voices ?? const <Map<String, dynamic>>[])
+                  PopupMenuItem<String>(
+                    value: '${voice['id']}',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text('${voice['name']}', style: TextStyle(fontWeight: voice['id'] == _voiceId ? FontWeight.w600 : null)),
+                        if (voice['description'] != null) Text('${voice['description']}', style: TextStyle(fontSize: 12, color: palette.textMuted)),
+                      ],
+                    ),
+                  ),
+              ],
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(border: Border.all(color: palette.borderStrong), borderRadius: BorderRadius.circular(AppRadius.pill)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(Icons.record_voice_over_outlined, size: 16, color: palette.accent),
+                    const SizedBox(width: 8),
+                    Text(_voices == null ? t.pgVoiceLoading : (_voiceName(_voiceId) ?? t.pgVoiceDefault), style: TextStyle(fontSize: 13, color: palette.text)),
+                    const SizedBox(width: 4),
+                    Icon(Icons.expand_more_rounded, size: 16, color: palette.textMuted),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            for (final speed in const <double>[0.75, 1, 1.25, 1.5])
+              ChoiceChip(label: Text('$speed×'.replaceAll('.0×', '×')), selected: _speed == speed, onSelected: (_) => setState(() => _speed = speed), visualDensity: VisualDensity.compact),
+          ],
         );
       case 'transcription':
         return Align(
@@ -564,19 +721,30 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
         return AppCard(
           child: Row(
             children: <Widget>[
-              FilledButton.tonalIcon(
+              IconButton.filled(
+                iconSize: 26,
+                style: IconButton.styleFrom(backgroundColor: palette.accent, foregroundColor: palette.onAccent, fixedSize: const Size(52, 52)),
+                tooltip: _playing == null ? t.pgPlay : t.pgStop,
                 onPressed: _togglePlay,
-                icon: Icon(_playing == null ? Icons.play_arrow_rounded : Icons.stop_rounded, size: 18),
-                label: Text(_playing == null ? t.pgPlay : t.pgStop),
+                icon: Icon(_playing == null ? Icons.play_arrow_rounded : Icons.stop_rounded),
               ),
-              const SizedBox(width: 8),
-              TextButton.icon(
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(_spokenVoice ?? t.pgVoiceDefault, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                    const SizedBox(height: 2),
+                    Text(_spokenText, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: palette.textSoft, fontSize: 13, height: 1.4)),
+                    _meta(model),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: t.pgDownload,
                 onPressed: _spoken == null ? null : () => downloadBytes(_spoken!.bytes, _spoken!.mime, 'speech.${result['format'] ?? 'audio'}'),
-                icon: const Icon(Icons.download_rounded, size: 17),
-                label: Text(t.pgDownload),
+                icon: const Icon(Icons.download_rounded, size: 20),
               ),
-              const Spacer(),
-              Flexible(child: _meta(model)),
             ],
           ),
         );
@@ -748,6 +916,123 @@ class _SimilarityRow extends StatelessWidget {
               style: const TextStyle(fontSize: 13, fontFeatures: <FontFeature>[FontFeature.tabularFigures()]),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Free only is on, but none of the user's models of this kind is free.
+class FreeOnlyNotice extends StatelessWidget {
+  const FreeOnlyNotice({super.key, required this.onAllowPaid});
+
+  final VoidCallback? onAllowPaid;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+      decoration: BoxDecoration(color: palette.accentSoft, borderRadius: BorderRadius.circular(AppRadius.control)),
+      child: Row(
+        children: <Widget>[
+          Icon(Icons.savings_outlined, size: 18, color: palette.accent),
+          const SizedBox(width: 10),
+          Expanded(child: Text(onAllowPaid == null ? t.pgNoFreeModelsLocked : t.pgNoFreeModels, style: TextStyle(color: palette.text, fontSize: 13.5, height: 1.4))),
+          if (onAllowPaid != null) TextButton(onPressed: onAllowPaid, child: Text(t.pgAllowPaid)),
+        ],
+      ),
+    );
+  }
+}
+
+/// A failed playground request, explained in plain words with the next step.
+class PlaygroundProblem extends StatelessWidget {
+  const PlaygroundProblem({
+    super.key,
+    required this.error,
+    required this.controller,
+    required this.freeOnly,
+    required this.onAllowPaid,
+    required this.onUseAuto,
+    required this.onRetry,
+  });
+
+  final ApiException error;
+  final NeoRouterController controller;
+  final bool freeOnly;
+  final VoidCallback? onAllowPaid;
+  final VoidCallback onUseAuto;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final retry = TextButton(onPressed: onRetry, child: Text(t.retry));
+    final (IconData icon, String title, String body, List<Widget> actions) = switch (error.code) {
+      'NO_MODEL_AVAILABLE' when freeOnly => (
+        Icons.savings_outlined,
+        t.pgProblemNoFreeTitle,
+        onAllowPaid == null ? t.pgProblemNoFreeBodyLocked : t.pgProblemNoFreeBody,
+        <Widget>[if (onAllowPaid != null) FilledButton(onPressed: onAllowPaid, child: Text(t.pgAllowPaid)), retry],
+      ),
+      'NO_MODEL_AVAILABLE' => (
+        Icons.hourglass_empty_rounded,
+        t.pgProblemNoModelTitle,
+        error.message,
+        <Widget>[retry, TextButton(onPressed: () => controller.go(AppPage.providers), child: Text(t.pgAddProvider))],
+      ),
+      'ALL_ATTEMPTS_FAILED' => (
+        Icons.sync_problem_rounded,
+        t.pgProblemFailedTitle,
+        error.message,
+        <Widget>[FilledButton(onPressed: onRetry, child: Text(t.retry)), TextButton(onPressed: () => controller.go(AppPage.activity), child: Text(t.navLogs))],
+      ),
+      'MODEL_NOT_ALLOWED' => (
+        Icons.block_rounded,
+        t.pgProblemNotAllowedTitle,
+        error.message,
+        <Widget>[FilledButton(onPressed: onUseAuto, child: Text(t.pgUseAuto)), TextButton(onPressed: () => controller.go(AppPage.keys), child: Text(t.navKeys))],
+      ),
+      'TOKEN_LIMIT_REACHED' || 'BUDGET_EXHAUSTED' || 'KEY_RATE_LIMITED' => (
+        Icons.speed_rounded,
+        t.pgProblemLimitTitle,
+        error.message,
+        <Widget>[retry, TextButton(onPressed: () => controller.go(AppPage.keys), child: Text(t.navKeys))],
+      ),
+      _ => (Icons.error_outline_rounded, t.pgProblemTitle, error.message, <Widget>[retry]),
+    };
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      decoration: BoxDecoration(
+        color: palette.surface,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        border: Border.all(color: palette.borderStrong),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Icon(icon, size: 20, color: palette.warning),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text, fontSize: 14.5)),
+                    const SizedBox(height: 4),
+                    Text(body, style: TextStyle(color: palette.textSoft, height: 1.45, fontSize: 13.5)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Align(alignment: Alignment.centerRight, child: Wrap(spacing: 6, children: actions)),
         ],
       ),
     );

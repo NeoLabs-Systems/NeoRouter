@@ -63,8 +63,9 @@ class RouterApi {
   // ---- catalog ---------------------------------------------------------------
   Future<List<CatalogModel>> models({String capability = 'chat'}) async =>
       _list(await client.get('$_base/models?capability=$capability'), 'models', CatalogModel.new);
-  Future<List<CapabilitySummary>> capabilities() async =>
-      sortCapabilities(_list(await client.get('$_base/models/capabilities'), 'capabilities', CapabilitySummary.new));
+  /// [all] also lists the kinds nothing is connected for yet.
+  Future<List<CapabilitySummary>> capabilities({bool all = false}) async =>
+      sortCapabilities(_list(await client.get('$_base/models/capabilities${all ? '?all=1' : ''}'), 'capabilities', CapabilitySummary.new));
   Future<CatalogModel> updateModel(int ref, {bool? enabled, Map<String, Object?>? overrides}) async => CatalogModel(
     Map<String, dynamic>.from(
       (await client.patch('$_base/models/$ref', <String, Object>{
@@ -135,6 +136,10 @@ class RouterApi {
 
   /// kind: embedding, image, speech, transcription, moderation or video.
   Future<Map<String, dynamic>> capacity() => client.get('$_base/usage/capacity');
+  Future<List<Map<String, dynamic>>> playgroundVoices(String model) async =>
+      (((await client.get('$_base/playground/voices?model=${Uri.encodeQueryComponent(model)}'))['voices'] as List?) ?? const <Object>[])
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
   Future<Map<String, dynamic>> playgroundMedia(String kind, Map<String, Object?> body) => client.post('$_base/playground/media/$kind', _clean(body));
   Future<Map<String, dynamic>> playgroundVideo(String id) => client.get('$_base/playground/videos/$id');
   Future<Map<String, dynamic>> playgroundVideoContent(String id) => client.get('$_base/playground/videos/$id/content');
