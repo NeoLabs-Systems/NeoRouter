@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
@@ -456,14 +458,82 @@ class _Bubble extends StatelessWidget {
         ),
       );
     }
+    final t = AppL10n.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          text,
-          if (message.meta != null) ...<Widget>[const SizedBox(height: 8), Text(message.meta!, style: TextStyle(color: palette.textMuted, fontSize: 12))],
+          _Answer(markdown: message.content),
+          const SizedBox(height: 6),
+          Row(
+            children: <Widget>[
+              if (message.meta != null) Flexible(child: Text(message.meta!, style: TextStyle(color: palette.textMuted, fontSize: 12))),
+              IconButton(
+                tooltip: t.copy,
+                visualDensity: VisualDensity.compact,
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: message.content));
+                  showSnack(context, t.copied);
+                },
+                icon: Icon(Icons.copy_rounded, size: 15, color: palette.textMuted),
+              ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+}
+
+/// An answer as Markdown: bold, lists, headings, links, tables and code, in
+/// the app's type and colours.
+class _Answer extends StatelessWidget {
+  const _Answer({required this.markdown});
+
+  final String markdown;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = neoRouterPaletteOf(context);
+    final body = TextStyle(color: palette.text, fontSize: 14.5, height: 1.6);
+    final mono = GoogleFonts.geistMono(fontSize: 13, height: 1.5, color: palette.text);
+    return MarkdownBody(
+      data: markdown,
+      selectable: true,
+      onTapLink: (_, href, _) {
+        if (href != null) launchUrl(Uri.parse(href));
+      },
+      styleSheet: MarkdownStyleSheet(
+        p: body,
+        strong: body.copyWith(fontWeight: FontWeight.w700),
+        em: body.copyWith(fontStyle: FontStyle.italic),
+        a: body.copyWith(color: palette.accent, decoration: TextDecoration.underline, decorationColor: palette.accent),
+        h1: displayTitleStyle(palette, size: 22),
+        h2: displayTitleStyle(palette, size: 19),
+        h3: body.copyWith(fontSize: 16, fontWeight: FontWeight.w700),
+        h4: body.copyWith(fontWeight: FontWeight.w700),
+        h1Padding: const EdgeInsets.only(top: 8),
+        h2Padding: const EdgeInsets.only(top: 8),
+        h3Padding: const EdgeInsets.only(top: 6),
+        blockSpacing: 10,
+        listBullet: body,
+        listIndent: 22,
+        code: mono.copyWith(backgroundColor: palette.surfaceRaised, fontSize: 13),
+        codeblockPadding: const EdgeInsets.all(14),
+        codeblockDecoration: BoxDecoration(
+          color: palette.surfaceRaised,
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          border: Border.all(color: palette.border),
+        ),
+        blockquote: body.copyWith(color: palette.textSoft),
+        blockquotePadding: const EdgeInsets.fromLTRB(14, 4, 8, 4),
+        blockquoteDecoration: BoxDecoration(border: Border(left: BorderSide(color: palette.accent.withValues(alpha: 0.6), width: 3))),
+        tableHead: body.copyWith(fontWeight: FontWeight.w600),
+        tableBody: body,
+        tableBorder: TableBorder.all(color: palette.border),
+        tableCellsPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        horizontalRuleDecoration: BoxDecoration(border: Border(top: BorderSide(color: palette.border))),
       ),
     );
   }
