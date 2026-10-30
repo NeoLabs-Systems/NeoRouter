@@ -26,6 +26,34 @@ test('prompts are recognised by kind, in English and German', () => {
   for (const [prompt, kind] of cases) assert.equal(ask(prompt).primary, kind, prompt);
 });
 
+test('word problems, passages, options, ideas and follow-ups are recognised', () => {
+  const article = 'Kubernetes is an open-source system for automating deployment of containerised applications on a server cluster. '.repeat(6);
+  const cases = [
+    ['Janet has 16 eggs per day. She eats three and bakes with four. How many eggs does she sell each week?', 'math'],
+    ['Lisa kauft 3 Äpfel zu je 2 Euro. Wie viel bezahlt sie insgesamt?', 'math'],
+    [`Given this paragraph, when was the system first released?\n\n${article}`, 'knowledge'],
+    [`Summarise this article in three sentences.\n\n${article}`, 'summarization'],
+    ['Identify which instrument is string or percussion: Cantaro, Gudok', 'extraction'],
+    ['Give me five ideas for a rainy Sunday with kids', 'writing'],
+    ['Write in Bash a script that deletes empty subdirectories', 'coding'],
+  ];
+  for (const [prompt, kind] of cases) assert.equal(ask(prompt).primary, kind, prompt);
+  // A short follow-up to an answer with code stays coding.
+  const followUp = classify({ messages: [
+    { role: 'user', content: 'Write a debounce helper' }, { role: 'assistant', content: '```js\nfunction debounce() {}\n```' }, { role: 'user', content: 'now make it faster' },
+  ] });
+  assert.equal(followUp.primary, 'coding');
+});
+
+test('conditions and specialist words make a request harder', () => {
+  const plain = ask('Write a product description for a water bottle');
+  const strict = ask('Write a product description for a water bottle. It must mention the warranty, must not use the word cheap, should stay under 80 words and only use British spelling.');
+  assert.ok(strict.difficulty > plain.difficulty, `${strict.difficulty} > ${plain.difficulty}`);
+  // A long pasted passage does not make a simple ask hard.
+  const passage = ask(`Summarise this.\n\n${'The meeting went well and everyone agreed on the plan. '.repeat(60)}`);
+  assert.ok(passage.difficulty < 0.4, String(passage.difficulty));
+});
+
 test('difficulty separates small talk from hard work', () => {
   assert.ok(ask('hi').difficulty <= 0.1);
   const hard = ask('Design a scalable architecture for a chat backend with Kafka and Postgres, consider edge cases and failure modes');

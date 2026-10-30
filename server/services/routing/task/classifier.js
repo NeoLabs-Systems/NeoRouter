@@ -12,14 +12,31 @@ const MIN_KIND_SCORE = 0.15;
 const LENGTH_RANGE = [8, 3000];
 const KIND_BY_ID = new Map(KINDS.map((kind) => [kind.id, kind]));
 
+// How hard a request looks, from the dimensions of NVIDIA's prompt complexity
+// classifier that rules can see: how long the ask is, what kind of task it
+// is, words of hard work, how many conditions the answer has to meet and how
+// specialist the vocabulary is. Conditions and vocabulary only add to the
+// first three, so a plain ask keeps its level; against the complexity labels
+// of a public routing dataset (SupraLabs/Prompt-Routing-Dataset) they lift
+// the correlation without moving easy prompts. A passage pasted after the ask
+// makes it longer to read, not harder to answer.
+const DIFFICULTY_WEIGHTS = { length: 0.35, kind: 0.4, hard: 0.25, constraints: 0.1, jargon: 0.1 };
+
 function difficultyOf(signals, ranked) {
-  const length = logScale(Math.max(1, signals.lastUserTokens), LENGTH_RANGE) ?? 0;
+  const length = logScale(Math.max(1, Math.ceil(signals.ask.length / 4) + signals.passage.length / 40), LENGTH_RANGE) ?? 0;
   const scored = ranked.filter((item) => item.id !== 'chat');
   const total = scored.reduce((sum, item) => sum + item.score, 0);
   const kindPrior = total ? scored.reduce((sum, item) => sum + item.score * KIND_BY_ID.get(item.id).difficulty, 0) / total : 0.3;
-  const hard = saturate(hits(HARD_WORDS, signals.lastUser), 2);
+  const parts = {
+    length,
+    kind: kindPrior,
+    hard: saturate(hits(HARD_WORDS, signals.ask), 2),
+    constraints: saturate(signals.constraints + signals.examples / 2, 5),
+    // Specialist words per word of the ask, saturating at one in six.
+    jargon: signals.askWords ? Math.min(1, (6 * signals.jargon) / signals.askWords) : 0,
+  };
   const deep = signals.turns > 8 ? 0.1 : 0;
-  const value = 0.35 * length + 0.4 * kindPrior + 0.25 * hard + deep;
+  const value = Object.entries(DIFFICULTY_WEIGHTS).reduce((sum, [part, weight]) => sum + weight * parts[part], 0) + deep;
   // Small talk stays easy whatever else the request carries.
   if (ranked[0]?.id === 'chat' && ranked[0].score >= 1) return Math.min(value, 0.1);
   return Math.min(1, Math.max(0, value));
