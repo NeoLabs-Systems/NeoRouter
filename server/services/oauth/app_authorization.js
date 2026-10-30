@@ -20,7 +20,7 @@ const CODE_TTL_MS = 2 * 60_000;
 const DEVICE_INTERVAL_S = 5;
 const USER_CODE_ALPHABET = 'BCDFGHJKLMNPQRSTVWXZ';
 // What an app may say it will use (the gateway's capabilities plus live voice).
-const SCOPES = ['chat', 'embedding', 'image', 'speech', 'transcription', 'live', 'moderation', 'video', 'search'];
+const SCOPES = ['chat', 'embedding', 'image', 'speech', 'transcription', 'live', 'moderation', 'video', 'search', 'weather'];
 const UNSAFE_SCHEMES = new Set(['javascript:', 'data:', 'file:', 'vbscript:', 'blob:', 'about:']);
 
 const requests = new Map();

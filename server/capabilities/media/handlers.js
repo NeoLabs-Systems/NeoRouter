@@ -373,4 +373,45 @@ async function search({ req, res, key, body, freeOnly = false }) {
   res.json({ object: 'search', model: entry.id, query: input.query, results: result.results });
 }
 
-module.exports = { search, searchWeb, embeddings, images, speech, transcription, moderations, decide, createVideo, subtitles, float32Base64 };
+// ------------------------------------------------------------------- weather
+
+const weatherSchema = z.object({
+  model: z.string().max(300).default('auto'),
+  // A place name, or coordinates.
+  location: z.union([
+    z.string().trim().min(1).max(200),
+    z.object({ latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180) }),
+  ]),
+  current: z.boolean().default(true),
+  hourly: z.boolean().default(false),
+  daily: z.boolean().default(true),
+  days: z.number().int().min(1).max(16).default(3),
+  units: z.enum(['metric', 'imperial']).default('metric'),
+}).refine((input) => input.current || input.hourly || input.daily, { message: 'ask for current, hourly or daily weather', path: ['current'] });
+
+/** Looks up the weather through the weather services in the catalog. */
+async function getWeather({ req, res = null, key, input, freeOnly = false, redactedCount = 0 }) {
+  return runCapability({
+    req, res, key, capability: 'weather', method: 'weather', requestedModel: input.model || 'auto', freeOnly, format: 'weather', redactedCount,
+    inputTokens: 0, contextTokens: 0, units: 1,
+    estimateCost: (entry) => unitCost(entry, 'call', 1),
+    invoke: ({ adapter, entry, signal, timeoutMs }) => adapter.weather({
+      location: input.location, current: input.current, hourly: input.hourly, daily: input.daily, days: input.days, units: input.units,
+    }, { modelId: entry.modelId, signal, timeoutMs }),
+    costOf: (entry) => unitCost(entry, 'call', 1) || 0,
+  });
+}
+
+async function weather({ req, res, key, body, freeOnly = false }) {
+  const input = parseBody(weatherSchema, body);
+  let redacted = 0;
+  if (typeof input.location === 'string') {
+    const shielded = shield(key, [input.location]);
+    [input.location] = shielded.texts;
+    redacted = shielded.redacted;
+  }
+  const { result, entry } = await getWeather({ req, res, key, input, freeOnly, redactedCount: redacted });
+  res.json({ object: 'weather', model: entry.id, location: result.location, units: input.units, current: result.current, hourly: result.hourly, daily: result.daily });
+}
+
+module.exports = { weather, getWeather, search, searchWeb, embeddings, images, speech, transcription, moderations, decide, createVideo, subtitles, float32Base64 };

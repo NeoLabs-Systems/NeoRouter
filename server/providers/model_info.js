@@ -30,6 +30,7 @@ function detectKind(id, raw = {}) {
   const declared = String(raw.type || raw.object_type || raw.task || '').toLowerCase();
   if (/embed/.test(declared)) return 'embedding';
   if (declared === 'search') return 'search';
+  if (declared === 'weather') return 'weather';
   if (declared === 'live') return 'live';
   if (/image/.test(declared) && !/text/.test(declared)) return 'image';
   if (raw.supported_durations || raw.supported_resolutions) return 'video';
@@ -110,6 +111,8 @@ function parseUnitPricing(raw) {
   if (perMchar !== null && perMchar >= 0) return { priceUnit: 'mchar', unitPrice: perMchar };
   const perSearch = toNumber(raw.price_per_search);
   if (perSearch !== null && perSearch >= 0) return { priceUnit: 'search', unitPrice: perSearch };
+  const perCall = toNumber(raw.price_per_call);
+  if (perCall !== null && perCall >= 0) return { priceUnit: 'call', unitPrice: perCall };
   const perImage = toNumber(raw.price_per_image ?? raw.pricing?.per_image);
   if (perImage !== null && perImage >= 0) return { priceUnit: 'image', unitPrice: perImage };
   return { priceUnit: null, unitPrice: null };

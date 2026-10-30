@@ -25,8 +25,8 @@ function reference(origin, { placeholder = false } = {}) {
 
 NeoRouter is a self-hosted inference router. One endpoint speaks the OpenAI
 Chat Completions, OpenAI Responses and Anthropic Messages APIs, plus
-OpenAI-style embeddings, images, speech, transcription, moderation, video and
-web search. It routes each request to one of the providers its owner has
+OpenAI-style embeddings, images, speech, transcription, moderation, video,
+web search and weather. It routes each request to one of the providers its owner has
 connected and falls back to another model when one fails.
 
 - Base URL: \`${base}\`
@@ -162,7 +162,7 @@ OpenAI Responses API, including streaming and tools.
 
 Lists the models this key may use, \`auto\` variants first. Add
 \`?type=<kind>\` to list another kind (\`embedding\`, \`image\`, \`speech\`,
-\`transcription\`, \`moderation\`, \`video\`, \`search\`, \`live\`); the default is \`chat\`.
+\`transcription\`, \`moderation\`, \`video\`, \`search\`, \`weather\`, \`live\`); the default is \`chat\`.
 With an \`anthropic-version\` header the list uses the Anthropic shape.
 
 Each model has the OpenAI fields plus:
@@ -277,6 +277,30 @@ Video generation is asynchronous.
 
 \`max_results\` is 1–20; \`recency\` is \`day\`, \`week\`, \`month\` or \`year\`.
 Returns \`{"object": "search", "model", "query", "results": [{"title", "url", "snippet", "content", "published"}]}\`.
+
+## Weather
+
+### POST /v1/weather
+
+\`\`\`json
+{"model": "auto", "location": "Berlin", "current": true, "hourly": false, "daily": true, "days": 3, "units": "metric"}
+\`\`\`
+
+\`location\` is a place name or \`{"latitude": 52.52, "longitude": 13.41}\`.
+\`days\` is 1–16 (services cap it at their own forecast length); \`units\` is
+\`metric\` (°C, km/h, mm) or \`imperial\` (°F, mph, inch). At least one of
+\`current\`, \`hourly\` and \`daily\` must be true. Services: Open-Meteo (no key),
+OpenWeatherMap, WeatherAPI.com, Tomorrow.io and Visual Crossing.
+
+Returns the same shape whichever service answered; a part not asked for is \`null\`:
+
+\`\`\`json
+{"object": "weather", "model": "open-meteo/open-meteo-forecast", "units": "metric",
+ "location": {"name", "latitude", "longitude", "timezone"},
+ "current": {"time", "temperature", "feels_like", "humidity", "wind_speed", "wind_direction", "precipitation", "condition"},
+ "hourly": [{"time", "temperature", "precipitation_probability", "precipitation", "wind_speed", "condition"}],
+ "daily": [{"date", "temperature_max", "temperature_min", "precipitation", "precipitation_probability", "condition", "sunrise", "sunset"}]}
+\`\`\`
 
 ## Live voice (WebSocket)
 

@@ -8,6 +8,7 @@ const { AnthropicAdapter } = require('./adapters/anthropic');
 const { GoogleGeminiAdapter } = require('./adapters/google_gemini');
 const { CloudflareAdapter } = require('./adapters/cloudflare');
 const { SearchAdapter } = require('./adapters/search_engines');
+const { WeatherAdapter } = require('./adapters/weather');
 const { DeepgramAdapter } = require('./adapters/deepgram');
 const { ElevenLabsAdapter } = require('./adapters/elevenlabs');
 const { CodexAdapter } = require('./adapters/codex');
@@ -18,6 +19,7 @@ const ADAPTERS = {
   google_gemini: GoogleGeminiAdapter,
   cloudflare: CloudflareAdapter,
   search: SearchAdapter,
+  weather: WeatherAdapter,
   deepgram: DeepgramAdapter,
   elevenlabs: ElevenLabsAdapter,
   codex: CodexAdapter,
@@ -36,11 +38,13 @@ const definitionSchema = z.object({
   id: z.string().regex(/^[a-z0-9][a-z0-9_-]*$/),
   label: z.string().min(1),
   description: z.string().default(''),
-  category: z.enum(['free', 'paid', 'aggregator', 'plan', 'local', 'custom', 'community', 'search']),
+  category: z.enum(['free', 'paid', 'aggregator', 'plan', 'local', 'custom', 'community', 'search', 'weather']),
   // Web search engines: which dialect the search adapter speaks.
   // Connected by signing in instead of pasting a key.
   connect: z.enum(['codex_device']).optional(),
   search: z.object({ engine: z.enum(['tavily', 'exa', 'linkup', 'parallel', 'firecrawl', 'serper', 'brave', 'jina', 'searxng']) }).optional(),
+  // Weather services: which dialect the weather adapter speaks.
+  weather: z.object({ service: z.enum(['open_meteo', 'openweathermap', 'weatherapi', 'tomorrow', 'visual_crossing']) }).optional(),
   website: z.string().url().optional(),
   keyUrl: z.string().url().optional(),
   adapter: z.enum(Object.keys(ADAPTERS)),
@@ -57,6 +61,7 @@ const definitionSchema = z.object({
     createVideo: z.union([z.string(), z.literal(true)]).optional(),
     decide: z.union([z.string(), z.literal(true)]).optional(),
     search: z.literal(true).optional(),
+    weather: z.literal(true).optional(),
   }).default({}),
   // Live voice WebSocket protocols the provider speaks (capabilities/live/dialects.js).
   live: z.array(z.enum(['openai_live', 'openai_realtime', 'gemini_live'])).default([]),

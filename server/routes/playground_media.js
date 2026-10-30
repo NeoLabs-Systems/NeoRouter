@@ -33,6 +33,7 @@ const KINDS = {
   moderation: (ctx) => handlers.moderations(ctx),
   decision: (ctx) => handlers.decide(ctx),
   search: (ctx) => handlers.search(ctx),
+  weather: (ctx) => handlers.weather(ctx),
   video: (ctx) => handlers.createVideo(ctx),
   transcription: (ctx) => {
     const { audio, filename, mime, translate, ...fields } = ctx.body;

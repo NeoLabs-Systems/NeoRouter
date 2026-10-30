@@ -1,7 +1,7 @@
 'use strict';
 
 // OpenAI-compatible endpoints for embeddings, images, speech, transcription,
-// System One (moderations) and video jobs. See handlers.js.
+// System One (moderations), video jobs, web search and weather. See handlers.js.
 const express = require('express');
 const { requireRouterKey } = require('../../middleware/router_key_auth');
 const { HttpError } = require('../../middleware/error_handler');
@@ -43,6 +43,7 @@ router.post('/audio/speech', ...keyed(handlers.speech));
 router.post('/moderations', ...keyed(handlers.moderations));
 router.post('/systemone', ...keyed(handlers.decide));
 router.post('/search', ...keyed(handlers.search));
+router.post('/weather', ...keyed(handlers.weather));
 
 for (const [path, translate] of [['/audio/transcriptions', false], ['/audio/translations', true]]) {
   router.post(path, requireRouterKey, multipart, asyncRoute(async (req, res) => {

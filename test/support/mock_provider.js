@@ -16,7 +16,7 @@ const WebSocket = require('ws');
 // for models starting with fail-, like chat.
 // Live sockets (/v1/live/sessions, /v1/realtime) refuse fail-* models with
 // HTTP 500, echo every client event and report usage for audio appends.
-function createMockProvider({ models, prices = {}, port = 0, failSearch = false, maxConcurrent = null } = {}) {
+function createMockProvider({ models, prices = {}, port = 0, failSearch = false, failWeather = false, maxConcurrent = null } = {}) {
   const app = express();
   app.use(express.json());
   const calls = [];
@@ -133,6 +133,16 @@ function createMockProvider({ models, prices = {}, port = 0, failSearch = false,
       { title: `Result for ${req.query.q}`, url: 'https://example.com/a', content: 'First result text.' },
       { title: 'Second', url: 'https://www.other.org/b', content: 'Second result text.' },
     ] });
+  });
+  // Open-Meteo-style forecast: GET /v1/forecast?latitude=…. failWeather makes it fail.
+  app.get('/v1/forecast', (req, res) => {
+    calls.push({ kind: 'weather', query: req.query, at: Date.now() });
+    if (failWeather) return res.status(500).json({ error: true, reason: 'weather exploded' });
+    return res.json({
+      timezone: 'Europe/Berlin',
+      current: { time: '2026-10-30T12:00', temperature_2m: 11.2, apparent_temperature: 9.8, relative_humidity_2m: 71, wind_speed_10m: 14.4, wind_direction_10m: 240, precipitation: 0, weather_code: 3 },
+      daily: { time: ['2026-10-30'], temperature_2m_max: [12.5], temperature_2m_min: [6.1], precipitation_sum: [0.4], precipitation_probability_max: [35], weather_code: [61], sunrise: ['2026-10-30T07:05'], sunset: ['2026-10-30T16:38'] },
+    });
   });
   // TypeSafe-style System One decisions: one answer per question.
   app.post('/v1/systemone', (req, res) => {

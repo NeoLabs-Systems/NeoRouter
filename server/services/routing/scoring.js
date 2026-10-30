@@ -59,7 +59,7 @@ function reliability(snapshot, { sample = true, random } = {}) {
 
 const LATENCY_RANGE = [200, 120_000];
 // Cheap to expensive, in USD per unit.
-const UNIT_PRICE_RANGES = { image: [0.002, 0.2], second: [0.01, 0.5], minute: [0.001, 0.1], mchar: [1, 100], search: [0.0005, 0.03] };
+const UNIT_PRICE_RANGES = { image: [0.002, 0.2], second: [0.01, 0.5], minute: [0.001, 0.1], mchar: [1, 100], search: [0.0005, 0.03], call: [0.00005, 0.01] };
 
 function speed(entry, snapshot) {
   const tps = logScale(snapshot.tps ?? entry.speedPriorTps, TPS_RANGE);

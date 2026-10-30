@@ -15,6 +15,7 @@ const CAPABILITIES = [
   { id: 'moderation', label: 'System One', routes: mediaRoutes },
   { id: 'video', label: 'Video', routes: mediaRoutes },
   { id: 'search', label: 'Web search', routes: mediaRoutes },
+  { id: 'weather', label: 'Weather', routes: mediaRoutes },
   // Live voice sessions are WebSockets, attached to the HTTP server (capabilities/live).
   { id: 'live', label: 'Live voice', routes: null },
 ];

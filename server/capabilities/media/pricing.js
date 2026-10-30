@@ -3,7 +3,7 @@
 // Cost per kind. Token-priced kinds (embeddings, System One) use the per-1M
 // token prices; media kinds use a unit price: USD per image, per second of
 // video, per minute of audio input, per million characters of speech or per
-// web search. An
+// web search or weather call. An
 // unknown price is never free: budget keys skip such models.
 
 function tokenCost(entry, tokens) {
