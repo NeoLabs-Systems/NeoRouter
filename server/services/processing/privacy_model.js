@@ -139,11 +139,32 @@ async function detect(text) {
   const items = [];
   for (const span of output) {
     const category = CATEGORY_OF[String(span.entity_group || span.entity || '').replace(/^[BIES]-/, '')];
-    const value = String(span.word || '').trim();
-    if (!category || span.score < MIN_SCORE || value.length < 2 || !input.includes(value)) continue;
-    items.push({ text: value, category });
+    if (!category || span.score < MIN_SCORE) continue;
+    const value = tidy(input, String(span.word || '').trim(), category);
+    if (value && value.length >= 2) items.push({ text: value, category });
   }
   return items;
+}
+
+const WORD = /[\p{L}\p{N}_]/u;
+
+// Spans follow tokens, which can stop inside a word ("…, IB" of "IBAN",
+// "xK2" of "9xK2"): widen them to whole words. A date must hold a digit, so
+// "last month" is not a date, and words without digits around one are dropped
+// ("10.18.4.27 yesterday").
+function tidy(input, value, category) {
+  let start = input.indexOf(value);
+  if (start < 0) return null;
+  let end = start + value.length;
+  while (start > 0 && WORD.test(input[start - 1]) && WORD.test(input[start])) start -= 1;
+  while (end < input.length && WORD.test(input[end]) && WORD.test(input[end - 1])) end += 1;
+  let text = input.slice(start, end);
+  if (category === 'birthdate') {
+    // An IP address is not a date; the IP rule names it properly.
+    if (!/\d/.test(text) || /\b\d{1,3}(\.\d{1,3}){3}\b/.test(text)) return null;
+    text = text.replace(/^(?:[^\d\s]+\s+)+(?=\S*\d)/u, '').replace(/(?<=\d\S*)(?:\s+[^\d\s]+)+$/u, '');
+  }
+  return text;
 }
 
 function setLibraryForTests(fake) {
