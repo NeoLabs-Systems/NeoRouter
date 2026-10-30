@@ -31,6 +31,7 @@ const KINDS = {
   image: (ctx) => handlers.images({ ...ctx, body: { response_format: 'b64_json', ...ctx.body } }),
   speech: (ctx) => handlers.speech({ ...ctx, asJson: true }),
   moderation: (ctx) => handlers.moderations(ctx),
+  decision: (ctx) => handlers.decide(ctx),
   search: (ctx) => handlers.search(ctx),
   video: (ctx) => handlers.createVideo(ctx),
   transcription: (ctx) => {

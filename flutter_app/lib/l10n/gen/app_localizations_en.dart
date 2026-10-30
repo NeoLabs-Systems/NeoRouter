@@ -1469,10 +1469,6 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get analyticsTruncated =>
-      'Showing the most recent 100,000 requests of this range.';
-
-  @override
   String get fetchModels => 'Fetch models';
 
   @override
@@ -2446,28 +2442,50 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get privacyAiHint =>
-      'Everything above is found on your server in about a millisecond, without AI. A fast AI model can also read each new message to find organizations and what the rules miss.';
+      'Everything above is found on your server in about a millisecond, without AI. OpenAI\'s privacy filter, also running on this server, can read each new message to find names, addresses and what the rules miss.';
 
   @override
   String get privacyAiEnable => 'Also look with AI';
 
   @override
   String get privacyAiEnableHint =>
-      'Adds about a second to new messages; repeated messages are remembered.';
+      'Runs on this server, so no provider sees the text. Adds a fraction of a second to new messages; the first one after a quiet while waits for the model to load.';
 
   @override
-  String get privacyAiModel => 'Detection model';
+  String get privacyAiUnavailable =>
+      'Your admin can turn this on under Admin → Server.';
 
   @override
-  String get privacyAiModelHint =>
-      '\"auto:fast\" picks the fastest model. Use a local model, e.g. \"ollama/…\", if no provider should see the raw text.';
+  String get privacyModelTitle => 'AI privacy filter';
 
   @override
-  String get privacyAiFreeOnly => 'Use free models only for detection';
+  String get privacyModelHint =>
+      'OpenAI\'s open privacy filter runs on this server and finds names, addresses, account numbers and more that rules miss. No provider sees the text. Turning it on downloads about 1 GB once; it loads when used and frees its memory (about 2 GB) after 15 minutes without requests.';
 
   @override
-  String get privacyAiWarning =>
-      'The detection model sees the original text of new messages. Pick a provider you trust or a local model.';
+  String get privacyModelEnable => 'Let users turn on the AI privacy filter';
+
+  @override
+  String get privacyModelOff => 'Off. Users can\'t use AI detection.';
+
+  @override
+  String privacyModelDownloading(String percent) {
+    return 'Downloading … $percent %';
+  }
+
+  @override
+  String get privacyModelLoading => 'Loading …';
+
+  @override
+  String get privacyModelReady => 'Ready and loaded.';
+
+  @override
+  String get privacyModelIdle => 'Ready. Loads when the next message needs it.';
+
+  @override
+  String privacyModelError(String error) {
+    return 'Couldn\'t load: $error';
+  }
 
   @override
   String get privacyTryHint =>
@@ -2723,6 +2741,44 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get pgCheckInjection => 'Prompt attacks';
+
+  @override
+  String get pgCheckTopic => 'Off-topic';
+
+  @override
+  String get pgTopicPolicy => 'Allowed topics';
+
+  @override
+  String get pgTopicPolicyHint =>
+      'e.g. Only questions about our product and orders.';
+
+  @override
+  String get pgDecide => 'Decide';
+
+  @override
+  String get pgDecideHint =>
+      'Describe a situation, ask a question and list the options. A System One model picks one in a split second and says how sure it is.';
+
+  @override
+  String get pgDecideRun => 'Decide';
+
+  @override
+  String get pgYes => 'Yes';
+
+  @override
+  String get pgNo => 'No';
+
+  @override
+  String get pgDecideQuestion => 'Question';
+
+  @override
+  String get pgDecideQuestionHint => 'e.g. What does the customer want?';
+
+  @override
+  String get pgDecideOptions => 'Options, one per line';
+
+  @override
+  String get pgDecideOptionsHint => 'Leave empty for a yes-or-no question.';
 
   @override
   String get pgFlagged => 'Flagged';

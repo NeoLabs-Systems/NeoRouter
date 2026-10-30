@@ -7,6 +7,7 @@ const settings = require('../settings/settings_service');
 const compression = require('./compression');
 const redaction = require('./redaction');
 const aiDetector = require('./ai_detector');
+const privacyModel = require('./privacy_model');
 const { createLogger } = require('../../utils/logger');
 
 const logger = createLogger('processing');
@@ -19,7 +20,8 @@ const DEFAULT_SETTINGS = Object.freeze({
     modes: { ...redaction.DEFAULT_MODES },
     customTerms: [],
     allowTerms: [],
-    ai: { enabled: false, model: 'auto:fast', freeOnly: true },
+    // The privacy filter on this server; only works once an admin turned it on.
+    ai: { enabled: false },
   },
   compression: { ...compression.DEFAULTS },
 });
@@ -33,7 +35,7 @@ function merge(stored = {}) {
       modes: { ...DEFAULT_SETTINGS.privacy.modes, ...(privacy.modes || {}) },
       customTerms: Array.isArray(privacy.customTerms) ? privacy.customTerms : [],
       allowTerms: Array.isArray(privacy.allowTerms) ? privacy.allowTerms : [],
-      ai: { ...DEFAULT_SETTINGS.privacy.ai, ...(privacy.ai || {}) },
+      ai: { enabled: privacy.ai?.enabled === true },
     },
     compression: { ...DEFAULT_SETTINGS.compression, ...(stored.compression || {}), engines: { ...(stored.compression?.engines || {}) } },
   };
@@ -68,8 +70,8 @@ async function apply(userId, canonical, options = {}) {
   let aiUsed = false;
   if (config.privacy.enabled) {
     let entitiesFor = () => [];
-    if (config.privacy.ai.enabled) {
-      entitiesFor = await aiDetector.detectEntities(userId, config.privacy.ai, result);
+    if (config.privacy.ai.enabled && privacyModel.enabled()) {
+      entitiesFor = await aiDetector.detectEntities(result);
       aiUsed = true;
     }
     const redacted = redaction.redactRequest(result, { modes: config.privacy.modes, customTerms: config.privacy.customTerms, allowTerms: config.privacy.allowTerms, entitiesFor });
@@ -106,13 +108,10 @@ function shieldTexts(userId, texts) {
 
 // The same pipeline for the settings page: shows what would be sent. Only
 // someone who may edit the settings can preview a draft of them; everyone
-// else sees the saved ones, with the AI pass kept to free models, so a
-// view-only member cannot spend on the owner's paid models.
+// else sees the saved ones.
 async function preview(userId, { text, messages, role = 'user', settings: draft, canEdit = true }) {
   const saved = getSettings(userId);
-  const config = canEdit
-    ? (draft ? merge(draft) : saved)
-    : { ...saved, privacy: { ...saved.privacy, ai: { ...saved.privacy.ai, freeOnly: true } } };
+  const config = canEdit && draft ? merge(draft) : saved;
   // A sample shown as tool output is not "the latest user message", so the
   // lossy compression steps can be previewed on it.
   const canonical = {

@@ -1480,10 +1480,6 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
-  String get analyticsTruncated =>
-      'Es werden die letzten 100.000 Requests dieses Zeitraums gezeigt.';
-
-  @override
   String get fetchModels => 'Modelle abrufen';
 
   @override
@@ -2464,28 +2460,52 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get privacyAiHint =>
-      'Alles oben wird auf deinem Server in rund einer Millisekunde gefunden, ohne KI. Ein schnelles KI-Modell kann zusätzlich jede neue Nachricht lesen und Organisationen sowie das finden, was die Regeln übersehen.';
+      'Alles oben wird auf deinem Server in rund einer Millisekunde gefunden, ohne KI. OpenAIs Datenschutzfilter, ebenfalls auf diesem Server, kann zusätzlich jede neue Nachricht lesen und Namen, Adressen und das finden, was die Regeln übersehen.';
 
   @override
   String get privacyAiEnable => 'Zusätzlich per KI suchen';
 
   @override
   String get privacyAiEnableHint =>
-      'Kostet bei neuen Nachrichten etwa eine Sekunde; wiederholte Nachrichten werden gemerkt.';
+      'Läuft auf diesem Server, kein Anbieter sieht den Text. Kostet bei neuen Nachrichten Sekundenbruchteile; die erste nach einer ruhigen Weile wartet, bis das Modell geladen ist.';
 
   @override
-  String get privacyAiModel => 'Erkennungsmodell';
+  String get privacyAiUnavailable =>
+      'Dein Admin kann das unter Admin → Server einschalten.';
 
   @override
-  String get privacyAiModelHint =>
-      '„auto:fast“ wählt das schnellste Modell. Nimm ein lokales Modell, z. B. „ollama/…“, wenn kein Anbieter den Rohtext sehen soll.';
+  String get privacyModelTitle => 'KI-Datenschutzfilter';
 
   @override
-  String get privacyAiFreeOnly => 'Für die Erkennung nur Gratis-Modelle nutzen';
+  String get privacyModelHint =>
+      'OpenAIs offener Datenschutzfilter läuft auf diesem Server und findet Namen, Adressen, Kontonummern und mehr, die Regeln übersehen. Kein Anbieter sieht den Text. Beim Einschalten wird einmalig etwa 1 GB geladen; das Modell startet bei Bedarf und gibt seinen Speicher (etwa 2 GB) nach 15 Minuten ohne Anfragen wieder frei.';
 
   @override
-  String get privacyAiWarning =>
-      'Das Erkennungsmodell sieht den Originaltext neuer Nachrichten. Wähle einen Anbieter, dem du vertraust, oder ein lokales Modell.';
+  String get privacyModelEnable => 'Nutzern den KI-Datenschutzfilter erlauben';
+
+  @override
+  String get privacyModelOff =>
+      'Aus. Nutzer können keine KI-Erkennung verwenden.';
+
+  @override
+  String privacyModelDownloading(String percent) {
+    return 'Wird heruntergeladen … $percent %';
+  }
+
+  @override
+  String get privacyModelLoading => 'Wird geladen …';
+
+  @override
+  String get privacyModelReady => 'Bereit und geladen.';
+
+  @override
+  String get privacyModelIdle =>
+      'Bereit. Startet, sobald eine Nachricht es braucht.';
+
+  @override
+  String privacyModelError(String error) {
+    return 'Konnte nicht geladen werden: $error';
+  }
 
   @override
   String get privacyTryHint =>
@@ -2742,6 +2762,44 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get pgCheckInjection => 'Prompt-Angriffe';
+
+  @override
+  String get pgCheckTopic => 'Themenfremd';
+
+  @override
+  String get pgTopicPolicy => 'Erlaubte Themen';
+
+  @override
+  String get pgTopicPolicyHint =>
+      'z. B. Nur Fragen zu unserem Produkt und zu Bestellungen.';
+
+  @override
+  String get pgDecide => 'Entscheiden';
+
+  @override
+  String get pgDecideHint =>
+      'Beschreibe eine Situation, stell eine Frage und nenne die Optionen. Ein System-One-Modell wählt in Sekundenbruchteilen eine aus und sagt, wie sicher es ist.';
+
+  @override
+  String get pgDecideRun => 'Entscheiden';
+
+  @override
+  String get pgYes => 'Ja';
+
+  @override
+  String get pgNo => 'Nein';
+
+  @override
+  String get pgDecideQuestion => 'Frage';
+
+  @override
+  String get pgDecideQuestionHint => 'z. B. Was möchte der Kunde?';
+
+  @override
+  String get pgDecideOptions => 'Optionen, eine pro Zeile';
+
+  @override
+  String get pgDecideOptionsHint => 'Leer lassen für eine Ja-oder-Nein-Frage.';
 
   @override
   String get pgFlagged => 'Markiert';

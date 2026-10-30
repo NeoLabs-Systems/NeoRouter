@@ -54,6 +54,9 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
     super.dispose();
   }
 
+  // Whether an admin turned on the privacy filter on this server.
+  bool _modelAvailable = false;
+
   Map<String, dynamic> get _privacy => _settings!['privacy'] as Map<String, dynamic>;
   Map<String, dynamic> get _compression => _settings!['compression'] as Map<String, dynamic>;
   bool get _dirty => _settings != null && jsonEncode(_body()) != _saved;
@@ -68,6 +71,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
         _settings = jsonDecode(jsonEncode(data['settings'])) as Map<String, dynamic>;
         _categories = (data['categories'] as List).cast<String>();
         _aiOnly = ((data['aiOnlyCategories'] as List?) ?? const <Object>[]).cast<String>();
+        _modelAvailable = (data['privacyModel'] as Map?)?['enabled'] == true;
         _engines = Map<String, dynamic>.from(data['engines'] as Map);
         _stats = results[1];
         _terms.text = ((_privacy['customTerms'] as List?) ?? const <Object>[]).join('\n');
@@ -222,32 +226,10 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                   children: <Widget>[
                     SettingsRow(
                       label: t.privacyAiEnable,
-                      description: t.privacyAiEnableHint,
-                      control: Switch(value: ai['enabled'] == true, onChanged: (value) => _update(() => ai['enabled'] = value)),
+                      description: _modelAvailable ? t.privacyAiEnableHint : t.privacyAiUnavailable,
+                      control: Switch(value: ai['enabled'] == true && _modelAvailable, onChanged: _modelAvailable ? (value) => _update(() => ai['enabled'] = value) : null),
                     ),
-                    if (ai['enabled'] == true) ...<Widget>[
-                      for (final category in _aiOnly) _modeRow(context, category, modes),
-                      SettingsRow(
-                        label: t.privacyAiModel,
-                        description: t.privacyAiModelHint,
-                        control: SizedBox(
-                          width: 240,
-                          child: TextFormField(
-                            initialValue: '${ai['model'] ?? 'auto:fast'}',
-                            style: GoogleFonts.geistMono(fontSize: 13),
-                            onChanged: (value) => _update(() => ai['model'] = value.trim().isEmpty ? 'auto:fast' : value.trim()),
-                          ),
-                        ),
-                      ),
-                      SettingsRow(
-                        label: t.privacyAiFreeOnly,
-                        control: Switch(value: ai['freeOnly'] != false, onChanged: (value) => _update(() => ai['freeOnly'] = value)),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        child: InlineHint(message: t.privacyAiWarning, icon: Icons.info_outline_rounded),
-                      ),
-                    ],
+                    if (ai['enabled'] == true && _modelAvailable) for (final category in _aiOnly) _modeRow(context, category, modes),
                   ],
                 ),
               ],

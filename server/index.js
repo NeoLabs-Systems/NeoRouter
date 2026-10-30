@@ -31,6 +31,8 @@ require('./capabilities/live/gateway').attach(server);
 server.requestTimeout = 0;
 server.headersTimeout = 65_000;
 scheduler.start();
+// Finishes a privacy filter download that a restart cut short.
+require('./services/processing/privacy_model').resume();
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
     scheduler.stop();

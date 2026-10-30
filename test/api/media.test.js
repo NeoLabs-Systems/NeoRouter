@@ -198,5 +198,8 @@ test('the playground runs every kind with a stored key', async () => {
   assert.equal(transcript.body.text, 'hello world');
   const image = await play('image', { prompt: 'a cat' });
   assert.ok(image.body.data[0].b64_json);
+  const decision = await play('decision', { state: { text: 'Where is my parcel?' }, questions: { answer: { type: 'choice', instructions: 'What does the customer want?', criteria: { tracking: 'tracking', refund: 'refund' } } } });
+  assert.equal(decision.status, 200, JSON.stringify(decision.body));
+  assert.ok(decision.body.answers.answer);
   assert.equal((await play('nope', {})).status, 404);
 });

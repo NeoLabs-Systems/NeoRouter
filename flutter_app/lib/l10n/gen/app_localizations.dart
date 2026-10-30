@@ -2743,12 +2743,6 @@ abstract class AppL10n {
   /// **'> {value}'**
   String over(String value);
 
-  /// No description provided for @analyticsTruncated.
-  ///
-  /// In en, this message translates to:
-  /// **'Showing the most recent 100,000 requests of this range.'**
-  String get analyticsTruncated;
-
   /// No description provided for @fetchModels.
   ///
   /// In en, this message translates to:
@@ -4432,7 +4426,7 @@ abstract class AppL10n {
   /// No description provided for @privacyAiHint.
   ///
   /// In en, this message translates to:
-  /// **'Everything above is found on your server in about a millisecond, without AI. A fast AI model can also read each new message to find organizations and what the rules miss.'**
+  /// **'Everything above is found on your server in about a millisecond, without AI. OpenAI\'s privacy filter, also running on this server, can read each new message to find names, addresses and what the rules miss.'**
   String get privacyAiHint;
 
   /// No description provided for @privacyAiEnable.
@@ -4444,32 +4438,68 @@ abstract class AppL10n {
   /// No description provided for @privacyAiEnableHint.
   ///
   /// In en, this message translates to:
-  /// **'Adds about a second to new messages; repeated messages are remembered.'**
+  /// **'Runs on this server, so no provider sees the text. Adds a fraction of a second to new messages; the first one after a quiet while waits for the model to load.'**
   String get privacyAiEnableHint;
 
-  /// No description provided for @privacyAiModel.
+  /// No description provided for @privacyAiUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'Detection model'**
-  String get privacyAiModel;
+  /// **'Your admin can turn this on under Admin → Server.'**
+  String get privacyAiUnavailable;
 
-  /// No description provided for @privacyAiModelHint.
+  /// No description provided for @privacyModelTitle.
   ///
   /// In en, this message translates to:
-  /// **'\"auto:fast\" picks the fastest model. Use a local model, e.g. \"ollama/…\", if no provider should see the raw text.'**
-  String get privacyAiModelHint;
+  /// **'AI privacy filter'**
+  String get privacyModelTitle;
 
-  /// No description provided for @privacyAiFreeOnly.
+  /// No description provided for @privacyModelHint.
   ///
   /// In en, this message translates to:
-  /// **'Use free models only for detection'**
-  String get privacyAiFreeOnly;
+  /// **'OpenAI\'s open privacy filter runs on this server and finds names, addresses, account numbers and more that rules miss. No provider sees the text. Turning it on downloads about 1 GB once; it loads when used and frees its memory (about 2 GB) after 15 minutes without requests.'**
+  String get privacyModelHint;
 
-  /// No description provided for @privacyAiWarning.
+  /// No description provided for @privacyModelEnable.
   ///
   /// In en, this message translates to:
-  /// **'The detection model sees the original text of new messages. Pick a provider you trust or a local model.'**
-  String get privacyAiWarning;
+  /// **'Let users turn on the AI privacy filter'**
+  String get privacyModelEnable;
+
+  /// No description provided for @privacyModelOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off. Users can\'t use AI detection.'**
+  String get privacyModelOff;
+
+  /// No description provided for @privacyModelDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading … {percent} %'**
+  String privacyModelDownloading(String percent);
+
+  /// No description provided for @privacyModelLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading …'**
+  String get privacyModelLoading;
+
+  /// No description provided for @privacyModelReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready and loaded.'**
+  String get privacyModelReady;
+
+  /// No description provided for @privacyModelIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready. Loads when the next message needs it.'**
+  String get privacyModelIdle;
+
+  /// No description provided for @privacyModelError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load: {error}'**
+  String privacyModelError(String error);
 
   /// No description provided for @privacyTryHint.
   ///
@@ -4914,6 +4944,78 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Prompt attacks'**
   String get pgCheckInjection;
+
+  /// No description provided for @pgCheckTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'Off-topic'**
+  String get pgCheckTopic;
+
+  /// No description provided for @pgTopicPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed topics'**
+  String get pgTopicPolicy;
+
+  /// No description provided for @pgTopicPolicyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Only questions about our product and orders.'**
+  String get pgTopicPolicyHint;
+
+  /// No description provided for @pgDecide.
+  ///
+  /// In en, this message translates to:
+  /// **'Decide'**
+  String get pgDecide;
+
+  /// No description provided for @pgDecideHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe a situation, ask a question and list the options. A System One model picks one in a split second and says how sure it is.'**
+  String get pgDecideHint;
+
+  /// No description provided for @pgDecideRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Decide'**
+  String get pgDecideRun;
+
+  /// No description provided for @pgYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get pgYes;
+
+  /// No description provided for @pgNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get pgNo;
+
+  /// No description provided for @pgDecideQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get pgDecideQuestion;
+
+  /// No description provided for @pgDecideQuestionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. What does the customer want?'**
+  String get pgDecideQuestionHint;
+
+  /// No description provided for @pgDecideOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Options, one per line'**
+  String get pgDecideOptions;
+
+  /// No description provided for @pgDecideOptionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty for a yes-or-no question.'**
+  String get pgDecideOptionsHint;
 
   /// No description provided for @pgFlagged.
   ///

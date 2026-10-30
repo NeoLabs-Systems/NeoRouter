@@ -85,20 +85,6 @@ test('the owner can still change the base URL, and a member who types the key ag
   assert.equal(member.status, 200, JSON.stringify(member.body));
 });
 
-test('a view-only member previews the saved settings, never a draft that spends', async () => {
-  await setPermissions(['processing.view']);
-  const settings = (await api('owner', 'get', '/processing/settings')).body.settings;
-  const draft = { ...settings, privacy: { ...settings.privacy, enabled: true, ai: { enabled: true, model: 'mock/echo-one', freeOnly: false } } };
-  const messages = [{ role: 'user', content: 'Meeting with Johanna Krause at Hauptstrasse 5' }];
-  const before = mock.calls.length;
-  const viewer = await api('member', 'post', '/processing/preview', { messages, settings: draft }, 'owner');
-  assert.equal(viewer.status, 200, JSON.stringify(viewer.body));
-  assert.equal(mock.calls.length, before, 'no model call for a view-only draft');
-  const owner = await api('owner', 'post', '/processing/preview', { messages, settings: draft });
-  assert.equal(owner.status, 200, JSON.stringify(owner.body));
-  assert.ok(mock.calls.length > before, 'an editor’s draft still runs the AI pass');
-});
-
 test('only the instance admin can use local and private addresses', async () => {
   process.env.NEOROUTER_ALLOW_PRIVATE_PROVIDER_URLS = 'false';
   const body = { definitionId: 'custom_openai', secret: 'good-key', baseUrl: mock.url };

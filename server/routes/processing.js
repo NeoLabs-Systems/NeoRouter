@@ -6,6 +6,7 @@ const processing = require('../services/processing/processing_service');
 const { CATEGORIES } = require('../services/processing/redaction');
 const { categoryList } = require('../services/processing/shield/registry');
 const { LEVELS, ENGINES } = require('../services/processing/compression');
+const privacyModel = require('../services/processing/privacy_model');
 const { getDatabase } = require('../db/database');
 const { validate } = require('../middleware/validate');
 const { requirePermission } = require('../middleware/space');
@@ -19,7 +20,7 @@ const settingsSchema = z.object({
     modes: z.record(z.enum(['off', 'restore', 'hide'])).refine((modes) => Object.keys(modes).every((key) => CATEGORIES.includes(key)), 'Unknown category'),
     customTerms: z.array(z.string().trim().min(2).max(200)).max(500),
     allowTerms: z.array(z.string().trim().min(2).max(200)).max(500).default([]),
-    ai: z.object({ enabled: z.boolean(), model: z.string().min(1).max(300), freeOnly: z.boolean() }),
+    ai: z.object({ enabled: z.boolean() }).passthrough(),
   }),
   compression: z.object({
     level: z.enum(LEVELS),
@@ -37,6 +38,8 @@ router.get('/settings', requirePermission('processing.view'), (req, res) => res.
   aiOnlyCategories: categoryList.filter((category) => category.aiOnly).map((category) => category.id),
   levels: LEVELS,
   engines: ENGINES,
+  // The privacy filter on this server, if an admin turned it on.
+  privacyModel: privacyModel.status(),
 }));
 
 router.put('/settings', requirePermission('processing.edit'), validate(settingsSchema), (req, res) => res.json({ settings: processing.saveSettings(req.space.ownerId, req.body) }));

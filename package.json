@@ -50,6 +50,7 @@
   },
   "homepage": "https://github.com/NeoLabs-Systems/NeoRouter",
   "dependencies": {
+    "@huggingface/transformers": "^4.3.2",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.11.1",
     "compression": "^1.8.2",

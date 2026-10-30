@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -84,6 +86,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
   @override
   void dispose() {
+    _privacyPoll?.cancel();
     _search.dispose();
     _aaKey.dispose();
     super.dispose();
@@ -97,6 +100,7 @@ class _AdminScreenState extends State<AdminScreen> {
       setState(() {
         _users = results[0] as List<AppUser>;
         _settings = results[1] as Map<String, dynamic>;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _watchPrivacyModel());
         _info = results[2] as Map<String, dynamic>;
         _teamEvents = results[3] as List<Map<String, dynamic>>;
       });
@@ -105,6 +109,25 @@ class _AdminScreenState extends State<AdminScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Timer? _privacyPoll;
+
+  // Follows the privacy filter's download until it is done.
+  void _watchPrivacyModel() {
+    final status = '${(_settings?['privacyModel'] as Map?)?['status']}';
+    _privacyPoll?.cancel();
+    if (status != 'downloading' && status != 'loading') return;
+    _privacyPoll = Timer(const Duration(seconds: 3), () async {
+      try {
+        final settings = await widget.controller.api.adminSettings();
+        if (!mounted) return;
+        setState(() => _settings = settings);
+        _watchPrivacyModel();
+      } on ApiException {
+        // Tried again on the next visit.
+      }
+    });
   }
 
   Future<void> _guard(Future<void> Function() action) async {
@@ -116,10 +139,22 @@ class _AdminScreenState extends State<AdminScreen> {
     }
   }
 
+  String _privacyModelState(AppL10n t, Map<String, dynamic> model) {
+    if (model['enabled'] != true) return t.privacyModelOff;
+    return switch ('${model['status']}') {
+      'downloading' => t.privacyModelDownloading('${(((model['progress'] as num?) ?? 0) * 100).round()}'),
+      'loading' => t.privacyModelLoading,
+      'ready' => t.privacyModelReady,
+      'error' => t.privacyModelError('${model['error'] ?? ''}'),
+      _ => t.privacyModelIdle,
+    };
+  }
+
   List<_AdminSearchEntry> _index(AppL10n t) => <_AdminSearchEntry>[
         _AdminSearchEntry(t.users, _AdminTab.users, 'accounts konten people email username admin role delete disable'),
         _AdminSearchEntry(t.registrationOpenLabel, _AdminTab.users, 'registration registrierung signup sign-up open close'),
         _AdminSearchEntry(t.serverTitle, _AdminTab.server, 'version endpoint url capabilities server'),
+        _AdminSearchEntry(t.privacyModelTitle, _AdminTab.server, 'privacy filter openai datenschutz pii ai detection'),
         _AdminSearchEntry(t.metadataSources, _AdminTab.metadata, 'models.dev openrouter prices preise context intelligence'),
         _AdminSearchEntry(t.aaKey, _AdminTab.metadata, 'artificial analysis benchmark key api'),
       ];
@@ -225,13 +260,33 @@ class _AdminScreenState extends State<AdminScreen> {
         );
       case _AdminTab.server:
         final capabilities = ((_info?['capabilities'] as List?) ?? const <Object>[]).map((item) => '${(item as Map)['label']}').join(', ');
-        return SettingsGroup(
-          title: t.serverTitle,
-          description: t.serverInfoHint,
+        final privacyModel = Map<String, dynamic>.from((_settings?['privacyModel'] as Map?) ?? <String, Object>{});
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            SettingsRow(label: t.versionLabel, control: Text('${_info?['version'] ?? '—'}', style: GoogleFonts.geistMono(color: palette.textSoft, fontSize: 13))),
-            SettingsRow(label: t.endpointTitle, description: t.endpointHint, control: SelectableText('${_info?['endpoint'] ?? '—'}', style: GoogleFonts.geistMono(color: palette.textSoft, fontSize: 13))),
-            SettingsRow(label: t.capabilitiesLabel, control: Text(capabilities, style: TextStyle(color: palette.textSoft, fontSize: 13))),
+            SettingsGroup(
+              title: t.serverTitle,
+              description: t.serverInfoHint,
+              children: <Widget>[
+                SettingsRow(label: t.versionLabel, control: Text('${_info?['version'] ?? '—'}', style: GoogleFonts.geistMono(color: palette.textSoft, fontSize: 13))),
+                SettingsRow(label: t.endpointTitle, description: t.endpointHint, control: SelectableText('${_info?['endpoint'] ?? '—'}', style: GoogleFonts.geistMono(color: palette.textSoft, fontSize: 13))),
+                SettingsRow(label: t.capabilitiesLabel, control: Text(capabilities, style: TextStyle(color: palette.textSoft, fontSize: 13))),
+              ],
+            ),
+            SettingsGroup(
+              title: t.privacyModelTitle,
+              description: t.privacyModelHint,
+              children: <Widget>[
+                SettingsRow(
+                  label: t.privacyModelEnable,
+                  description: _privacyModelState(t, privacyModel),
+                  control: Switch(
+                    value: privacyModel['enabled'] == true,
+                    onChanged: (value) => _guard(() => widget.controller.api.updateAdminSettings(<String, Object?>{'privacyModel': value})),
+                  ),
+                ),
+              ],
+            ),
           ],
         );
       case _AdminTab.metadata:

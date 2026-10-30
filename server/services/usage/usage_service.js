@@ -81,8 +81,6 @@ function summary(userId, range = '24h', now = Date.now()) {
   };
 }
 
-const ANALYTICS_ROW_LIMIT = 100_000;
-
 function percentile(sorted, p) {
   if (!sorted.length) return null;
   return sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))];
@@ -119,16 +117,21 @@ function finishGroup(group) {
   };
 }
 
-function grouped(rows, keyOf, limit) {
+// Rows counted under a key each, e.g. per provider; the largest kept.
+function grouper(keyOf) {
   const groups = new Map();
-  for (const row of rows) {
-    const key = keyOf(row);
-    if (key === null || key === undefined) continue;
-    if (!groups.has(key)) groups.set(key, newGroup());
-    addRow(groups.get(key), row);
-  }
-  return [...groups.entries()].map(([key, group]) => ({ key, ...finishGroup(group) }))
-    .sort((a, b) => b.requests - a.requests).slice(0, limit);
+  return {
+    add(row) {
+      const key = keyOf(row);
+      if (key === null || key === undefined) return;
+      if (!groups.has(key)) groups.set(key, newGroup());
+      addRow(groups.get(key), row);
+    },
+    top(limit) {
+      return [...groups.entries()].map(([key, group]) => ({ key, ...finishGroup(group) }))
+        .sort((a, b) => b.requests - a.requests).slice(0, limit);
+    },
+  };
 }
 
 // Everything the analytics page charts, computed from request metadata.
@@ -139,7 +142,7 @@ function analytics(userId, range = '24h', now = Date.now()) {
   const rows = db.prepare(`SELECT r.created_at, r.status, r.error_code, r.input_tokens, r.output_tokens, r.cost_usd, r.saved_usd, r.is_free,
       r.latency_ms, r.ttft_ms, r.attempts, r.stream, r.api_format, r.model_label, r.router_key_id, r.trail_json, r.capability, k.name key_name
     FROM requests r LEFT JOIN router_keys k ON k.id = r.router_key_id
-    WHERE r.user_id = ? AND r.created_at >= ? ORDER BY r.created_at LIMIT ?`).all(userId, since, ANALYTICS_ROW_LIMIT);
+    WHERE r.user_id = ? AND r.created_at >= ? ORDER BY r.created_at`);
 
   const buckets = new Map();
   for (let bucket = Math.floor(since / bucketMs) * bucketMs + bucketMs; bucket <= now; bucket += bucketMs) buckets.set(bucket, newGroup());
@@ -147,27 +150,36 @@ function analytics(userId, range = '24h', now = Date.now()) {
   const outcomes = {};
   const histogramEdges = [250, 500, 1000, 2000, 5000, 10000, 30000, Infinity];
   const histogram = histogramEdges.map((edge) => ({ upToMs: Number.isFinite(edge) ? edge : null, count: 0 }));
-  for (const row of rows) {
+  const providerOf = (row) => (row.model_label ? row.model_label.split('/')[0] : null);
+  const groups = {
+    byProvider: grouper(providerOf),
+    byModel: grouper((row) => row.model_label),
+    byKey: grouper((row) => row.key_name || row.router_key_id),
+    byFormat: grouper((row) => `${row.api_format}${row.stream ? ' · stream' : ''}`),
+    byCapability: grouper((row) => row.capability || 'chat'),
+    errors: grouper((row) => (row.status === 'error' ? row.error_code || 'unknown' : null)),
+  };
+  // Streamed row by row, so every request in the range counts.
+  for (const row of rows.iterate(userId, since)) {
     addRow(total, row);
+    for (const group of Object.values(groups)) group.add(row);
     const bucket = Math.floor(row.created_at / bucketMs) * bucketMs;
     if (!buckets.has(bucket)) buckets.set(bucket, newGroup());
     addRow(buckets.get(bucket), row);
     for (const step of JSON.parse(row.trail_json || '[]')) outcomes[step.outcome] = (outcomes[step.outcome] || 0) + 1;
     if (row.status === 'success' && row.latency_ms !== null) histogram[histogramEdges.findIndex((edge) => row.latency_ms <= edge)].count += 1;
   }
-  const providerOf = (row) => (row.model_label ? row.model_label.split('/')[0] : null);
   return {
     range,
     bucketMs,
-    truncated: rows.length >= ANALYTICS_ROW_LIMIT,
     totals: finishGroup(total),
     series: [...buckets.entries()].sort((a, b) => a[0] - b[0]).map(([bucket, group]) => ({ bucket, ...finishGroup(group) })),
-    byProvider: grouped(rows, providerOf, 20),
-    byModel: grouped(rows, (row) => row.model_label, 15),
-    byKey: grouped(rows, (row) => row.key_name || row.router_key_id, 20),
-    byFormat: grouped(rows, (row) => `${row.api_format}${row.stream ? ' · stream' : ''}`, 10),
-    byCapability: grouped(rows, (row) => row.capability || 'chat', 10),
-    errors: grouped(rows.filter((row) => row.status === 'error'), (row) => row.error_code || 'unknown', 10).map(({ key, requests }) => ({ key, count: requests })),
+    byProvider: groups.byProvider.top(20),
+    byModel: groups.byModel.top(15),
+    byKey: groups.byKey.top(20),
+    byFormat: groups.byFormat.top(10),
+    byCapability: groups.byCapability.top(10),
+    errors: groups.errors.top(10).map(({ key, requests }) => ({ key, count: requests })),
     attemptOutcomes: Object.entries(outcomes).map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count),
     latencyHistogram: histogram,
   };

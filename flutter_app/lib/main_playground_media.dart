@@ -34,6 +34,10 @@ class MediaPlayground extends StatefulWidget {
 class _MediaPlaygroundState extends State<MediaPlayground> {
   final Map<String, TextEditingController> _inputs = <String, TextEditingController>{};
   final TextEditingController _voice = TextEditingController();
+  // System One: the rules for a topic check, or a question and its options.
+  final TextEditingController _policy = TextEditingController();
+  final TextEditingController _question = TextEditingController();
+  final TextEditingController _choices = TextEditingController();
   final Map<String, Map<String, dynamic>> _results = <String, Map<String, dynamic>>{};
   final Map<String, String> _errors = <String, String>{};
   final Map<String, int> _latency = <String, int>{};
@@ -55,6 +59,9 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
       controller.dispose();
     }
     _voice.dispose();
+    _policy.dispose();
+    _question.dispose();
+    _choices.dispose();
     _playing?.stop();
     _poll?.cancel();
     super.dispose();
@@ -85,9 +92,24 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
           'mime': _file?.mime ?? _spoken?.mime,
           'translate': _translate,
         });
+      case 'moderation' when _check == 'decide':
+        final question = _question.text.trim();
+        if (text.isEmpty || question.isEmpty) return;
+        final options = _choices.text.split('\n').map((line) => line.trim()).where((line) => line.isNotEmpty).toSet().toList();
+        // Two or more options make a choice; none asks a yes-or-no question.
+        body.addAll(<String, Object?>{
+          'state': <String, Object?>{'text': text},
+          'questions': <String, Object?>{
+            'answer': options.length >= 2
+                ? <String, Object?>{'type': 'choice', 'instructions': question, 'criteria': <String, String>{for (final option in options) option: option}}
+                : <String, Object?>{'type': 'noul', 'instructions': question},
+          },
+        });
       case 'moderation':
         if (text.isEmpty) return;
-        body.addAll(<String, Object?>{'input': text, 'check': _check});
+        final policy = _policy.text.trim();
+        if (_check == 'topic' && policy.isEmpty) return;
+        body.addAll(<String, Object?>{'input': text, 'check': _check, if (_check == 'topic') 'policy': policy});
       case 'video':
         if (text.isEmpty) return;
         body.addAll(<String, Object?>{'prompt': text, 'seconds': _seconds});
@@ -101,7 +123,7 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
     });
     final started = DateTime.now();
     try {
-      final result = await api.playgroundMedia(kind, body);
+      final result = await api.playgroundMedia(kind == 'moderation' && _check == 'decide' ? 'decision' : kind, body);
       if (!mounted) return;
       setState(() {
         _results[kind] = result;
@@ -216,7 +238,7 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
     'image' => t.pgImageHint,
     'speech' => t.pgSpeechHint,
     'transcription' => t.pgTranscribeHint,
-    'moderation' => t.pgCheckHint,
+    'moderation' => _check == 'decide' ? t.pgDecideHint : t.pgCheckHint,
     'search' => t.pgSearchHint,
     _ => t.pgVideoHint,
   };
@@ -226,7 +248,7 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
     'image' => t.pgImageRun,
     'speech' => t.pgSpeechRun,
     'transcription' => t.pgTranscribeRun,
-    'moderation' => t.pgCheckRun,
+    'moderation' => _check == 'decide' ? t.pgDecideRun : t.pgCheckRun,
     'search' => t.pgSearchRun,
     _ => t.pgVideoRun,
   };
@@ -285,11 +307,32 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
           child: FilterChip(label: Text(t.pgTranslate), selected: _translate, onSelected: (value) => setState(() => _translate = value)),
         );
       case 'moderation':
-        return Wrap(
-          spacing: 6,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            for (final (value, label) in <(String, String)>[('safety', t.pgCheckSafety), ('prompt_injection', t.pgCheckInjection)])
-              ChoiceChip(label: Text(label), selected: _check == value, onSelected: (_) => setState(() => _check = value)),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: <Widget>[
+                for (final (value, label) in <(String, String)>[
+                  ('safety', t.pgCheckSafety),
+                  ('prompt_injection', t.pgCheckInjection),
+                  ('topic', t.pgCheckTopic),
+                  ('decide', t.pgDecide),
+                ])
+                  ChoiceChip(label: Text(label), selected: _check == value, onSelected: (_) => setState(() => _check = value)),
+              ],
+            ),
+            if (_check == 'topic') ...<Widget>[
+              const SizedBox(height: AppSpacing.sm),
+              TextField(controller: _policy, minLines: 2, maxLines: 6, decoration: InputDecoration(isDense: true, labelText: t.pgTopicPolicy, hintText: t.pgTopicPolicyHint)),
+            ],
+            if (_check == 'decide') ...<Widget>[
+              const SizedBox(height: AppSpacing.sm),
+              TextField(controller: _question, decoration: InputDecoration(isDense: true, labelText: t.pgDecideQuestion, hintText: t.pgDecideQuestionHint)),
+              const SizedBox(height: AppSpacing.sm),
+              TextField(controller: _choices, minLines: 2, maxLines: 8, decoration: InputDecoration(isDense: true, labelText: t.pgDecideOptions, hintText: t.pgDecideOptionsHint)),
+            ],
           ],
         );
       case 'video':
@@ -303,6 +346,41 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
       default:
         return const SizedBox.shrink();
     }
+  }
+
+  // A decision: the picked option (or yes / no) and how likely each one was.
+  Widget _decision(AppL10n t, NeoRouterPalette palette, Map<String, dynamic> answer, String? model) {
+    final yes = (answer['noul'] as num?)?.toDouble();
+    final probabilities = <String, double>{
+      if (yes != null) ...<String, double>{t.pgYes: yes, t.pgNo: 1 - yes},
+      for (final entry in Map<String, dynamic>.from(answer['probabilities'] as Map? ?? const <String, dynamic>{}).entries)
+        if (entry.value is num) entry.key: (entry.value as num).toDouble(),
+    };
+    final picked = answer['choice']?.toString() ?? (yes == null ? null : (yes >= 0.5 ? t.pgYes : t.pgNo));
+    final ranked = probabilities.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(picked ?? '—', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+          for (final entry in ranked) ...<Widget>[
+            const SizedBox(height: 10),
+            Row(
+              children: <Widget>[
+                Expanded(child: Text(entry.key, style: TextStyle(color: palette.textSoft, fontSize: 13))),
+                Text('${(entry.value * 100).round()} %', style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(value: entry.value.clamp(0, 1), minHeight: 6, color: entry.key == picked ? palette.accent : palette.textMuted, backgroundColor: palette.surfaceRaised),
+            ),
+          ],
+          _meta(model),
+        ],
+      ),
+    );
   }
 
   Widget _meta(String? model) {
@@ -422,6 +500,8 @@ class _MediaPlaygroundState extends State<MediaPlayground> {
             ],
           ),
         );
+      case 'moderation' when result['answers'] is Map:
+        return _decision(t, palette, Map<String, dynamic>.from((result['answers'] as Map)['answer'] as Map? ?? const <String, dynamic>{}), model);
       case 'moderation':
         final verdict = Map<String, dynamic>.from((result['results'] as List).first as Map);
         final flagged = verdict['flagged'] == true;

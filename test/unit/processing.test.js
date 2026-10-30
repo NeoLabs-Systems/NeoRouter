@@ -5,7 +5,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { detect, Vault, redactRequest, restoreResponse, StreamRestorer, DEFAULT_MODES } = require('../../server/services/processing/redaction');
 const { compress } = require('../../server/services/processing/compression');
-const { parseItems } = require('../../server/services/processing/ai_detector');
+
+test.before(() => require('../../server/db/migrate').migrate());
 
 const modes = { ...DEFAULT_MODES };
 const categories = (text, options = {}) => detect(text, { modes, ...options }).map((span) => `${span.category}:${span.value}`);
@@ -58,9 +59,25 @@ test('placeholders split across stream chunks are restored', () => {
   assert.equal(out, 'Hi x@y.org and [unrelated] text');
 });
 
-test('AI detector output only counts exact substrings', () => {
-  const items = parseItems('{"items":[{"text":"Anna Schmidt","type":"person"},{"text":"Invented Name","type":"person"},{"text":"Hauptstr. 5","type":"address"}]}', 'Anna Schmidt lives at Hauptstr. 5');
-  assert.deepEqual(items, [{ text: 'Anna Schmidt', category: 'person' }, { text: 'Hauptstr. 5', category: 'address' }]);
+test('the privacy filter adds what it finds, only once an admin turned it on', async () => {
+  const privacyModel = require('../../server/services/processing/privacy_model');
+  const processing = require('../../server/services/processing/processing_service');
+  const fake = Object.assign(async (text) => (text.includes('Johanna Krause') ? [{ entity_group: 'private_person', word: ' Johanna Krause', score: 0.98 }, { entity_group: 'private_person', word: 'Made Up', score: 0.9 }] : []), { dispose: async () => {} });
+  privacyModel.setLibraryForTests(async () => ({ env: {}, pipeline: async () => fake }));
+  const settings = { ...processing.DEFAULT_SETTINGS, privacy: { ...processing.DEFAULT_SETTINGS.privacy, enabled: true, ai: { enabled: true } } };
+  const canonical = { messages: [{ role: 'user', content: 'Lunch with Johanna Krause tomorrow, okay?' }] };
+  const off = await processing.apply('u1', canonical, { settings });
+  assert.equal(off.stats.aiDetection, false, 'nothing runs until an admin turns it on');
+  privacyModel.setEnabled(true);
+  try {
+    const on = await processing.apply('u1', canonical, { settings });
+    assert.equal(on.stats.aiDetection, true);
+    const sent = on.canonical.messages.at(-1).content;
+    assert.doesNotMatch(sent, /Johanna Krause/);
+    assert.equal(on.vault.restoreText(sent), canonical.messages[0].content, 'placeholders are put back');
+  } finally {
+    privacyModel.setEnabled(false);
+  }
 });
 
 const longTool = (seed) => Array.from({ length: 400 }, (_, i) => `${seed} line ${i} ${'x'.repeat(40)}`).join('\n');

@@ -130,7 +130,6 @@ class _OverviewState extends State<_Overview> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        if (data['truncated'] == true) ...<Widget>[InlineHint(message: t.analyticsTruncated), const SizedBox(height: AppSpacing.md)],
         MetricStrip(
           metrics: <({String label, String value, String? caption})>[
             (label: t.metricRequests, value: formatCount(requests), caption: t.metricTokens(formatCount(tokens))),
