@@ -45,6 +45,28 @@ test('word problems, passages, options, ideas and follow-ups are recognised', ()
   assert.equal(followUp.primary, 'coding');
 });
 
+test('agent work in a terminal or a browser is told apart by its tools', () => {
+  const tool = (name, description = '') => ({ type: 'function', function: { name, description } });
+  const tools = [tool('run_terminal_cmd', 'Run a shell command'), tool('browserNavigate', 'Open a URL'), tool('browser_click'), tool('read_file')];
+  const turn = (content, called) => classify({ tools, messages: [
+    { role: 'user', content: 'start' },
+    ...(called ? [{ role: 'assistant', content: '', tool_calls: [{ id: '1', type: 'function', function: { name: called, arguments: '{}' } }] }, { role: 'tool', tool_call_id: '1', content: 'done' }] : []),
+    { role: 'user', content },
+  ] });
+  assert.equal(turn('Run the tests and fix whatever fails').primary, 'terminal');
+  assert.equal(turn('Go to amazon.com and add the cheapest USB-C cable to the cart').primary, 'browser');
+  assert.equal(turn('Öffne die Seite und klick auf Anmelden').primary, 'browser');
+  // The tool the agent just called says what "go on" means.
+  assert.equal(turn('ok continue', 'run_terminal_cmd').primary, 'terminal');
+  assert.equal(turn('ok continue', 'browser_click').primary, 'browser');
+  assert.ok(turn('Run the tests').skills.terminal > 0);
+  // Tools on offer alone are no work: "hi" stays small talk, a request stays agent work.
+  assert.equal(turn('hi').primary, 'chat');
+  assert.equal(turn('Book me a table for two tomorrow at 7').primary, 'agent');
+  // Without tools it is a question about the terminal, not work in it.
+  assert.notEqual(ask('How do I rebase a branch in git?').primary, 'terminal');
+});
+
 test('conditions and specialist words make a request harder', () => {
   const plain = ask('Write a product description for a water bottle');
   const strict = ask('Write a product description for a water bottle. It must mention the warranty, must not use the word cheap, should stay under 80 words and only use British spelling.');

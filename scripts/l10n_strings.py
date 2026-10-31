@@ -948,6 +948,8 @@ S = {
   'taskTranslation': ('Translation', 'Übersetzen'),
   'taskSummarization': ('Summarizing', 'Zusammenfassen'),
   'taskExtraction': ('Extracting data', 'Daten herausziehen'),
+  'taskTerminal': ('Terminal work', 'Arbeit im Terminal'),
+  'taskBrowser': ('Browser and screen use', 'Browser und Bildschirm steuern'),
   'taskAgent': ('Agent work with tools', 'Agentenarbeit mit Tools'),
   'taskVision': ('Images', 'Bilder'),
   'taskLongContext': ('Long documents', 'Lange Dokumente'),

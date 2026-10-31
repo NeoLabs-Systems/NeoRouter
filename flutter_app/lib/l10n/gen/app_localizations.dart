@@ -5989,6 +5989,18 @@ abstract class AppL10n {
   /// **'Extracting data'**
   String get taskExtraction;
 
+  /// No description provided for @taskTerminal.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminal work'**
+  String get taskTerminal;
+
+  /// No description provided for @taskBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Browser and screen use'**
+  String get taskBrowser;
+
   /// No description provided for @taskAgent.
   ///
   /// In en, this message translates to:

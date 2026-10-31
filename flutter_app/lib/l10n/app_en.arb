@@ -1809,6 +1809,8 @@
   "taskTranslation": "Translation",
   "taskSummarization": "Summarizing",
   "taskExtraction": "Extracting data",
+  "taskTerminal": "Terminal work",
+  "taskBrowser": "Browser and screen use",
   "taskAgent": "Agent work with tools",
   "taskVision": "Images",
   "taskLongContext": "Long documents",

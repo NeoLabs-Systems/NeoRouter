@@ -55,6 +55,28 @@ function splitPassage(text) {
   return { ask: trimmed.slice(0, end).trim(), passage: trimmed.slice(end).trim() };
 }
 
+// Tool names as words ("run_terminal_cmd", "browserNavigate" → "run terminal
+// cmd", "browser navigate"), so detectors can read them like text.
+const toolWords = (name) => String(name || '').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_\-.:/]+/g, ' ').toLowerCase();
+// The tools an agent is offered say what it may do; the ones it called in
+// the last few messages say what it is doing.
+const RECENT_MESSAGES = 6;
+const TOOL_TEXT_CHARS = 4000;
+
+function offeredTools(tools) {
+  return (tools || []).map((tool) => {
+    const fn = tool.function || tool;
+    return `${toolWords(fn.name)} ${String(fn.description || '').slice(0, 200)}`;
+  }).join('\n').slice(0, TOOL_TEXT_CHARS);
+}
+
+function calledTools(messages) {
+  return messages.slice(-RECENT_MESSAGES).flatMap((message) => [
+    ...(message.tool_calls || []).map((call) => call.function?.name || call.name),
+    message.role === 'tool' ? message.name : null,
+  ]).filter(Boolean).map(toolWords).join('\n');
+}
+
 function readSignals(request, { inputTokens = 0 } = {}) {
   const messages = request.messages || [];
   const users = userMessages(messages);
@@ -82,8 +104,10 @@ function readSignals(request, { inputTokens = 0 } = {}) {
     previousCode: /```/.test(textOf(lastAssistant?.content || '')),
     turns: users.length,
     toolCount: (request.tools || []).length,
+    tools: offeredTools(request.tools),
+    calledTools: calledTools(messages),
     // Tool results in this turn: the request continues agent work.
-    toolResults: messages.slice(-6).filter((message) => message.role === 'tool').length,
+    toolResults: messages.slice(-RECENT_MESSAGES).filter((message) => message.role === 'tool').length,
     wantsJson: format === 'json_object' || format === 'json_schema',
     hasImages,
     inputTokens,

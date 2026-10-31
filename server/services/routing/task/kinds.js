@@ -27,7 +27,7 @@ const CODE_WORDS = words('function', 'class(es)?$', 'def ', 'import ', 'const ',
   'backend', 'frontend', 'database', 'datenbank', 'postgres', 'mysql', 'redis', 'kafka', 'microservice', 'server$', 'algorithm', 'algorithmus', 'array',
   'integer', 'variable', 'linked list', 'binary tree', 'recursion', 'recursive', 'rekursi', 'html', 'css', 'c\\+\\+', 'c#', 'php', 'ruby', 'scala', 'haskell',
   'implement', 'implementier', 'snippet', 'npm$', 'pip$', 'cli$', 'linux', 'query', 'schema', 'unittest', 'pytest',
-  'lambda', 'method', 'methode', 'interface', 'pull request', 'commits?$', 'repos?$', 'repository', 'deploy', 'runtime', 'syntax', 'leetcode', 'big-?o', 'time complexity');
+  'lambda', 'method', 'methode', 'parser', 'state machine', 'interface', 'pull request', 'commits?$', 'repos?$', 'repository', 'deploy', 'runtime', 'syntax', 'leetcode', 'big-?o', 'time complexity');
 const CODE_SYNTAX = /```|=>|\)\s*\{|;\s*$|^\s*(def|class|import|from|const|let|var|function|public|private|#include)\b|\b\w+\.(js|ts|py|go|rs|java|kt|swift|dart|cpp|rb|php|sql|ya?ml|json)\b|Traceback \(most recent call last\)|at \w+ \(.+:\d+:\d+\)|\b\w+_\w+\(|\b[a-z]+[A-Z]\w*\(/m;
 // Asking for code to be written, whatever the language is called.
 const CODE_ASK = /\b(write|create|implement|build|make|develop|generate|code)\s+(a|an|the)?\s*(\w+\s+){0,3}(function|program|script|class|method|query|regex|pattern|api|app|bot|cli|module|component|form|page|endpoint|parser|test)s?\b|\b(schreib|erstell)\w*\s+(ein(e|en)?)?\s*(\w+\s+){0,2}(funktion|programm|skript|klasse|methode|abfrage)/i;
@@ -64,7 +64,7 @@ const TRANSLATION_WORDS = words('translate', 'translation', 'in english', 'into 
   'auf italienisch', 'in japanese', 'in chinese', 'how do you say', 'what does .* mean in', 'wie sagt man');
 const SUMMARY_WORDS = words('summari[sz]', 'summary', 'tl;?dr', 'key points', 'main points', 'in short', 'condense', 'recap', 'gist', 'in a nutshell',
   'in (one|two|three|a few|\\d+) sentences', 'briefly describe', 'outline the', 'zusammenfass', 'kernpunkte', 'kurzfassung', 'fasse', 'in kürze', 'das wichtigste');
-const EXTRACTION_WORDS = words('extract', 'as json', 'in json', 'json format', 'classify', 'categori[sz]e', 'label', 'fill in', 'table of', 'parse',
+const EXTRACTION_WORDS = words('extract', 'as json', 'in json', 'json format', 'classify', 'categori[sz]e', 'label', 'fill in', 'table of', 'parse$',
   'pull out', 'list (all|out|down|the)', 'identify (which|the|all|whether)', 'which of (these|the following|those)', 'sort (these|the following|them)',
   'group (these|the following|them)', 'tag (these|each)', 'sentiment', 'comma separated', 'bullet(ed)? list of (the|all)',
   'extrahier', 'als json', 'klassifizier', 'kategorisier', 'tabelle', 'ordne .* zu', 'welche (davon|dieser|der folgenden)', 'stimmung');
@@ -72,6 +72,19 @@ const EXTRACTION_WORDS = words('extract', 'as json', 'in json', 'json format', '
 const OPTION_LIST = /\b(\w+ or \w+)\b[^\n]{0,40}[:?]\s*\S[^\n]{0,120}(,| or )/i;
 const ACTION_WORDS = words('search', 'look up', 'open', 'send', 'create', 'schedule', 'book', 'remind', 'run', 'execute', 'download', 'browse',
   'such', 'öffne', 'sende', 'schick', 'erstell', 'erinnere', 'führe', 'buche');
+// Agents that work a terminal or a browser. Tool names say what an agent can
+// do; the ask and the tools it just called say what this turn is about.
+const TERMINAL_TOOLS = words('bash', 'shell', 'terminal', 'exec', 'run command', 'run cmd', 'run terminal', 'command', 'cmd$', 'powershell', 'zsh', 'ssh',
+  'subprocess', 'process');
+const TERMINAL_WORDS = words('terminal', 'command line', 'kommandozeile', 'shell', 'bash', 'run (the )?(command|script|tests?|build|migration)', 'npm (install|run|test)',
+  'pip install', 'yarn', 'git (clone|push|pull|commit|status|log|checkout|rebase|merge)', 'ssh', 'chmod', 'sudo', 'docker (run|build|compose|ps)', 'kubectl',
+  'make (build|test)', 'install (the )?(package|dependenc)', 'befehl', 'führe .* aus', 'installier');
+const BROWSER_TOOLS = words('browser', 'navigate', 'click', 'goto', 'go to', 'open url', 'open page', 'page', 'screenshot', 'scroll', 'type text', 'fill',
+  'hover', 'playwright', 'puppeteer', 'selenium', 'dom$', 'tab$', 'tabs$', 'computer', 'mouse', 'keyboard', 'web page', 'webpage');
+const BROWSER_WORDS = words('browser', 'website', 'web ?site', 'web ?page', 'click', 'log ?in (to|on)', 'sign in', 'fill (out|in) (the|this|a) form', 'go to', 'navigate',
+  'open (the |this )?(site|page|url|link|tab)', 'scroll', 'screenshot', 'add (it )?to (the )?cart', 'checkout', 'webseite', 'internetseite', 'klick', 'formular',
+  'öffne die seite', 'melde dich an', 'geh auf', 'in den warenkorb');
+const URL = /https?:\/\/\S+|\bwww\.\S+/i;
 const QUESTION_WORDS = words('who', 'what', 'when', 'where', 'which', 'how many', 'how much', 'how does', 'how do', 'how is', 'is there', 'are there', 'does', 'did',
   'tell me about', 'what is', 'define', 'wer', 'was', 'wann', 'wo$', 'woher', 'welche', 'wie viele', 'wie viel', 'wie funktioniert', 'gibt es', 'erzähl mir');
 // Asking about a passage: "Given this paragraph, …", "From the text, …".
@@ -81,7 +94,17 @@ const SMALL_TALK = /^\s*(hi|hey|hello|hallo|servus|moin|yo|thanks?( you)?|thx|da
 // A short message that builds on code from the last answer ("now add tests").
 const FOLLOW_UP_TOKENS = 40;
 
-const opensWithQuestion = (s) => QUESTION_WORDS.test(s.ask.slice(0, 40)) || /\?\s*$/.test(s.ask.split('\n')[0]);
+// How much a turn looks like work with one kind of tool: calling it now says
+// most, being asked to it next. Being offered the tool only adds to those:
+// agents are offered every tool on every turn, "hi" included. Without tools
+// on offer it is a question about the tool ("how do I rebase?"), not work with it.
+function toolWork(s, tools, askWords, extra = 0) {
+  if (!s.toolCount) return 0;
+  const signal = (tools.test(s.calledTools) ? 0.6 : 0) + (askWords.test(s.ask) ? 0.35 : 0);
+  return signal ? Math.min(1, signal + (tools.test(s.tools) ? 0.2 : 0) + extra) : 0;
+}
+
+const opensWithQuestion = (s) => s.ask.match(QUESTION_WORDS)?.index === 0 || /\?\s*$/.test(s.ask.split('\n')[0]);
 const followsCode = (s) => s.previousCode && s.lastUserTokens < FOLLOW_UP_TOKENS && !s.passage;
 
 const KINDS = [
@@ -140,12 +163,31 @@ const KINDS = [
     detect: (s) => Math.min(1, (s.wantsJson ? 0.6 : 0) + 0.5 * Math.min(2, hits(EXTRACTION_WORDS, s.ask)) + (OPTION_LIST.test(s.ask) ? 0.4 : 0)),
   },
   {
+    id: 'terminal',
+    skills: { terminal: 1, agentic: 0.5, coding: 0.4 },
+    difficulty: 0.45,
+    detect: (s) => toolWork(s, TERMINAL_TOOLS, TERMINAL_WORDS),
+  },
+  {
+    id: 'browser',
+    skills: { agentic: 1, instruction: 0.5 },
+    difficulty: 0.4,
+    // Pages to visit and screenshots coming back are browser work too.
+    detect: (s) => toolWork(s, BROWSER_TOOLS, BROWSER_WORDS, (URL.test(s.ask) ? 0.1 : 0) + (s.hasImages && BROWSER_TOOLS.test(s.calledTools) ? 0.1 : 0)),
+  },
+  {
     id: 'agent',
     skills: { agentic: 1, instruction: 0.5 },
     difficulty: 0.35,
     // Tools on offer are only a hint (agents send them every turn); asking for
-    // an action, or tool results coming back, make it agent work.
-    detect: (s) => (s.toolCount ? Math.min(1, 0.25 + (ACTION_WORDS.test(s.ask) ? 0.4 : 0) + Math.min(0.5, s.toolResults * 0.25)) : 0),
+    // an action, or tool results coming back, make it agent work. Work in a
+    // terminal or a browser is that kind first, and agent work only besides.
+    detect: (s) => {
+      if (!s.toolCount) return 0;
+      const general = Math.min(1, AGENT_BASELINE + (ACTION_WORDS.test(s.ask) ? 0.4 : 0) + Math.min(0.5, s.toolResults * 0.25));
+      const specific = Math.max(toolWork(s, TERMINAL_TOOLS, TERMINAL_WORDS), toolWork(s, BROWSER_TOOLS, BROWSER_WORDS));
+      return specific ? Math.min(general, specific / 2) : general;
+    },
   },
   {
     id: 'vision',
@@ -177,5 +219,7 @@ const HARD_WORDS = words('prove', 'rigorous', 'optimi[sz]e', 'architecture', 'de
 
 // Below this many tokens, a message that matches no kind is small talk.
 const SHORT_MESSAGE_TOKENS = 12;
+// What the agent kind scores for tools on offer and nothing else.
+const AGENT_BASELINE = 0.25;
 
-module.exports = { KINDS, HARD_WORDS, SHORT_MESSAGE_TOKENS, hits, saturate };
+module.exports = { KINDS, HARD_WORDS, SHORT_MESSAGE_TOKENS, AGENT_BASELINE, hits, saturate };

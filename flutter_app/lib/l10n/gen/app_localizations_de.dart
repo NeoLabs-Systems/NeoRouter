@@ -3367,6 +3367,12 @@ class AppL10nDe extends AppL10n {
   String get taskExtraction => 'Daten herausziehen';
 
   @override
+  String get taskTerminal => 'Arbeit im Terminal';
+
+  @override
+  String get taskBrowser => 'Browser und Bildschirm steuern';
+
+  @override
   String get taskAgent => 'Agentenarbeit mit Tools';
 
   @override

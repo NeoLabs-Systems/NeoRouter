@@ -982,6 +982,8 @@
   "taskTranslation": "Übersetzen",
   "taskSummarization": "Zusammenfassen",
   "taskExtraction": "Daten herausziehen",
+  "taskTerminal": "Arbeit im Terminal",
+  "taskBrowser": "Browser und Bildschirm steuern",
   "taskAgent": "Agentenarbeit mit Tools",
   "taskVision": "Bilder",
   "taskLongContext": "Lange Dokumente",

@@ -3343,6 +3343,12 @@ class AppL10nEn extends AppL10n {
   String get taskExtraction => 'Extracting data';
 
   @override
+  String get taskTerminal => 'Terminal work';
+
+  @override
+  String get taskBrowser => 'Browser and screen use';
+
+  @override
   String get taskAgent => 'Agent work with tools';
 
   @override

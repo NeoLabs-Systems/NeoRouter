@@ -4,13 +4,14 @@
 // them. The metadata service turns each model's benchmark scores into a
 // score per skill on the same scale as its overall intelligence; routing then
 // weighs the skills a request calls on (classifier.js).
-const SKILLS = Object.freeze(['coding', 'math', 'reasoning', 'knowledge', 'instruction', 'agentic', 'long_context']);
+const SKILLS = Object.freeze(['coding', 'math', 'reasoning', 'knowledge', 'instruction', 'agentic', 'terminal', 'long_context']);
 
-// Artificial Analysis benchmark → the skills it measures.
+// Artificial Analysis benchmark → the skills it measures. Browser and
+// computer use have no benchmark there yet; browser work calls on agentic.
 const BENCHMARK_SKILLS = Object.freeze({
   livecodebench: ['coding'],
   scicode: ['coding'],
-  terminalbench_hard: ['coding', 'agentic'],
+  terminalbench_hard: ['coding', 'agentic', 'terminal'],
   aime_25: ['math'],
   aime: ['math'],
   math_500: ['math'],

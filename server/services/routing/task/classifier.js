@@ -1,7 +1,7 @@
 'use strict';
 
 const { readSignals } = require('./signals');
-const { KINDS, HARD_WORDS, SHORT_MESSAGE_TOKENS, hits, saturate } = require('./kinds');
+const { KINDS, HARD_WORDS, SHORT_MESSAGE_TOKENS, AGENT_BASELINE, hits, saturate } = require('./kinds');
 const { logScale } = require('../scoring');
 
 // What a chat request asks for: a mix of task kinds (kinds.js), the skills
@@ -56,8 +56,9 @@ function classify(request, { inputTokens = 0, hint = null } = {}) {
     for (const [id, score] of scores) scores.set(id, id === hint ? 1 : score * 0.5);
   }
   const ranked = [...scores].map(([id, score]) => ({ id, score })).filter((item) => item.score >= MIN_KIND_SCORE).sort((a, b) => b.score - a.score);
-  // A short message that is nothing else ("ok, do it") is light conversation.
-  if (!ranked.some((item) => item.id !== 'agent') && signals.lastUserTokens < SHORT_MESSAGE_TOKENS && !signals.toolResults) ranked.unshift({ id: 'chat', score: 0.5 });
+  // A short message that is nothing else ("ok, do it") is light conversation,
+  // with tools on offer too, unless it asks for something to be done.
+  if (!ranked.some((item) => item.id !== 'agent' || item.score > AGENT_BASELINE) && signals.lastUserTokens < SHORT_MESSAGE_TOKENS && !signals.toolResults) ranked.unshift({ id: 'chat', score: 0.5 });
   // The skills the mix calls on, each kind in proportion to how clearly it shows.
   const skills = {};
   for (const { id, score } of ranked) {
