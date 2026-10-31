@@ -509,10 +509,18 @@ class _KeyFormState extends State<_KeyForm> {
                   children: <Widget>[
                     for (final kind in _available)
                       FilterChip(
-                        avatar: Icon(capabilityInfo(kind).icon, size: 15),
-                        label: Text(capabilityInfo(kind).label(t)),
+                        avatar: Icon(capabilityInfo(kind).icon, size: 15, color: _kindOn(kind) ? neoRouterPaletteOf(context).accent : neoRouterPaletteOf(context).textMuted),
+                        label: Text(
+                          capabilityInfo(kind).label(t),
+                          style: TextStyle(
+                            color: _kindOn(kind) ? neoRouterPaletteOf(context).text : neoRouterPaletteOf(context).textMuted,
+                            decoration: _kindOn(kind) ? null : TextDecoration.lineThrough,
+                          ),
+                        ),
                         selected: _kindOn(kind),
                         showCheckmark: false,
+                        selectedColor: neoRouterPaletteOf(context).accentSoft,
+                        side: BorderSide(color: _kindOn(kind) ? neoRouterPaletteOf(context).accent.withValues(alpha: 0.6) : neoRouterPaletteOf(context).border),
                         onSelected: (value) => _toggleKind(kind, value),
                       ),
                   ],

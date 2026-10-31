@@ -141,7 +141,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
   Iterable<CatalogModel> get _visible {
     final query = _query.toLowerCase();
     return _models.where((model) {
-      if (_provider != null && model.providerSlug != _provider) return false;
+      if (_provider != null && model.providerKey != _provider) return false;
       if (query.isNotEmpty && !model.id.toLowerCase().contains(query) && !model.name.toLowerCase().contains(query)) return false;
       return switch (_filter) {
         _Filter.all => true,
@@ -151,19 +151,36 @@ class _ModelsScreenState extends State<ModelsScreen> {
     });
   }
 
-  Future<void> _toggle(CatalogModel model, bool enabled) async {
+  // One row per model and provider: its copies on the provider's other accounts.
+  List<(CatalogModel, List<CatalogModel>)> _rows(List<CatalogModel> models) {
+    final groups = <String, List<CatalogModel>>{};
+    for (final model in models) {
+      groups.putIfAbsent('${model.providerKey}|${model.modelId}', () => <CatalogModel>[]).add(model);
+    }
+    return <(CatalogModel, List<CatalogModel>)>[for (final copies in groups.values) (copies.firstWhere((model) => model.enabled, orElse: () => copies.first), copies)];
+  }
+
+  // Switches a model on or off on every account of its provider.
+  Future<void> _toggle(List<CatalogModel> copies, bool enabled) async {
     try {
-      final updated = await widget.controller.api.updateModel(model.ref, enabled: enabled);
-      setState(() => _models = <CatalogModel>[for (final item in _models) item.ref == updated.ref ? updated : item]);
+      final updated = <int, CatalogModel>{};
+      for (final model in copies) {
+        final result = await widget.controller.api.updateModel(model.ref, enabled: enabled);
+        updated[result.ref] = result;
+      }
+      setState(() => _models = <CatalogModel>[for (final item in _models) updated[item.ref] ?? item]);
     } on ApiException catch (error) {
       if (mounted) showSnack(context, error.message);
     }
   }
 
   Future<void> _bulk({required bool enabled, bool onlyFree = false}) async {
-    final accountId = _provider == null ? null : _models.firstWhere((model) => model.providerSlug == _provider).accountId;
-    if (onlyFree) await widget.controller.api.bulkEnable(accountId: accountId, enabled: false);
-    await widget.controller.api.bulkEnable(accountId: accountId, enabled: enabled, onlyFree: onlyFree);
+    // A provider's accounts all change together.
+    final accountIds = _provider == null ? <String?>[null] : _models.where((model) => model.providerKey == _provider).map((model) => model.accountId).toSet().toList();
+    for (final accountId in accountIds) {
+      if (onlyFree) await widget.controller.api.bulkEnable(accountId: accountId, enabled: false);
+      await widget.controller.api.bulkEnable(accountId: accountId, enabled: enabled, onlyFree: onlyFree);
+    }
     await _load();
   }
 
@@ -171,8 +188,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    final providers = _models.map((model) => model.providerSlug).toSet().toList()..sort();
-    final visible = _visible.toList();
+    final providerNames = <String, String>{for (final model in _models) model.providerKey: model.providerName};
+    final providers = providerNames.keys.toList()..sort((a, b) => providerNames[a]!.toLowerCase().compareTo(providerNames[b]!.toLowerCase()));
+    final visible = _rows(_visible.toList());
     final current = _capabilities.where((item) => item.id == _capability).firstOrNull;
     return PageScaffold(
       header: ScreenHeader(
@@ -233,7 +251,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 }),
                 itemBuilder: (_) => <PopupMenuEntry<String?>>[
                   PopupMenuItem<String?>(value: '', child: Text(t.allConnections)),
-                  for (final provider in providers) PopupMenuItem<String?>(value: provider, child: Text(provider)),
+                  for (final provider in providers) PopupMenuItem<String?>(value: provider, child: Text(providerNames[provider]!)),
                 ],
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -244,7 +262,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      Text(_provider ?? t.allConnections, style: TextStyle(fontSize: 13.5, color: palette.text)),
+                      Text(_provider == null ? t.allConnections : providerNames[_provider] ?? t.allConnections, style: TextStyle(fontSize: 13.5, color: palette.text)),
                       const SizedBox(width: 6),
                       Icon(Icons.expand_more_rounded, size: 18, color: palette.textMuted),
                     ],
@@ -283,11 +301,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
                       ),
                       SettingsCardList(
                         children: <Widget>[
-                          for (final model in visible.take(_shown))
+                          for (final (model, copies) in visible.take(_shown))
                             _ModelRow(
                               model: model,
+                              accounts: copies.length,
                               routable: current?.routable ?? true,
-                              onToggle: (value) => _toggle(model, value),
+                              onToggle: (value) => _toggle(copies, value),
                               onOpen: () async {
                                 final updated = await showDialog<CatalogModel>(
                                   context: context,
@@ -348,7 +367,7 @@ class _ComingSoon extends StatelessWidget {
                         for (final model in models.take(7))
                           ListRow(
                             title: model.name,
-                            subtitle: '${model.providerSlug} · ${modelPriceLabel(t, model)}',
+                            subtitle: '${model.providerName} · ${modelPriceLabel(t, model)}',
                             trailing: Switch(value: model.enabled, onChanged: null),
                           ),
                         if (models.isEmpty && !loading)
@@ -406,9 +425,12 @@ class _ComingSoon extends StatelessWidget {
 }
 
 class _ModelRow extends StatelessWidget {
-  const _ModelRow({required this.model, required this.routable, required this.onToggle, required this.onOpen});
+  const _ModelRow({required this.model, required this.routable, required this.onToggle, required this.onOpen, this.accounts = 1});
 
   final CatalogModel model;
+
+  /// On how many of its provider's accounts this model is offered.
+  final int accounts;
   final bool routable;
   final ValueChanged<bool> onToggle;
   final VoidCallback onOpen;
@@ -419,7 +441,7 @@ class _ModelRow extends StatelessWidget {
     final palette = neoRouterPaletteOf(context);
     final wide = MediaQuery.sizeOf(context).width >= AppBreakpoints.tablet;
     final details = <String>[
-      model.providerSlug,
+      accounts > 1 ? '${model.providerName} · ${t.providerAccountsCount('$accounts')}' : model.providerName,
       if (model.contextWindow != null) t.contextWindow(formatCount(model.contextWindow!)),
       modelPriceLabel(t, model),
     ].join(' · ');

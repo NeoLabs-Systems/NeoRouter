@@ -4,6 +4,7 @@ const crypto = require('node:crypto');
 const { getDatabase } = require('../../db/database');
 const { HttpError } = require('../../middleware/error_handler');
 const { encryptString, decryptString } = require('../../utils/crypto');
+const { providerIdentity } = require('../catalog/provider_identity');
 const registry = require('../../providers/registry');
 const { declaresFreeModels } = require('../catalog/free_classifier');
 const { createLogger } = require('../../utils/logger');
@@ -92,6 +93,7 @@ function publicAccount(row) {
     id: row.id,
     definitionId: row.definition_id,
     providerLabel: definition?.label || row.definition_id,
+    ...providerIdentity({ definitionId: row.definition_id, slug: row.slug, label: row.label, baseUrl: row.base_url }),
     category: definition?.category || null,
     slug: row.slug,
     label: row.label,

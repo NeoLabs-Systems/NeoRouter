@@ -116,6 +116,9 @@ class ProviderAccount {
   String get id => raw['id'] as String;
   String get definitionId => raw['definitionId'] as String;
   String get providerLabel => raw['providerLabel'] as String? ?? definitionId;
+  /// Accounts with the same key are one provider (two Groq keys: one Groq).
+  String get providerKey => raw['providerKey'] as String? ?? definitionId;
+  String get providerName => raw['providerName'] as String? ?? providerLabel;
   String? get category => raw['category'] as String?;
   String get slug => raw['slug'] as String;
   String get label => raw['label'] as String;
@@ -148,6 +151,9 @@ class CatalogModel {
   String get modelId => raw['modelId'] as String;
   String get name => raw['name'] as String? ?? modelId;
   String get providerSlug => raw['providerSlug'] as String;
+  /// The provider, whichever of its accounts serves this copy.
+  String get providerKey => raw['providerKey'] as String? ?? providerSlug;
+  String get providerName => raw['providerName'] as String? ?? providerSlug;
   /// Live models: the WebSocket protocols that reach them.
   List<String> get liveProtocols => _strings(raw['liveProtocols']);
   String get definitionId => raw['definitionId'] as String;

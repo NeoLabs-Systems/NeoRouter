@@ -2139,6 +2139,27 @@ class AppL10nEn extends AppL10n {
   String get addAnotherAccount => 'Add another account';
 
   @override
+  String providerAccountsCount(String count) {
+    return '$count accounts';
+  }
+
+  @override
+  String providerAccountsWorking(String count) {
+    return '$count working';
+  }
+
+  @override
+  String providerAccountsProblems(String count) {
+    return '$count need attention';
+  }
+
+  @override
+  String get providerShowAccounts => 'Show accounts';
+
+  @override
+  String get providerHideAccounts => 'Hide accounts';
+
+  @override
   String limitsModelsRoom(String room, String total) {
     return '$room of $total models have room today';
   }

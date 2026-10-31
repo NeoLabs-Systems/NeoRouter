@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -91,6 +92,28 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
       if (mounted) setState(() => _busy.remove(accountId));
     }
   }
+
+  // Accounts grouped by provider, in the order the first of each appears.
+  List<List<ProviderAccount>> _groups() {
+    final groups = <String, List<ProviderAccount>>{};
+    for (final account in _accounts) {
+      groups.putIfAbsent(account.providerKey, () => <ProviderAccount>[]).add(account);
+    }
+    return groups.values.toList();
+  }
+
+  Widget _row(ProviderAccount account, bool canManage) => _AccountRow(
+    account: account,
+    busy: _busy.contains(account.id),
+    showCreator: widget.controller.showCreators,
+    canManage: canManage,
+    canDelete: widget.controller.can('providers.delete'),
+    onToggle: (enabled) => _run(account.id, () async {
+      await widget.controller.api.updateAccount(account.id, <String, Object?>{'enabled': enabled});
+      return null;
+    }),
+    onAction: (action) => _action(account, action),
+  );
 
   Future<void> _add() async {
     final definition = await showDialog<ProviderDefinition>(
@@ -227,19 +250,28 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
                   )
                 : SettingsCardList(
                     children: <Widget>[
-                      for (final account in _accounts)
-                        _AccountRow(
-                          account: account,
-                          busy: _busy.contains(account.id),
-                          showCreator: controller.showCreators,
-                          canManage: canManage,
-                          canDelete: controller.can('providers.delete'),
-                          onToggle: (enabled) => _run(account.id, () async {
-                            await widget.controller.api.updateAccount(account.id, <String, Object?>{'enabled': enabled});
-                            return null;
-                          }),
-                          onAction: (action) => _action(account, action),
-                        ),
+                      // Several accounts with one provider show as that one provider.
+                      for (final group in _groups())
+                        if (group.length == 1)
+                          _row(group.first, canManage)
+                        else
+                          _ProviderGroup(
+                            accounts: group,
+                            canManage: canManage,
+                            busy: group.any((account) => _busy.contains(account.id)),
+                            onToggleAll: (enabled) async {
+                              for (final account in group) {
+                                if (account.enabled != enabled) {
+                                  await _run(account.id, () async {
+                                    await widget.controller.api.updateAccount(account.id, <String, Object?>{'enabled': enabled});
+                                    return null;
+                                  });
+                                }
+                              }
+                            },
+                            onAddAnother: () => _action(group.first, _AccountAction.another),
+                            rows: <Widget>[for (final account in group) _row(account, canManage)],
+                          ),
                     ],
                   ),
           ),
@@ -249,6 +281,112 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
 }
 
 enum _AccountAction { check, sync, balance, edit, another, remove }
+
+/// A provider connected with several accounts: one row for the provider, its
+/// accounts in a dropdown under it.
+class _ProviderGroup extends StatefulWidget {
+  const _ProviderGroup({required this.accounts, required this.rows, required this.canManage, required this.busy, required this.onToggleAll, required this.onAddAnother});
+
+  final List<ProviderAccount> accounts;
+  final List<Widget> rows;
+  final bool canManage;
+  final bool busy;
+  final Future<void> Function(bool enabled) onToggleAll;
+  final VoidCallback onAddAnother;
+
+  @override
+  State<_ProviderGroup> createState() => _ProviderGroupState();
+}
+
+class _ProviderGroupState extends State<_ProviderGroup> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final accounts = widget.accounts;
+    final first = accounts.first;
+    final enabled = accounts.where((account) => account.enabled).toList();
+    final working = enabled.where((account) => account.status == 'healthy').length;
+    final problems = enabled.length - working;
+    final models = accounts.map((account) => account.modelCount).fold<int>(0, math.max);
+    final free = accounts.map((account) => account.freeModelCount).fold<int>(0, math.max);
+    final tone = enabled.isEmpty ? PillTone.neutral : problems == 0 ? PillTone.success : working == 0 ? PillTone.error : PillTone.warning;
+    final status = enabled.isEmpty ? t.modeOff : problems == 0 ? t.providerAccountsWorking('$working') : t.providerAccountsProblems('$problems');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        InkWell(
+          onTap: () => setState(() => _open = !_open),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
+            child: Row(
+              children: <Widget>[
+                ProviderAvatar(label: first.providerName, size: 38),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(first.providerName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: palette.text)),
+                      const SizedBox(height: 3),
+                      Text(
+                        <String>[t.providerAccountsCount('${accounts.length}'), t.homeModelsLine('$models', '$free')].join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 13, color: palette.textMuted),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                if (MediaQuery.sizeOf(context).width >= 700) ...<Widget>[StatusLabel(label: status, tone: tone), const SizedBox(width: 16)] else ...<Widget>[
+                  ToneDot(tone: tone),
+                  const SizedBox(width: 10),
+                ],
+                if (widget.busy)
+                  const Padding(padding: EdgeInsets.all(14), child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)))
+                else
+                  Switch(value: enabled.isNotEmpty, onChanged: widget.canManage ? widget.onToggleAll : null),
+                IconButton(
+                  tooltip: _open ? t.providerHideAccounts : t.providerShowAccounts,
+                  onPressed: () => setState(() => _open = !_open),
+                  icon: Icon(_open ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 22),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_open)
+          Container(
+            margin: const EdgeInsets.fromLTRB(32, 0, 12, 12),
+            decoration: BoxDecoration(
+              color: palette.surfaceRaised,
+              borderRadius: BorderRadius.circular(AppRadius.control),
+              border: Border.all(color: palette.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                for (var i = 0; i < widget.rows.length; i++) ...<Widget>[if (i > 0) Divider(height: 1, color: palette.border), widget.rows[i]],
+                if (widget.canManage) ...<Widget>[
+                  Divider(height: 1, color: palette.border),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: TextButton.icon(onPressed: widget.onAddAnother, icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.addAnotherAccount)),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
 
 /// One connection: who, how many models, whether it is free and working.
 class _AccountRow extends StatelessWidget {

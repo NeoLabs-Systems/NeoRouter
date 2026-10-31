@@ -3,6 +3,7 @@
 const { getDatabase } = require('../../db/database');
 const { HttpError } = require('../../middleware/error_handler');
 const registry = require('../../providers/registry');
+const { providerIdentity } = require('./provider_identity');
 const accounts = require('../providers/account_service');
 const metadata = require('./metadata_service');
 const { classify } = require('./free_classifier');
@@ -155,7 +156,7 @@ function bulkSetEnabled(userId, { accountId, enabled, onlyFree }) {
 
 // One row per model with everything routing needs. Overrides win over
 // provider data; provider data wins over canonical metadata.
-const SELECT_ENTRY = `SELECT m.*, a.slug, a.user_id, a.definition_id, a.billing_mode, a.enabled account_enabled, a.status account_status, a.prepaid account_prepaid,
+const SELECT_ENTRY = `SELECT m.*, a.slug, a.user_id, a.definition_id, a.label account_label, a.base_url account_base_url, a.billing_mode, a.enabled account_enabled, a.status account_status, a.prepaid account_prepaid,
     md.intelligence, md.intelligence_source, md.intelligence_confidence, md.speed_tps, md.context_window md_context,
     md.supports_tools md_tools, md.supports_vision md_vision, md.supports_reasoning md_reasoning, md.release_date, md.params_b, md.skills_json,
     s.successes, s.failures, s.decayed_at, s.latency_ms, s.ttft_ms, s.tps, s.samples, s.penalty, s.penalty_at,
@@ -180,6 +181,9 @@ function toEntry(row) {
     userId: row.user_id,
     providerSlug: row.slug,
     definitionId: row.definition_id,
+    // Several accounts with one provider are one provider: the same key and
+    // name. Custom endpoints are one provider per address.
+    ...providerIdentity({ definitionId: row.definition_id, slug: row.slug, label: row.account_label, baseUrl: row.account_base_url }),
     billingMode: row.billing_mode,
     enabled: Boolean(row.enabled),
     available: Boolean(row.available),

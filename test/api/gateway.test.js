@@ -285,3 +285,15 @@ test('web files are served for revalidation so new releases are picked up', asyn
   const response = await request(app).get('/');
   if (response.status === 200) assert.equal(response.headers['cache-control'], 'private, no-cache');
 });
+
+test('several accounts of one provider count as one provider', async () => {
+  const second = await api('post', '/providers/accounts', { definitionId: 'custom_openai', slug: 'mock-two', baseUrl: mock.url, secret: 'good-key', billingMode: 'free_tier' });
+  assert.equal(second.status, 201, JSON.stringify(second.body));
+  const accounts = (await api('get', '/providers/accounts')).body.accounts;
+  const same = accounts.filter((account) => account.baseUrl === mock.url || account.slug === 'mock-two');
+  assert.ok(same.length >= 2);
+  assert.equal(new Set(same.map((account) => account.providerKey)).size, 1, 'one provider key for both accounts');
+  const models = (await api('get', '/models')).body.models.filter((model) => model.modelId === 'ok-alpha');
+  assert.ok(models.length >= 2 && new Set(models.map((model) => model.providerKey)).size === 1);
+  await api('delete', `/providers/accounts/${second.body.account.id}`);
+});

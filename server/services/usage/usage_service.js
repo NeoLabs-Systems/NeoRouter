@@ -1,6 +1,7 @@
 'use strict';
 
 const { getDatabase } = require('../../db/database');
+const { providerIdentity } = require('../catalog/provider_identity');
 
 const RANGES = { '24h': 86_400_000, '7d': 7 * 86_400_000, '30d': 30 * 86_400_000 };
 
@@ -147,8 +148,9 @@ function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}
   const since = rangeStart(range, now);
   const bucketMs = range === '24h' ? 3_600_000 : range === '7d' ? 6 * 3_600_000 : 86_400_000;
   const rows = db.prepare(`SELECT r.created_at, r.status, r.error_code, r.input_tokens, r.output_tokens, r.cost_usd, r.saved_usd, r.is_free,
-      r.latency_ms, r.ttft_ms, r.attempts, r.stream, r.api_format, r.model_label, r.router_key_id, r.trail_json, r.capability, k.name key_name
-    FROM requests r LEFT JOIN router_keys k ON k.id = r.router_key_id
+      r.latency_ms, r.ttft_ms, r.attempts, r.stream, r.api_format, r.model_label, r.router_key_id, r.trail_json, r.capability, k.name key_name,
+      a.definition_id, a.slug account_slug, a.label account_label, a.base_url account_base_url
+    FROM requests r LEFT JOIN router_keys k ON k.id = r.router_key_id LEFT JOIN provider_accounts a ON a.id = r.account_id
     WHERE r.user_id = ? AND r.created_at >= ?${keys.sql} ORDER BY r.created_at`);
 
   const buckets = new Map();
@@ -157,7 +159,10 @@ function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}
   const outcomes = {};
   const histogramEdges = [250, 500, 1000, 2000, 5000, 10000, 30000, Infinity];
   const histogram = histogramEdges.map((edge) => ({ upToMs: Number.isFinite(edge) ? edge : null, count: 0 }));
-  const providerOf = (row) => (row.model_label ? row.model_label.split('/')[0] : null);
+  // Accounts of one provider count as that provider.
+  const providerOf = (row) => (row.definition_id
+    ? providerIdentity({ definitionId: row.definition_id, slug: row.account_slug, label: row.account_label, baseUrl: row.account_base_url }).providerName
+    : row.model_label ? row.model_label.split('/')[0] : null);
   const groups = {
     byProvider: grouper(providerOf),
     byModel: grouper((row) => row.model_label),

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -367,6 +369,14 @@ class _CapacityCard extends StatelessWidget {
   }
 }
 
+List<List<ProviderAccount>> _byProvider(List<ProviderAccount> accounts) {
+  final groups = <String, List<ProviderAccount>>{};
+  for (final account in accounts) {
+    groups.putIfAbsent(account.providerKey, () => <ProviderAccount>[]).add(account);
+  }
+  return groups.values.toList();
+}
+
 class _ConnectionsList extends StatelessWidget {
   const _ConnectionsList({required this.accounts, required this.onAll});
 
@@ -390,12 +400,16 @@ class _ConnectionsList extends StatelessWidget {
         else
           SettingsCardList(
             children: <Widget>[
-              for (final account in accounts.take(6))
+              // A provider's accounts together, its healthiest account's status first.
+              for (final group in _byProvider(accounts).take(6))
                 ListRow(
-                  leading: ProviderAvatar(label: account.label, size: 30),
-                  title: account.label,
-                  subtitle: t.homeModelsLine('${account.modelCount}', '${account.freeModelCount}'),
-                  trailing: accountStatusDot(account),
+                  leading: ProviderAvatar(label: group.first.providerName, size: 30),
+                  title: group.length > 1 ? group.first.providerName : group.first.label,
+                  subtitle: <String>[
+                    if (group.length > 1) t.providerAccountsCount('${group.length}'),
+                    t.homeModelsLine('${group.map((account) => account.modelCount).reduce(math.max)}', '${group.map((account) => account.freeModelCount).reduce(math.max)}'),
+                  ].join(' · '),
+                  trailing: accountStatusDot(group.firstWhere((account) => account.status == 'healthy', orElse: () => group.first)),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
                 ),
             ],

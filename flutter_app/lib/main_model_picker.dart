@@ -102,7 +102,7 @@ class _ModelPickerState extends State<_ModelPicker> {
     final words = _search.text.toLowerCase().split(RegExp(r'\s+')).where((word) => word.isNotEmpty);
     return _models.where((model) {
       if (_capabilityFilter != null && model.capability != _capabilityFilter) return false;
-      final haystack = '${model.name} ${model.id} ${model.providerSlug}'.toLowerCase();
+      final haystack = '${model.name} ${model.id} ${model.providerName}'.toLowerCase();
       if (!words.every(haystack.contains)) return false;
       final kindOk = switch (_kind) {
         _Kind.all => true,
@@ -127,12 +127,15 @@ class _ModelPickerState extends State<_ModelPicker> {
     return widget.routes.where((route) => words.every('${route.$1} ${route.$2}'.toLowerCase().contains)).toList();
   }
 
-  void _tap(String id) {
+  // A model on several accounts of one provider is one choice: picking it
+  // allows every copy, so the router may use whichever account has room.
+  void _tap(String id, [List<String>? copies]) {
+    final ids = copies ?? <String>[id];
     if (!widget.multi) {
       Navigator.of(context).pop(<String>[id]);
       return;
     }
-    setState(() => _chosen.contains(id) ? _chosen.remove(id) : _chosen.add(id));
+    setState(() => ids.any(_chosen.contains) ? _chosen.removeAll(ids) : _chosen.addAll(ids));
   }
 
   @override
@@ -141,10 +144,12 @@ class _ModelPickerState extends State<_ModelPicker> {
     final palette = neoRouterPaletteOf(context);
     final visible = _visible();
     final routes = _visibleRoutes();
-    // Grouped by provider, providers in order of their first (best) model.
-    final groups = <String, List<CatalogModel>>{};
+    // Grouped by provider (its accounts together), each model once.
+    final names = <String, String>{};
+    final groups = <String, Map<String, List<CatalogModel>>>{};
     for (final model in visible) {
-      groups.putIfAbsent(model.providerSlug, () => <CatalogModel>[]).add(model);
+      names[model.providerKey] = model.providerName;
+      groups.putIfAbsent(model.providerKey, () => <String, List<CatalogModel>>{}).putIfAbsent(model.modelId, () => <CatalogModel>[]).add(model);
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -226,9 +231,9 @@ class _ModelPickerState extends State<_ModelPicker> {
                     for (final entry in groups.entries) ...<Widget>[
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
-                        child: Text(entry.key.toUpperCase(), style: sectionEyebrowStyle(palette)),
+                        child: Text(names[entry.key]!.toUpperCase(), style: sectionEyebrowStyle(palette)),
                       ),
-                      for (final model in entry.value) _row(t, palette, model),
+                      for (final copies in entry.value.values) _row(t, palette, copies.first, copies.map((model) => model.id).toList()),
                     ],
                   ],
                 ),
@@ -251,7 +256,7 @@ class _ModelPickerState extends State<_ModelPicker> {
     );
   }
 
-  Widget _row(AppL10n t, NeoRouterPalette palette, CatalogModel model) {
+  Widget _row(AppL10n t, NeoRouterPalette palette, CatalogModel model, List<String> copies) {
     final facts = <String>[
       modelPriceLabel(t, model),
       if (model.contextWindow != null) t.pickModelContext(formatCount(model.contextWindow!)),
@@ -259,6 +264,7 @@ class _ModelPickerState extends State<_ModelPicker> {
     return _choice(
       palette,
       id: model.id,
+      copies: copies,
       title: model.name,
       subtitle: facts.join(' · '),
       subtitleColor: model.isFree ? palette.accent : null,
@@ -270,10 +276,10 @@ class _ModelPickerState extends State<_ModelPicker> {
     );
   }
 
-  Widget _choice(NeoRouterPalette palette, {required String id, required String title, required String subtitle, Color? subtitleColor, List<Widget> trailing = const <Widget>[]}) {
-    final chosen = _chosen.contains(id);
+  Widget _choice(NeoRouterPalette palette, {required String id, List<String>? copies, required String title, required String subtitle, Color? subtitleColor, List<Widget> trailing = const <Widget>[]}) {
+    final chosen = (copies ?? <String>[id]).any(_chosen.contains);
     return InkWell(
-      onTap: () => _tap(id),
+      onTap: () => _tap(id, copies),
       child: Container(
         color: chosen ? palette.accentSoft : null,
         padding: const EdgeInsets.fromLTRB(20, 9, 16, 9),

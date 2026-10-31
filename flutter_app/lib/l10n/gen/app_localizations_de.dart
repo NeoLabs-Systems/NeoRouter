@@ -2155,6 +2155,27 @@ class AppL10nDe extends AppL10n {
   String get addAnotherAccount => 'Weiteres Konto hinzufügen';
 
   @override
+  String providerAccountsCount(String count) {
+    return '$count Konten';
+  }
+
+  @override
+  String providerAccountsWorking(String count) {
+    return '$count funktionieren';
+  }
+
+  @override
+  String providerAccountsProblems(String count) {
+    return '$count brauchen Aufmerksamkeit';
+  }
+
+  @override
+  String get providerShowAccounts => 'Konten zeigen';
+
+  @override
+  String get providerHideAccounts => 'Konten ausblenden';
+
+  @override
   String limitsModelsRoom(String room, String total) {
     return '$room von $total Modellen haben heute noch Kontingent';
   }

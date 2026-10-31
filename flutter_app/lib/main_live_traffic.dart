@@ -318,7 +318,9 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
 
   List<String> _apps = <String>[];
   List<String> _providers = <String>[];
+  // Provider keys of the cards ("*": the rest), and which provider each account slug belongs to.
   List<String> _providerSlugs = <String>[];
+  Map<String, String> _slugToProvider = <String, String>{};
   final Map<String, int> _appRequests = <String, int>{};
   final Map<int, String> _lastModel = <int, String>{};
 
@@ -383,13 +385,20 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
     final wide = MediaQuery.maybeSizeOf(context)?.width ?? 1200;
     final maxApps = wide < 640 ? 4 : 6;
     _apps = keyNames.length > maxApps ? <String>[...keyNames.take(maxApps - 1), _otherLabel] : keyNames;
-    final enabled = widget.accounts.where((account) => account.enabled).toList()..sort((a, b) => (slugCounts[b.slug] ?? 0).compareTo(slugCounts[a.slug] ?? 0));
-    final maxProviders = 8;
-    final shown = enabled.length > maxProviders ? enabled.take(maxProviders - 1).toList() : enabled;
-    _providerSlugs = shown.map((account) => account.slug).toList();
-    // Custom endpoints share one generic label; their own name tells them apart.
-    _providers = shown.map((account) => account.definitionId.startsWith('custom') || account.label.isEmpty ? account.slug : account.label).toList();
-    if (enabled.length > maxProviders) {
+    // One card per provider, however many of its accounts are connected.
+    _slugToProvider = <String, String>{for (final account in widget.accounts) account.slug: account.providerKey};
+    final providerCounts = <String, int>{};
+    final providerNames = <String, String>{};
+    for (final account in widget.accounts.where((account) => account.enabled)) {
+      providerNames.putIfAbsent(account.providerKey, () => account.providerName);
+      providerCounts[account.providerKey] = (providerCounts[account.providerKey] ?? 0) + (slugCounts[account.slug] ?? 0);
+    }
+    final keys = providerNames.keys.toList()..sort((a, b) => providerCounts[b]!.compareTo(providerCounts[a]!));
+    const maxProviders = 8;
+    final shown = keys.length > maxProviders ? keys.take(maxProviders - 1).toList() : keys;
+    _providerSlugs = List<String>.of(shown);
+    _providers = shown.map((key) => providerNames[key]!).toList();
+    if (keys.length > maxProviders) {
       _providerSlugs.add('*');
       _providers.add(_otherLabel);
     }
@@ -407,7 +416,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   }
 
   int _providerIndex(String slug) {
-    final index = _providerSlugs.indexOf(slug);
+    final index = _providerSlugs.indexOf(_slugToProvider[slug] ?? slug);
     if (index >= 0) return index;
     return _providerSlugs.indexOf('*');
   }

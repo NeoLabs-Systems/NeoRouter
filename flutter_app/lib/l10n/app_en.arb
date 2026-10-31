@@ -1190,6 +1190,14 @@
     }
   },
   "addAnotherAccount": "Add another account",
+  "providerAccountsCount": "{count} accounts",
+  "@providerAccountsCount": {"placeholders": {"count": {"type": "String"}}},
+  "providerAccountsWorking": "{count} working",
+  "@providerAccountsWorking": {"placeholders": {"count": {"type": "String"}}},
+  "providerAccountsProblems": "{count} need attention",
+  "@providerAccountsProblems": {"placeholders": {"count": {"type": "String"}}},
+  "providerShowAccounts": "Show accounts",
+  "providerHideAccounts": "Hide accounts",
   "limitsModelsRoom": "{room} of {total} models have room today",
   "@limitsModelsRoom": {
     "placeholders": {

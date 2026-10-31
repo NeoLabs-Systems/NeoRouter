@@ -3889,6 +3889,36 @@ abstract class AppL10n {
   /// **'Add another account'**
   String get addAnotherAccount;
 
+  /// No description provided for @providerAccountsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} accounts'**
+  String providerAccountsCount(String count);
+
+  /// No description provided for @providerAccountsWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} working'**
+  String providerAccountsWorking(String count);
+
+  /// No description provided for @providerAccountsProblems.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} need attention'**
+  String providerAccountsProblems(String count);
+
+  /// No description provided for @providerShowAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Show accounts'**
+  String get providerShowAccounts;
+
+  /// No description provided for @providerHideAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide accounts'**
+  String get providerHideAccounts;
+
   /// No description provided for @limitsModelsRoom.
   ///
   /// In en, this message translates to:
