@@ -36,10 +36,36 @@ function globToRegExp(pattern) {
   return new RegExp(`^${escaped}$`, 'i');
 }
 
-function allowedByKey(entry, key) {
+// A key's allowed list holds model patterns ("groq/*") and routing entries
+// ("auto", "auto:coding", "auto-free:*"). Model patterns bound which models
+// the key reaches, routing included; routing entries bound which autos it
+// may ask for.
+const isRoutePattern = (pattern) => /^auto(?:$|[-:*?])/i.test(String(pattern).trim());
+
+function keyPatterns(key) {
   const patterns = JSON.parse(key.allowed_models_json || '[]');
-  if (!patterns.length) return true;
-  return patterns.some((pattern) => globToRegExp(pattern).test(entry.id));
+  return { models: patterns.filter((pattern) => !isRoutePattern(pattern)), routes: patterns.filter(isRoutePattern) };
+}
+
+function allowedByKey(entry, key) {
+  const { models } = keyPatterns(key);
+  if (!models.length) return true;
+  return models.some((pattern) => globToRegExp(pattern).test(entry.id));
+}
+
+// Whether the key may ask for this model name. With routing entries listed,
+// an auto must match one of them (plain "auto" also matches as
+// "auto:<key profile>"), and a model named directly needs model patterns too.
+function routeAllowedByKey(requested, key) {
+  const { models, routes } = keyPatterns(key);
+  if (!routes.length) return true;
+  const parsed = parseModel(requested);
+  if (!parsed.auto) return models.length > 0;
+  const base = parsed.kind ? `auto-${parsed.kind}` : 'auto';
+  const named = parsed.profile === 'default' ? null : parsed.profile;
+  const names = named ? [`${base}:${profiles.resolve(key.user_id, named)?.slug || named}`] : [base];
+  if (!named) names.push(`${base}:${profiles.resolve(key.user_id, key.profile || 'balanced')?.slug || 'balanced'}`);
+  return names.some((name) => routes.some((pattern) => globToRegExp(pattern).test(name)));
 }
 
 // The kinds of model an auto variant can be limited to.
@@ -261,6 +287,9 @@ class RoutingPlan {
     const profileRef = named || key.profile || 'balanced';
     this.profile = profiles.resolve(userId, profileRef);
     if (!this.profile) throw new HttpError(400, 'UNKNOWN_PROFILE', `Unknown routing profile "${profileRef}".`);
+    if (!routeAllowedByKey(requestedModel, key)) {
+      throw new HttpError(403, 'MODEL_NOT_ALLOWED', `This key may not use "${String(requestedModel || 'auto').trim() || 'auto'}". Ask for one of the models or routings it allows (GET /v1/models).`);
+    }
     // What a chat request asks for (kind mix, skills, difficulty); other
     // capabilities have no prompt to read.
     this.task = capability === 'chat' && request?.messages?.length ? classify(request, { inputTokens, hint: taskHint }) : null;
@@ -474,4 +503,4 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
   };
 }
 
-module.exports = { RoutingPlan, explainNoModel, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor };
+module.exports = { RoutingPlan, explainNoModel, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, routeAllowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor };

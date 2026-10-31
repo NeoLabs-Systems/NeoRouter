@@ -820,7 +820,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get allowedModels =>
-      'Erlaubte Modelle – Glob-Muster, eines pro Zeile (leer = alle)';
+      'Erlaubte Modelle und Routings – eines pro Zeile, * als Platzhalter (leer = alle)';
 
   @override
   String get defaultProfile => 'Routing-Stil für „auto“';

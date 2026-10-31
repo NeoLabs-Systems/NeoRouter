@@ -425,7 +425,7 @@
   },
   "paceOver": "Used up until the reset",
   "rpmLimit": "Requests per minute (empty = no limit)",
-  "allowedModels": "Allowed models – glob patterns, one per line (empty = all)",
+  "allowedModels": "Allowed models and routings – one per line, * as wildcard (empty = all)",
   "defaultProfile": "Routing style for \"auto\"",
   "keySecretTitle": "Copy your new key",
   "keySecretBody": "For your security it is shown only once. Paste it into your app where it asks for an API key.",

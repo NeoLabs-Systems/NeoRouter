@@ -7,7 +7,7 @@ const catalog = require('../../services/catalog/catalog_service');
 const accounts = require('../../services/providers/account_service');
 const experience = require('../../services/routing/task/experience');
 const { getDatabase } = require('../../db/database');
-const { allowedByKey, kindAllowed, modelKind, MODEL_KINDS } = require('../../services/routing/router');
+const { allowedByKey, routeAllowedByKey, kindAllowed, modelKind, MODEL_KINDS } = require('../../services/routing/router');
 const profiles = require('../../services/routing/profiles');
 const { createLogger } = require('../../utils/logger');
 
@@ -116,9 +116,11 @@ router.get('/models', requireRouterKey, (req, res) => {
   const key = req.routerKey;
   // ?type=embedding (or image, speech, transcription, moderation, video) lists another kind.
   const kind = KINDS.has(req.query.type) ? req.query.type : 'chat';
-  const entries = modelsVisibleTo(key, kind);
+  const reachable = modelsVisibleTo(key, kind);
   const created = Math.floor(Date.now() / 1000);
-  const autos = autoModels(key, entries, kind);
+  // Only the autos the key may ask for, and models only when it may name them.
+  const autos = autoModels(key, reachable, kind).filter((auto) => routeAllowedByKey(auto.id, key));
+  const entries = reachable.filter((entry) => routeAllowedByKey(entry.id, key));
   if (req.get('anthropic-version')) {
     const data = [...autos.map((auto) => ({ type: 'model', id: auto.id, display_name: auto.name, created_at: new Date().toISOString() })),
       ...entries.map((entry) => ({ type: 'model', id: entry.id, display_name: entry.name, created_at: new Date().toISOString() }))];
@@ -149,7 +151,7 @@ router.get('/models', requireRouterKey, (req, res) => {
 });
 
 router.get('/models/:model(*)', requireRouterKey, (req, res, next) => {
-  const entry = modelsVisibleTo(req.routerKey).find((item) => item.id === req.params.model);
+  const entry = modelsVisibleTo(req.routerKey).find((item) => item.id === req.params.model && routeAllowedByKey(item.id, req.routerKey));
   if (!entry) return gatewayErrorHandler('openai_chat')(Object.assign(new Error(`Model ${req.params.model} not found.`), { status: 404, code: 'MODEL_NOT_FOUND' }), req, res, next);
   return res.json({ id: entry.id, object: 'model', created: Math.floor(Date.now() / 1000), owned_by: entry.providerSlug });
 });

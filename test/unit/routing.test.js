@@ -191,3 +191,20 @@ test('a quality profile does not pick a tiny model just because it is fast and r
   assert.equal(order('smart')[0], big.ref);
   assert.equal(order('fast')[0], tiny.ref, 'speed-first profiles may still prefer the small model');
 });
+
+test('routing entries in a key\'s allowed list limit which autos it may ask for', () => {
+  const { routeAllowedByKey, allowedByKey } = require('../../server/services/routing/router');
+  const key = (patterns, profile = 'balanced') => ({ user_id: 'u', profile, allowed_models_json: JSON.stringify(patterns) });
+  assert.ok(routeAllowedByKey('auto:coding', key([])), 'an empty list allows everything');
+  assert.ok(routeAllowedByKey('groq/llama', key(['groq/*'])), 'model patterns alone leave every auto open');
+  assert.ok(routeAllowedByKey('auto:fast', key(['groq/*'])));
+  assert.ok(routeAllowedByKey('auto:fast', key(['auto:fast'])));
+  assert.ok(!routeAllowedByKey('auto:smart', key(['auto:fast'])));
+  assert.ok(routeAllowedByKey('auto', key(['auto:fast'], 'fast')), 'plain auto counts as auto:<key profile>');
+  assert.ok(routeAllowedByKey('auto:default', key(['auto'])));
+  assert.ok(routeAllowedByKey('auto-free:smart', key(['auto*'])));
+  assert.ok(!routeAllowedByKey('groq/llama', key(['auto'])), 'routing only: no models named directly');
+  assert.ok(routeAllowedByKey('groq/llama', key(['auto', 'groq/*'])));
+  assert.ok(allowedByKey({ id: 'openai/gpt' }, key(['auto:fast'])), 'routing entries do not narrow the models routing picks from');
+  assert.ok(!allowedByKey({ id: 'openai/gpt' }, key(['auto:fast', 'groq/*'])));
+});

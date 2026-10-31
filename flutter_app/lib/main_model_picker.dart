@@ -11,13 +11,15 @@ import 'src/models.dart';
 /// Picks one model ([multi] false, returns its id) or several (returns their
 /// ids) from the catalog for [capability], so nobody has to type model ids.
 /// Search matches name, id and provider; filters narrow by price kind and
-/// what the model can do. Returns null when cancelled.
+/// what the model can do. [routes] (model id, label) are offered above the
+/// models, for picking routings such as "auto:fast". Returns null when cancelled.
 Future<List<String>?> showModelPicker(
   BuildContext context, {
   required NeoRouterController controller,
   String capability = 'chat',
   List<String> selected = const <String>[],
   bool multi = false,
+  List<(String, String)> routes = const <(String, String)>[],
 }) {
   final mobile = MediaQuery.sizeOf(context).width < AppBreakpoints.mobile;
   return showDialog<List<String>>(
@@ -27,7 +29,7 @@ Future<List<String>?> showModelPicker(
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 620, maxHeight: 720),
-        child: _ModelPicker(controller: controller, capability: capability, selected: selected, multi: multi),
+        child: _ModelPicker(controller: controller, capability: capability, selected: selected, multi: multi, routes: routes),
       ),
     ),
   );
@@ -36,12 +38,13 @@ Future<List<String>?> showModelPicker(
 enum _Kind { all, free, plan, paid }
 
 class _ModelPicker extends StatefulWidget {
-  const _ModelPicker({required this.controller, required this.capability, required this.selected, required this.multi});
+  const _ModelPicker({required this.controller, required this.capability, required this.selected, required this.multi, required this.routes});
 
   final NeoRouterController controller;
   final String capability;
   final List<String> selected;
   final bool multi;
+  final List<(String, String)> routes;
 
   @override
   State<_ModelPicker> createState() => _ModelPickerState();
@@ -107,12 +110,19 @@ class _ModelPickerState extends State<_ModelPicker> {
       });
   }
 
-  void _tap(CatalogModel model) {
+  // Routings are not models: price and capability filters hide them.
+  List<(String, String)> _visibleRoutes() {
+    if (_kind != _Kind.all || _tools || _vision) return const <(String, String)>[];
+    final words = _search.text.toLowerCase().split(RegExp(r'\s+')).where((word) => word.isNotEmpty);
+    return widget.routes.where((route) => words.every('${route.$1} ${route.$2}'.toLowerCase().contains)).toList();
+  }
+
+  void _tap(String id) {
     if (!widget.multi) {
-      Navigator.of(context).pop(<String>[model.id]);
+      Navigator.of(context).pop(<String>[id]);
       return;
     }
-    setState(() => _chosen.contains(model.id) ? _chosen.remove(model.id) : _chosen.add(model.id));
+    setState(() => _chosen.contains(id) ? _chosen.remove(id) : _chosen.add(id));
   }
 
   @override
@@ -120,6 +130,7 @@ class _ModelPickerState extends State<_ModelPicker> {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final visible = _visible();
+    final routes = _visibleRoutes();
     // Grouped by provider, providers in order of their first (best) model.
     final groups = <String, List<CatalogModel>>{};
     for (final model in visible) {
@@ -167,12 +178,19 @@ class _ModelPickerState extends State<_ModelPicker> {
               ? const Padding(padding: EdgeInsets.all(40), child: Center(child: SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2))))
               : _error != null
               ? Padding(padding: const EdgeInsets.all(24), child: InlineError(message: _error!))
-              : visible.isEmpty
+              : visible.isEmpty && routes.isEmpty
               ? Padding(padding: const EdgeInsets.all(32), child: Text(t.pickModelNone, textAlign: TextAlign.center, style: TextStyle(color: palette.textSoft)))
               : ListView(
                   shrinkWrap: true,
                   padding: const EdgeInsets.only(bottom: 8),
                   children: <Widget>[
+                    if (routes.isNotEmpty) ...<Widget>[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+                        child: Text(t.groupRouting.toUpperCase(), style: sectionEyebrowStyle(palette)),
+                      ),
+                      for (final route in routes) _choice(palette, id: route.$1, title: route.$2, subtitle: route.$1),
+                    ],
                     for (final entry in groups.entries) ...<Widget>[
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
@@ -202,13 +220,28 @@ class _ModelPickerState extends State<_ModelPicker> {
   }
 
   Widget _row(AppL10n t, NeoRouterPalette palette, CatalogModel model) {
-    final chosen = _chosen.contains(model.id);
     final facts = <String>[
       modelPriceLabel(t, model),
       if (model.contextWindow != null) t.pickModelContext(formatCount(model.contextWindow!)),
     ];
+    return _choice(
+      palette,
+      id: model.id,
+      title: model.name,
+      subtitle: facts.join(' · '),
+      subtitleColor: model.isFree ? palette.accent : null,
+      trailing: <Widget>[
+        if (model.tools == true) Padding(padding: const EdgeInsets.only(left: 6), child: Tooltip(message: t.filterTools, child: Icon(Icons.build_outlined, size: 15, color: palette.textMuted))),
+        if (model.vision == true) Padding(padding: const EdgeInsets.only(left: 6), child: Tooltip(message: t.filterVision, child: Icon(Icons.image_outlined, size: 15, color: palette.textMuted))),
+        if (model.reasoning == true) Padding(padding: const EdgeInsets.only(left: 6), child: Tooltip(message: t.pickModelReasoning, child: Icon(Icons.psychology_outlined, size: 16, color: palette.textMuted))),
+      ],
+    );
+  }
+
+  Widget _choice(NeoRouterPalette palette, {required String id, required String title, required String subtitle, Color? subtitleColor, List<Widget> trailing = const <Widget>[]}) {
+    final chosen = _chosen.contains(id);
     return InkWell(
-      onTap: () => _tap(model),
+      onTap: () => _tap(id),
       child: Container(
         color: chosen ? palette.accentSoft : null,
         padding: const EdgeInsets.fromLTRB(20, 9, 16, 9),
@@ -222,15 +255,13 @@ class _ModelPickerState extends State<_ModelPicker> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(model.name, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text), overflow: TextOverflow.ellipsis),
+                  Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text), overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 2),
-                  Text(facts.join(' · '), style: TextStyle(fontSize: 12.5, color: model.isFree ? palette.accent : palette.textMuted)),
+                  Text(subtitle, style: TextStyle(fontSize: 12.5, color: subtitleColor ?? palette.textMuted)),
                 ],
               ),
             ),
-            if (model.tools == true) Padding(padding: const EdgeInsets.only(left: 6), child: Tooltip(message: t.filterTools, child: Icon(Icons.build_outlined, size: 15, color: palette.textMuted))),
-            if (model.vision == true) Padding(padding: const EdgeInsets.only(left: 6), child: Tooltip(message: t.filterVision, child: Icon(Icons.image_outlined, size: 15, color: palette.textMuted))),
-            if (model.reasoning == true) Padding(padding: const EdgeInsets.only(left: 6), child: Tooltip(message: t.pickModelReasoning, child: Icon(Icons.psychology_outlined, size: 16, color: palette.textMuted))),
+            ...trailing,
             if (!widget.multi && chosen) Padding(padding: const EdgeInsets.only(left: 8), child: Icon(Icons.check_rounded, size: 18, color: palette.accent)),
           ],
         ),

@@ -244,7 +244,7 @@
   "paceTight": "Bei diesem Tempo etwa {forecast} bis zum Reset: NeoRouter bevorzugt günstigere Modelle",
   "paceOver": "Bis zum Reset aufgebraucht",
   "rpmLimit": "Requests pro Minute (leer = unbegrenzt)",
-  "allowedModels": "Erlaubte Modelle – Glob-Muster, eines pro Zeile (leer = alle)",
+  "allowedModels": "Erlaubte Modelle und Routings – eines pro Zeile, * als Platzhalter (leer = alle)",
   "defaultProfile": "Routing-Stil für „auto“",
   "keySecretTitle": "Kopiere deinen neuen Key",
   "keySecretBody": "Aus Sicherheitsgründen wird er nur einmal angezeigt. Füge ihn in deiner App dort ein, wo nach einem API-Key gefragt wird.",

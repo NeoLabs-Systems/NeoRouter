@@ -813,7 +813,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get allowedModels =>
-      'Allowed models – glob patterns, one per line (empty = all)';
+      'Allowed models and routings – one per line, * as wildcard (empty = all)';
 
   @override
   String get defaultProfile => 'Routing style for \"auto\"';

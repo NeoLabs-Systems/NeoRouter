@@ -1564,7 +1564,7 @@ abstract class AppL10n {
   /// No description provided for @allowedModels.
   ///
   /// In en, this message translates to:
-  /// **'Allowed models – glob patterns, one per line (empty = all)'**
+  /// **'Allowed models and routings – one per line, * as wildcard (empty = all)'**
   String get allowedModels;
 
   /// No description provided for @defaultProfile.
