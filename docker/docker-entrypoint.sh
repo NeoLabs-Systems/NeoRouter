@@ -33,8 +33,12 @@ rm -f "$home/.write-test"
 # configuration yet, and that example binds 127.0.0.1 — which inside a
 # container means the published port answers nothing. Seed the file with the
 # container defaults first so the first start is usable as-is.
-if [ ! -f "$home/.env" ] && [ -f /app/docker/env.default ]; then
-  cp /app/docker/env.default "$home/.env"
+if [ ! -f "$home/.env" ] && [ -f /app/docker/env.example ]; then
+  cp /app/docker/env.example "$home/.env"
+  # The image was built for one channel; the file must not claim another.
+  if [ -n "${NEOROUTER_RELEASE_CHANNEL:-}" ]; then
+    sed -i "s/^NEOROUTER_RELEASE_CHANNEL=.*/NEOROUTER_RELEASE_CHANNEL=${NEOROUTER_RELEASE_CHANNEL}/" "$home/.env"
+  fi
   chmod 0600 "$home/.env"
 fi
 

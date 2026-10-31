@@ -60,18 +60,6 @@ You need Node.js 20+ and git. The web app comes prebuilt; if it cannot be downlo
 
 Then open **http://localhost:4600/app**. The first account you create becomes the administrator. Add a provider, create a router key, and point any OpenAI or Anthropic SDK at `http://localhost:4600/v1`.
 
-### Docker
-
-```bash
-docker compose up -d --build
-```
-
-The image carries the server and the dashboard; the database, `secret.key` and
-logs live in the `neorouter-data` volume. Open **http://localhost:4600/app**
-afterwards. See [docs/docker.md](docs/docker.md) for the volume layout, reverse
-proxy settings, reaching an Ollama/LM Studio on the host, and the CLI inside the
-container.
-
 ```python
 from openai import OpenAI
 
@@ -129,8 +117,7 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
 | Start | Understand | Extend |
 | --- | --- | --- |
 | [Configuration](docs/configuration.md) | [Routing](docs/routing.md) | [Providers](docs/providers.md) |
-| [Docker](docs/docker.md) | [Security](SECURITY.md) | [Contributing](CONTRIBUTING.md) |
-| [CLI](#-cli) | | |
+| [CLI](#-cli) | [Security](SECURITY.md) | [Contributing](CONTRIBUTING.md) |
 
 ## 🛠️ CLI
 

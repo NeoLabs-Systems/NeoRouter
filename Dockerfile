@@ -2,14 +2,55 @@
 #
 # NeoRouter container image.
 #
-#   docker build -t neorouter .                                   # prebuilt web client
-#   docker build --target runtime-from-source -t neorouter:src .   # build the UI with Flutter
+#   docker build -t neorouter .                                    # this checkout, beta dashboard
+#   docker build --build-arg NEOROUTER_CHANNEL=stable -t neorouter:stable .
+#   docker build --build-arg NEOROUTER_VERSION=v0.1.0 -t neorouter:0.1.0 .
+#   docker build --target runtime-from-source -t neorouter:src .    # dashboard built with Flutter
 #
 # Runtime state (SQLite database, secret.key, downloaded models, backups) lives
 # in /data. Everything else in the image is read-only to the process.
 
 ARG NODE_VERSION=22
 ARG FLUTTER_VERSION=3.35.5
+
+# Which NeoRouter release the image represents. It selects the prebuilt
+# dashboard to download and the default release channel inside the image, so
+# `beta` and `stable` installs are one build argument apart.
+ARG NEOROUTER_CHANNEL=beta
+
+# ---------------------------------------------------------------------------
+# Source: the code that goes into the image.
+#
+# The build context is the source by default — `git clone --branch beta` before
+# `docker build` is how a version is picked for a checkout. NEOROUTER_VERSION
+# (tag or branch) makes the build fetch it from GitHub itself, for an image
+# built from a directory that is not that version.
+# ---------------------------------------------------------------------------
+FROM alpine:3.20 AS source
+
+ARG NEOROUTER_REPO=https://github.com/NeoLabs-Systems/NeoRouter.git
+ARG NEOROUTER_VERSION=
+
+RUN apk add --no-cache git ca-certificates
+
+COPY . /context
+
+RUN set -eux; \
+    if [ -z "${NEOROUTER_VERSION}" ]; then \
+      echo "Source: the build context"; \
+      rm -rf /src; \
+      cp -a /context /src; \
+      rm -rf /src/.git /src/.dockerignore; \
+    else \
+      echo "Source: ${NEOROUTER_REPO} at ${NEOROUTER_VERSION}"; \
+      if ! git clone --quiet --depth 1 --branch "${NEOROUTER_VERSION}" "${NEOROUTER_REPO}" /src; then \
+        echo "NEOROUTER_VERSION '${NEOROUTER_VERSION}' is not a tag or branch of ${NEOROUTER_REPO}" >&2; \
+        exit 1; \
+      fi; \
+      rm -rf /src/.git; \
+    fi; \
+    test -f /src/package.json; \
+    echo "Version: $(sed -n 's/^\s*"version": *"\([^"]*\)".*/\1/p' /src/package.json | head -1)"
 
 # ---------------------------------------------------------------------------
 # Dependencies: production node_modules, native modules built for this image.
@@ -27,7 +68,7 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY --from=source /src/package.json /src/package-lock.json ./
 
 # npm ci installs exactly the lockfile. The install scripts npm skips for
 # packages it does not trust (package.json allowScripts) are run by the
@@ -40,14 +81,16 @@ RUN --mount=type=cache,target=/root/.npm \
  && node -e "new (require('better-sqlite3'))(':memory:').close(); require('bcrypt')"
 
 # ---------------------------------------------------------------------------
-# Web client, prebuilt: the tarball GitHub attaches to the rolling web-main /
-# web-beta releases (.github/workflows/web-client.yml). This is what an npm
-# install without the Flutter SDK uses as well.
+# Web client, prebuilt: the tarball GitHub attaches to the rolling web-beta /
+# web-main releases (.github/workflows/web-client.yml). This is also what an
+# npm install without the Flutter SDK uses, so no Flutter is needed here.
 # ---------------------------------------------------------------------------
 FROM debian:bookworm-slim AS web-prebuilt
 
-ARG NEOROUTER_WEB_CHANNEL=main
-# Point this at a local mirror or file:// path for air-gapped builds.
+# The dashboard always matches the code: the channel decides which release tag
+# carries it. NEOROUTER_WEB_URL points at a mirror or a file:// path instead,
+# for air-gapped builds.
+ARG NEOROUTER_CHANNEL=beta
 ARG NEOROUTER_WEB_URL=
 
 RUN apt-get update \
@@ -56,11 +99,10 @@ RUN apt-get update \
 
 WORKDIR /web
 RUN set -eux; \
-    channel="${NEOROUTER_WEB_CHANNEL}"; \
-    case "$channel" in \
+    case "${NEOROUTER_CHANNEL:-beta}" in \
       beta) release=web-beta ;; \
-      main|stable) release=web-main ;; \
-      *) echo "NEOROUTER_WEB_CHANNEL must be main or beta, got '$channel'" >&2; exit 1 ;; \
+      stable|main|latest) release=web-main ;; \
+      *) echo "NEOROUTER_CHANNEL must be beta or stable, got '${NEOROUTER_CHANNEL}'" >&2; exit 1 ;; \
     esac; \
     url="${NEOROUTER_WEB_URL:-https://github.com/NeoLabs-Systems/NeoRouter/releases/download/${release}/neorouter-web.tar.gz}"; \
     echo "Downloading web client: $url"; \
@@ -80,8 +122,7 @@ RUN set -eux; \
 FROM ghcr.io/cirruslabs/flutter:${FLUTTER_VERSION} AS web-source
 
 WORKDIR /app/flutter_app
-COPY flutter_app/pubspec.yaml flutter_app/pubspec.lock flutter_app/l10n.yaml ./
-COPY flutter_app ./
+COPY --from=source /src/flutter_app ./
 
 # The full icon font keeps its glyphs stable across releases, so a cached font
 # from an older build never shows blank icons.
@@ -110,6 +151,7 @@ LABEL org.opencontainers.image.title="NeoRouter" \
 # then needs chown to this uid.
 ARG UID=1000
 ARG GID=1000
+ARG NEOROUTER_CHANNEL=beta
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates ffmpeg tini \
  && rm -rf /var/lib/apt/lists/* \
@@ -120,7 +162,7 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY --chown=${UID}:${GID} . .
+COPY --from=source --chown=${UID}:${GID} /src ./
 COPY --from=deps --chown=${UID}:${GID} /app/node_modules ./node_modules
 COPY --from=web-prebuilt --chown=${UID}:${GID} /web ./flutter_app/build/web
 
@@ -139,7 +181,10 @@ ENV NODE_ENV=production \
     # The container's only listener must be reachable from outside it; the
     # default 127.0.0.1 would make the published port answer nothing.
     NEOROUTER_HOST=0.0.0.0 \
-    NEOROUTER_PORT=4600
+    NEOROUTER_PORT=4600 \
+    # Default channel for `neorouter channel` / `update` inside the image:
+    # the one this image was built from.
+    NEOROUTER_RELEASE_CHANNEL=${NEOROUTER_CHANNEL}
 
 VOLUME ["/data"]
 EXPOSE 4600

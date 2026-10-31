@@ -6,6 +6,15 @@
 #
 # Then open http://localhost:4600/app — the first account you create is the
 # administrator. Point OpenAI/Anthropic clients at http://localhost:4600/v1.
+#
+# The version is chosen with NEOROUTER_CHANNEL or NEOROUTER_VERSION, in the
+# shell or in a .env file next to this one:
+#
+#   NEOROUTER_CHANNEL=beta docker compose up -d --build    # beta branch
+#   NEOROUTER_CHANNEL=stable docker compose up -d --build  # main branch
+#   NEOROUTER_VERSION=v0.1.0 docker compose up -d --build  # an exact tag
+#
+# With neither set, the image is built from this checkout as it is.
 
 services:
   neorouter:
@@ -16,7 +25,10 @@ services:
       # this checkout instead of downloading the prebuilt web client.
       target: runtime
       args:
-        NEOROUTER_WEB_CHANNEL: main
+        # beta is the project's default channel; set NEOROUTER_CHANNEL=stable
+        # or NEOROUTER_VERSION=<tag> to build something else.
+        NEOROUTER_CHANNEL: ${NEOROUTER_CHANNEL:-beta}
+        NEOROUTER_VERSION: ${NEOROUTER_VERSION:-}
         NODE_VERSION: "22"
     # Or use a published image instead of building:
     # image: ghcr.io/neolabs-systems/neorouter:latest

@@ -60,6 +60,9 @@ jobs:
           context: .
           load: true
           tags: neorouter:ci
+          # The dashboard matches the branch: main is stable, beta is beta.
+          build-args: |
+            NEOROUTER_CHANNEL=${{ github.ref_name == 'beta' && 'beta' || 'stable' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -113,6 +116,8 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            NEOROUTER_CHANNEL=${{ github.ref_name == 'beta' && 'beta' || 'stable' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

@@ -25,6 +25,33 @@ docker run -d --name neorouter \
   neorouter
 ```
 
+## Choosing the version
+
+`beta` is the default channel (the project's own default: `beta` is the
+development branch, `main` is stable). The channel picks the code **and** the
+matching prebuilt dashboard, so the two cannot drift apart.
+
+```bash
+NEOROUTER_CHANNEL=beta   docker compose up -d --build   # beta branch (default)
+NEOROUTER_CHANNEL=stable docker compose up -d --build   # main branch
+NEOROUTER_VERSION=v0.1.2 docker compose up -d --build   # an exact tag or branch
+```
+
+Put those in a `.env` file next to `docker-compose.yml` to keep them; Compose
+reads that file automatically. With plain `docker build`:
+
+```bash
+docker build --build-arg NEOROUTER_CHANNEL=stable -t neorouter:stable .
+docker build --build-arg NEOROUTER_VERSION=v0.1.2 -t neorouter:0.1.2 .
+```
+
+`NEOROUTER_VERSION` takes a tag or any branch name and fetches it from
+`NEOROUTER_REPO` (default `https://github.com/NeoLabs-Systems/NeoRouter.git`),
+which is how an image is built for a version other than the working tree. For a
+fork, either clone the fork and build the context, or set
+`NEOROUTER_REPO` to it. Inside the container
+`NEOROUTER_RELEASE_CHANNEL` reports the channel the image was built from.
+
 ## The `/data` volume
 
 Everything the process writes is under `/data` (image default
@@ -35,7 +62,7 @@ Everything the process writes is under `/data` (image default
 | `/data/data/neorouter.sqlite3` | Users, provider accounts, keys, catalog, usage |
 | `/data/data/secret.key` | AES-256-GCM key for provider API keys |
 | `/data/data/models/` | Privacy-filter weights, when that feature is enabled |
-| `/data/.env` | Configuration, seeded on first start from `docker/env.default` |
+| `/data/.env` | Configuration, seeded on first start from `docker/env.example` |
 | `/data/logs/`, `/data/backups/` | Log files and pre-update backups |
 
 Losing the volume means provider keys can no longer be decrypted: back it up
@@ -61,15 +88,18 @@ Process environment wins over `/data/.env`. The image sets:
 | `NEOROUTER_HOME` | `/data` | Single writable location |
 | `NEOROUTER_HOST` | `0.0.0.0` | The default `127.0.0.1` is unreachable through a published port |
 | `NEOROUTER_PORT` | `4600` | Matches `EXPOSE` and the healthcheck |
+| `NEOROUTER_RELEASE_CHANNEL` | build channel | Reports the channel the image was built from |
 
-`docker/env.default` (copied to `/data/.env` on first start) additionally sets
-`NEOROUTER_RELEASE_CHANNEL=stable`. Every other setting is in
-[configuration.md](configuration.md).
+`docker/env.example` is a complete, commented list of everything the server
+reads. The entrypoint copies it to `/data/.env` on first start, so the defaults
+are visible and editable from inside the container; the release channel line in
+that copy is set from the channel the image was built for.
 
 Change settings with compose `environment:` or `docker run -e`. `neorouter env
 set` also works for anything the image does not set itself, but the file is
-read at start, so restart after using it — and `NEOROUTER_HOME`, `NEOROUTER_HOST`
-and `NEOROUTER_PORT` come from the image environment, which wins over the file.
+read at start, so restart after using it — and `NEOROUTER_HOME`, `NEOROUTER_HOST`,
+`NEOROUTER_PORT` and `NEOROUTER_RELEASE_CHANNEL` come from the image
+environment, which wins over the file.
 
 ### Behind a reverse proxy
 
@@ -129,27 +159,29 @@ instead of pretending:
 ## Building
 
 The default build downloads the dashboard that GitHub already built for the
-branch (the `web-main` / `web-beta` release, 12 MB) instead of installing
+branch (the `web-beta` / `web-main` release, 12 MB) instead of installing
 Flutter. That is also what an npm install does without the Flutter SDK.
 
 ```bash
-docker build -t neorouter .                                  # dashboard downloaded
-docker build -t neorouter:beta --build-arg NEOROUTER_WEB_CHANNEL=beta .
-docker build --target runtime-from-source -t neorouter:src .  # dashboard built with Flutter
+docker build -t neorouter .                                    # beta (default)
+docker build --build-arg NEOROUTER_CHANNEL=stable -t neorouter:stable .
+docker build --target runtime-from-source -t neorouter:src .    # dashboard from Flutter
 ```
 
 `runtime-from-source` uses the `ghcr.io/cirruslabs/flutter` image and builds
-`flutter_app` from the checkout — use it after changing the Flutter app, or
-when the prebuilt release is not reachable. It is slow (multi-GB base image).
+`flutter_app` from the source — use it after changing the Flutter app, or when
+the prebuilt release is not reachable. It is slow (multi-GB base image).
 
 Build arguments:
 
 | Argument | Default | Meaning |
 | --- | --- | --- |
+| `NEOROUTER_CHANNEL` | `beta` | `beta` or `stable`: the prebuilt dashboard and the image's release channel |
+| `NEOROUTER_VERSION` | – | Tag or branch to fetch as the source instead of the build context |
+| `NEOROUTER_REPO` | upstream GitHub | Repository `NEOROUTER_VERSION` is fetched from, e.g. a fork |
+| `NEOROUTER_WEB_URL` | – | Full URL (or `file://` path) to `neorouter-web.tar.gz`, for mirrors and air-gapped builds |
 | `NODE_VERSION` | `22` | Node base image tag (must be 20 or newer) |
 | `FLUTTER_VERSION` | `3.35.5` | Flutter SDK image for `runtime-from-source` |
-| `NEOROUTER_WEB_CHANNEL` | `main` | Prebuilt client branch: `main` or `beta` |
-| `NEOROUTER_WEB_URL` | – | Full URL (or `file://` path) to `neorouter-web.tar.gz`, for mirrors and air-gapped builds |
 | `UID` / `GID` | `1000` | Runtime user, for bind mounts owned by somebody else |
 
 Native modules (`better-sqlite3`, `bcrypt`) are compiled in the build stage and
@@ -177,8 +209,9 @@ docker compose build --pull && docker compose up -d   # built from a checkout
 docker compose pull && docker compose up -d           # published image
 ```
 
-The volume is untouched. Migrations run at start — take a backup first if the
-release notes mention schema changes:
+Pinning a version is `NEOROUTER_VERSION` at build time, or `image: …:0.1.2` for
+a published image. The volume is untouched either way. Migrations run at start
+— take a backup first if the release notes mention schema changes:
 
 ```bash
 docker compose exec neorouter neorouter backup
