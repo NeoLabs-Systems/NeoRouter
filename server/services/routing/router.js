@@ -42,14 +42,40 @@ function globToRegExp(pattern) {
 // may ask for.
 const isRoutePattern = (pattern) => /^auto(?:$|[-:*?])/i.test(String(pattern).trim());
 
+// A key's allowed list holds model patterns ("groq/*"), routings ("auto:fast")
+// and kinds of model ("kind:speech").
+const KIND_TOKEN = /^kind:([a-z_]+)$/i;
+
 function keyPatterns(key) {
-  const patterns = JSON.parse(key.allowed_models_json || '[]');
-  return { models: patterns.filter((pattern) => !isRoutePattern(pattern)), routes: patterns.filter(isRoutePattern) };
+  const patterns = JSON.parse(key.allowed_models_json || '[]').map((pattern) => String(pattern).trim());
+  const kinds = patterns.map((pattern) => KIND_TOKEN.exec(pattern)?.[1]?.toLowerCase()).filter(Boolean);
+  const rest = patterns.filter((pattern) => !KIND_TOKEN.test(pattern));
+  return { kinds, models: rest.filter((pattern) => !isRoutePattern(pattern)), routes: rest.filter(isRoutePattern) };
 }
 
+// Whether the model patterns name any model of this kind in the user's
+// catalog, cached briefly (it is asked once per candidate).
+const coverCache = new Map();
+function patternsCoverKind(key, capability, models) {
+  const id = `${key.user_id}|${capability}|${models.join('\n')}`;
+  const hit = coverCache.get(id);
+  if (hit && Date.now() - hit.at < 10_000) return hit.value;
+  const regexes = models.map(globToRegExp);
+  const value = catalog.listForUser(key.user_id, { capability, includeUnavailable: true }).some((entry) => regexes.some((regex) => regex.test(entry.id)));
+  if (coverCache.size > 500) coverCache.clear();
+  coverCache.set(id, { at: Date.now(), value });
+  return value;
+}
+
+// With kinds listed, the key takes only those kinds, and model patterns
+// narrow just the kinds they name a model of ("these chat models, and any
+// speech model"). Without kinds, model patterns limit everything, as before.
 function allowedByKey(entry, key) {
-  const { models } = keyPatterns(key);
+  const { kinds, models } = keyPatterns(key);
+  const capability = entry.capability || 'chat';
+  if (kinds.length && !kinds.includes(capability)) return false;
   if (!models.length) return true;
+  if (kinds.length && !patternsCoverKind(key, capability, models)) return true;
   return models.some((pattern) => globToRegExp(pattern).test(entry.id));
 }
 

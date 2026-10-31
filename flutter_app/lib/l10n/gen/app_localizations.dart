@@ -1567,6 +1567,30 @@ abstract class AppL10n {
   /// **'Allowed models and routings – one per line, * as wildcard (empty = all)'**
   String get allowedModels;
 
+  /// No description provided for @keyKindsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Kinds of models'**
+  String get keyKindsTitle;
+
+  /// No description provided for @keyKindsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch off what this key should never use, e.g. text models for a voice app.'**
+  String get keyKindsHint;
+
+  /// No description provided for @keyKindsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick at least one kind.'**
+  String get keyKindsNone;
+
+  /// No description provided for @pickModelAllKinds.
+  ///
+  /// In en, this message translates to:
+  /// **'All kinds'**
+  String get pickModelAllKinds;
+
   /// No description provided for @defaultProfile.
   ///
   /// In en, this message translates to:

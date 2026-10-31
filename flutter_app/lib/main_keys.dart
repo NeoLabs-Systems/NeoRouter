@@ -10,6 +10,7 @@ import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
 import 'src/backend_client.dart';
+import 'src/capabilities.dart';
 import 'src/models.dart';
 
 /// "Free · Plans · Paid" for the kinds of models a key may use.
@@ -355,7 +356,13 @@ class _KeyFormState extends State<_KeyForm> {
   late final TextEditingController _rpm = TextEditingController(text: widget.existing?.rpmLimit?.toString() ?? '');
   late final TextEditingController _tokens = TextEditingController(text: widget.existing?.tokenLimit?.toString() ?? '');
   late String _tokenPeriod = widget.existing?.tokenPeriod ?? 'monthly';
-  late final TextEditingController _allowed = TextEditingController(text: widget.existing?.allowedModels.join('\n') ?? '');
+  // Kinds of model ("kind:speech") have their own chips; the text keeps models and routings.
+  late final TextEditingController _allowed = TextEditingController(text: widget.existing?.allowedModels.where((item) => !item.startsWith('kind:')).join('\n') ?? '');
+  late Set<String>? _kinds = () {
+    final kinds = widget.existing?.allowedModels.where((item) => item.startsWith('kind:')).map((item) => item.substring(5)).toSet() ?? <String>{};
+    return kinds.isEmpty ? null : kinds;
+  }();
+  List<String> _available = <String>[];
   late bool _free = widget.existing?.allowFree ?? true;
   late bool _plan = widget.existing?.allowPlan ?? true;
   late bool _paid = widget.existing?.allowPaid ?? false;
@@ -364,6 +371,33 @@ class _KeyFormState extends State<_KeyForm> {
   bool _advanced = false;
   bool _saving = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    // The kinds of model this user has connected, for the kind chips.
+    widget.controller.api.capabilities().then((items) {
+      if (mounted) setState(() => _available = items.where((item) => item.routable && item.total > 0 && item.id != 'live').map((item) => item.id).toList());
+    }).catchError((_) {});
+  }
+
+  bool _kindOn(String kind) => _kinds == null || _kinds!.contains(kind);
+
+  void _toggleKind(String kind, bool on) => setState(() {
+    final next = <String>{...(_kinds ?? _available.toSet())};
+    on ? next.add(kind) : next.remove(kind);
+    _kinds = next;
+  });
+
+  // What gets saved: kind entries when kinds are narrowed or models chosen
+  // (so a chosen chat model leaves other kinds open), then models and routings.
+  List<String> _allowedList() {
+    final lines = _allowed.text.split('\n').map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
+    final kinds = _kinds ?? _available.toSet();
+    final narrowed = _kinds != null && !_available.every(kinds.contains);
+    final hasModels = lines.any((line) => !RegExp(r'^auto(?:$|[-:*?])', caseSensitive: false).hasMatch(line));
+    return <String>[if (narrowed || hasModels) for (final kind in kinds) 'kind:$kind', ...lines];
+  }
 
   @override
   void dispose() {
@@ -383,7 +417,7 @@ class _KeyFormState extends State<_KeyForm> {
       ('auto', t.autoKeyDefault),
       for (final profile in widget.profiles) ('auto:${profile.slug}', 'Auto (${profileLabel(t, profile)})'),
     ];
-    final picked = await showModelPicker(context, controller: widget.controller, selected: lines.where((line) => !line.contains('*')).toList(), multi: true, routes: routes);
+    final picked = await showModelPicker(context, controller: widget.controller, selected: lines.where((line) => !line.contains('*')).toList(), multi: true, routes: routes, capabilities: _available.where(_kindOn).toList());
     if (picked == null) return;
     final patterns = lines.where((line) => line.contains('*'));
     setState(() => _allowed.text = <String>{...patterns, ...picked}.join('\n'));
@@ -392,6 +426,10 @@ class _KeyFormState extends State<_KeyForm> {
   Future<void> _submit() async {
     if (!_free && !_plan && !_paid) {
       setState(() => _error = AppL10n.of(context).pickOneKind);
+      return;
+    }
+    if (_kinds != null && _kinds!.isEmpty) {
+      setState(() => _error = AppL10n.of(context).keyKindsNone);
       return;
     }
     setState(() {
@@ -408,7 +446,7 @@ class _KeyFormState extends State<_KeyForm> {
       'rpmLimit': int.tryParse(_rpm.text.trim()),
       'tokenLimit': _free || _plan ? int.tryParse(_tokens.text.trim().replaceAll(RegExp(r'[^0-9]'), '')) : null,
       'tokenPeriod': _tokenPeriod,
-      'allowedModels': _allowed.text.split('\n').map((line) => line.trim()).where((line) => line.isNotEmpty).toList(),
+      'allowedModels': _allowedList(),
       'profile': _profile,
     };
     try {
@@ -459,6 +497,28 @@ class _KeyFormState extends State<_KeyForm> {
                 onPeriod: (value) => setState(() => _period = value),
                 onTokenPeriod: (value) => setState(() => _tokenPeriod = value),
               ),
+              if (_available.length > 1) ...<Widget>[
+                const SizedBox(height: AppSpacing.md),
+                Text(t.keyKindsTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(t.keyKindsHint, style: TextStyle(fontSize: 12.5, color: neoRouterPaletteOf(context).textMuted)),
+                const SizedBox(height: AppSpacing.xs),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: <Widget>[
+                    for (final kind in _available)
+                      FilterChip(
+                        avatar: Icon(capabilityInfo(kind).icon, size: 15),
+                        label: Text(capabilityInfo(kind).label(t)),
+                        selected: _kindOn(kind),
+                        showCheckmark: false,
+                        onSelected: (value) => _toggleKind(kind, value),
+                      ),
+                  ],
+                ),
+                if (_kinds != null && _kinds!.isEmpty) ...<Widget>[const SizedBox(height: AppSpacing.xs), InlineError(message: t.keyKindsNone)],
+              ],
               const SizedBox(height: AppSpacing.sm),
               Align(
                 alignment: Alignment.centerLeft,

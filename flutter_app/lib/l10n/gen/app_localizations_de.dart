@@ -823,6 +823,19 @@ class AppL10nDe extends AppL10n {
       'Erlaubte Modelle und Routings – eines pro Zeile, * als Platzhalter (leer = alle)';
 
   @override
+  String get keyKindsTitle => 'Arten von Modellen';
+
+  @override
+  String get keyKindsHint =>
+      'Schalte aus, was dieser Key nie nutzen soll, z. B. Textmodelle für eine Sprach-App.';
+
+  @override
+  String get keyKindsNone => 'Wähle mindestens eine Art.';
+
+  @override
+  String get pickModelAllKinds => 'Alle Arten';
+
+  @override
   String get defaultProfile => 'Routing-Stil für „auto“';
 
   @override

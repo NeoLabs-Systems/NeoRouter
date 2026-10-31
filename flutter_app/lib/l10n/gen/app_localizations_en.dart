@@ -816,6 +816,19 @@ class AppL10nEn extends AppL10n {
       'Allowed models and routings – one per line, * as wildcard (empty = all)';
 
   @override
+  String get keyKindsTitle => 'Kinds of models';
+
+  @override
+  String get keyKindsHint =>
+      'Switch off what this key should never use, e.g. text models for a voice app.';
+
+  @override
+  String get keyKindsNone => 'Pick at least one kind.';
+
+  @override
+  String get pickModelAllKinds => 'All kinds';
+
+  @override
   String get defaultProfile => 'Routing style for \"auto\"';
 
   @override

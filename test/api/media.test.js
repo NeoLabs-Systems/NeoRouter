@@ -230,3 +230,28 @@ test('a request waits for a model that frees up in a moment, and fails fast when
   assert.ok(Date.now() - fast < 1500, 'no pointless wait');
   for (const entry of images) quota.markExhausted(entry, 'rpd', Date.now() - 1);
 });
+
+test('a key can be limited to kinds of model, with chosen models only narrowing their own kind', async () => {
+  const keyWith = async (allowedModels) => (await request(app).post('/api/v1/keys').set('Authorization', `Bearer ${session}`)
+    .send({ name: `kinds ${allowedModels.join(' ')}`, mode: 'free_only', allowedModels })).body.secret;
+  const as = (key) => (method, path) => request(app)[method](`/v1${path}`).set('Authorization', `Bearer ${key}`);
+  const chat = (call) => call('post', '/chat/completions').send({ model: 'auto', messages: [{ role: 'user', content: 'hi' }] });
+  const speak = (call) => call('post', '/audio/speech').send({ model: 'auto', input: 'hello' });
+
+  // No text models, but voice and System One.
+  const voiceOnly = as(await keyWith(['kind:speech', 'kind:moderation']));
+  assert.notEqual((await chat(voiceOnly)).status, 200, 'text models are off for this key');
+  assert.equal((await speak(voiceOnly)).status, 200);
+  assert.equal((await voiceOnly('post', '/moderations').send({ input: 'hello' })).status, 200);
+
+  // One chosen chat model plus any speech model.
+  const mixed = as(await keyWith(['kind:chat', 'kind:speech', 'mock/ok-chat']));
+  const answered = await chat(mixed);
+  assert.equal(answered.status, 200, JSON.stringify(answered.body));
+  assert.equal(answered.headers['x-neorouter-model'], 'mock/ok-chat');
+  assert.equal((await speak(mixed)).status, 200, 'the chat pick does not narrow speech');
+
+  // Without kinds, model patterns still limit every kind, as before.
+  const legacy = as(await keyWith(['mock/ok-chat']));
+  assert.notEqual((await speak(legacy)).status, 200);
+});

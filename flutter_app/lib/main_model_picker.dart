@@ -6,6 +6,7 @@ import 'main_models.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
+import 'src/capabilities.dart';
 import 'src/models.dart';
 
 /// Picks one model ([multi] false, returns its id) or several (returns their
@@ -20,6 +21,7 @@ Future<List<String>?> showModelPicker(
   List<String> selected = const <String>[],
   bool multi = false,
   List<(String, String)> routes = const <(String, String)>[],
+  List<String> capabilities = const <String>[],
 }) {
   final mobile = MediaQuery.sizeOf(context).width < AppBreakpoints.mobile;
   return showDialog<List<String>>(
@@ -29,7 +31,7 @@ Future<List<String>?> showModelPicker(
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 620, maxHeight: 720),
-        child: _ModelPicker(controller: controller, capability: capability, selected: selected, multi: multi, routes: routes),
+        child: _ModelPicker(controller: controller, capability: capability, selected: selected, multi: multi, routes: routes, capabilities: capabilities),
       ),
     ),
   );
@@ -38,13 +40,16 @@ Future<List<String>?> showModelPicker(
 enum _Kind { all, free, plan, paid }
 
 class _ModelPicker extends StatefulWidget {
-  const _ModelPicker({required this.controller, required this.capability, required this.selected, required this.multi, required this.routes});
+  const _ModelPicker({required this.controller, required this.capability, required this.selected, required this.multi, required this.routes, this.capabilities = const <String>[]});
 
   final NeoRouterController controller;
   final String capability;
   final List<String> selected;
   final bool multi;
   final List<(String, String)> routes;
+
+  /// Several kinds to choose from (a kind filter appears); empty: just [capability].
+  final List<String> capabilities;
 
   @override
   State<_ModelPicker> createState() => _ModelPickerState();
@@ -78,8 +83,9 @@ class _ModelPickerState extends State<_ModelPicker> {
       _error = null;
     });
     try {
-      final models = await widget.controller.api.models(capability: widget.capability);
-      if (mounted) setState(() => _models = models.where((model) => model.enabled).toList());
+      final kinds = widget.capabilities.isEmpty ? <String>[widget.capability] : widget.capabilities;
+      final lists = await Future.wait(kinds.map((kind) => widget.controller.api.models(capability: kind)));
+      if (mounted) setState(() => _models = lists.expand((list) => list).where((model) => model.enabled).toList());
     } catch (error) {
       if (mounted) setState(() => _error = '$error');
     } finally {
@@ -87,11 +93,15 @@ class _ModelPickerState extends State<_ModelPicker> {
     }
   }
 
-  bool get _isChat => widget.capability == 'chat';
+  // The kind shown when several are offered (null: all of them).
+  String? _capabilityFilter;
+
+  bool get _isChat => (_capabilityFilter ?? (widget.capabilities.isEmpty ? widget.capability : null)) == 'chat';
 
   List<CatalogModel> _visible() {
     final words = _search.text.toLowerCase().split(RegExp(r'\s+')).where((word) => word.isNotEmpty);
     return _models.where((model) {
+      if (_capabilityFilter != null && model.capability != _capabilityFilter) return false;
       final haystack = '${model.name} ${model.id} ${model.providerSlug}'.toLowerCase();
       if (!words.every(haystack.contains)) return false;
       final kindOk = switch (_kind) {
@@ -157,6 +167,28 @@ class _ModelPickerState extends State<_ModelPicker> {
             decoration: InputDecoration(isDense: true, prefixIcon: const Icon(Icons.search_rounded, size: 18), hintText: t.searchModels),
           ),
         ),
+        if (widget.capabilities.length > 1)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: <Widget>[
+                  for (final kind in <String?>[null, ...widget.capabilities])
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ChoiceChip(
+                        avatar: kind == null ? null : Icon(capabilityInfo(kind).icon, size: 15),
+                        label: Text(kind == null ? t.pickModelAllKinds : capabilityInfo(kind).label(t)),
+                        selected: _capabilityFilter == kind,
+                        onSelected: (_) => setState(() => _capabilityFilter = kind),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 6),
           child: Wrap(
