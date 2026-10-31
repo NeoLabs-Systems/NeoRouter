@@ -53,7 +53,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/NeoLabs-Systems/NeoRouter/ma
 or with npm:
 
 ```bash
-npm i -g github:NeoLabs-Systems/NeoRouter && neorouter install
+npm i -g --allow-scripts=bcrypt,better-sqlite3,onnxruntime-node,protobufjs github:NeoLabs-Systems/NeoRouter && neorouter install
 ```
 
 You need Node.js 20+ and git. The web app comes prebuilt; if it cannot be downloaded, the installer sets up Flutter for you and builds it.
