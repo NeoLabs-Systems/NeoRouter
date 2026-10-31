@@ -10,7 +10,8 @@ process environment. Change values with `neorouter env set KEY value`.
 | `NEOROUTER_HOST` | `127.0.0.1` | Bind address. Use `0.0.0.0` behind a reverse proxy. |
 | `NEOROUTER_PORT` | `4600` | HTTP port for `/`, `/app`, `/api/v1` and `/v1`. |
 | `NEOROUTER_PUBLIC_URL` | – | External URL; used for the endpoint shown in the app and OAuth callbacks. |
-| `NEOROUTER_HOME` | `~/.neorouter` | Data, logs, backups and `secret.key`. |
+| `NEOROUTER_HOME` | `~/.neorouter` | Data, logs, backups and `secret.key`. `/data` in the container image. |
+| `NEOROUTER_CONTAINER` | auto | Forces the container behaviour (no service install, foreground start). Detected from `/.dockerenv` and Kubernetes env otherwise. See [docker.md](docker.md). |
 | `NEOROUTER_TRUST_PROXY` | `false` | Trust `X-Forwarded-*` from a reverse proxy. |
 | `NEOROUTER_ALLOW_PRIVATE_PROVIDER_URLS` | `false` | Let every user, not only the instance admin, use local and private network addresses for provider accounts. |
 | `NEOROUTER_ALLOWED_ORIGINS` | – | Extra CORS origins (comma separated); loopback is always allowed. |
