@@ -56,6 +56,8 @@ or with npm:
 npm i -g github:NeoLabs-Systems/NeoRouter && neorouter install
 ```
 
+You need Node.js 20+ and git. The web app comes prebuilt; if it cannot be downloaded, the installer sets up Flutter for you and builds it.
+
 Then open **http://localhost:4600/app**. The first account you create becomes the administrator. Add a provider, create a router key, and point any OpenAI or Anthropic SDK at `http://localhost:4600/v1`.
 
 ```python

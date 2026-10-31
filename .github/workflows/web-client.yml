@@ -1,0 +1,59 @@
+# Builds the Flutter web client for every push to main and beta and attaches
+# it to a rolling release (web-main, web-beta). Installs and updates without
+# the Flutter SDK download it from there (lib/install_helpers.js).
+name: Web Client
+
+on:
+  push:
+    branches:
+      - main
+      - beta
+    paths:
+      - flutter_app/**
+      - .github/workflows/web-client.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: web-client-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and publish web client
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.35.5
+          cache: true
+
+      - name: Build
+        working-directory: flutter_app
+        run: |
+          flutter pub get
+          flutter build web --release --no-tree-shake-icons --base-href /app/
+          echo "${GITHUB_SHA}" > build/web/.commit
+
+      - name: Package
+        run: tar -czf neorouter-web.tar.gz -C flutter_app/build/web .
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: web-${{ github.ref_name }}
+        run: |
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --prerelease --title "Web client (${GITHUB_REF_NAME})" \
+              --notes "Prebuilt Flutter web client for the ${GITHUB_REF_NAME} branch, rebuilt on every push. Used by installs without the Flutter SDK." \
+              --target "$GITHUB_SHA"
+          fi
+          gh release upload "$TAG" neorouter-web.tar.gz --clobber
+          gh release edit "$TAG" --notes "Prebuilt Flutter web client for the ${GITHUB_REF_NAME} branch. Built from ${GITHUB_SHA}."
