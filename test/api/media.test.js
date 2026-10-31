@@ -208,3 +208,25 @@ test('the playground runs every kind with a stored key', async () => {
   const voices = await request(app).get('/api/v1/playground/voices?model=auto').set('Authorization', `Bearer ${session}`);
   assert.ok(voices.body.voices.some((voice) => voice.id === 'alloy'), 'auto offers the portable OpenAI voices');
 });
+
+test('a request waits for a model that frees up in a moment, and fails fast when none will', async () => {
+  const quota = require('../../server/services/quota/quota_service');
+  const catalog = require('../../server/services/catalog/catalog_service');
+  const usage = require('../../server/services/usage/usage_service');
+  const userId = (await request(app).get('/api/v1/auth/me').set('Authorization', `Bearer ${session}`)).body.user.id;
+  const images = catalog.listForUser(userId, { capability: 'image' });
+  // Every image model at its per-minute limit for two more seconds: the request queues.
+  for (const entry of images) quota.markExhausted(entry, 'rpm', Date.now() + 2000);
+  const started = Date.now();
+  const waited = await gateway('post', '/images/generations').send({ prompt: 'a lighthouse' });
+  assert.equal(waited.status, 200, JSON.stringify(waited.body));
+  assert.ok(Date.now() - started >= 1500, 'it waited for the limit to reset');
+  assert.ok(usage.logs(userId, { limit: 1 })[0].queuedMs >= 1000, 'the wait is logged');
+  // Out for the day: waiting cannot help, so the answer comes at once.
+  for (const entry of images) quota.markExhausted(entry, 'rpd', null);
+  const fast = Date.now();
+  const failed = await gateway('post', '/images/generations').send({ prompt: 'a lighthouse' });
+  assert.equal(failed.body.error.code, 'NO_MODEL_AVAILABLE');
+  assert.ok(Date.now() - fast < 1500, 'no pointless wait');
+  for (const entry of images) quota.markExhausted(entry, 'rpd', Date.now() - 1);
+});

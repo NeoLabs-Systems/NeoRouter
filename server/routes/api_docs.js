@@ -343,7 +343,7 @@ A failure after a stream started arrives as an \`error\` event in the stream.
 | 429 | \`KEY_RATE_LIMITED\` | Wait \`Retry-After\` seconds. |
 | 429 | \`TOKEN_LIMIT_REACHED\` | The key's token limit for free and plan models is used up for this period. |
 | 502 | \`ALL_ATTEMPTS_FAILED\` | Every candidate failed. \`details.trail\` lists the attempts. Retry later. |
-| 503 | \`NO_MODEL_AVAILABLE\` | No model can take the request right now (rate limits, quotas, missing features). The message says why; \`details.rejected\` counts the reasons. |
+| 503 | \`NO_MODEL_AVAILABLE\` | No model can take the request right now (rate limits, quotas, missing features). When a model frees up within a few seconds NeoRouter waits for it instead (up to 45 s); this error means none would. The message says why; \`details.rejected\` counts the reasons, and \`Retry-After\` (also \`details.retryAfterSeconds\`) says when one frees up, if known. |
 | 503 | \`EMBEDDING_PIN_UNAVAILABLE\` | No provider serves the pinned embedding model right now. |
 
 Retry \`429\`, \`502\` and \`503\` with backoff. Do not retry \`400\`–\`404\` unchanged.

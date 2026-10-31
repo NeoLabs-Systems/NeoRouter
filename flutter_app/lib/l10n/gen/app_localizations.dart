@@ -3151,6 +3151,18 @@ abstract class AppL10n {
   /// **'Waiting for the first request'**
   String get liveWaiting;
 
+  /// No description provided for @liveWaitingChip.
+  ///
+  /// In en, this message translates to:
+  /// **'waiting for a free model'**
+  String get liveWaitingChip;
+
+  /// No description provided for @liveQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} waiting for a free model'**
+  String liveQueued(String count);
+
   /// No description provided for @liveLoading.
   ///
   /// In en, this message translates to:

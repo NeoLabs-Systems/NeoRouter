@@ -1704,6 +1704,14 @@ class AppL10nEn extends AppL10n {
   String get liveWaiting => 'Waiting for the first request';
 
   @override
+  String get liveWaitingChip => 'waiting for a free model';
+
+  @override
+  String liveQueued(String count) {
+    return '$count waiting for a free model';
+  }
+
+  @override
   String get liveLoading => 'Loading…';
 
   @override

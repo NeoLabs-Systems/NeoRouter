@@ -237,6 +237,11 @@ function explainNoModel(rejected, capability = 'chat') {
   return `No ${kind}model can take this request right now: ${parts.join('; ')}.`;
 }
 
+// Cooldowns that end by themselves; whether waiting helps depends on when.
+const SHORT_COOLDOWNS = new Set(['rate_limited', 'quota_exhausted', 'circuit_open', 'cooldown']);
+const BUSY_RECHECK_MS = 1000;
+const MINUTE_MS = 60_000;
+
 class RoutingPlan {
   // taskHint: a task kind the client named (X-NeoRouter-Task).
   constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null, taskHint = null }) {
@@ -409,6 +414,28 @@ class RoutingPlan {
     }
     this.tried.add(choice.entry.ref);
     return choice;
+  }
+
+  // When the soonest candidate that is only blocked for now (rate-limited,
+  // cooling down, at its concurrency or per-minute limit) may take work
+  // again, or null when none will without outside help (a daily limit, a
+  // key policy, a model that cannot handle the request).
+  freesUpAt(now = Date.now(), filter = null) {
+    const ctx = this.context();
+    let soonest = null;
+    for (const entry of this.entries) {
+      if (this.tried.has(entry.ref) || (filter && !filter(entry))) continue;
+      const reason = rejection(entry, ctx, now);
+      let at = null;
+      if (reason === 'account_busy') at = now + BUSY_RECHECK_MS;
+      else if (SHORT_COOLDOWNS.has(reason)) at = stats.availability(entry.ref, now).until || now + BUSY_RECHECK_MS;
+      else if (reason && reason.startsWith('quota_')) {
+        const blocked = quota.evaluate(entry, this.inputTokens, now).blocked;
+        at = blocked?.resetAt || (/^quota_(rpm|tpm)$/.test(reason) ? now + MINUTE_MS : null);
+      }
+      if (at !== null && (soonest === null || at < soonest)) soonest = at;
+    }
+    return soonest;
   }
 
   rejectionSummary(now = Date.now()) {

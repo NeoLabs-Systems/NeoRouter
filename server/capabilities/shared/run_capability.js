@@ -21,6 +21,9 @@ const routerKeys = require('../../services/router_keys/router_key_service');
 
 const KEY_POLICY_REJECTIONS = new Set(['not_free', 'not_allowed_for_key', 'price_unknown']);
 const MAX_CONSECUTIVE_BAD_REQUESTS = 2;
+const QUEUE_POLL_MS = 1000;
+const QUEUE_MIN_POLL_MS = 200;
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function trailItem(entry, outcome, extra = {}) {
   return { model: entry.id, outcome, ...extra };
@@ -71,11 +74,13 @@ async function runCapability({ req, res = null, key, capability, method, request
   });
   if (plan.pacing) res?.set('X-NeoRouter-Budget-Pace', plan.pacing.state);
 
+  let queuedMs = 0;
+  let freesUpAt = null;
   const finish = (fields) => {
     try {
       usage.record({
         id: requestId, user_id: key.user_id, router_key_id: key.id, created_at: startedAt, api_format: format,
-        requested_model: requestedModel, attempts: Math.max(1, trail.length), stream: 0, trail_json: JSON.stringify(trail),
+        requested_model: requestedModel, attempts: Math.max(1, trail.length), stream: 0, trail_json: JSON.stringify(trail), queued_ms: Math.round(queuedMs),
         latency_ms: Date.now() - startedAt, input_tokens: inputTokens, output_tokens: 0, cost_usd: 0, is_free: 0,
         capability, units, redacted_count: redactedCount, ...fields,
       });
@@ -95,8 +100,22 @@ async function runCapability({ req, res = null, key, capability, method, request
   const config = getConfig();
   let lastError = null;
   let badRequests = 0;
+  // Like chat: when every candidate is only blocked for a moment, wait for
+  // the first one to free up instead of failing.
+  const waitUntil = Math.min(startedAt + config.routing.queueWaitMs, startedAt + config.routing.totalBudgetMs);
+  const nextChoice = async () => {
+    for (;;) {
+      const choice = plan.next({ filter: supported });
+      if (choice) return choice;
+      const now = Date.now();
+      freesUpAt = plan.freesUpAt(now, supported);
+      if (freesUpAt === null || freesUpAt > waitUntil) return null;
+      await sleep(Math.min(waitUntil - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random())));
+      queuedMs += Date.now() - now;
+    }
+  };
   while (trail.length < config.routing.maxAttempts && Date.now() - startedAt < config.routing.totalBudgetMs) {
-    const choice = plan.next({ filter: supported });
+    const choice = await nextChoice();
     if (!choice) break;
     const { entry } = choice;
     const adapter = accounts.adapterFor(accounts.getRuntime(entry.accountId));
@@ -166,7 +185,9 @@ async function runCapability({ req, res = null, key, capability, method, request
     ? explainNoModel(rejected, capability)
     : `All ${trail.length} attempt(s) failed. Last error: ${lastError?.message || 'unknown'}`;
   finish({ status: 'error', http_status: status, error_code: code, error_message: message });
-  throw new HttpError(status, code, message, { trail, rejected });
+  const retryAfterSeconds = freesUpAt ? Math.max(1, Math.ceil((freesUpAt - Date.now()) / 1000)) : null;
+  if (retryAfterSeconds && res && !res.headersSent) res.set('Retry-After', String(retryAfterSeconds));
+  throw new HttpError(status, code, message, { trail, rejected, ...(retryAfterSeconds ? { retryAfterSeconds } : {}) });
 }
 
 module.exports = { runCapability };

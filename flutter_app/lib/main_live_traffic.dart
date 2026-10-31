@@ -43,7 +43,7 @@ class _Attempt {
 }
 
 class _Packet {
-  _Packet({required this.app, required this.attempts, required this.label, required this.success, required this.latency, required this.live});
+  _Packet({required this.app, required this.attempts, required this.label, required this.success, required this.latency, required this.live, this.queued = 0});
 
   final int app;
   final List<_Attempt> attempts;
@@ -51,6 +51,9 @@ class _Packet {
   final bool success;
   final int latency;
   final bool live;
+
+  /// How long it waited for a free model, in ms (0: none).
+  final int queued;
 
   String phase = 'in';
   double t0 = 0;
@@ -61,7 +64,8 @@ class _Packet {
 }
 
 class _Chip {
-  _Chip(this.text, this.t0, this.dx);
+  _Chip(this.text, this.t0, this.dx, {this.waiting = false});
+  final bool waiting;
   final String text;
   final double t0;
   final double dx;
@@ -94,6 +98,10 @@ class _Scene extends ChangeNotifier {
   }
 
   int get thinking => packets.where((p) => p.phase == 'think' || p.phase == 'rethink').length;
+  int get waiting => packets.where((p) => p.phase == 'queue').length;
+
+  /// The chip shown when a request starts waiting (localized by the view).
+  String waitingLabel = 'waiting';
 
   void add(_Packet p) {
     p.t0 = t;
@@ -135,9 +143,19 @@ class _Scene extends ChangeNotifier {
   void _next(_Packet p) {
     switch (p.phase) {
       case 'in':
+        // Every model was busy: it waits its turn on an outer lap first.
+        if (p.queued > 300) {
+          _go(p, 'queue', (p.queued / 6).clamp(1200, 4500).toDouble());
+          chips.add(_Chip(waitingLabel, t, (random.nextDouble() - 0.5) * 90, waiting: true));
+          return;
+        }
         _go(p, 'think', _thinkMs);
         pulses.add(t);
         // One label at a time, so busy moments stay readable.
+        if (chips.isEmpty || t - chips.last.t0 > 450) chips.add(_Chip(p.label, t, (random.nextDouble() - 0.5) * 90));
+      case 'queue':
+        _go(p, 'think', _thinkMs);
+        pulses.add(t);
         if (chips.isEmpty || t - chips.last.t0 > 450) chips.add(_Chip(p.label, t, (random.nextDouble() - 0.5) * 90));
       case 'think':
       case 'rethink':
@@ -415,7 +433,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
     // A failed request ends on its last failed attempt; a successful one on a success.
     if (log.success && attempts.isNotEmpty && !attempts.last.ok) attempts.add(_Attempt(attempts.last.provider, true));
     final task = log.task ?? log.capability;
-    return _Packet(app: app, attempts: attempts, label: task.isEmpty ? 'chat' : task.replaceAll('_', ' '), success: log.success, latency: log.latencyMs ?? 900, live: live);
+    return _Packet(app: app, attempts: attempts, label: task.isEmpty ? 'chat' : task.replaceAll('_', ' '), success: log.success, latency: log.latencyMs ?? 900, live: live, queued: log.queuedMs);
   }
 
   void _spawn(RequestLog log, {required bool live}) {
@@ -459,6 +477,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    _scene.waitingLabel = AppL10n.of(context).liveWaitingChip;
     final palette = neoRouterPaletteOf(context);
     return Container(
       decoration: BoxDecoration(
@@ -650,10 +669,13 @@ class _Stage extends StatelessWidget {
           final s = scene;
           final thinking = s.thinking;
           final routing = s.packets.any((p) => p.phase == 'out' || p.phase == 'work');
+          final waiting = s.waiting;
           final coreLabel = !loaded
               ? t.liveLoadingTraffic
               : empty
               ? t.liveWaiting
+              : waiting > 0 && thinking == 0
+              ? t.liveQueued('$waiting')
               : thinking > 0
               ? t.liveScoring('$thinking')
               : routing
@@ -805,7 +827,7 @@ class _Stage extends StatelessWidget {
               decoration: BoxDecoration(
                 color: palette.scaffold.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: palette.accent.withValues(alpha: 0.5)),
+                border: Border.all(color: chip.waiting ? palette.borderStrong : palette.accent.withValues(alpha: 0.5)),
               ),
               child: Text(chip.text, style: GoogleFonts.geistMono(fontSize: 11, color: palette.text)),
             ),
@@ -1036,6 +1058,9 @@ class _TrafficPainter extends CustomPainter {
     switch (p.phase) {
       case 'in':
         return p.app < layout.appPos.length ? _bez(layout.appCurve(p.app), e) : null;
+      case 'queue':
+        // A slow, wider lap, ending where scoring starts.
+        return layout.core + (layout.onOrbit(layout.inAngle + u.clamp(0.0, 1.0) * 2 * math.pi) - layout.core) * 1.35;
       case 'think':
         return layout.onOrbit(layout.inAngle + u.clamp(0.0, 1.0) * 3 * math.pi);
       case 'rethink':

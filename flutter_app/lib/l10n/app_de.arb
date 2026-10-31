@@ -509,6 +509,8 @@
   "liveNow": "Live",
   "liveReplay": "Letzte Anfragen im Rückblick",
   "liveWaiting": "Warte auf die erste Anfrage",
+  "liveWaitingChip": "wartet auf ein freies Modell",
+  "liveQueued": "{count} warten auf ein freies Modell",
   "liveLoading": "Lädt …",
   "liveLoadingTraffic": "lade deine Anfragen …",
   "liveOther": "Andere",

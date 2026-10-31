@@ -295,6 +295,8 @@ class RequestLog {
   int? get latencyMs => _int(raw['latencyMs']);
   int? get ttftMs => _int(raw['ttftMs']);
   int get attempts => _int(raw['attempts']) ?? 1;
+  /// How long the request waited for a model to free up first.
+  int get queuedMs => _int(raw['queuedMs']) ?? 0;
   bool get stream => raw['stream'] == true;
   List<Map<String, dynamic>> get trail => (raw['trail'] as List? ?? const <Object>[]).map(_map).toList();
 }

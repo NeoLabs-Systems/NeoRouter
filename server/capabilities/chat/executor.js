@@ -37,9 +37,7 @@ const HEDGE_MAX_MS = 30_000;
 const HEDGE_MIN_SAMPLES = 3;
 const HEDGE_RETRY_MS = 2000;
 const QUEUE_POLL_MS = 1000;
-// Rejections that clear by themselves within seconds to minutes. When every
-// candidate is blocked only by these, the request waits instead of failing.
-const TEMPORARY_REJECTIONS = new Set(['rate_limited', 'quota_exhausted', 'circuit_open', 'cooldown', 'account_busy']);
+const QUEUE_MIN_POLL_MS = 200;
 
 const KEY_POLICY_REJECTIONS = new Set(['not_free', 'not_allowed_for_key', 'price_unknown']);
 // Rejections that do not change within the lifetime of one request.
@@ -229,6 +227,8 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   const trail = [];
   let lastError = null;
   let badRequests = 0;
+  let queuedMs = 0;
+  let freesUpAt = null;
 
   const finish = (fields) => {
     try {
@@ -242,6 +242,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
         attempts: Math.max(1, trail.length),
         stream: stream ? 1 : 0,
         trail_json: JSON.stringify(trail),
+        queued_ms: Math.round(queuedMs),
         redacted_count: processingStats.redacted,
         compression_saved_tokens: processingStats.compression.savedTokens,
         task: plan.task?.primary ?? null,
@@ -379,15 +380,19 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
 
   // Starts an attempt, or waits for temporarily blocked candidates to free up
   // (bursts beyond every provider's rate limit queue instead of failing).
+  // It only waits when a candidate frees up within the window: a model out
+  // for the day is no reason to keep the client hanging.
   const ensureRunning = async () => {
-    const waitUntil = Date.now() + config.routing.queueWaitMs;
+    const waitUntil = Math.min(Date.now() + config.routing.queueWaitMs, startedAt + config.routing.totalBudgetMs);
     while (!running.size) {
       if (startNext()) return true;
-      const remaining = Math.min(waitUntil, startedAt + config.routing.totalBudgetMs) - Date.now();
-      if (remaining <= 0 || clientAbort.signal.aborted || attemptsStarted >= config.routing.maxAttempts) return false;
-      const reasons = Object.keys(plan.rejectionSummary());
-      if (!reasons.some((reason) => TEMPORARY_REJECTIONS.has(reason) || reason.startsWith('quota_'))) return false;
-      await sleep(Math.min(remaining, QUEUE_POLL_MS * (0.5 + Math.random())));
+      if (clientAbort.signal.aborted || attemptsStarted >= config.routing.maxAttempts) return false;
+      const now = Date.now();
+      freesUpAt = plan.freesUpAt(now);
+      if (freesUpAt === null || freesUpAt > waitUntil) return false;
+      const pause = Math.min(waitUntil - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random()));
+      await sleep(pause);
+      queuedMs += Date.now() - now;
     }
     return true;
   };
@@ -484,7 +489,10 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     ? explainNoModel(rejected)
     : `All ${trail.length} attempt(s) failed. Last error: ${lastError?.message || 'unknown'}`;
   finish({ status: 'error', http_status: status, error_code: code, error_message: message });
-  throw new HttpError(status, code, message, { trail, rejected });
+  // When a model frees up later, say when to come back.
+  const retryAfterSeconds = freesUpAt ? Math.max(1, Math.ceil((freesUpAt - Date.now()) / 1000)) : null;
+  if (retryAfterSeconds && !res.headersSent) res.set('Retry-After', String(retryAfterSeconds));
+  throw new HttpError(status, code, message, { trail, rejected, ...(retryAfterSeconds ? { retryAfterSeconds } : {}) });
 }
 
 // Translation errors become 400s, as in execute().
