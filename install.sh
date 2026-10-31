@@ -51,7 +51,18 @@ ask INSTALL_DIR "Install directory" "$DEFAULT_DIR"
 
 if [[ -d "$INSTALL_DIR/.git" ]]; then
   info "Existing repo found at ${INSTALL_DIR} — pulling latest..."
-  git -C "$INSTALL_DIR" pull --rebase origin "$(git -C "$INSTALL_DIR" rev-parse --abbrev-ref HEAD)"
+  BRANCH="$(git -C "$INSTALL_DIR" rev-parse --abbrev-ref HEAD)"
+  # Files an earlier install run changed itself (npm rewrites the lockfile,
+  # Flutter its own lock) are not local edits: put them back first.
+  for file in package-lock.json flutter_app/pubspec.lock; do
+    git -C "$INSTALL_DIR" checkout -- "$file" 2>/dev/null || true
+  done
+  # Anything else that changed is kept aside and put back after the update.
+  if ! git -C "$INSTALL_DIR" pull --rebase --autostash origin "$BRANCH"; then
+    err "Could not update ${INSTALL_DIR}. Your local changes are kept in 'git stash list' there."
+    err "To start fresh: rm -rf \"${INSTALL_DIR}\" and run this installer again."
+    exit 1
+  fi
   ok "Updated"
 elif [[ -d "$INSTALL_DIR" && -n "$(ls -A "$INSTALL_DIR" 2>/dev/null)" ]]; then
   err "Directory ${INSTALL_DIR} exists and is not empty. Choose a different path or remove it."
@@ -65,7 +76,9 @@ fi
 echo
 info "Installing Node.js dependencies..."
 cd "$INSTALL_DIR"
-npm install --omit=dev --no-audit --no-fund
+# npm ci installs exactly the lockfile and never rewrites it, so the
+# checkout stays clean for the next update.
+npm ci --omit=dev --no-audit --no-fund || npm install --omit=dev --no-audit --no-fund
 ok "Dependencies ready"
 
 echo
