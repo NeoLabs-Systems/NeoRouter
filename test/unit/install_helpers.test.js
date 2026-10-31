@@ -79,3 +79,12 @@ test('with Flutter installed the client is built locally, nothing is downloaded'
   assert.equal(fs.readFileSync(path.join(ws.webDir, 'index.html'), 'utf8'), 'built');
   assert.ok(!calls.some((call) => call[0] === 'curl'));
 });
+
+test('an install without the app sources (npm) downloads the prebuilt web client', () => {
+  const ws = workspace();
+  fs.rmSync(path.join(ws.appDir, 'pubspec.yaml'));
+  const { run } = commands({ root: ws.root, prebuilt: true });
+  const built = buildBundledWebClientIfPossible({ flutterAppDir: ws.appDir, webClientDir: ws.webDir, runCommand: run, commandExistsFn: () => false, toolsDir: ws.toolsDir, fail, required: true });
+  assert.equal(built, true);
+  assert.equal(fs.readFileSync(path.join(ws.webDir, 'index.html'), 'utf8'), 'prebuilt');
+});
