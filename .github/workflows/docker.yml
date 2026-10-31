@@ -1,0 +1,119 @@
+# Builds the container image, proves it actually boots (health + dashboard),
+# and publishes it to GHCR for pushes to main/beta and for version tags.
+name: Docker
+
+on:
+  push:
+    branches:
+      - main
+      - beta
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - docker/**
+      - docker-compose.yml
+      - package.json
+      - package-lock.json
+      - server/**
+      - shared/**
+      - runtime/**
+      - lib/**
+      - bin/**
+      - landing/**
+      - .github/workflows/docker.yml
+    tags:
+      - "v*"
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - docker/**
+      - docker-compose.yml
+      - .github/workflows/docker.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: neorouter:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # A build that passes but does not start is worthless: the native modules,
+      # the web client path and the bind address only fail at runtime.
+      - name: Smoke test
+        run: |
+          docker run -d --name neorouter-ci -p 4600:4600 neorouter:ci
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4600/health; then break; fi
+            if [ "$attempt" = 30 ]; then
+              echo "The server did not become healthy:" >&2
+              docker logs neorouter-ci >&2
+              exit 1
+            fi
+            sleep 2
+          done
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4600/app/)" = "200"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4600/app/main.dart.js)" = "200"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4600/)" = "200"
+          # The gateway must answer in the OpenAI error shape, not with a stack trace.
+          curl -s -X POST http://127.0.0.1:4600/v1/chat/completions \
+            -H 'content-type: application/json' -d '{"model":"auto","messages":[]}' \
+            | grep -q INVALID_API_KEY
+          docker exec neorouter-ci neorouter doctor
+          docker rm -f neorouter-ci
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Publish
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

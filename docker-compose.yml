@@ -1,0 +1,64 @@
+# NeoRouter in Docker.
+#
+#   docker compose up -d --build
+#   docker compose exec neorouter neorouter status
+#   docker compose logs -f
+#
+# Then open http://localhost:4600/app — the first account you create is the
+# administrator. Point OpenAI/Anthropic clients at http://localhost:4600/v1.
+
+services:
+  neorouter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # Set to "runtime-from-source" to build the dashboard with Flutter from
+      # this checkout instead of downloading the prebuilt web client.
+      target: runtime
+      args:
+        NEOROUTER_WEB_CHANNEL: main
+        NODE_VERSION: "22"
+    # Or use a published image instead of building:
+    # image: ghcr.io/neolabs-systems/neorouter:latest
+    container_name: neorouter
+    restart: unless-stopped
+    ports:
+      # Bind to loopback when a reverse proxy in front of it handles TLS.
+      - "4600:4600"
+    environment:
+      # Shown in the dashboard and used for OAuth callbacks. Change it when the
+      # router is reachable under another address.
+      NEOROUTER_PUBLIC_URL: ${NEOROUTER_PUBLIC_URL:-http://localhost:4600}
+      NEOROUTER_LOG_LEVEL: ${NEOROUTER_LOG_LEVEL:-info}
+      # Provider base URLs on the LAN (Ollama, LM Studio, vLLM …) reach the
+      # container's own network, not the host's loopback. Host services are
+      # reachable at http://host.docker.internal:<port>.
+      NEOROUTER_ALLOW_PRIVATE_PROVIDER_URLS: ${NEOROUTER_ALLOW_PRIVATE_PROVIDER_URLS:-false}
+    volumes:
+      # Database, secret.key, downloaded models and backups. Losing it means
+      # provider keys can no longer be decrypted.
+      - neorouter-data:/data
+    # Lets the container reach Ollama/LM Studio running on the host.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:' + (process.env.NEOROUTER_PORT || 4600) + '/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+    # The scheduler, key checks and model sync run in this one process; a
+    # clean SIGTERM closes the server and the database.
+    stop_grace_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  neorouter-data:
