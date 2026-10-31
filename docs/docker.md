@@ -66,8 +66,10 @@ Process environment wins over `/data/.env`. The image sets:
 `NEOROUTER_RELEASE_CHANNEL=stable`. Every other setting is in
 [configuration.md](configuration.md).
 
-Change settings with compose `environment:` or `docker run -e`; `neorouter env
-set` also works, but the file is read at start, so restart after using it.
+Change settings with compose `environment:` or `docker run -e`. `neorouter env
+set` also works for anything the image does not set itself, but the file is
+read at start, so restart after using it — and `NEOROUTER_HOME`, `NEOROUTER_HOST`
+and `NEOROUTER_PORT` come from the image environment, which wins over the file.
 
 ### Behind a reverse proxy
 
