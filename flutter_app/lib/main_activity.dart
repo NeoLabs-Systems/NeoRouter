@@ -32,6 +32,17 @@ class ActivityScreen extends StatefulWidget {
 class _ActivityScreenState extends State<ActivityScreen> {
   _ActivityTab _tab = _ActivityTab.overview;
   String _range = '7d';
+  // Keys the numbers are limited to; empty means all of them.
+  Set<String> _keyIds = <String>{};
+  List<RouterKey> _keys = <RouterKey>[];
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.api.keys().then((keys) {
+      if (mounted) setState(() => _keys = keys);
+    }).catchError((_) {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,20 +73,22 @@ class _ActivityScreenState extends State<ActivityScreen> {
           selected: _tab,
           onChanged: (value) => setState(() => _tab = value),
         ),
+        if (_keys.length > 1) _KeyFilter(keys: _keys, selected: _keyIds, onChanged: (value) => setState(() => _keyIds = value)),
         if (_tab == _ActivityTab.overview)
-          _Overview(key: ValueKey<String>(_range), controller: widget.controller, range: _range)
+          _Overview(key: ValueKey<String>('$_range|${(_keyIds.toList()..sort()).join(',')}'), controller: widget.controller, range: _range, keyIds: _keyIds.toList())
         else
-          _RequestList(controller: widget.controller),
+          _RequestList(controller: widget.controller, keyIds: _keyIds.toList()),
       ],
     );
   }
 }
 
 class _Overview extends StatefulWidget {
-  const _Overview({super.key, required this.controller, required this.range});
+  const _Overview({super.key, required this.controller, required this.range, this.keyIds = const <String>[]});
 
   final NeoRouterController controller;
   final String range;
+  final List<String> keyIds;
 
   @override
   State<_Overview> createState() => _OverviewState();
@@ -95,7 +108,7 @@ class _OverviewState extends State<_Overview> {
   Future<void> _load() async {
     setState(() => _error = null);
     try {
-      final data = await widget.controller.api.analytics(widget.range);
+      final data = await widget.controller.api.analytics(widget.range, keyIds: widget.keyIds);
       setState(() => _data = data);
     } catch (error) {
       setState(() => _error = '$error');
@@ -442,15 +455,22 @@ class _LineChart extends StatelessWidget {
 }
 
 class _RequestList extends StatefulWidget {
-  const _RequestList({required this.controller});
+  const _RequestList({required this.controller, this.keyIds = const <String>[]});
 
   final NeoRouterController controller;
+  final List<String> keyIds;
 
   @override
   State<_RequestList> createState() => _RequestListState();
 }
 
 class _RequestListState extends State<_RequestList> {
+  @override
+  void didUpdateWidget(_RequestList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.keyIds.join(',') != widget.keyIds.join(',')) _load();
+  }
+
   List<RequestLog> _logs = <RequestLog>[];
   bool _loading = true;
   String? _error;
@@ -466,7 +486,7 @@ class _RequestListState extends State<_RequestList> {
   Future<void> _load() async {
     setState(() => _error = null);
     try {
-      final logs = await widget.controller.api.logs(limit: 200, status: _status);
+      final logs = await widget.controller.api.logs(limit: 200, status: _status, keyIds: widget.keyIds);
       setState(() => _logs = logs);
     } catch (error) {
       setState(() => _error = '$error');
@@ -625,4 +645,57 @@ class _RequestDetails extends StatelessWidget {
     'rate_limit' || 'quota_exhausted' => t.outcomeBusy,
     _ => t.outcomeFailed(outcome.replaceAll('_', ' ')),
   };
+}
+
+/// Which API keys the activity covers: all of them, or the ones ticked.
+class _KeyFilter extends StatelessWidget {
+  const _KeyFilter({required this.keys, required this.selected, required this.onChanged});
+
+  final List<RouterKey> keys;
+  final Set<String> selected;
+  final ValueChanged<Set<String>> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final chosen = keys.where((key) => selected.contains(key.id)).toList();
+    final label = chosen.isEmpty ? t.activityAllKeys : chosen.length == 1 ? chosen.first.name : t.activityKeysCount('${chosen.length}');
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: MenuAnchor(
+        menuChildren: <Widget>[
+          MenuItemButton(
+            leadingIcon: Icon(selected.isEmpty ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded, size: 18),
+            onPressed: () => onChanged(<String>{}),
+            child: Text(t.activityAllKeys),
+          ),
+          const Divider(height: 1),
+          for (final key in keys)
+            CheckboxMenuButton(
+              value: selected.contains(key.id),
+              closeOnActivate: false,
+              onChanged: (value) {
+                final next = <String>{...selected};
+                value == true ? next.add(key.id) : next.remove(key.id);
+                onChanged(next);
+              },
+              child: Text(key.revoked ? '${key.name} · ${t.activityRevoked}' : key.name),
+            ),
+        ],
+        builder: (context, menu, _) => OutlinedButton.icon(
+          onPressed: () => menu.isOpen ? menu.close() : menu.open(),
+          icon: Icon(Icons.key_outlined, size: 16, color: chosen.isEmpty ? null : palette.accent),
+          label: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+              const SizedBox(width: 4),
+              const Icon(Icons.expand_more_rounded, size: 18),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

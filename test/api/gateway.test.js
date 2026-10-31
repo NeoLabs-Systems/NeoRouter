@@ -262,6 +262,15 @@ test('request logs and usage summary record metadata only', async () => {
   assert.ok(analytics.attemptOutcomes.some((item) => item.key === 'success'));
   const quotas = (await api('get', '/usage/quotas')).body;
   assert.ok(quotas.accounts.length >= 1);
+  // Limited to one key, both views only count that key's requests.
+  const keys = (await api('get', '/keys')).body.keys;
+  const free = keys.find((key) => key.name === 'free');
+  const own = (await api('get', `/usage/logs?limit=500&keyIds=${free.id}`)).body.logs;
+  assert.ok(own.length > 0 && own.every((log) => log.keyId === free.id));
+  const all = (await api('get', '/usage/analytics?range=7d')).body.totals.requests;
+  const limited = (await api('get', `/usage/analytics?range=7d&keyIds=${free.id}`)).body;
+  assert.ok(limited.totals.requests > 0 && limited.totals.requests < all, `${limited.totals.requests} of ${all}`);
+  assert.ok(limited.byKey.every((item) => item.key === 'free'));
 });
 
 test('routing preview ranks candidates without calling providers', async () => {

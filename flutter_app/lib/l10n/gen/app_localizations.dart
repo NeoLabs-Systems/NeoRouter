@@ -3439,6 +3439,24 @@ abstract class AppL10n {
   /// **'What your apps asked for and how NeoRouter answered. Only metadata is kept – never your messages.'**
   String get activityDescription;
 
+  /// No description provided for @activityAllKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'All API keys'**
+  String get activityAllKeys;
+
+  /// No description provided for @activityKeysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} keys'**
+  String activityKeysCount(String count);
+
+  /// No description provided for @activityRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'revoked'**
+  String get activityRevoked;
+
   /// No description provided for @tabOverview.
   ///
   /// In en, this message translates to:

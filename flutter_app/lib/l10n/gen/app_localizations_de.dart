@@ -1895,6 +1895,17 @@ class AppL10nDe extends AppL10n {
       'Was deine Apps angefragt haben und wie NeoRouter geantwortet hat. Gespeichert werden nur Metadaten – nie deine Nachrichten.';
 
   @override
+  String get activityAllKeys => 'Alle API-Keys';
+
+  @override
+  String activityKeysCount(String count) {
+    return '$count Keys';
+  }
+
+  @override
+  String get activityRevoked => 'widerrufen';
+
+  @override
   String get tabOverview => 'Überblick';
 
   @override

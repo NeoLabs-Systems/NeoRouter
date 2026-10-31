@@ -126,10 +126,14 @@ class RouterApi {
   Future<Map<String, dynamic>> processingStats() => client.get('$_base/processing/stats');
 
   // ---- usage ------------------------------------------------------------------
-  Future<Map<String, dynamic>> analytics(String range) => client.get('$_base/usage/analytics?range=$range');
+  Future<Map<String, dynamic>> analytics(String range, {List<String> keyIds = const <String>[]}) =>
+      client.get('$_base/usage/analytics?range=$range${keyIds.isEmpty ? '' : '&keyIds=${keyIds.map(Uri.encodeQueryComponent).join(',')}'}');
   Future<Map<String, dynamic>> summary(String range) => client.get('$_base/usage/summary?range=$range');
-  Future<List<RequestLog>> logs({int limit = 100, String? status}) async =>
-      _list(await client.get('$_base/usage/logs?limit=$limit${status == null ? '' : '&status=$status'}'), 'logs', RequestLog.new);
+  Future<List<RequestLog>> logs({int limit = 100, String? status, List<String> keyIds = const <String>[]}) async => _list(
+    await client.get('$_base/usage/logs?limit=$limit${status == null ? '' : '&status=$status'}${keyIds.isEmpty ? '' : '&keyIds=${keyIds.map(Uri.encodeQueryComponent).join(',')}'}'),
+    'logs',
+    RequestLog.new,
+  );
   Future<List<Map<String, dynamic>>> quotas() async =>
       ((await client.get('$_base/usage/quotas'))['accounts'] as List).map((item) => Map<String, dynamic>.from(item as Map)).toList();
   Future<Map<String, dynamic>> playground(Map<String, Object?> body) => client.post('$_base/playground/chat', _clean(body));

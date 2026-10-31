@@ -1879,6 +1879,17 @@ class AppL10nEn extends AppL10n {
       'What your apps asked for and how NeoRouter answered. Only metadata is kept – never your messages.';
 
   @override
+  String get activityAllKeys => 'All API keys';
+
+  @override
+  String activityKeysCount(String count) {
+    return '$count keys';
+  }
+
+  @override
+  String get activityRevoked => 'revoked';
+
+  @override
   String get tabOverview => 'Overview';
 
   @override

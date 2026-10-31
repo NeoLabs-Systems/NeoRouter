@@ -135,14 +135,21 @@ function grouper(keyOf) {
 }
 
 // Everything the analytics page charts, computed from request metadata.
-function analytics(userId, range = '24h', now = Date.now()) {
+// Limits a query to some keys: an empty list means all of them.
+function keyFilter(keyIds) {
+  const ids = (keyIds || []).filter(Boolean).slice(0, 100);
+  return { sql: ids.length ? ` AND r.router_key_id IN (${ids.map(() => '?').join(',')})` : '', ids };
+}
+
+function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}) {
   const db = getDatabase();
+  const keys = keyFilter(keyIds);
   const since = rangeStart(range, now);
   const bucketMs = range === '24h' ? 3_600_000 : range === '7d' ? 6 * 3_600_000 : 86_400_000;
   const rows = db.prepare(`SELECT r.created_at, r.status, r.error_code, r.input_tokens, r.output_tokens, r.cost_usd, r.saved_usd, r.is_free,
       r.latency_ms, r.ttft_ms, r.attempts, r.stream, r.api_format, r.model_label, r.router_key_id, r.trail_json, r.capability, k.name key_name
     FROM requests r LEFT JOIN router_keys k ON k.id = r.router_key_id
-    WHERE r.user_id = ? AND r.created_at >= ? ORDER BY r.created_at`);
+    WHERE r.user_id = ? AND r.created_at >= ?${keys.sql} ORDER BY r.created_at`);
 
   const buckets = new Map();
   for (let bucket = Math.floor(since / bucketMs) * bucketMs + bucketMs; bucket <= now; bucket += bucketMs) buckets.set(bucket, newGroup());
@@ -160,7 +167,7 @@ function analytics(userId, range = '24h', now = Date.now()) {
     errors: grouper((row) => (row.status === 'error' ? row.error_code || 'unknown' : null)),
   };
   // Streamed row by row, so every request in the range counts.
-  for (const row of rows.iterate(userId, since)) {
+  for (const row of rows.iterate(userId, since, ...keys.ids)) {
     addRow(total, row);
     for (const group of Object.values(groups)) group.add(row);
     const bucket = Math.floor(row.created_at / bucketMs) * bucketMs;
@@ -185,11 +192,12 @@ function analytics(userId, range = '24h', now = Date.now()) {
   };
 }
 
-function logs(userId, { limit = 100, before = null, keyId = null, status = null } = {}) {
+function logs(userId, { limit = 100, before = null, keyId = null, keyIds = [], status = null } = {}) {
+  const keys = keyFilter(keyId ? [keyId, ...keyIds] : keyIds);
   return getDatabase().prepare(`SELECT r.*, k.name key_name FROM requests r LEFT JOIN router_keys k ON k.id = r.router_key_id
-    WHERE r.user_id = ? AND (? IS NULL OR r.created_at < ?) AND (? IS NULL OR r.router_key_id = ?) AND (? IS NULL OR r.status = ?)
+    WHERE r.user_id = ? AND (? IS NULL OR r.created_at < ?)${keys.sql} AND (? IS NULL OR r.status = ?)
     ORDER BY r.created_at DESC LIMIT ?`)
-    .all(userId, before, before, keyId, keyId, status, status, Math.min(500, limit))
+    .all(userId, before, before, ...keys.ids, status, status, Math.min(500, limit))
     .map((row) => ({
       id: row.id,
       createdAt: row.created_at,

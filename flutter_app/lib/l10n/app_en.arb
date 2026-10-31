@@ -1031,6 +1031,10 @@
     }
   },
   "activityDescription": "What your apps asked for and how NeoRouter answered. Only metadata is kept – never your messages.",
+  "activityAllKeys": "All API keys",
+  "activityKeysCount": "{count} keys",
+  "@activityKeysCount": {"placeholders": {"count": {"type": "String"}}},
+  "activityRevoked": "revoked",
   "tabOverview": "Overview",
   "tabRequests": "Requests",
   "metricTokens": "{count} tokens",

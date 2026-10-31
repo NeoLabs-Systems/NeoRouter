@@ -14,13 +14,17 @@ router.use(requirePermission('activity.view'));
 
 router.get('/summary', (req, res) => res.json(usage.summary(req.space.ownerId, String(req.query.range || '24h'))));
 
-router.get('/analytics', (req, res) => res.json(usage.analytics(req.space.ownerId, String(req.query.range || '24h'))));
+// ?keyIds=a,b limits the numbers to those keys.
+const keyIdsOf = (req) => String(req.query.keyIds || '').split(',').map((id) => id.trim()).filter(Boolean);
+
+router.get('/analytics', (req, res) => res.json(usage.analytics(req.space.ownerId, String(req.query.range || '24h'), Date.now(), { keyIds: keyIdsOf(req) })));
 
 router.get('/logs', (req, res) => res.json({
   logs: usage.logs(req.space.ownerId, {
     limit: Number(req.query.limit) || 100,
     before: req.query.before ? Number(req.query.before) : null,
     keyId: req.query.keyId || null,
+    keyIds: keyIdsOf(req),
     status: req.query.status || null,
   }),
 }));
