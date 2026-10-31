@@ -119,21 +119,29 @@ function finishGroup(group) {
 }
 
 // Rows counted under a key each, e.g. per provider; the largest kept.
-function grouper(keyOf) {
+// nameOf (optional) gives each group a readable name when the key is an id.
+function grouper(keyOf, nameOf = null) {
   const groups = new Map();
+  const names = new Map();
   return {
     add(row) {
       const key = keyOf(row);
       if (key === null || key === undefined) return;
       if (!groups.has(key)) groups.set(key, newGroup());
+      if (nameOf && !names.has(key)) names.set(key, nameOf(row));
       addRow(groups.get(key), row);
     },
     top(limit) {
-      return [...groups.entries()].map(([key, group]) => ({ key, ...finishGroup(group) }))
+      return [...groups.entries()].map(([key, group]) => ({ key, ...(names.has(key) ? { name: names.get(key) } : {}), ...finishGroup(group) }))
         .sort((a, b) => b.requests - a.requests).slice(0, limit);
     },
   };
 }
+
+// One model, whichever provider or account served it ("beam" on four
+// accounts is one model); requests without a known model keep their label.
+const modelKeyOf = (row) => row.canonical_id || row.model_label;
+const modelNameOf = (row) => (row.model_label ? row.model_label.split('/').pop().replace(/:free$/, '') : row.canonical_id);
 
 // Everything the analytics page charts, computed from request metadata.
 // Limits a query to some keys: an empty list means all of them.
@@ -149,8 +157,9 @@ function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}
   const bucketMs = range === '24h' ? 3_600_000 : range === '7d' ? 6 * 3_600_000 : 86_400_000;
   const rows = db.prepare(`SELECT r.created_at, r.status, r.error_code, r.input_tokens, r.output_tokens, r.cost_usd, r.saved_usd, r.is_free,
       r.latency_ms, r.ttft_ms, r.attempts, r.stream, r.api_format, r.model_label, r.router_key_id, r.trail_json, r.capability, k.name key_name,
-      a.definition_id, a.slug account_slug, a.label account_label, a.base_url account_base_url
+      a.definition_id, a.slug account_slug, a.label account_label, a.base_url account_base_url, m.canonical_id
     FROM requests r LEFT JOIN router_keys k ON k.id = r.router_key_id LEFT JOIN provider_accounts a ON a.id = r.account_id
+      LEFT JOIN models m ON m.id = r.model_ref
     WHERE r.user_id = ? AND r.created_at >= ?${keys.sql} ORDER BY r.created_at`);
 
   const buckets = new Map();
@@ -165,7 +174,7 @@ function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}
     : row.model_label ? row.model_label.split('/')[0] : null);
   const groups = {
     byProvider: grouper(providerOf),
-    byModel: grouper((row) => row.model_label),
+    byModel: grouper(modelKeyOf, modelNameOf),
     byKey: grouper((row) => row.key_name || row.router_key_id),
     byFormat: grouper((row) => `${row.api_format}${row.stream ? ' · stream' : ''}`),
     byCapability: grouper((row) => row.capability || 'chat'),

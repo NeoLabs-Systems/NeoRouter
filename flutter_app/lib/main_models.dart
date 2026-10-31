@@ -151,11 +151,14 @@ class _ModelsScreenState extends State<ModelsScreen> {
     });
   }
 
-  // One row per model and provider: its copies on the provider's other accounts.
+  // One row per model: its copies on other accounts and providers.
   List<(CatalogModel, List<CatalogModel>)> _rows(List<CatalogModel> models) {
     final groups = <String, List<CatalogModel>>{};
     for (final model in models) {
-      groups.putIfAbsent('${model.providerKey}|${model.modelId}', () => <CatalogModel>[]).add(model);
+      // Across all connections a model is one row whichever provider serves it;
+      // with one provider picked, it is that provider's copy.
+      final key = _provider == null ? '${model.capability}|${model.canonicalId}' : '${model.providerKey}|${model.modelId}';
+      groups.putIfAbsent(key, () => <CatalogModel>[]).add(model);
     }
     return <(CatalogModel, List<CatalogModel>)>[for (final copies in groups.values) (copies.firstWhere((model) => model.enabled, orElse: () => copies.first), copies)];
   }
@@ -305,6 +308,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                             _ModelRow(
                               model: model,
                               accounts: copies.length,
+                              providers: <String>{for (final copy in copies) copy.providerName}.toList(),
                               routable: current?.routable ?? true,
                               onToggle: (value) => _toggle(copies, value),
                               onOpen: () async {
@@ -425,12 +429,13 @@ class _ComingSoon extends StatelessWidget {
 }
 
 class _ModelRow extends StatelessWidget {
-  const _ModelRow({required this.model, required this.routable, required this.onToggle, required this.onOpen, this.accounts = 1});
+  const _ModelRow({required this.model, required this.routable, required this.onToggle, required this.onOpen, this.accounts = 1, this.providers = const <String>[]});
 
   final CatalogModel model;
 
-  /// On how many of its provider's accounts this model is offered.
+  /// On how many accounts this model is offered, and by which providers.
   final int accounts;
+  final List<String> providers;
   final bool routable;
   final ValueChanged<bool> onToggle;
   final VoidCallback onOpen;
@@ -441,7 +446,11 @@ class _ModelRow extends StatelessWidget {
     final palette = neoRouterPaletteOf(context);
     final wide = MediaQuery.sizeOf(context).width >= AppBreakpoints.tablet;
     final details = <String>[
-      accounts > 1 ? '${model.providerName} · ${t.providerAccountsCount('$accounts')}' : model.providerName,
+      providers.length > 1
+          ? providers.join(', ')
+          : accounts > 1
+          ? '${model.providerName} · ${t.providerAccountsCount('$accounts')}'
+          : model.providerName,
       if (model.contextWindow != null) t.contextWindow(formatCount(model.contextWindow!)),
       modelPriceLabel(t, model),
     ].join(' · ');

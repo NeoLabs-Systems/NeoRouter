@@ -295,5 +295,13 @@ test('several accounts of one provider count as one provider', async () => {
   assert.equal(new Set(same.map((account) => account.providerKey)).size, 1, 'one provider key for both accounts');
   const models = (await api('get', '/models')).body.models.filter((model) => model.modelId === 'ok-alpha');
   assert.ok(models.length >= 2 && new Set(models.map((model) => model.providerKey)).size === 1);
+  // The same model served by both accounts is one row in the stats.
+  for (const id of ['mock/ok-alpha', 'mock-two/ok-alpha']) {
+    const sent = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${freeKey}`).send({ model: id, messages: [{ role: 'user', content: 'hi' }] });
+    assert.equal(sent.status, 200, JSON.stringify(sent.body));
+  }
+  const byModel = (await api('get', '/usage/analytics?range=7d')).body.byModel;
+  const alpha = byModel.filter((item) => item.name === 'ok-alpha');
+  assert.equal(alpha.length, 1, JSON.stringify(byModel.map((item) => item.key)));
   await api('delete', `/providers/accounts/${second.body.account.id}`);
 });

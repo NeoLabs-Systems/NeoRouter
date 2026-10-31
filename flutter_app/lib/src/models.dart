@@ -151,6 +151,8 @@ class CatalogModel {
   String get modelId => raw['modelId'] as String;
   String get name => raw['name'] as String? ?? modelId;
   String get providerSlug => raw['providerSlug'] as String;
+  /// The model itself, whichever provider serves it ("beam" on Kilo and Ollama).
+  String get canonicalId => raw['canonicalId'] as String? ?? modelId;
   /// The provider, whichever of its accounts serves this copy.
   String get providerKey => raw['providerKey'] as String? ?? providerSlug;
   String get providerName => raw['providerName'] as String? ?? providerSlug;

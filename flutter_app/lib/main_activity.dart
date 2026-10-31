@@ -244,7 +244,7 @@ class _Ranking extends StatelessWidget {
                       children: <Widget>[
                         Expanded(
                           child: Text(
-                            label?.call('${row['key']}') ?? '${row['key']}',
+                            row['name'] != null ? '${row['name']}' : label?.call('${row['key']}') ?? '${row['key']}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(fontSize: 13.5, color: palette.text, fontWeight: FontWeight.w500),
