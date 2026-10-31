@@ -922,6 +922,8 @@
   "liveNow": "Live",
   "liveReplay": "Replaying recent requests",
   "liveWaiting": "Waiting for the first request",
+  "liveLoading": "Loading…",
+  "liveLoadingTraffic": "loading your traffic…",
   "liveOther": "Others",
   "liveYourApp": "Your app",
   "liveAddProvider": "Add a connection",

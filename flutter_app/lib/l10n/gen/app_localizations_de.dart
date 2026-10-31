@@ -1720,6 +1720,12 @@ class AppL10nDe extends AppL10n {
   String get liveWaiting => 'Warte auf die erste Anfrage';
 
   @override
+  String get liveLoading => 'Lädt …';
+
+  @override
+  String get liveLoadingTraffic => 'lade deine Anfragen …';
+
+  @override
   String get liveOther => 'Andere';
 
   @override

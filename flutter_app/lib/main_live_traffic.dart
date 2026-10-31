@@ -473,11 +473,14 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _Header(title: widget.title, status: widget.status, action: widget.action, scene: _scene, liveSince: () => _lastLive, hasTraffic: () => _history.isNotEmpty, compact: compact),
+              _Header(title: widget.title, status: widget.status, action: widget.action, scene: _scene, liveSince: () => _lastLive, hasTraffic: () => _history.isNotEmpty, loaded: () => _loaded, compact: compact),
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, stage) {
-                    final layout = _Layout(Size(stage.maxWidth, stage.maxHeight), math.max(1, _apps.length), math.max(1, _providers.length));
+                    // While loading, skeleton slots stand in for keys and connections.
+                    final apps = _loaded || _apps.isNotEmpty ? math.max(1, _apps.length) : (compact ? 3 : 4);
+                    final providers = _loaded || _providers.isNotEmpty ? math.max(1, _providers.length) : (compact ? 4 : 5);
+                    final layout = _Layout(Size(stage.maxWidth, stage.maxHeight), apps, providers);
                     return _Stage(scene: _scene, layout: layout, apps: _apps, providers: _providers, appRequests: _appRequests, lastModel: _lastModel, empty: _history.isEmpty, loaded: _loaded);
                   },
                 ),
@@ -492,13 +495,14 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.title, required this.status, required this.action, required this.scene, required this.liveSince, required this.hasTraffic, required this.compact});
+  const _Header({required this.title, required this.status, required this.action, required this.scene, required this.liveSince, required this.hasTraffic, required this.loaded, required this.compact});
 
   final String title;
   final String status;
   final Widget? action;
   final _Scene scene;
   final double Function() liveSince;
+  final bool Function() loaded;
   final bool Function() hasTraffic;
   final bool compact;
 
@@ -516,7 +520,7 @@ class _Header extends StatelessWidget {
           animation: scene,
           builder: (context, _) {
             final live = scene.t - liveSince() < 30000;
-            final label = !hasTraffic() ? t.liveWaiting : live ? t.liveNow : t.liveReplay;
+            final label = !loaded() ? t.liveLoading : !hasTraffic() ? t.liveWaiting : live ? t.liveNow : t.liveReplay;
             final color = live ? palette.success : palette.textMuted;
             final blink = live ? 0.35 + 0.65 * (0.5 + 0.5 * math.sin(scene.t / 260)) : 1.0;
             return Container(
@@ -646,7 +650,9 @@ class _Stage extends StatelessWidget {
           final s = scene;
           final thinking = s.thinking;
           final routing = s.packets.any((p) => p.phase == 'out' || p.phase == 'work');
-          final coreLabel = empty
+          final coreLabel = !loaded
+              ? t.liveLoadingTraffic
+              : empty
               ? t.liveWaiting
               : thinking > 0
               ? t.liveScoring('$thinking')
@@ -658,7 +664,7 @@ class _Stage extends StatelessWidget {
             children: <Widget>[
               Positioned.fill(
                 child: CustomPaint(
-                  painter: _TrafficPainter(scene: s, layout: layout, palette: palette),
+                  painter: _TrafficPainter(scene: s, layout: layout, palette: palette, loading: !loaded),
                 ),
               ),
               for (var i = 0; i < layout.appPos.length && i < appNames.length; i++)
@@ -685,6 +691,10 @@ class _Stage extends StatelessWidget {
                   dashed: providers.isEmpty,
                   width: layout.provW,
                 ),
+              if (!loaded && apps.isEmpty)
+                for (var i = 0; i < layout.appPos.length; i++) _skeleton(palette, layout.appPos[i], layout.appW, s.t, i),
+              if (!loaded && providers.isEmpty)
+                for (var j = 0; j < layout.provPos.length; j++) _skeleton(palette, layout.provPos[j], layout.provW, s.t, j + 3),
               // The router's own label inside the disk.
               Positioned(
                 left: layout.core.dx - layout.radius,
@@ -739,6 +749,41 @@ class _Stage extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+
+  // A card-shaped placeholder that shimmers while the traffic loads.
+  Widget _skeleton(NeoRouterPalette palette, Offset center, double width, double now, int index) {
+    final shimmer = 0.5 + 0.5 * math.sin(now / 420 - index * 0.6);
+    final bar = Color.lerp(palette.surfaceRaised, palette.borderStrong, 0.4 + 0.6 * shimmer)!;
+    return Positioned(
+      left: center.dx - width / 2,
+      top: center.dy - layout.nodeH / 2,
+      width: width,
+      height: layout.nodeH,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: palette.surfaceRaised,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: palette.border),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            FractionallySizedBox(
+              widthFactor: 0.7,
+              child: Container(height: 9, decoration: BoxDecoration(color: bar, borderRadius: BorderRadius.circular(5))),
+            ),
+            const SizedBox(height: 7),
+            FractionallySizedBox(
+              widthFactor: 0.45,
+              child: Container(height: 7, decoration: BoxDecoration(color: bar.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(4))),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -827,11 +872,12 @@ class _Stage extends StatelessWidget {
 }
 
 class _TrafficPainter extends CustomPainter {
-  _TrafficPainter({required this.scene, required this.layout, required this.palette});
+  _TrafficPainter({required this.scene, required this.layout, required this.palette, this.loading = false});
 
   final _Scene scene;
   final _Layout layout;
   final NeoRouterPalette palette;
+  final bool loading;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -859,9 +905,30 @@ class _TrafficPainter extends CustomPainter {
       if (glow > 0.01) canvas.drawPath(path, hot..color = palette.accent.withValues(alpha: glow * 0.85));
     }
 
+    if (loading) _loadingPulses(canvas);
     _core(canvas);
     for (final p in s.packets) {
       _packet(canvas, p);
+    }
+  }
+
+  // While loading: a soft light runs along every line, in and out of the router.
+  void _loadingPulses(Canvas canvas) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    final curves = <List<Offset>>[
+      for (var i = 0; i < layout.appPos.length; i++) layout.appCurve(i),
+      for (var j = 0; j < layout.provPos.length; j++) layout.provCurve(j),
+    ];
+    for (var k = 0; k < curves.length; k++) {
+      final metric = _path(curves[k]).computeMetrics().first;
+      final phase = ((scene.t / 1600) + k * 0.17) % 1.0;
+      final head = metric.length * phase;
+      final segment = metric.extractPath(math.max(0, head - 60), head);
+      paint.color = palette.accent.withValues(alpha: 0.5 * math.sin(phase * math.pi));
+      canvas.drawPath(segment, paint);
     }
   }
 
@@ -938,7 +1005,7 @@ class _TrafficPainter extends CustomPainter {
     canvas.drawCircle(c + Offset(math.cos(turn), math.sin(turn)) * r * 1.25, 3.5, Paint()..color = palette.accent);
 
     // Spinner while something is being scored.
-    if (thinking > 0) {
+    if (thinking > 0 || loading) {
       final spin = s.t / 1100 * math.pi * 2;
       canvas.drawArc(
         Rect.fromCircle(center: c, radius: r * 1.08),

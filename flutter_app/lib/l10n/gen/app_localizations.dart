@@ -3151,6 +3151,18 @@ abstract class AppL10n {
   /// **'Waiting for the first request'**
   String get liveWaiting;
 
+  /// No description provided for @liveLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get liveLoading;
+
+  /// No description provided for @liveLoadingTraffic.
+  ///
+  /// In en, this message translates to:
+  /// **'loading your traffic…'**
+  String get liveLoadingTraffic;
+
   /// No description provided for @liveOther.
   ///
   /// In en, this message translates to:

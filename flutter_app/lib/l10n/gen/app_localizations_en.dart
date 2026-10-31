@@ -1704,6 +1704,12 @@ class AppL10nEn extends AppL10n {
   String get liveWaiting => 'Waiting for the first request';
 
   @override
+  String get liveLoading => 'Loading…';
+
+  @override
+  String get liveLoadingTraffic => 'loading your traffic…';
+
+  @override
   String get liveOther => 'Others';
 
   @override
