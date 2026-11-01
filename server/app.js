@@ -86,6 +86,14 @@ function createApp() {
   });
 
   app.use('/', express.static(LANDING_DIR, { extensions: ['html'], setHeaders: revalidate }));
+  // A mistyped address in a browser gets a page; API clients keep the JSON error.
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    if (/^\/(api|v1)(\/|$)/.test(req.path) || req.accepts(['json', 'html']) !== 'html') return next();
+    return res.status(404).sendFile(path.join(LANDING_DIR, '404.html'), (error) => {
+      if (error && !res.headersSent) next();
+    });
+  });
   app.use(notFound, errorHandler);
   return app;
 }
