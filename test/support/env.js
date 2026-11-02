@@ -1,8 +1,18 @@
 'use strict';
 
 const fs = require('node:fs');
+const http = require('node:http');
 const os = require('node:os');
 const path = require('node:path');
+
+// supertest calls listen(0), which binds every interface. The system may then
+// hand out a port another program holds on 127.0.0.1, and that program answers
+// the test's request (an unrelated 401, say). On loopback the port is really free.
+const { listen } = http.Server.prototype;
+http.Server.prototype.listen = function listenOnLoopback(port, ...rest) {
+  const anyInterface = port === 0 && (rest.length === 0 || typeof rest[0] === 'function');
+  return anyInterface ? listen.call(this, 0, '127.0.0.1', ...rest) : listen.call(this, port, ...rest);
+};
 
 // Every test file gets an isolated runtime home and database.
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'neorouter-test-'));
