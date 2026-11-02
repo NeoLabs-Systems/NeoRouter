@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/routing.gif" alt="NeoRouter's home screen: requests fly from apps through the router to providers, and failed attempts bounce back and try the next one. Sample data." width="100%"><br>
+https://github.com/user-attachments/assets/f42be679-1e12-4cb1-9c00-d0f3c15bf403
 </p>
 
 <table>
