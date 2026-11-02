@@ -2,8 +2,9 @@
 'use strict';
 
 const { runCLI } = require('../lib/manager');
+const { printError } = require('../lib/cli/errors');
 
 runCLI(process.argv.slice(2)).catch((err) => {
-  console.error(`[neorouter] ${err.message}`);
+  printError(err, { details: process.argv.includes('--details') });
   process.exit(1);
 });

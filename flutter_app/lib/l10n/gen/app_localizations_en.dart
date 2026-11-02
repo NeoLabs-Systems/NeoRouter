@@ -816,19 +816,6 @@ class AppL10nEn extends AppL10n {
       'Allowed models and routings – one per line, * as wildcard (empty = all)';
 
   @override
-  String get keyKindsTitle => 'Kinds of models';
-
-  @override
-  String get keyKindsHint =>
-      'Switch off what this key should never use, e.g. text models for a voice app.';
-
-  @override
-  String get keyKindsNone => 'Pick at least one kind.';
-
-  @override
-  String get pickModelAllKinds => 'All kinds';
-
-  @override
   String get defaultProfile => 'Routing style for \"auto\"';
 
   @override
@@ -1708,85 +1695,7 @@ class AppL10nEn extends AppL10n {
   String get homeLast7Days => 'Last 7 days';
 
   @override
-  String get liveNow => 'Live';
-
-  @override
-  String get liveReplay => 'Replaying recent requests';
-
-  @override
-  String get liveWaiting => 'Waiting for the first request';
-
-  @override
-  String get liveWaitingChip => 'waiting for a free model';
-
-  @override
-  String liveQueued(String count) {
-    return '$count waiting for a free model';
-  }
-
-  @override
-  String get liveLoading => 'Loading…';
-
-  @override
-  String get liveLoadingTraffic => 'loading your traffic…';
-
-  @override
-  String get liveOther => 'Others';
-
-  @override
-  String get liveYourApp => 'Your app';
-
-  @override
-  String get liveAddProvider => 'Add a connection';
-
-  @override
-  String get liveListening => 'listening';
-
-  @override
-  String get liveRouting => 'routing';
-
-  @override
-  String liveScoring(String count) {
-    return 'scoring $count';
-  }
-
-  @override
-  String liveInFlight(String count) {
-    return '$count in flight';
-  }
-
-  @override
-  String liveRequests(String count) {
-    return '$count requests';
-  }
-
-  @override
-  String liveSummary(String count, String free, String caught, String ms) {
-    return 'Last $count: $free% free · $caught rescued · $ms ms avg';
-  }
-
-  @override
-  String get liveLegendRequest => 'request';
-
-  @override
-  String get liveLegendAnswer => 'answer';
-
-  @override
-  String get liveLegendFailure => 'failed attempt';
-
-  @override
-  String get liveMore => 'Details';
-
-  @override
   String get metricRequests => 'Requests';
-
-  @override
-  String get homeTokens => 'Tokens';
-
-  @override
-  String homeTokensCaption(String count) {
-    return '$count requests';
-  }
 
   @override
   String get metricAnswered => 'Answered';
@@ -1890,17 +1799,6 @@ class AppL10nEn extends AppL10n {
   @override
   String get activityDescription =>
       'What your apps asked for and how NeoRouter answered. Only metadata is kept – never your messages.';
-
-  @override
-  String get activityAllKeys => 'All API keys';
-
-  @override
-  String activityKeysCount(String count) {
-    return '$count keys';
-  }
-
-  @override
-  String get activityRevoked => 'revoked';
 
   @override
   String get tabOverview => 'Overview';
@@ -2139,27 +2037,6 @@ class AppL10nEn extends AppL10n {
   String get addAnotherAccount => 'Add another account';
 
   @override
-  String providerAccountsCount(String count) {
-    return '$count accounts';
-  }
-
-  @override
-  String providerAccountsWorking(String count) {
-    return '$count working';
-  }
-
-  @override
-  String providerAccountsProblems(String count) {
-    return '$count need attention';
-  }
-
-  @override
-  String get providerShowAccounts => 'Show accounts';
-
-  @override
-  String get providerHideAccounts => 'Hide accounts';
-
-  @override
   String limitsModelsRoom(String room, String total) {
     return '$room of $total models have room today';
   }
@@ -2293,24 +2170,6 @@ class AppL10nEn extends AppL10n {
   String get newChat => 'New chat';
 
   @override
-  String get pgMode => 'Mode';
-
-  @override
-  String get pgGroupText => 'Text';
-
-  @override
-  String get pgGroupCreate => 'Create';
-
-  @override
-  String get pgGroupListen => 'Listen';
-
-  @override
-  String get pgGroupLookup => 'Look up';
-
-  @override
-  String get pgGroupOther => 'More';
-
-  @override
   String get modelPicker => 'Model';
 
   @override
@@ -2318,31 +2177,6 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get modelSpecificHint => 'e.g. groq/openai/gpt-oss-120b';
-
-  @override
-  String get pickModel => 'Choose a model';
-
-  @override
-  String get pickModels => 'Choose models';
-
-  @override
-  String get pickModelNone => 'No model matches.';
-
-  @override
-  String pickModelsCount(String count) {
-    return '$count chosen';
-  }
-
-  @override
-  String pickModelContext(String tokens) {
-    return '$tokens context';
-  }
-
-  @override
-  String get pickModelReasoning => 'Thinks before answering';
-
-  @override
-  String get done => 'Done';
 
   @override
   String get systemPromptTitle => 'Instructions';
@@ -2610,38 +2444,6 @@ class AppL10nEn extends AppL10n {
       'Runs on this server, so no provider sees the text. Adds a fraction of a second to new messages; the first one after a quiet while waits for the model to load.';
 
   @override
-  String get privacyModelTitle => 'AI privacy filter';
-
-  @override
-  String get privacyModelHint =>
-      'OpenAI\'s open privacy filter runs on this server and finds names, addresses, account numbers and more that rules miss. No provider sees the text. Turning it on downloads about 1 GB once; it loads when used and frees its memory (about 2 GB) after 15 minutes without requests.';
-
-  @override
-  String get privacyModelEnable => 'Let users turn on the AI privacy filter';
-
-  @override
-  String get privacyModelOff => 'Off. Users can\'t use AI detection.';
-
-  @override
-  String privacyModelDownloading(String percent) {
-    return 'Downloading … $percent %';
-  }
-
-  @override
-  String get privacyModelLoading => 'Loading …';
-
-  @override
-  String get privacyModelReady => 'Ready and loaded.';
-
-  @override
-  String get privacyModelIdle => 'Ready. Loads when the next message needs it.';
-
-  @override
-  String privacyModelError(String error) {
-    return 'Couldn\'t load: $error';
-  }
-
-  @override
   String get privacyTryHint =>
       'Paste a text to see exactly what a provider would receive. Nothing is sent to a model (except AI detection, if it is on).';
 
@@ -2856,67 +2658,6 @@ class AppL10nEn extends AppL10n {
   String get pgVoiceDefault => 'Default voice';
 
   @override
-  String get pgVoiceLoading => 'Loading voices…';
-
-  @override
-  String get pgSetUp => 'Set up';
-
-  @override
-  String pgNotSetUpTitle(String kind) {
-    return '$kind isn\'t set up yet';
-  }
-
-  @override
-  String get pgConnectOpenMeteo => 'Connect Open-Meteo';
-
-  @override
-  String get pgConnectOpenMeteoHint =>
-      'Free and no key needed. It takes a second.';
-
-  @override
-  String get pgOtherProviders => 'Other weather services';
-
-  @override
-  String get pgNoFreeModels =>
-      'You have no free model for this, so Free only finds nothing here.';
-
-  @override
-  String get pgNoFreeModelsLocked =>
-      'You have no free model for this, and this key only allows free models.';
-
-  @override
-  String get pgAllowPaid => 'Allow paid models';
-
-  @override
-  String get pgUseAuto => 'Use auto';
-
-  @override
-  String get pgProblemNoFreeTitle => 'No free model could take this';
-
-  @override
-  String get pgProblemNoFreeBody =>
-      'Your free models for this are busy, past their limits or missing. Allow paid models, or try again in a minute.';
-
-  @override
-  String get pgProblemNoFreeBodyLocked =>
-      'This key only allows free models, and none could take this right now. Connect a free provider for it, or use a key that may use paid models.';
-
-  @override
-  String get pgProblemNoModelTitle => 'No model can take this right now';
-
-  @override
-  String get pgProblemFailedTitle => 'Every model that tried failed';
-
-  @override
-  String get pgProblemNotAllowedTitle => 'This key can\'t use that model';
-
-  @override
-  String get pgProblemLimitTitle => 'This key reached a limit';
-
-  @override
-  String get pgProblemTitle => 'That didn\'t work';
-
-  @override
   String get pgPlay => 'Play';
 
   @override
@@ -2956,44 +2697,6 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get pgCheckInjection => 'Prompt attacks';
-
-  @override
-  String get pgCheckTopic => 'Off-topic';
-
-  @override
-  String get pgTopicPolicy => 'Allowed topics';
-
-  @override
-  String get pgTopicPolicyHint =>
-      'e.g. Only questions about our product and orders.';
-
-  @override
-  String get pgDecide => 'Decide';
-
-  @override
-  String get pgDecideHint =>
-      'Describe a situation, ask a question and list the options. A System One model picks one in a split second and says how sure it is.';
-
-  @override
-  String get pgDecideRun => 'Decide';
-
-  @override
-  String get pgYes => 'Yes';
-
-  @override
-  String get pgNo => 'No';
-
-  @override
-  String get pgDecideQuestion => 'Question';
-
-  @override
-  String get pgDecideQuestionHint => 'e.g. What does the customer want?';
-
-  @override
-  String get pgDecideOptions => 'Options, one per line';
-
-  @override
-  String get pgDecideOptionsHint => 'Leave empty for a yes-or-no question.';
 
   @override
   String get pgFlagged => 'Flagged';
@@ -3046,40 +2749,6 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get pgSearchRun => 'Search';
-
-  @override
-  String get categoryWeather => 'Weather';
-
-  @override
-  String get capWeather => 'Weather';
-
-  @override
-  String get capWeatherHint =>
-      'Current weather and forecasts for any place, from the weather services you connect.';
-
-  @override
-  String get unitCall => 'per call';
-
-  @override
-  String get pgWeatherHint =>
-      'Look up the weather for a place name or coordinates such as 52.52, 13.41. The answer has the same shape whichever service replies.';
-
-  @override
-  String get pgWeatherRun => 'Get weather';
-
-  @override
-  String get pgWeatherMetric => '°C, km/h';
-
-  @override
-  String get pgWeatherImperial => '°F, mph';
-
-  @override
-  String get pgWeatherHourly => 'Next hours';
-
-  @override
-  String pgWeatherNow(String feels, String humidity, String wind) {
-    return 'Feels like $feels · humidity $humidity% · wind $wind';
-  }
 
   @override
   String get pgNoResults => 'No results.';
@@ -3713,4 +3382,368 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get connectedApp => 'Connected app';
+
+  @override
+  String get keyKindsTitle => 'Kinds of models';
+
+  @override
+  String get keyKindsHint =>
+      'Switch off what this key should never use, e.g. text models for a voice app.';
+
+  @override
+  String get keyKindsNone => 'Pick at least one kind.';
+
+  @override
+  String get pickModelAllKinds => 'All kinds';
+
+  @override
+  String get liveNow => 'Live';
+
+  @override
+  String get liveReplay => 'Replaying recent requests';
+
+  @override
+  String get liveWaiting => 'Waiting for the first request';
+
+  @override
+  String get liveWaitingChip => 'waiting for a free model';
+
+  @override
+  String liveQueued(String count) {
+    return '$count waiting for a free model';
+  }
+
+  @override
+  String get liveLoading => 'Loading…';
+
+  @override
+  String get liveLoadingTraffic => 'loading your traffic…';
+
+  @override
+  String get liveOther => 'Others';
+
+  @override
+  String get liveYourApp => 'Your app';
+
+  @override
+  String get liveAddProvider => 'Add a connection';
+
+  @override
+  String get liveListening => 'listening';
+
+  @override
+  String get liveRouting => 'routing';
+
+  @override
+  String liveScoring(String count) {
+    return 'scoring $count';
+  }
+
+  @override
+  String liveInFlight(String count) {
+    return '$count in flight';
+  }
+
+  @override
+  String liveRequests(String count) {
+    return '$count requests';
+  }
+
+  @override
+  String liveSummary(String count, String free, String caught, String ms) {
+    return 'Last $count: $free% free · $caught rescued · $ms ms avg';
+  }
+
+  @override
+  String get liveLegendRequest => 'request';
+
+  @override
+  String get liveLegendAnswer => 'answer';
+
+  @override
+  String get liveLegendFailure => 'failed attempt';
+
+  @override
+  String get liveMore => 'Details';
+
+  @override
+  String get homeTokens => 'Tokens';
+
+  @override
+  String homeTokensCaption(String count) {
+    return '$count requests';
+  }
+
+  @override
+  String get activityAllKeys => 'All API keys';
+
+  @override
+  String activityKeysCount(String count) {
+    return '$count keys';
+  }
+
+  @override
+  String get activityRevoked => 'revoked';
+
+  @override
+  String providerAccountsCount(String count) {
+    return '$count accounts';
+  }
+
+  @override
+  String providerAccountsWorking(String count) {
+    return '$count working';
+  }
+
+  @override
+  String providerAccountsProblems(String count) {
+    return '$count need attention';
+  }
+
+  @override
+  String get providerShowAccounts => 'Show accounts';
+
+  @override
+  String get providerHideAccounts => 'Hide accounts';
+
+  @override
+  String get pgMode => 'Mode';
+
+  @override
+  String get pgGroupText => 'Text';
+
+  @override
+  String get pgGroupCreate => 'Create';
+
+  @override
+  String get pgGroupListen => 'Listen';
+
+  @override
+  String get pgGroupLookup => 'Look up';
+
+  @override
+  String get pgGroupOther => 'More';
+
+  @override
+  String get pickModel => 'Choose a model';
+
+  @override
+  String get pickModels => 'Choose models';
+
+  @override
+  String get pickModelNone => 'No model matches.';
+
+  @override
+  String pickModelsCount(String count) {
+    return '$count chosen';
+  }
+
+  @override
+  String pickModelContext(String tokens) {
+    return '$tokens context';
+  }
+
+  @override
+  String get pickModelReasoning => 'Thinks before answering';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get privacyModelTitle => 'AI privacy filter';
+
+  @override
+  String get privacyModelHint =>
+      'OpenAI\'s open privacy filter runs on this server and finds names, addresses, account numbers and more that rules miss. No provider sees the text. Turning it on downloads about 1 GB once; it loads when used and frees its memory (about 2 GB) after 15 minutes without requests.';
+
+  @override
+  String get privacyModelEnable => 'Let users turn on the AI privacy filter';
+
+  @override
+  String get privacyModelOff => 'Off. Users can\'t use AI detection.';
+
+  @override
+  String privacyModelDownloading(String percent) {
+    return 'Downloading … $percent %';
+  }
+
+  @override
+  String get privacyModelLoading => 'Loading …';
+
+  @override
+  String get privacyModelReady => 'Ready and loaded.';
+
+  @override
+  String get privacyModelIdle => 'Ready. Loads when the next message needs it.';
+
+  @override
+  String privacyModelError(String error) {
+    return 'Couldn\'t load: $error';
+  }
+
+  @override
+  String get pgVoiceLoading => 'Loading voices…';
+
+  @override
+  String get pgSetUp => 'Set up';
+
+  @override
+  String pgNotSetUpTitle(String kind) {
+    return '$kind isn\'t set up yet';
+  }
+
+  @override
+  String get pgConnectOpenMeteo => 'Connect Open-Meteo';
+
+  @override
+  String get pgConnectOpenMeteoHint =>
+      'Free and no key needed. It takes a second.';
+
+  @override
+  String get pgOtherProviders => 'Other weather services';
+
+  @override
+  String get pgNoFreeModels =>
+      'You have no free model for this, so Free only finds nothing here.';
+
+  @override
+  String get pgNoFreeModelsLocked =>
+      'You have no free model for this, and this key only allows free models.';
+
+  @override
+  String get pgAllowPaid => 'Allow paid models';
+
+  @override
+  String get pgUseAuto => 'Use auto';
+
+  @override
+  String get pgProblemNoFreeTitle => 'No free model could take this';
+
+  @override
+  String get pgProblemNoFreeBody =>
+      'Your free models for this are busy, past their limits or missing. Allow paid models, or try again in a minute.';
+
+  @override
+  String get pgProblemNoFreeBodyLocked =>
+      'This key only allows free models, and none could take this right now. Connect a free provider for it, or use a key that may use paid models.';
+
+  @override
+  String get pgProblemNoModelTitle => 'No model can take this right now';
+
+  @override
+  String get pgProblemFailedTitle => 'Every model that tried failed';
+
+  @override
+  String get pgProblemNotAllowedTitle => 'This key can\'t use that model';
+
+  @override
+  String get pgProblemLimitTitle => 'This key reached a limit';
+
+  @override
+  String get pgProblemTitle => 'That didn\'t work';
+
+  @override
+  String get pgCheckTopic => 'Off-topic';
+
+  @override
+  String get pgTopicPolicy => 'Allowed topics';
+
+  @override
+  String get pgTopicPolicyHint =>
+      'e.g. Only questions about our product and orders.';
+
+  @override
+  String get pgDecide => 'Decide';
+
+  @override
+  String get pgDecideHint =>
+      'Describe a situation, ask a question and list the options. A System One model picks one in a split second and says how sure it is.';
+
+  @override
+  String get pgDecideRun => 'Decide';
+
+  @override
+  String get pgYes => 'Yes';
+
+  @override
+  String get pgNo => 'No';
+
+  @override
+  String get pgDecideQuestion => 'Question';
+
+  @override
+  String get pgDecideQuestionHint => 'e.g. What does the customer want?';
+
+  @override
+  String get pgDecideOptions => 'Options, one per line';
+
+  @override
+  String get pgDecideOptionsHint => 'Leave empty for a yes-or-no question.';
+
+  @override
+  String get categoryWeather => 'Weather';
+
+  @override
+  String get capWeather => 'Weather';
+
+  @override
+  String get capWeatherHint =>
+      'Current weather and forecasts for any place, from the weather services you connect.';
+
+  @override
+  String get unitCall => 'per call';
+
+  @override
+  String get pgWeatherHint =>
+      'Look up the weather for a place name or coordinates such as 52.52, 13.41. The answer has the same shape whichever service replies.';
+
+  @override
+  String get pgWeatherRun => 'Get weather';
+
+  @override
+  String get pgWeatherMetric => '°C, km/h';
+
+  @override
+  String get pgWeatherImperial => '°F, mph';
+
+  @override
+  String get pgWeatherHourly => 'Next hours';
+
+  @override
+  String pgWeatherNow(String feels, String humidity, String wind) {
+    return 'Feels like $feels · humidity $humidity% · wind $wind';
+  }
+
+  @override
+  String get priorityTitle => 'Priority';
+
+  @override
+  String get priorityMenuHeading => 'When your models are busy';
+
+  @override
+  String get priorityHigh => 'High';
+
+  @override
+  String get priorityNormal => 'Normal';
+
+  @override
+  String get priorityLow => 'Low';
+
+  @override
+  String get priorityHighHint => 'Goes first.';
+
+  @override
+  String get priorityNormalHint => 'Takes its turn. The default.';
+
+  @override
+  String get priorityLowHint => 'Lets the others go first.';
+
+  @override
+  String get priorityHighLabel => 'High priority';
+
+  @override
+  String get priorityNormalLabel => 'Normal priority';
+
+  @override
+  String get priorityLowLabel => 'Low priority';
 }

@@ -2,15 +2,17 @@
 """Single source for NeoRouter UI strings. Regenerates lib/l10n/app_{en,de}.arb.
 
 Run: python3 scripts/l10n_strings.py
+With --check it writes nothing and fails when the .arb files differ.
 """
 import json
 import os
 import re
+import sys
 
 S = {
   # common
   'appName': ('NeoRouter', 'NeoRouter'),
-  'brandTagline': ('INFERENCE ROUTER', 'INFERENCE ROUTER'),
+  'brandTagline': ('INFERENCE ROUTER', 'INFERENZ-ROUTER'),
   'cancel': ('Cancel', 'Abbrechen'),
   'save': ('Save', 'Speichern'),
   'delete': ('Delete', 'Löschen'),
@@ -265,7 +267,7 @@ S = {
   'paceTight': ('At this pace about {forecast} by the reset: NeoRouter prefers cheaper models', 'Bei diesem Tempo etwa {forecast} bis zum Reset: NeoRouter bevorzugt günstigere Modelle'),
   'paceOver': ('Used up until the reset', 'Bis zum Reset aufgebraucht'),
   'rpmLimit': ('Requests per minute (empty = no limit)', 'Requests pro Minute (leer = unbegrenzt)'),
-  'allowedModels': ('Allowed models – glob patterns, one per line (empty = all)', 'Erlaubte Modelle – Glob-Muster, eines pro Zeile (leer = alle)'),
+  'allowedModels': ('Allowed models and routings – one per line, * as wildcard (empty = all)', 'Erlaubte Modelle und Routings – eines pro Zeile, * als Platzhalter (leer = alle)'),
   'defaultProfile': ('Routing style for "auto"', 'Routing-Stil für „auto“'),
   'keySecretTitle': ('Copy your new key', 'Kopiere deinen neuen Key'),
   'keySecretBody': ('For your security it is shown only once. Paste it into your app where it asks for an API key.', 'Aus Sicherheitsgründen wird er nur einmal angezeigt. Füge ihn in deiner App dort ein, wo nach einem API-Key gefragt wird.'),
@@ -475,7 +477,6 @@ S = {
   'colCost': ('Cost', 'Kosten'),
   'upTo': ('≤ {value}', '≤ {value}'),
   'over': ('> {value}', '> {value}'),
-  'analyticsTruncated': ('Showing the most recent 100,000 requests of this range.', 'Es werden die letzten 100.000 Requests dieses Zeitraums gezeigt.'),
 
   # custom providers & oauth
   'fetchModels': ('Fetch models', 'Modelle abrufen'),
@@ -759,13 +760,9 @@ S = {
   'privacyAllowHint': ('Values that may always go out, one per line. Start with @ to allow a whole mail domain, e.g. your company\'s.', 'Werte, die immer rausgehen dürfen, einer pro Zeile. Beginne mit @, um eine ganze Mail-Domain freizugeben, z. B. die deiner Firma.'),
   'privacyAllowPlaceholder': ('@acme.example\nsupport@acme.example', '@acme.example\nsupport@acme.example'),
   'privacyAiTitle': ('AI detection', 'KI-Erkennung'),
-  'privacyAiHint': ('Everything above is found on your server in about a millisecond, without AI. A fast AI model can also read each new message to find organizations and what the rules miss.', 'Alles oben wird auf deinem Server in rund einer Millisekunde gefunden, ohne KI. Ein schnelles KI-Modell kann zusätzlich jede neue Nachricht lesen und Organisationen sowie das finden, was die Regeln übersehen.'),
+  'privacyAiHint': ("Everything above is found on your server in about a millisecond, without AI. OpenAI's privacy filter, also running on this server, can read each new message to find names, addresses and what the rules miss.", 'Alles oben wird auf deinem Server in rund einer Millisekunde gefunden, ohne KI. OpenAIs Datenschutzfilter, ebenfalls auf diesem Server, kann zusätzlich jede neue Nachricht lesen und Namen, Adressen und das finden, was die Regeln übersehen.'),
   'privacyAiEnable': ('Also look with AI', 'Zusätzlich per KI suchen'),
-  'privacyAiEnableHint': ('Adds about a second to new messages; repeated messages are remembered.', 'Kostet bei neuen Nachrichten etwa eine Sekunde; wiederholte Nachrichten werden gemerkt.'),
-  'privacyAiModel': ('Detection model', 'Erkennungsmodell'),
-  'privacyAiModelHint': ('"auto:fast" picks the fastest model. Use a local model, e.g. "ollama/…", if no provider should see the raw text.', '„auto:fast“ wählt das schnellste Modell. Nimm ein lokales Modell, z. B. „ollama/…“, wenn kein Anbieter den Rohtext sehen soll.'),
-  'privacyAiFreeOnly': ('Use free models only for detection', 'Für die Erkennung nur Gratis-Modelle nutzen'),
-  'privacyAiWarning': ('The detection model sees the original text of new messages. Pick a provider you trust or a local model.', 'Das Erkennungsmodell sieht den Originaltext neuer Nachrichten. Wähle einen Anbieter, dem du vertraust, oder ein lokales Modell.'),
+  'privacyAiEnableHint': ('Runs on this server, so no provider sees the text. Adds a fraction of a second to new messages; the first one after a quiet while waits for the model to load.', 'Läuft auf diesem Server, kein Anbieter sieht den Text. Kostet bei neuen Nachrichten Sekundenbruchteile; die erste nach einer ruhigen Weile wartet, bis das Modell geladen ist.'),
   'privacyTryHint': ('Paste a text to see exactly what a provider would receive. Nothing is sent to a model (except AI detection, if it is on).', 'Füge einen Text ein und sieh genau, was ein Anbieter bekäme. Es wird nichts an ein Modell gesendet (außer der KI-Erkennung, falls aktiv).'),
   'privacyTrySample': ('Hi, I am Anna Schmidt, born 14.07.1988, living at Lindenstraße 12, 50674 Köln. Please send the invoice to anna.schmidt@example.de and call me at +49 170 1234567. My IBAN is DE89 3704 0044 0532 0130 00, my tax ID 86 095 742 719, the server password: hunter2pw.', 'Hallo, ich bin Anna Schmidt, geb. 14.07.1988, wohnhaft Lindenstraße 12, 50674 Köln. Bitte schick die Rechnung an anna.schmidt@example.de und ruf mich unter +49 170 1234567 an. Meine IBAN ist DE89 3704 0044 0532 0130 00, meine Steuer-ID 86 095 742 719, das Server-Passwort: hunter2pw.'),
   'privacyTryResult': ('{count} values hidden', '{count} Werte verborgen'),
@@ -966,9 +963,9 @@ S = {
 
   # home: capacity
   'homeCapacityTitle': ('Around the clock', 'Rund um die Uhr'),
-  'homeCapacityValue': ('{count} requests a day', '{count} Anfragen am Tag'),
-  'homeCapacityCaption': ('What your free models could answer if used non-stop: about {hour} an hour, from the usage limits of {providers} providers.', 'So viel könnten deine Gratis-Modelle im Dauerbetrieb beantworten: etwa {hour} pro Stunde, nach den Nutzungslimits von {providers} Anbietern.'),
-  'homeCapacityPerMinute': ('Plus up to {count} requests a minute from providers that only publish a per-minute limit.', 'Dazu bis zu {count} Anfragen pro Minute von Anbietern, die nur ein Minutenlimit nennen.'),
+  'homeCapacityValue': ('{count} tokens a day', '{count} Tokens am Tag'),
+  'homeCapacityCaption': ('What your free models could handle if used non-stop: about {hour} tokens an hour, from the usage limits of {providers} providers.', 'So viel könnten deine Gratis-Modelle im Dauerbetrieb verarbeiten: etwa {hour} Tokens pro Stunde, nach den Nutzungslimits von {providers} Anbietern.'),
+  'homeCapacityPerMinute': ('Plus up to {count} tokens a minute from providers that only publish a per-minute limit.', 'Dazu bis zu {count} Tokens pro Minute von Anbietern, die nur ein Minutenlimit nennen.'),
   'homeCapacityUnknown': ('{models} more free models publish no limit and are not counted.', '{models} weitere Gratis-Modelle nennen kein Limit und sind nicht mitgezählt.'),
   'homeCapacityNone': ('None of your free models has a known daily limit yet, so there is no daily total.', 'Für keines deiner Gratis-Modelle ist bisher ein Tageslimit bekannt, daher gibt es keine Tagessumme.'),
 
@@ -1024,11 +1021,6 @@ S = {
   'styleSkipProvidersHint': ('Connections this style never uses.', 'Verbindungen, die dieser Stil nie nutzt.'),
 
   # playground: live voice
-  'pgLiveHint': ('Live voice is a spoken conversation in real time over a WebSocket. Apps such as NeoAgent connect to the address for the protocol they speak, with a router key; NeoRouter picks the model and falls back if a provider refuses.', 'Live-Sprache ist ein gesprochenes Gespräch in Echtzeit über einen WebSocket. Apps wie NeoAgent verbinden sich mit der Adresse für ihr Protokoll und einem Router-Key; NeoRouter wählt das Modell und weicht aus, wenn ein Anbieter ablehnt.'),
-  'pgLiveEndpoints': ('Where apps connect', 'Wohin Apps sich verbinden'),
-  'pgLiveModelHint': ('Use "auto" as the model, or one of the models below.', 'Nutze „auto“ als Modell oder eines der Modelle unten.'),
-  'pgLiveModels': ('Live models', 'Live-Modelle'),
-  'pgLiveNoModels': ('No live models yet. Gemini (AI Studio) and OpenAI connections bring them.', 'Noch keine Live-Modelle. Gemini- (AI Studio) und OpenAI-Verbindungen bringen welche mit.'),
 
   # connect an app (OAuth)
   'connectTitle': ('Connect {name}?', '{name} verbinden?'),
@@ -1055,6 +1047,113 @@ S = {
   'connectedAppsHint': ('Apps that signed in with NeoRouter. Revoke one to disconnect it.', 'Apps, die sich mit NeoRouter angemeldet haben. Widerrufe eine, um sie zu trennen.'),
   'connectedVia': ('Connected · {host}', 'Verbunden · {host}'),
   'connectedApp': ('Connected app', 'Verbundene App'),
+  'keyKindsTitle': ('Kinds of models', 'Arten von Modellen'),
+  'keyKindsHint': ('Switch off what this key should never use, e.g. text models for a voice app.', 'Schalte aus, was dieser Key nie nutzen soll, z. B. Textmodelle für eine Sprach-App.'),
+  'keyKindsNone': ('Pick at least one kind.', 'Wähle mindestens eine Art.'),
+  'pickModelAllKinds': ('All kinds', 'Alle Arten'),
+  'liveNow': ('Live', 'Live'),
+  'liveReplay': ('Replaying recent requests', 'Letzte Anfragen im Rückblick'),
+  'liveWaiting': ('Waiting for the first request', 'Warte auf die erste Anfrage'),
+  'liveWaitingChip': ('waiting for a free model', 'wartet auf ein freies Modell'),
+  'liveQueued': ('{count} waiting for a free model', '{count} warten auf ein freies Modell'),
+  'liveLoading': ('Loading…', 'Lädt …'),
+  'liveLoadingTraffic': ('loading your traffic…', 'lade deine Anfragen …'),
+  'liveOther': ('Others', 'Andere'),
+  'liveYourApp': ('Your app', 'Deine App'),
+  'liveAddProvider': ('Add a connection', 'Verbindung hinzufügen'),
+  'liveListening': ('listening', 'wartet'),
+  'liveRouting': ('routing', 'leitet weiter'),
+  'liveScoring': ('scoring {count}', 'bewertet {count}'),
+  'liveInFlight': ('{count} in flight', '{count} unterwegs'),
+  'liveRequests': ('{count} requests', '{count} Anfragen'),
+  'liveSummary': ('Last {count}: {free}% free · {caught} rescued · {ms} ms avg', 'Letzte {count}: {free} % gratis · {caught} gerettet · Ø {ms} ms'),
+  'liveLegendRequest': ('request', 'Anfrage'),
+  'liveLegendAnswer': ('answer', 'Antwort'),
+  'liveLegendFailure': ('failed attempt', 'Fehlversuch'),
+  'liveMore': ('Details', 'Details'),
+  'homeTokens': ('Tokens', 'Tokens'),
+  'homeTokensCaption': ('{count} requests', '{count} Anfragen'),
+  'activityAllKeys': ('All API keys', 'Alle API-Keys'),
+  'activityKeysCount': ('{count} keys', '{count} Keys'),
+  'activityRevoked': ('revoked', 'widerrufen'),
+  'providerAccountsCount': ('{count} accounts', '{count} Konten'),
+  'providerAccountsWorking': ('{count} working', '{count} funktionieren'),
+  'providerAccountsProblems': ('{count} need attention', '{count} brauchen Aufmerksamkeit'),
+  'providerShowAccounts': ('Show accounts', 'Konten zeigen'),
+  'providerHideAccounts': ('Hide accounts', 'Konten ausblenden'),
+  'pgMode': ('Mode', 'Modus'),
+  'pgGroupText': ('Text', 'Text'),
+  'pgGroupCreate': ('Create', 'Erstellen'),
+  'pgGroupListen': ('Listen', 'Hören'),
+  'pgGroupLookup': ('Look up', 'Nachschlagen'),
+  'pgGroupOther': ('More', 'Mehr'),
+  'pickModel': ('Choose a model', 'Modell wählen'),
+  'pickModels': ('Choose models', 'Modelle wählen'),
+  'pickModelNone': ('No model matches.', 'Kein Modell passt.'),
+  'pickModelsCount': ('{count} chosen', '{count} gewählt'),
+  'pickModelContext': ('{tokens} context', '{tokens} Kontext'),
+  'pickModelReasoning': ('Thinks before answering', 'Denkt vor der Antwort nach'),
+  'done': ('Done', 'Fertig'),
+  'privacyModelTitle': ('AI privacy filter', 'KI-Datenschutzfilter'),
+  'privacyModelHint': ("OpenAI's open privacy filter runs on this server and finds names, addresses, account numbers and more that rules miss. No provider sees the text. Turning it on downloads about 1 GB once; it loads when used and frees its memory (about 2 GB) after 15 minutes without requests.", 'OpenAIs offener Datenschutzfilter läuft auf diesem Server und findet Namen, Adressen, Kontonummern und mehr, die Regeln übersehen. Kein Anbieter sieht den Text. Beim Einschalten wird einmalig etwa 1 GB geladen; das Modell startet bei Bedarf und gibt seinen Speicher (etwa 2 GB) nach 15 Minuten ohne Anfragen wieder frei.'),
+  'privacyModelEnable': ('Let users turn on the AI privacy filter', 'Nutzern den KI-Datenschutzfilter erlauben'),
+  'privacyModelOff': ("Off. Users can't use AI detection.", 'Aus. Nutzer können keine KI-Erkennung verwenden.'),
+  'privacyModelDownloading': ('Downloading … {percent} %', 'Wird heruntergeladen … {percent} %'),
+  'privacyModelLoading': ('Loading …', 'Wird geladen …'),
+  'privacyModelReady': ('Ready and loaded.', 'Bereit und geladen.'),
+  'privacyModelIdle': ('Ready. Loads when the next message needs it.', 'Bereit. Startet, sobald eine Nachricht es braucht.'),
+  'privacyModelError': ("Couldn't load: {error}", 'Konnte nicht geladen werden: {error}'),
+  'pgVoiceLoading': ('Loading voices…', 'Stimmen werden geladen …'),
+  'pgSetUp': ('Set up', 'Einrichten'),
+  'pgNotSetUpTitle': ("{kind} isn't set up yet", '{kind} ist noch nicht eingerichtet'),
+  'pgConnectOpenMeteo': ('Connect Open-Meteo', 'Open-Meteo verbinden'),
+  'pgConnectOpenMeteoHint': ('Free and no key needed. It takes a second.', 'Kostenlos, ohne Schlüssel. Dauert eine Sekunde.'),
+  'pgOtherProviders': ('Other weather services', 'Andere Wetterdienste'),
+  'pgNoFreeModels': ('You have no free model for this, so Free only finds nothing here.', 'Du hast dafür kein Gratis-Modell, deshalb findet „Nur gratis“ hier nichts.'),
+  'pgNoFreeModelsLocked': ('You have no free model for this, and this key only allows free models.', 'Du hast dafür kein Gratis-Modell, und dieser Key erlaubt nur Gratis-Modelle.'),
+  'pgAllowPaid': ('Allow paid models', 'Bezahlte Modelle erlauben'),
+  'pgUseAuto': ('Use auto', 'Auto verwenden'),
+  'pgProblemNoFreeTitle': ('No free model could take this', 'Kein Gratis-Modell konnte das übernehmen'),
+  'pgProblemNoFreeBody': ('Your free models for this are busy, past their limits or missing. Allow paid models, or try again in a minute.', 'Deine Gratis-Modelle dafür sind ausgelastet, über ihren Limits oder fehlen. Erlaube bezahlte Modelle oder versuch es in einer Minute noch mal.'),
+  'pgProblemNoFreeBodyLocked': ('This key only allows free models, and none could take this right now. Connect a free provider for it, or use a key that may use paid models.', 'Dieser Key erlaubt nur Gratis-Modelle, und gerade konnte keins das übernehmen. Verbinde dafür einen Gratis-Anbieter oder nimm einen Key, der bezahlte Modelle nutzen darf.'),
+  'pgProblemNoModelTitle': ('No model can take this right now', 'Gerade kann kein Modell das übernehmen'),
+  'pgProblemFailedTitle': ('Every model that tried failed', 'Alle Modelle, die es versucht haben, sind gescheitert'),
+  'pgProblemNotAllowedTitle': ("This key can't use that model", 'Dieser Key darf dieses Modell nicht nutzen'),
+  'pgProblemLimitTitle': ('This key reached a limit', 'Dieser Key hat ein Limit erreicht'),
+  'pgProblemTitle': ("That didn't work", 'Das hat nicht geklappt'),
+  'pgCheckTopic': ('Off-topic', 'Themenfremd'),
+  'pgTopicPolicy': ('Allowed topics', 'Erlaubte Themen'),
+  'pgTopicPolicyHint': ('e.g. Only questions about our product and orders.', 'z. B. Nur Fragen zu unserem Produkt und zu Bestellungen.'),
+  'pgDecide': ('Decide', 'Entscheiden'),
+  'pgDecideHint': ('Describe a situation, ask a question and list the options. A System One model picks one in a split second and says how sure it is.', 'Beschreibe eine Situation, stell eine Frage und nenne die Optionen. Ein System-One-Modell wählt in Sekundenbruchteilen eine aus und sagt, wie sicher es ist.'),
+  'pgDecideRun': ('Decide', 'Entscheiden'),
+  'pgYes': ('Yes', 'Ja'),
+  'pgNo': ('No', 'Nein'),
+  'pgDecideQuestion': ('Question', 'Frage'),
+  'pgDecideQuestionHint': ('e.g. What does the customer want?', 'z. B. Was möchte der Kunde?'),
+  'pgDecideOptions': ('Options, one per line', 'Optionen, eine pro Zeile'),
+  'pgDecideOptionsHint': ('Leave empty for a yes-or-no question.', 'Leer lassen für eine Ja-oder-Nein-Frage.'),
+  'categoryWeather': ('Weather', 'Wetter'),
+  'capWeather': ('Weather', 'Wetter'),
+  'capWeatherHint': ('Current weather and forecasts for any place, from the weather services you connect.', 'Aktuelles Wetter und Vorhersagen für jeden Ort, von den Wetterdiensten, die du verbindest.'),
+  'unitCall': ('per call', 'pro Abruf'),
+  'pgWeatherHint': ('Look up the weather for a place name or coordinates such as 52.52, 13.41. The answer has the same shape whichever service replies.', 'Frag das Wetter für einen Ortsnamen oder Koordinaten wie 52.52, 13.41 ab. Die Antwort sieht gleich aus, egal welcher Dienst antwortet.'),
+  'pgWeatherRun': ('Get weather', 'Wetter abrufen'),
+  'pgWeatherMetric': ('°C, km/h', '°C, km/h'),
+  'pgWeatherImperial': ('°F, mph', '°F, mph'),
+  'pgWeatherHourly': ('Next hours', 'Nächste Stunden'),
+  'pgWeatherNow': ('Feels like {feels} · humidity {humidity}% · wind {wind}', 'Gefühlt {feels} · Luftfeuchte {humidity} % · Wind {wind}'),
+  'priorityTitle': ('Priority', 'Priorität'),
+  'priorityMenuHeading': ('When your models are busy', 'Wenn deine Modelle ausgelastet sind'),
+  'priorityHigh': ('High', 'Hoch'),
+  'priorityNormal': ('Normal', 'Normal'),
+  'priorityLow': ('Low', 'Niedrig'),
+  'priorityHighHint': ('Goes first.', 'Kommt zuerst dran.'),
+  'priorityNormalHint': ('Takes its turn. The default.', 'Reiht sich normal ein. Der Standard.'),
+  'priorityLowHint': ('Lets the others go first.', 'Lässt die anderen vor.'),
+  'priorityHighLabel': ('High priority', 'Hohe Priorität'),
+  'priorityNormalLabel': ('Normal priority', 'Normale Priorität'),
+  'priorityLowLabel': ('Low priority', 'Niedrige Priorität'),
 }
 
 PLACEHOLDER = re.compile(r'\{(\w+)\}')
@@ -1073,8 +1172,18 @@ def build(index, locale):
 
 root = os.path.join(os.path.dirname(__file__), '..', 'flutter_app', 'lib', 'l10n')
 os.makedirs(root, exist_ok=True)
+check = '--check' in sys.argv
+stale = []
 for index, locale in enumerate(['en', 'de']):
-    with open(os.path.join(root, f'app_{locale}.arb'), 'w', encoding='utf-8') as handle:
-        json.dump(build(index, locale), handle, ensure_ascii=False, indent=2)
-        handle.write('\n')
-print(f'{len(S)} strings written')
+    path = os.path.join(root, f'app_{locale}.arb')
+    content = json.dumps(build(index, locale), ensure_ascii=False, indent=2) + '\n'
+    if check:
+        with open(path, encoding='utf-8') as handle:
+            if handle.read() != content:
+                stale.append(path)
+    else:
+        with open(path, 'w', encoding='utf-8') as handle:
+            handle.write(content)
+if stale:
+    sys.exit('Out of sync with scripts/l10n_strings.py: ' + ', '.join(stale))
+print(f'{len(S)} strings ' + ('match' if check else 'written'))

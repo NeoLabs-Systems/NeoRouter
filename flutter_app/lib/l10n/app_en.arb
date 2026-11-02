@@ -426,10 +426,6 @@
   "paceOver": "Used up until the reset",
   "rpmLimit": "Requests per minute (empty = no limit)",
   "allowedModels": "Allowed models and routings – one per line, * as wildcard (empty = all)",
-  "keyKindsTitle": "Kinds of models",
-  "keyKindsHint": "Switch off what this key should never use, e.g. text models for a voice app.",
-  "keyKindsNone": "Pick at least one kind.",
-  "pickModelAllKinds": "All kinds",
   "defaultProfile": "Routing style for \"auto\"",
   "keySecretTitle": "Copy your new key",
   "keySecretBody": "For your security it is shown only once. Paste it into your app where it asks for an API key.",
@@ -923,35 +919,7 @@
   },
   "homeStatusEmpty": "Connect an AI provider to get started.",
   "homeLast7Days": "Last 7 days",
-  "liveNow": "Live",
-  "liveReplay": "Replaying recent requests",
-  "liveWaiting": "Waiting for the first request",
-  "liveWaitingChip": "waiting for a free model",
-  "liveQueued": "{count} waiting for a free model",
-  "@liveQueued": {"placeholders": {"count": {"type": "String"}}},
-  "liveLoading": "Loading…",
-  "liveLoadingTraffic": "loading your traffic…",
-  "liveOther": "Others",
-  "liveYourApp": "Your app",
-  "liveAddProvider": "Add a connection",
-  "liveListening": "listening",
-  "liveRouting": "routing",
-  "liveScoring": "scoring {count}",
-  "@liveScoring": {"placeholders": {"count": {"type": "String"}}},
-  "liveInFlight": "{count} in flight",
-  "@liveInFlight": {"placeholders": {"count": {"type": "String"}}},
-  "liveRequests": "{count} requests",
-  "@liveRequests": {"placeholders": {"count": {"type": "String"}}},
-  "liveSummary": "Last {count}: {free}% free · {caught} rescued · {ms} ms avg",
-  "@liveSummary": {"placeholders": {"count": {"type": "String"}, "free": {"type": "String"}, "caught": {"type": "String"}, "ms": {"type": "String"}}},
-  "liveLegendRequest": "request",
-  "liveLegendAnswer": "answer",
-  "liveLegendFailure": "failed attempt",
-  "liveMore": "Details",
   "metricRequests": "Requests",
-  "homeTokens": "Tokens",
-  "homeTokensCaption": "{count} requests",
-  "@homeTokensCaption": {"placeholders": {"count": {"type": "String"}}},
   "metricAnswered": "Answered",
   "metricSpent": "Spent",
   "metricFreeShare": "{percent} % free",
@@ -1035,10 +1003,6 @@
     }
   },
   "activityDescription": "What your apps asked for and how NeoRouter answered. Only metadata is kept – never your messages.",
-  "activityAllKeys": "All API keys",
-  "activityKeysCount": "{count} keys",
-  "@activityKeysCount": {"placeholders": {"count": {"type": "String"}}},
-  "activityRevoked": "revoked",
   "tabOverview": "Overview",
   "tabRequests": "Requests",
   "metricTokens": "{count} tokens",
@@ -1190,14 +1154,6 @@
     }
   },
   "addAnotherAccount": "Add another account",
-  "providerAccountsCount": "{count} accounts",
-  "@providerAccountsCount": {"placeholders": {"count": {"type": "String"}}},
-  "providerAccountsWorking": "{count} working",
-  "@providerAccountsWorking": {"placeholders": {"count": {"type": "String"}}},
-  "providerAccountsProblems": "{count} need attention",
-  "@providerAccountsProblems": {"placeholders": {"count": {"type": "String"}}},
-  "providerShowAccounts": "Show accounts",
-  "providerHideAccounts": "Hide accounts",
   "limitsModelsRoom": "{room} of {total} models have room today",
   "@limitsModelsRoom": {
     "placeholders": {
@@ -1274,24 +1230,9 @@
   "suggestion2": "Write a friendly reminder for a team meeting",
   "suggestion3": "Give me three dinner ideas with chickpeas",
   "newChat": "New chat",
-  "pgMode": "Mode",
-  "pgGroupText": "Text",
-  "pgGroupCreate": "Create",
-  "pgGroupListen": "Listen",
-  "pgGroupLookup": "Look up",
-  "pgGroupOther": "More",
   "modelPicker": "Model",
   "modelSpecific": "Specific model…",
   "modelSpecificHint": "e.g. groq/openai/gpt-oss-120b",
-  "pickModel": "Choose a model",
-  "pickModels": "Choose models",
-  "pickModelNone": "No model matches.",
-  "pickModelsCount": "{count} chosen",
-  "pickModelContext": "{tokens} context",
-  "pickModelReasoning": "Thinks before answering",
-  "done": "Done",
-  "@pickModelsCount": {"placeholders": {"count": {"type": "String"}}},
-  "@pickModelContext": {"placeholders": {"tokens": {"type": "String"}}},
   "systemPromptTitle": "Instructions",
   "systemPromptHint": "Optional: how the assistant should behave, e.g. \"Answer briefly and in German.\"",
   "thinking": "Thinking…",
@@ -1394,17 +1335,6 @@
   "privacyAiHint": "Everything above is found on your server in about a millisecond, without AI. OpenAI's privacy filter, also running on this server, can read each new message to find names, addresses and what the rules miss.",
   "privacyAiEnable": "Also look with AI",
   "privacyAiEnableHint": "Runs on this server, so no provider sees the text. Adds a fraction of a second to new messages; the first one after a quiet while waits for the model to load.",
-  "privacyModelTitle": "AI privacy filter",
-  "privacyModelHint": "OpenAI's open privacy filter runs on this server and finds names, addresses, account numbers and more that rules miss. No provider sees the text. Turning it on downloads about 1 GB once; it loads when used and frees its memory (about 2 GB) after 15 minutes without requests.",
-  "privacyModelEnable": "Let users turn on the AI privacy filter",
-  "privacyModelOff": "Off. Users can't use AI detection.",
-  "privacyModelDownloading": "Downloading … {percent} %",
-  "privacyModelLoading": "Loading …",
-  "privacyModelReady": "Ready and loaded.",
-  "privacyModelIdle": "Ready. Loads when the next message needs it.",
-  "privacyModelError": "Couldn't load: {error}",
-  "@privacyModelDownloading": {"placeholders": {"percent": {"type": "String"}}},
-  "@privacyModelError": {"placeholders": {"error": {"type": "String"}}},
   "privacyTryHint": "Paste a text to see exactly what a provider would receive. Nothing is sent to a model (except AI detection, if it is on).",
   "privacyTrySample": "Hi, I am Anna Schmidt, born 14.07.1988, living at Lindenstraße 12, 50674 Köln. Please send the invoice to anna.schmidt@example.de and call me at +49 170 1234567. My IBAN is DE89 3704 0044 0532 0130 00, my tax ID 86 095 742 719, the server password: hunter2pw.",
   "privacyTryResult": "{count} values hidden",
@@ -1507,25 +1437,6 @@
   "pgSpeechRun": "Read aloud",
   "pgVoice": "Voice",
   "pgVoiceDefault": "Default voice",
-  "pgVoiceLoading": "Loading voices…",
-  "pgSetUp": "Set up",
-  "pgNotSetUpTitle": "{kind} isn't set up yet",
-  "pgConnectOpenMeteo": "Connect Open-Meteo",
-  "pgConnectOpenMeteoHint": "Free and no key needed. It takes a second.",
-  "pgOtherProviders": "Other weather services",
-  "pgNoFreeModels": "You have no free model for this, so Free only finds nothing here.",
-  "pgNoFreeModelsLocked": "You have no free model for this, and this key only allows free models.",
-  "pgAllowPaid": "Allow paid models",
-  "pgUseAuto": "Use auto",
-  "pgProblemNoFreeTitle": "No free model could take this",
-  "pgProblemNoFreeBody": "Your free models for this are busy, past their limits or missing. Allow paid models, or try again in a minute.",
-  "pgProblemNoFreeBodyLocked": "This key only allows free models, and none could take this right now. Connect a free provider for it, or use a key that may use paid models.",
-  "pgProblemNoModelTitle": "No model can take this right now",
-  "pgProblemFailedTitle": "Every model that tried failed",
-  "pgProblemNotAllowedTitle": "This key can't use that model",
-  "pgProblemLimitTitle": "This key reached a limit",
-  "pgProblemTitle": "That didn't work",
-  "@pgNotSetUpTitle": {"placeholders": {"kind": {"type": "String"}}},
   "pgPlay": "Play",
   "pgStop": "Stop",
   "pgDownload": "Download",
@@ -1539,18 +1450,6 @@
   "pgSafe": "Looks safe",
   "pgCheckSafety": "Harmful content",
   "pgCheckInjection": "Prompt attacks",
-  "pgCheckTopic": "Off-topic",
-  "pgTopicPolicy": "Allowed topics",
-  "pgTopicPolicyHint": "e.g. Only questions about our product and orders.",
-  "pgDecide": "Decide",
-  "pgDecideHint": "Describe a situation, ask a question and list the options. A System One model picks one in a split second and says how sure it is.",
-  "pgDecideRun": "Decide",
-  "pgYes": "Yes",
-  "pgNo": "No",
-  "pgDecideQuestion": "Question",
-  "pgDecideQuestionHint": "e.g. What does the customer want?",
-  "pgDecideOptions": "Options, one per line",
-  "pgDecideOptionsHint": "Leave empty for a yes-or-no question.",
   "pgFlagged": "Flagged",
   "pgVideoHint": "Describe a short scene. Videos take a few minutes and are never free.",
   "pgVideoRun": "Create video",
@@ -1580,17 +1479,6 @@
   "unitSearch": "per search",
   "pgSearchHint": "Search the web through your search engines. Chat models use the same engines when a request turns web search on.",
   "pgSearchRun": "Search",
-  "categoryWeather": "Weather",
-  "capWeather": "Weather",
-  "capWeatherHint": "Current weather and forecasts for any place, from the weather services you connect.",
-  "unitCall": "per call",
-  "pgWeatherHint": "Look up the weather for a place name or coordinates such as 52.52, 13.41. The answer has the same shape whichever service replies.",
-  "pgWeatherRun": "Get weather",
-  "pgWeatherMetric": "°C, km/h",
-  "pgWeatherImperial": "°F, mph",
-  "pgWeatherHourly": "Next hours",
-  "pgWeatherNow": "Feels like {feels} · humidity {humidity}% · wind {wind}",
-  "@pgWeatherNow": {"placeholders": {"feels": {"type": "String"}, "humidity": {"type": "String"}, "wind": {"type": "String"}}},
   "pgNoResults": "No results.",
   "activityKind": "Kind",
   "unitPriceLabel": "{price} {unit}",
@@ -2027,5 +1915,239 @@
       }
     }
   },
-  "connectedApp": "Connected app"
+  "connectedApp": "Connected app",
+  "keyKindsTitle": "Kinds of models",
+  "keyKindsHint": "Switch off what this key should never use, e.g. text models for a voice app.",
+  "keyKindsNone": "Pick at least one kind.",
+  "pickModelAllKinds": "All kinds",
+  "liveNow": "Live",
+  "liveReplay": "Replaying recent requests",
+  "liveWaiting": "Waiting for the first request",
+  "liveWaitingChip": "waiting for a free model",
+  "liveQueued": "{count} waiting for a free model",
+  "@liveQueued": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "liveLoading": "Loading…",
+  "liveLoadingTraffic": "loading your traffic…",
+  "liveOther": "Others",
+  "liveYourApp": "Your app",
+  "liveAddProvider": "Add a connection",
+  "liveListening": "listening",
+  "liveRouting": "routing",
+  "liveScoring": "scoring {count}",
+  "@liveScoring": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "liveInFlight": "{count} in flight",
+  "@liveInFlight": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "liveRequests": "{count} requests",
+  "@liveRequests": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "liveSummary": "Last {count}: {free}% free · {caught} rescued · {ms} ms avg",
+  "@liveSummary": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "free": {
+        "type": "String"
+      },
+      "caught": {
+        "type": "String"
+      },
+      "ms": {
+        "type": "String"
+      }
+    }
+  },
+  "liveLegendRequest": "request",
+  "liveLegendAnswer": "answer",
+  "liveLegendFailure": "failed attempt",
+  "liveMore": "Details",
+  "homeTokens": "Tokens",
+  "homeTokensCaption": "{count} requests",
+  "@homeTokensCaption": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "activityAllKeys": "All API keys",
+  "activityKeysCount": "{count} keys",
+  "@activityKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "activityRevoked": "revoked",
+  "providerAccountsCount": "{count} accounts",
+  "@providerAccountsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "providerAccountsWorking": "{count} working",
+  "@providerAccountsWorking": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "providerAccountsProblems": "{count} need attention",
+  "@providerAccountsProblems": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "providerShowAccounts": "Show accounts",
+  "providerHideAccounts": "Hide accounts",
+  "pgMode": "Mode",
+  "pgGroupText": "Text",
+  "pgGroupCreate": "Create",
+  "pgGroupListen": "Listen",
+  "pgGroupLookup": "Look up",
+  "pgGroupOther": "More",
+  "pickModel": "Choose a model",
+  "pickModels": "Choose models",
+  "pickModelNone": "No model matches.",
+  "pickModelsCount": "{count} chosen",
+  "@pickModelsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "pickModelContext": "{tokens} context",
+  "@pickModelContext": {
+    "placeholders": {
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
+  "pickModelReasoning": "Thinks before answering",
+  "done": "Done",
+  "privacyModelTitle": "AI privacy filter",
+  "privacyModelHint": "OpenAI's open privacy filter runs on this server and finds names, addresses, account numbers and more that rules miss. No provider sees the text. Turning it on downloads about 1 GB once; it loads when used and frees its memory (about 2 GB) after 15 minutes without requests.",
+  "privacyModelEnable": "Let users turn on the AI privacy filter",
+  "privacyModelOff": "Off. Users can't use AI detection.",
+  "privacyModelDownloading": "Downloading … {percent} %",
+  "@privacyModelDownloading": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "privacyModelLoading": "Loading …",
+  "privacyModelReady": "Ready and loaded.",
+  "privacyModelIdle": "Ready. Loads when the next message needs it.",
+  "privacyModelError": "Couldn't load: {error}",
+  "@privacyModelError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pgVoiceLoading": "Loading voices…",
+  "pgSetUp": "Set up",
+  "pgNotSetUpTitle": "{kind} isn't set up yet",
+  "@pgNotSetUpTitle": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "pgConnectOpenMeteo": "Connect Open-Meteo",
+  "pgConnectOpenMeteoHint": "Free and no key needed. It takes a second.",
+  "pgOtherProviders": "Other weather services",
+  "pgNoFreeModels": "You have no free model for this, so Free only finds nothing here.",
+  "pgNoFreeModelsLocked": "You have no free model for this, and this key only allows free models.",
+  "pgAllowPaid": "Allow paid models",
+  "pgUseAuto": "Use auto",
+  "pgProblemNoFreeTitle": "No free model could take this",
+  "pgProblemNoFreeBody": "Your free models for this are busy, past their limits or missing. Allow paid models, or try again in a minute.",
+  "pgProblemNoFreeBodyLocked": "This key only allows free models, and none could take this right now. Connect a free provider for it, or use a key that may use paid models.",
+  "pgProblemNoModelTitle": "No model can take this right now",
+  "pgProblemFailedTitle": "Every model that tried failed",
+  "pgProblemNotAllowedTitle": "This key can't use that model",
+  "pgProblemLimitTitle": "This key reached a limit",
+  "pgProblemTitle": "That didn't work",
+  "pgCheckTopic": "Off-topic",
+  "pgTopicPolicy": "Allowed topics",
+  "pgTopicPolicyHint": "e.g. Only questions about our product and orders.",
+  "pgDecide": "Decide",
+  "pgDecideHint": "Describe a situation, ask a question and list the options. A System One model picks one in a split second and says how sure it is.",
+  "pgDecideRun": "Decide",
+  "pgYes": "Yes",
+  "pgNo": "No",
+  "pgDecideQuestion": "Question",
+  "pgDecideQuestionHint": "e.g. What does the customer want?",
+  "pgDecideOptions": "Options, one per line",
+  "pgDecideOptionsHint": "Leave empty for a yes-or-no question.",
+  "categoryWeather": "Weather",
+  "capWeather": "Weather",
+  "capWeatherHint": "Current weather and forecasts for any place, from the weather services you connect.",
+  "unitCall": "per call",
+  "pgWeatherHint": "Look up the weather for a place name or coordinates such as 52.52, 13.41. The answer has the same shape whichever service replies.",
+  "pgWeatherRun": "Get weather",
+  "pgWeatherMetric": "°C, km/h",
+  "pgWeatherImperial": "°F, mph",
+  "pgWeatherHourly": "Next hours",
+  "pgWeatherNow": "Feels like {feels} · humidity {humidity}% · wind {wind}",
+  "@pgWeatherNow": {
+    "placeholders": {
+      "feels": {
+        "type": "String"
+      },
+      "humidity": {
+        "type": "String"
+      },
+      "wind": {
+        "type": "String"
+      }
+    }
+  },
+  "priorityTitle": "Priority",
+  "priorityMenuHeading": "When your models are busy",
+  "priorityHigh": "High",
+  "priorityNormal": "Normal",
+  "priorityLow": "Low",
+  "priorityHighHint": "Goes first.",
+  "priorityNormalHint": "Takes its turn. The default.",
+  "priorityLowHint": "Lets the others go first.",
+  "priorityHighLabel": "High priority",
+  "priorityNormalLabel": "Normal priority",
+  "priorityLowLabel": "Low priority"
 }

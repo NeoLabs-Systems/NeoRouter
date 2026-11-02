@@ -97,6 +97,16 @@ its limit below that count, steady success at the limit probes one higher, and
 learned limits fade after an hour. An account at its limit is skipped
 (`account_busy`) and chat requests wait briefly if every copy is busy.
 
+## Key priority
+
+Each key or connected app is `high`, `normal` (default) or `low`. Priority only
+counts when capacity runs short: a request that has to wait for a model or
+account announces it (`routing/priority.js`), and requests of a lower priority
+leave those alone (`held_for_priority`) until it has been served. It never
+changes which model a key may use or how models are scored, and it does not
+stop requests already running. A held request waits at most the normal queue
+window (`NEOROUTER_ROUTING_QUEUE_WAIT_MS`).
+
 ## Budget pacing
 
 A key with a daily or monthly budget is paced (`services/budget/pacing.js`):

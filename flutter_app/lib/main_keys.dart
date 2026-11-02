@@ -122,6 +122,15 @@ class _KeysScreenState extends State<KeysScreen> {
     await _load();
   }
 
+  Future<void> _setPriority(RouterKey key, String priority) async {
+    try {
+      final updated = await widget.controller.api.updateKey(key.id, <String, Object?>{'priority': priority});
+      if (mounted) setState(() => _keys = <RouterKey>[for (final item in _keys) item.id == key.id ? updated : item]);
+    } on ApiException catch (error) {
+      if (mounted) showSnack(context, error.message);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
@@ -142,6 +151,7 @@ class _KeysScreenState extends State<KeysScreen> {
         'revoke' => _revoke(key),
         _ => _delete(key),
       },
+      onPriority: (priority) => _setPriority(key, priority),
     );
     return PageScaffold(
       header: ScreenHeader(
@@ -207,6 +217,7 @@ class _KeyRow extends StatelessWidget {
     required this.routerKey,
     required this.profiles,
     required this.onAction,
+    required this.onPriority,
     this.showCreator = false,
     this.canEdit = true,
     this.canDelete = true,
@@ -215,6 +226,7 @@ class _KeyRow extends StatelessWidget {
   final RouterKey routerKey;
   final List<RoutingProfile> profiles;
   final ValueChanged<String> onAction;
+  final ValueChanged<String> onPriority;
   final bool showCreator;
   final bool canEdit;
   final bool canDelete;
@@ -265,8 +277,11 @@ class _KeyRow extends StatelessWidget {
                         style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: palette.text),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Text('${key.prefix}…', style: GoogleFonts.geistMono(fontSize: 12, color: palette.textMuted)),
+                    // On a phone the name needs the room.
+                    if (MediaQuery.sizeOf(context).width >= 600) ...<Widget>[
+                      const SizedBox(width: 10),
+                      Text('${key.prefix}…', style: GoogleFonts.geistMono(fontSize: 12, color: palette.textMuted)),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 3),
@@ -326,6 +341,7 @@ class _KeyRow extends StatelessWidget {
               ],
             ),
           ),
+          if (!key.revoked) _PriorityPicker(priority: key.priority, onChanged: canEdit ? onPriority : null),
           if (actions.isNotEmpty)
             PopupMenuButton<String>(
               tooltip: t.moreActions,
@@ -334,6 +350,83 @@ class _KeyRow extends StatelessWidget {
               itemBuilder: (_) => actions,
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// A key's priority on its row: a quiet label that opens the three choices.
+class _PriorityPicker extends StatelessWidget {
+  const _PriorityPicker({required this.priority, required this.onChanged});
+
+  final String priority;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final narrow = MediaQuery.sizeOf(context).width < 600;
+    final label = narrow
+        ? switch (priority) { 'high' => t.priorityHigh, 'low' => t.priorityLow, _ => t.priorityNormal }
+        : switch (priority) { 'high' => t.priorityHighLabel, 'low' => t.priorityLowLabel, _ => t.priorityNormalLabel };
+    final text = Text(
+      label,
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: priority == 'high' ? FontWeight.w600 : FontWeight.w400,
+        color: priority == 'high' ? palette.text : palette.textMuted,
+      ),
+    );
+    final padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 10);
+    if (onChanged == null) return Padding(padding: padding, child: text);
+    return PopupMenuButton<String>(
+      tooltip: t.priorityTitle,
+      initialValue: priority,
+      onSelected: (value) {
+        if (value != priority) onChanged!(value);
+      },
+      itemBuilder: (_) => <PopupMenuEntry<String>>[
+        PopupMenuItem<String>(
+          enabled: false,
+          height: 36,
+          child: Text(t.priorityMenuHeading, style: TextStyle(fontSize: 12.5, color: palette.textMuted)),
+        ),
+        for (final (value, title, hint) in <(String, String, String)>[
+          ('high', t.priorityHigh, t.priorityHighHint),
+          ('normal', t.priorityNormal, t.priorityNormalHint),
+          ('low', t.priorityLow, t.priorityLowHint),
+        ])
+          PopupMenuItem<String>(
+            value: value,
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: palette.text)),
+                      Text(hint, style: TextStyle(fontSize: 12.5, color: palette.textMuted)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                SizedBox(width: 18, child: value == priority ? Icon(Icons.check_rounded, size: 18, color: palette.accent) : null),
+              ],
+            ),
+          ),
+      ],
+      child: Padding(
+        padding: padding,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            text,
+            const SizedBox(width: 2),
+            Icon(Icons.expand_more_rounded, size: 16, color: palette.textMuted),
+          ],
+        ),
       ),
     );
   }

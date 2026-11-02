@@ -11,6 +11,7 @@ const profiles = require('./profiles');
 const budget = require('../budget/budget_service');
 const pacing = require('../budget/pacing');
 const plans = require('./plans');
+const priority = require('./priority');
 const { classify } = require('./task/classifier');
 const { neededIntelligence } = require('./task/skills');
 const { getConfig } = require('../../config/env');
@@ -163,6 +164,7 @@ function rejection(entry, ctx, now) {
   if (parallel && loadTracker.inflight(entry).account >= parallel.limit) return 'account_busy';
   const quotaState = quota.evaluate(entry, inputTokens, now);
   if (quotaState.blocked) return `quota_${quotaState.blocked.metric}`;
+  if (priority.heldBack(entry, key.priority)) return 'held_for_priority';
   return null;
 }
 
@@ -271,7 +273,7 @@ const REJECTION_GROUPS = [
   ['key', ['not_free', 'not_allowed_for_key', 'other_kind', 'price_unknown', 'budget_exhausted'], 'are not allowed for this key'],
   ['tokens', ['token_limit'], "are past this key's token limit until it resets"],
   ['credits', ['needs_credits'], 'need credits, and their connection is set to free'],
-  ['busy', ['quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'plan_used_up', 'not_available'], 'are used up, rate-limited or cooling down for now'],
+  ['busy', ['quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'held_for_priority', 'plan_used_up', 'not_available'], 'are used up, rate-limited or cooling down for now'],
   ['fit', ['no_tools', 'no_vision', 'context_too_small', 'context_unknown', 'needs_more_tokens', 'incompatible'], 'cannot handle this request (tools, images or its size)'],
   ['profile', ['below_min_intelligence', 'too_expensive', 'too_slow', 'provider_not_included', 'provider_excluded', 'model_excluded', 'kind_not_in_style'], "are left out by the routing style"],
 ];
@@ -482,7 +484,7 @@ class RoutingPlan {
       if (this.tried.has(entry.ref) || (filter && !filter(entry))) continue;
       const reason = rejection(entry, ctx, now);
       let at = null;
-      if (reason === 'account_busy') at = now + BUSY_RECHECK_MS;
+      if (reason === 'account_busy' || reason === 'held_for_priority') at = now + BUSY_RECHECK_MS;
       else if (SHORT_COOLDOWNS.has(reason)) at = stats.availability(entry.ref, now).until || now + BUSY_RECHECK_MS;
       else if (reason && reason.startsWith('quota_')) {
         const blocked = quota.evaluate(entry, this.inputTokens, now).blocked;
@@ -491,6 +493,27 @@ class RoutingPlan {
       if (at !== null && (soonest === null || at < soonest)) soonest = at;
     }
     return soonest;
+  }
+
+  // While this request waits for capacity, requests of a lower priority leave
+  // what it waits for alone. Called on every pass, as candidates free up or
+  // block; leaveQueue() ends it.
+  joinQueue(now = Date.now(), filter = null) {
+    const ctx = this.context();
+    const targets = new Set();
+    for (const entry of this.entries) {
+      if (this.tried.has(entry.ref) || (filter && !filter(entry))) continue;
+      const reason = rejection(entry, ctx, now);
+      if (reason === 'account_busy') targets.add(`account:${entry.accountId}`);
+      else if (reason === 'held_for_priority' || SHORT_COOLDOWNS.has(reason) || /^quota_(rpm|tpm)$/.test(reason || '')) targets.add(`model:${entry.ref}`);
+    }
+    this.leaveQueue();
+    this.stopWaiting = priority.join([...targets], this.key.priority);
+  }
+
+  leaveQueue() {
+    this.stopWaiting?.();
+    this.stopWaiting = null;
   }
 
   rejectionSummary(now = Date.now()) {

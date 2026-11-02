@@ -104,14 +104,19 @@ async function runCapability({ req, res = null, key, capability, method, request
   // the first one to free up instead of failing.
   const waitUntil = Math.min(startedAt + config.routing.queueWaitMs, startedAt + config.routing.totalBudgetMs);
   const nextChoice = async () => {
-    for (;;) {
-      const choice = plan.next({ filter: supported });
-      if (choice) return choice;
-      const now = Date.now();
-      freesUpAt = plan.freesUpAt(now, supported);
-      if (freesUpAt === null || freesUpAt > waitUntil) return null;
-      await sleep(Math.min(waitUntil - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random())));
-      queuedMs += Date.now() - now;
+    try {
+      for (;;) {
+        const choice = plan.next({ filter: supported });
+        if (choice) return choice;
+        const now = Date.now();
+        freesUpAt = plan.freesUpAt(now, supported);
+        if (freesUpAt === null || freesUpAt > waitUntil) return null;
+        plan.joinQueue(now, supported);
+        await sleep(Math.min(waitUntil - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random())));
+        queuedMs += Date.now() - now;
+      }
+    } finally {
+      plan.leaveQueue();
     }
   };
   while (trail.length < config.routing.maxAttempts && Date.now() - startedAt < config.routing.totalBudgetMs) {
