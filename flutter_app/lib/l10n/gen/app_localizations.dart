@@ -1567,30 +1567,6 @@ abstract class AppL10n {
   /// **'Allowed models and routings – one per line, * as wildcard (empty = all)'**
   String get allowedModels;
 
-  /// No description provided for @keyKindsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Kinds of models'**
-  String get keyKindsTitle;
-
-  /// No description provided for @keyKindsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Switch off what this key should never use, e.g. text models for a voice app.'**
-  String get keyKindsHint;
-
-  /// No description provided for @keyKindsNone.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick at least one kind.'**
-  String get keyKindsNone;
-
-  /// No description provided for @pickModelAllKinds.
-  ///
-  /// In en, this message translates to:
-  /// **'All kinds'**
-  String get pickModelAllKinds;
-
   /// No description provided for @defaultProfile.
   ///
   /// In en, this message translates to:
@@ -3157,143 +3133,11 @@ abstract class AppL10n {
   /// **'Last 7 days'**
   String get homeLast7Days;
 
-  /// No description provided for @liveNow.
-  ///
-  /// In en, this message translates to:
-  /// **'Live'**
-  String get liveNow;
-
-  /// No description provided for @liveReplay.
-  ///
-  /// In en, this message translates to:
-  /// **'Replaying recent requests'**
-  String get liveReplay;
-
-  /// No description provided for @liveWaiting.
-  ///
-  /// In en, this message translates to:
-  /// **'Waiting for the first request'**
-  String get liveWaiting;
-
-  /// No description provided for @liveWaitingChip.
-  ///
-  /// In en, this message translates to:
-  /// **'waiting for a free model'**
-  String get liveWaitingChip;
-
-  /// No description provided for @liveQueued.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} waiting for a free model'**
-  String liveQueued(String count);
-
-  /// No description provided for @liveLoading.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading…'**
-  String get liveLoading;
-
-  /// No description provided for @liveLoadingTraffic.
-  ///
-  /// In en, this message translates to:
-  /// **'loading your traffic…'**
-  String get liveLoadingTraffic;
-
-  /// No description provided for @liveOther.
-  ///
-  /// In en, this message translates to:
-  /// **'Others'**
-  String get liveOther;
-
-  /// No description provided for @liveYourApp.
-  ///
-  /// In en, this message translates to:
-  /// **'Your app'**
-  String get liveYourApp;
-
-  /// No description provided for @liveAddProvider.
-  ///
-  /// In en, this message translates to:
-  /// **'Add a connection'**
-  String get liveAddProvider;
-
-  /// No description provided for @liveListening.
-  ///
-  /// In en, this message translates to:
-  /// **'listening'**
-  String get liveListening;
-
-  /// No description provided for @liveRouting.
-  ///
-  /// In en, this message translates to:
-  /// **'routing'**
-  String get liveRouting;
-
-  /// No description provided for @liveScoring.
-  ///
-  /// In en, this message translates to:
-  /// **'scoring {count}'**
-  String liveScoring(String count);
-
-  /// No description provided for @liveInFlight.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} in flight'**
-  String liveInFlight(String count);
-
-  /// No description provided for @liveRequests.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} requests'**
-  String liveRequests(String count);
-
-  /// No description provided for @liveSummary.
-  ///
-  /// In en, this message translates to:
-  /// **'Last {count}: {free}% free · {caught} rescued · {ms} ms avg'**
-  String liveSummary(String count, String free, String caught, String ms);
-
-  /// No description provided for @liveLegendRequest.
-  ///
-  /// In en, this message translates to:
-  /// **'request'**
-  String get liveLegendRequest;
-
-  /// No description provided for @liveLegendAnswer.
-  ///
-  /// In en, this message translates to:
-  /// **'answer'**
-  String get liveLegendAnswer;
-
-  /// No description provided for @liveLegendFailure.
-  ///
-  /// In en, this message translates to:
-  /// **'failed attempt'**
-  String get liveLegendFailure;
-
-  /// No description provided for @liveMore.
-  ///
-  /// In en, this message translates to:
-  /// **'Details'**
-  String get liveMore;
-
   /// No description provided for @metricRequests.
   ///
   /// In en, this message translates to:
   /// **'Requests'**
   String get metricRequests;
-
-  /// No description provided for @homeTokens.
-  ///
-  /// In en, this message translates to:
-  /// **'Tokens'**
-  String get homeTokens;
-
-  /// No description provided for @homeTokensCaption.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} requests'**
-  String homeTokensCaption(String count);
 
   /// No description provided for @metricAnswered.
   ///
@@ -3462,24 +3306,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'What your apps asked for and how NeoRouter answered. Only metadata is kept – never your messages.'**
   String get activityDescription;
-
-  /// No description provided for @activityAllKeys.
-  ///
-  /// In en, this message translates to:
-  /// **'All API keys'**
-  String get activityAllKeys;
-
-  /// No description provided for @activityKeysCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} keys'**
-  String activityKeysCount(String count);
-
-  /// No description provided for @activityRevoked.
-  ///
-  /// In en, this message translates to:
-  /// **'revoked'**
-  String get activityRevoked;
 
   /// No description provided for @tabOverview.
   ///
@@ -3889,36 +3715,6 @@ abstract class AppL10n {
   /// **'Add another account'**
   String get addAnotherAccount;
 
-  /// No description provided for @providerAccountsCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} accounts'**
-  String providerAccountsCount(String count);
-
-  /// No description provided for @providerAccountsWorking.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} working'**
-  String providerAccountsWorking(String count);
-
-  /// No description provided for @providerAccountsProblems.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} need attention'**
-  String providerAccountsProblems(String count);
-
-  /// No description provided for @providerShowAccounts.
-  ///
-  /// In en, this message translates to:
-  /// **'Show accounts'**
-  String get providerShowAccounts;
-
-  /// No description provided for @providerHideAccounts.
-  ///
-  /// In en, this message translates to:
-  /// **'Hide accounts'**
-  String get providerHideAccounts;
-
   /// No description provided for @limitsModelsRoom.
   ///
   /// In en, this message translates to:
@@ -4147,42 +3943,6 @@ abstract class AppL10n {
   /// **'New chat'**
   String get newChat;
 
-  /// No description provided for @pgMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Mode'**
-  String get pgMode;
-
-  /// No description provided for @pgGroupText.
-  ///
-  /// In en, this message translates to:
-  /// **'Text'**
-  String get pgGroupText;
-
-  /// No description provided for @pgGroupCreate.
-  ///
-  /// In en, this message translates to:
-  /// **'Create'**
-  String get pgGroupCreate;
-
-  /// No description provided for @pgGroupListen.
-  ///
-  /// In en, this message translates to:
-  /// **'Listen'**
-  String get pgGroupListen;
-
-  /// No description provided for @pgGroupLookup.
-  ///
-  /// In en, this message translates to:
-  /// **'Look up'**
-  String get pgGroupLookup;
-
-  /// No description provided for @pgGroupOther.
-  ///
-  /// In en, this message translates to:
-  /// **'More'**
-  String get pgGroupOther;
-
   /// No description provided for @modelPicker.
   ///
   /// In en, this message translates to:
@@ -4200,48 +3960,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'e.g. groq/openai/gpt-oss-120b'**
   String get modelSpecificHint;
-
-  /// No description provided for @pickModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose a model'**
-  String get pickModel;
-
-  /// No description provided for @pickModels.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose models'**
-  String get pickModels;
-
-  /// No description provided for @pickModelNone.
-  ///
-  /// In en, this message translates to:
-  /// **'No model matches.'**
-  String get pickModelNone;
-
-  /// No description provided for @pickModelsCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} chosen'**
-  String pickModelsCount(String count);
-
-  /// No description provided for @pickModelContext.
-  ///
-  /// In en, this message translates to:
-  /// **'{tokens} context'**
-  String pickModelContext(String tokens);
-
-  /// No description provided for @pickModelReasoning.
-  ///
-  /// In en, this message translates to:
-  /// **'Thinks before answering'**
-  String get pickModelReasoning;
-
-  /// No description provided for @done.
-  ///
-  /// In en, this message translates to:
-  /// **'Done'**
-  String get done;
 
   /// No description provided for @systemPromptTitle.
   ///
@@ -4711,60 +4429,6 @@ abstract class AppL10n {
   /// **'Runs on this server, so no provider sees the text. Adds a fraction of a second to new messages; the first one after a quiet while waits for the model to load.'**
   String get privacyAiEnableHint;
 
-  /// No description provided for @privacyModelTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'AI privacy filter'**
-  String get privacyModelTitle;
-
-  /// No description provided for @privacyModelHint.
-  ///
-  /// In en, this message translates to:
-  /// **'OpenAI\'s open privacy filter runs on this server and finds names, addresses, account numbers and more that rules miss. No provider sees the text. Turning it on downloads about 1 GB once; it loads when used and frees its memory (about 2 GB) after 15 minutes without requests.'**
-  String get privacyModelHint;
-
-  /// No description provided for @privacyModelEnable.
-  ///
-  /// In en, this message translates to:
-  /// **'Let users turn on the AI privacy filter'**
-  String get privacyModelEnable;
-
-  /// No description provided for @privacyModelOff.
-  ///
-  /// In en, this message translates to:
-  /// **'Off. Users can\'t use AI detection.'**
-  String get privacyModelOff;
-
-  /// No description provided for @privacyModelDownloading.
-  ///
-  /// In en, this message translates to:
-  /// **'Downloading … {percent} %'**
-  String privacyModelDownloading(String percent);
-
-  /// No description provided for @privacyModelLoading.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading …'**
-  String get privacyModelLoading;
-
-  /// No description provided for @privacyModelReady.
-  ///
-  /// In en, this message translates to:
-  /// **'Ready and loaded.'**
-  String get privacyModelReady;
-
-  /// No description provided for @privacyModelIdle.
-  ///
-  /// In en, this message translates to:
-  /// **'Ready. Loads when the next message needs it.'**
-  String get privacyModelIdle;
-
-  /// No description provided for @privacyModelError.
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn\'t load: {error}'**
-  String privacyModelError(String error);
-
   /// No description provided for @privacyTryHint.
   ///
   /// In en, this message translates to:
@@ -5131,114 +4795,6 @@ abstract class AppL10n {
   /// **'Default voice'**
   String get pgVoiceDefault;
 
-  /// No description provided for @pgVoiceLoading.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading voices…'**
-  String get pgVoiceLoading;
-
-  /// No description provided for @pgSetUp.
-  ///
-  /// In en, this message translates to:
-  /// **'Set up'**
-  String get pgSetUp;
-
-  /// No description provided for @pgNotSetUpTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'{kind} isn\'t set up yet'**
-  String pgNotSetUpTitle(String kind);
-
-  /// No description provided for @pgConnectOpenMeteo.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect Open-Meteo'**
-  String get pgConnectOpenMeteo;
-
-  /// No description provided for @pgConnectOpenMeteoHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Free and no key needed. It takes a second.'**
-  String get pgConnectOpenMeteoHint;
-
-  /// No description provided for @pgOtherProviders.
-  ///
-  /// In en, this message translates to:
-  /// **'Other weather services'**
-  String get pgOtherProviders;
-
-  /// No description provided for @pgNoFreeModels.
-  ///
-  /// In en, this message translates to:
-  /// **'You have no free model for this, so Free only finds nothing here.'**
-  String get pgNoFreeModels;
-
-  /// No description provided for @pgNoFreeModelsLocked.
-  ///
-  /// In en, this message translates to:
-  /// **'You have no free model for this, and this key only allows free models.'**
-  String get pgNoFreeModelsLocked;
-
-  /// No description provided for @pgAllowPaid.
-  ///
-  /// In en, this message translates to:
-  /// **'Allow paid models'**
-  String get pgAllowPaid;
-
-  /// No description provided for @pgUseAuto.
-  ///
-  /// In en, this message translates to:
-  /// **'Use auto'**
-  String get pgUseAuto;
-
-  /// No description provided for @pgProblemNoFreeTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'No free model could take this'**
-  String get pgProblemNoFreeTitle;
-
-  /// No description provided for @pgProblemNoFreeBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Your free models for this are busy, past their limits or missing. Allow paid models, or try again in a minute.'**
-  String get pgProblemNoFreeBody;
-
-  /// No description provided for @pgProblemNoFreeBodyLocked.
-  ///
-  /// In en, this message translates to:
-  /// **'This key only allows free models, and none could take this right now. Connect a free provider for it, or use a key that may use paid models.'**
-  String get pgProblemNoFreeBodyLocked;
-
-  /// No description provided for @pgProblemNoModelTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'No model can take this right now'**
-  String get pgProblemNoModelTitle;
-
-  /// No description provided for @pgProblemFailedTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Every model that tried failed'**
-  String get pgProblemFailedTitle;
-
-  /// No description provided for @pgProblemNotAllowedTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'This key can\'t use that model'**
-  String get pgProblemNotAllowedTitle;
-
-  /// No description provided for @pgProblemLimitTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'This key reached a limit'**
-  String get pgProblemLimitTitle;
-
-  /// No description provided for @pgProblemTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'That didn\'t work'**
-  String get pgProblemTitle;
-
   /// No description provided for @pgPlay.
   ///
   /// In en, this message translates to:
@@ -5316,78 +4872,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Prompt attacks'**
   String get pgCheckInjection;
-
-  /// No description provided for @pgCheckTopic.
-  ///
-  /// In en, this message translates to:
-  /// **'Off-topic'**
-  String get pgCheckTopic;
-
-  /// No description provided for @pgTopicPolicy.
-  ///
-  /// In en, this message translates to:
-  /// **'Allowed topics'**
-  String get pgTopicPolicy;
-
-  /// No description provided for @pgTopicPolicyHint.
-  ///
-  /// In en, this message translates to:
-  /// **'e.g. Only questions about our product and orders.'**
-  String get pgTopicPolicyHint;
-
-  /// No description provided for @pgDecide.
-  ///
-  /// In en, this message translates to:
-  /// **'Decide'**
-  String get pgDecide;
-
-  /// No description provided for @pgDecideHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Describe a situation, ask a question and list the options. A System One model picks one in a split second and says how sure it is.'**
-  String get pgDecideHint;
-
-  /// No description provided for @pgDecideRun.
-  ///
-  /// In en, this message translates to:
-  /// **'Decide'**
-  String get pgDecideRun;
-
-  /// No description provided for @pgYes.
-  ///
-  /// In en, this message translates to:
-  /// **'Yes'**
-  String get pgYes;
-
-  /// No description provided for @pgNo.
-  ///
-  /// In en, this message translates to:
-  /// **'No'**
-  String get pgNo;
-
-  /// No description provided for @pgDecideQuestion.
-  ///
-  /// In en, this message translates to:
-  /// **'Question'**
-  String get pgDecideQuestion;
-
-  /// No description provided for @pgDecideQuestionHint.
-  ///
-  /// In en, this message translates to:
-  /// **'e.g. What does the customer want?'**
-  String get pgDecideQuestionHint;
-
-  /// No description provided for @pgDecideOptions.
-  ///
-  /// In en, this message translates to:
-  /// **'Options, one per line'**
-  String get pgDecideOptions;
-
-  /// No description provided for @pgDecideOptionsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Leave empty for a yes-or-no question.'**
-  String get pgDecideOptionsHint;
 
   /// No description provided for @pgFlagged.
   ///
@@ -5478,66 +4962,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Search'**
   String get pgSearchRun;
-
-  /// No description provided for @categoryWeather.
-  ///
-  /// In en, this message translates to:
-  /// **'Weather'**
-  String get categoryWeather;
-
-  /// No description provided for @capWeather.
-  ///
-  /// In en, this message translates to:
-  /// **'Weather'**
-  String get capWeather;
-
-  /// No description provided for @capWeatherHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Current weather and forecasts for any place, from the weather services you connect.'**
-  String get capWeatherHint;
-
-  /// No description provided for @unitCall.
-  ///
-  /// In en, this message translates to:
-  /// **'per call'**
-  String get unitCall;
-
-  /// No description provided for @pgWeatherHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Look up the weather for a place name or coordinates such as 52.52, 13.41. The answer has the same shape whichever service replies.'**
-  String get pgWeatherHint;
-
-  /// No description provided for @pgWeatherRun.
-  ///
-  /// In en, this message translates to:
-  /// **'Get weather'**
-  String get pgWeatherRun;
-
-  /// No description provided for @pgWeatherMetric.
-  ///
-  /// In en, this message translates to:
-  /// **'°C, km/h'**
-  String get pgWeatherMetric;
-
-  /// No description provided for @pgWeatherImperial.
-  ///
-  /// In en, this message translates to:
-  /// **'°F, mph'**
-  String get pgWeatherImperial;
-
-  /// No description provided for @pgWeatherHourly.
-  ///
-  /// In en, this message translates to:
-  /// **'Next hours'**
-  String get pgWeatherHourly;
-
-  /// No description provided for @pgWeatherNow.
-  ///
-  /// In en, this message translates to:
-  /// **'Feels like {feels} · humidity {humidity}% · wind {wind}'**
-  String pgWeatherNow(String feels, String humidity, String wind);
 
   /// No description provided for @pgNoResults.
   ///
@@ -6630,6 +6054,582 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Connected app'**
   String get connectedApp;
+
+  /// No description provided for @keyKindsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Kinds of models'**
+  String get keyKindsTitle;
+
+  /// No description provided for @keyKindsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch off what this key should never use, e.g. text models for a voice app.'**
+  String get keyKindsHint;
+
+  /// No description provided for @keyKindsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick at least one kind.'**
+  String get keyKindsNone;
+
+  /// No description provided for @pickModelAllKinds.
+  ///
+  /// In en, this message translates to:
+  /// **'All kinds'**
+  String get pickModelAllKinds;
+
+  /// No description provided for @liveNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get liveNow;
+
+  /// No description provided for @liveReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Replaying recent requests'**
+  String get liveReplay;
+
+  /// No description provided for @liveWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the first request'**
+  String get liveWaiting;
+
+  /// No description provided for @liveWaitingChip.
+  ///
+  /// In en, this message translates to:
+  /// **'waiting for a free model'**
+  String get liveWaitingChip;
+
+  /// No description provided for @liveQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} waiting for a free model'**
+  String liveQueued(String count);
+
+  /// No description provided for @liveLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get liveLoading;
+
+  /// No description provided for @liveLoadingTraffic.
+  ///
+  /// In en, this message translates to:
+  /// **'loading your traffic…'**
+  String get liveLoadingTraffic;
+
+  /// No description provided for @liveOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get liveOther;
+
+  /// No description provided for @liveYourApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Your app'**
+  String get liveYourApp;
+
+  /// No description provided for @liveAddProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a connection'**
+  String get liveAddProvider;
+
+  /// No description provided for @liveListening.
+  ///
+  /// In en, this message translates to:
+  /// **'listening'**
+  String get liveListening;
+
+  /// No description provided for @liveRouting.
+  ///
+  /// In en, this message translates to:
+  /// **'routing'**
+  String get liveRouting;
+
+  /// No description provided for @liveScoring.
+  ///
+  /// In en, this message translates to:
+  /// **'scoring {count}'**
+  String liveScoring(String count);
+
+  /// No description provided for @liveInFlight.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} in flight'**
+  String liveInFlight(String count);
+
+  /// No description provided for @liveRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} requests'**
+  String liveRequests(String count);
+
+  /// No description provided for @liveSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Last {count}: {free}% free · {caught} rescued · {ms} ms avg'**
+  String liveSummary(String count, String free, String caught, String ms);
+
+  /// No description provided for @liveLegendRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'request'**
+  String get liveLegendRequest;
+
+  /// No description provided for @liveLegendAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'answer'**
+  String get liveLegendAnswer;
+
+  /// No description provided for @liveLegendFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'failed attempt'**
+  String get liveLegendFailure;
+
+  /// No description provided for @liveMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get liveMore;
+
+  /// No description provided for @homeTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens'**
+  String get homeTokens;
+
+  /// No description provided for @homeTokensCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} requests'**
+  String homeTokensCaption(String count);
+
+  /// No description provided for @activityAllKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'All API keys'**
+  String get activityAllKeys;
+
+  /// No description provided for @activityKeysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} keys'**
+  String activityKeysCount(String count);
+
+  /// No description provided for @activityRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'revoked'**
+  String get activityRevoked;
+
+  /// No description provided for @providerAccountsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} accounts'**
+  String providerAccountsCount(String count);
+
+  /// No description provided for @providerAccountsWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} working'**
+  String providerAccountsWorking(String count);
+
+  /// No description provided for @providerAccountsProblems.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} need attention'**
+  String providerAccountsProblems(String count);
+
+  /// No description provided for @providerShowAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Show accounts'**
+  String get providerShowAccounts;
+
+  /// No description provided for @providerHideAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide accounts'**
+  String get providerHideAccounts;
+
+  /// No description provided for @pgMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode'**
+  String get pgMode;
+
+  /// No description provided for @pgGroupText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get pgGroupText;
+
+  /// No description provided for @pgGroupCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get pgGroupCreate;
+
+  /// No description provided for @pgGroupListen.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen'**
+  String get pgGroupListen;
+
+  /// No description provided for @pgGroupLookup.
+  ///
+  /// In en, this message translates to:
+  /// **'Look up'**
+  String get pgGroupLookup;
+
+  /// No description provided for @pgGroupOther.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get pgGroupOther;
+
+  /// No description provided for @pickModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a model'**
+  String get pickModel;
+
+  /// No description provided for @pickModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose models'**
+  String get pickModels;
+
+  /// No description provided for @pickModelNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No model matches.'**
+  String get pickModelNone;
+
+  /// No description provided for @pickModelsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} chosen'**
+  String pickModelsCount(String count);
+
+  /// No description provided for @pickModelContext.
+  ///
+  /// In en, this message translates to:
+  /// **'{tokens} context'**
+  String pickModelContext(String tokens);
+
+  /// No description provided for @pickModelReasoning.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinks before answering'**
+  String get pickModelReasoning;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @privacyModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI privacy filter'**
+  String get privacyModelTitle;
+
+  /// No description provided for @privacyModelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI\'s open privacy filter runs on this server and finds names, addresses, account numbers and more that rules miss. No provider sees the text. Turning it on downloads about 1 GB once; it loads when used and frees its memory (about 2 GB) after 15 minutes without requests.'**
+  String get privacyModelHint;
+
+  /// No description provided for @privacyModelEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Let users turn on the AI privacy filter'**
+  String get privacyModelEnable;
+
+  /// No description provided for @privacyModelOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off. Users can\'t use AI detection.'**
+  String get privacyModelOff;
+
+  /// No description provided for @privacyModelDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading … {percent} %'**
+  String privacyModelDownloading(String percent);
+
+  /// No description provided for @privacyModelLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading …'**
+  String get privacyModelLoading;
+
+  /// No description provided for @privacyModelReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready and loaded.'**
+  String get privacyModelReady;
+
+  /// No description provided for @privacyModelIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready. Loads when the next message needs it.'**
+  String get privacyModelIdle;
+
+  /// No description provided for @privacyModelError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load: {error}'**
+  String privacyModelError(String error);
+
+  /// No description provided for @pgVoiceLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading voices…'**
+  String get pgVoiceLoading;
+
+  /// No description provided for @pgSetUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up'**
+  String get pgSetUp;
+
+  /// No description provided for @pgNotSetUpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} isn\'t set up yet'**
+  String pgNotSetUpTitle(String kind);
+
+  /// No description provided for @pgConnectOpenMeteo.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Open-Meteo'**
+  String get pgConnectOpenMeteo;
+
+  /// No description provided for @pgConnectOpenMeteoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Free and no key needed. It takes a second.'**
+  String get pgConnectOpenMeteoHint;
+
+  /// No description provided for @pgOtherProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'Other weather services'**
+  String get pgOtherProviders;
+
+  /// No description provided for @pgNoFreeModels.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no free model for this, so Free only finds nothing here.'**
+  String get pgNoFreeModels;
+
+  /// No description provided for @pgNoFreeModelsLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no free model for this, and this key only allows free models.'**
+  String get pgNoFreeModelsLocked;
+
+  /// No description provided for @pgAllowPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow paid models'**
+  String get pgAllowPaid;
+
+  /// No description provided for @pgUseAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Use auto'**
+  String get pgUseAuto;
+
+  /// No description provided for @pgProblemNoFreeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No free model could take this'**
+  String get pgProblemNoFreeTitle;
+
+  /// No description provided for @pgProblemNoFreeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your free models for this are busy, past their limits or missing. Allow paid models, or try again in a minute.'**
+  String get pgProblemNoFreeBody;
+
+  /// No description provided for @pgProblemNoFreeBodyLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'This key only allows free models, and none could take this right now. Connect a free provider for it, or use a key that may use paid models.'**
+  String get pgProblemNoFreeBodyLocked;
+
+  /// No description provided for @pgProblemNoModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No model can take this right now'**
+  String get pgProblemNoModelTitle;
+
+  /// No description provided for @pgProblemFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Every model that tried failed'**
+  String get pgProblemFailedTitle;
+
+  /// No description provided for @pgProblemNotAllowedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This key can\'t use that model'**
+  String get pgProblemNotAllowedTitle;
+
+  /// No description provided for @pgProblemLimitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This key reached a limit'**
+  String get pgProblemLimitTitle;
+
+  /// No description provided for @pgProblemTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'That didn\'t work'**
+  String get pgProblemTitle;
+
+  /// No description provided for @pgCheckTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'Off-topic'**
+  String get pgCheckTopic;
+
+  /// No description provided for @pgTopicPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed topics'**
+  String get pgTopicPolicy;
+
+  /// No description provided for @pgTopicPolicyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Only questions about our product and orders.'**
+  String get pgTopicPolicyHint;
+
+  /// No description provided for @pgDecide.
+  ///
+  /// In en, this message translates to:
+  /// **'Decide'**
+  String get pgDecide;
+
+  /// No description provided for @pgDecideHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe a situation, ask a question and list the options. A System One model picks one in a split second and says how sure it is.'**
+  String get pgDecideHint;
+
+  /// No description provided for @pgDecideRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Decide'**
+  String get pgDecideRun;
+
+  /// No description provided for @pgYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get pgYes;
+
+  /// No description provided for @pgNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get pgNo;
+
+  /// No description provided for @pgDecideQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get pgDecideQuestion;
+
+  /// No description provided for @pgDecideQuestionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. What does the customer want?'**
+  String get pgDecideQuestionHint;
+
+  /// No description provided for @pgDecideOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Options, one per line'**
+  String get pgDecideOptions;
+
+  /// No description provided for @pgDecideOptionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty for a yes-or-no question.'**
+  String get pgDecideOptionsHint;
+
+  /// No description provided for @categoryWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather'**
+  String get categoryWeather;
+
+  /// No description provided for @capWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather'**
+  String get capWeather;
+
+  /// No description provided for @capWeatherHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Current weather and forecasts for any place, from the weather services you connect.'**
+  String get capWeatherHint;
+
+  /// No description provided for @unitCall.
+  ///
+  /// In en, this message translates to:
+  /// **'per call'**
+  String get unitCall;
+
+  /// No description provided for @pgWeatherHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Look up the weather for a place name or coordinates such as 52.52, 13.41. The answer has the same shape whichever service replies.'**
+  String get pgWeatherHint;
+
+  /// No description provided for @pgWeatherRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Get weather'**
+  String get pgWeatherRun;
+
+  /// No description provided for @pgWeatherMetric.
+  ///
+  /// In en, this message translates to:
+  /// **'°C, km/h'**
+  String get pgWeatherMetric;
+
+  /// No description provided for @pgWeatherImperial.
+  ///
+  /// In en, this message translates to:
+  /// **'°F, mph'**
+  String get pgWeatherImperial;
+
+  /// No description provided for @pgWeatherHourly.
+  ///
+  /// In en, this message translates to:
+  /// **'Next hours'**
+  String get pgWeatherHourly;
+
+  /// No description provided for @pgWeatherNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Feels like {feels} · humidity {humidity}% · wind {wind}'**
+  String pgWeatherNow(String feels, String humidity, String wind);
 
   /// No description provided for @priorityTitle.
   ///
