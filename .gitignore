@@ -111,3 +111,6 @@ __pycache__/
 
 # Static API docs (scripts/build_api_docs.js)
 build/api-docs/
+
+# Local video projects (published cuts live in docs/videos/)
+/videos/

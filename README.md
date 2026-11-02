@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="flutter_app/assets/branding/app_icon_256.png" alt="NeoRouter logo" width="112">
+  <img src=".github/banner.jpg" alt="NeoRouter: every model, one endpoint" width="100%">
 </p>
 
 <h1 align="center">NeoRouter</h1>
@@ -20,6 +20,10 @@
 
 <p align="center">
   <a href="https://discord.gg/f59rg2RwUT"><img src="https://img.shields.io/badge/Join%20NeoLabs-Discord-5865F2?style=for-the-badge&amp;logo=discord&amp;logoColor=white" alt="Join the NeoLabs Discord"></a>
+</p>
+
+<p align="center">
+  <img src="docs/images/routing.gif" alt="NeoRouter's home screen: requests fly from apps through the router to providers, and failed attempts bounce back and try the next one. Sample data." width="100%"><br>
 </p>
 
 <table>
