@@ -7,12 +7,14 @@ const billing = require('../services/providers/billing_check');
 const metadata = require('../services/catalog/metadata_service');
 const quota = require('../services/quota/quota_service');
 const usage = require('../services/usage/usage_service');
+const updates = require('../services/updates/update_service');
 const PLAN_PROBE_MS = 5 * 60_000;
 const { createLogger } = require('../utils/logger');
 
 const logger = createLogger('scheduler');
 const QUOTA_FLUSH_MS = 10_000;
 const BILLING_CHECK_MS = 6 * 60 * 60_000;
+const UPDATE_CHECK_MS = 6 * 60 * 60_000;
 const LOG_RETENTION_DAYS = 90;
 const timers = [];
 
@@ -70,6 +72,7 @@ function start() {
   every('probe-plans', PLAN_PROBE_MS, async () => {
     for (const id of accounts.prepaidIds()) await accounts.probeQuota(id).catch((error) => logger.warn('Plan probe failed', { accountId: id, error: error.message }));
   });
+  every('check-updates', UPDATE_CHECK_MS, () => updates.check(), { runAtStart: true });
   every('prune-logs', 24 * 60 * 60_000, () => usage.prune(LOG_RETENTION_DAYS));
 }
 

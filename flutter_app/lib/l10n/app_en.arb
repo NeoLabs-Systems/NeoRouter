@@ -833,6 +833,73 @@
       }
     }
   },
+  "updatesTitle": "Updates",
+  "updatesHint": "NeoRouter updates itself from GitHub. Your settings, keys and usage are kept.",
+  "updateChannel": "Channel",
+  "updateChannelHint": "Stable follows main. Beta gets new features first.",
+  "channelStable": "Stable",
+  "channelBeta": "Beta",
+  "updateCheckNow": "Check now",
+  "updateNeverChecked": "Not checked yet",
+  "updateUpToDate": "You have the latest version",
+  "updateCheckFailed": "Couldn't reach GitHub. Showing the last result.",
+  "updateContainerTitle": "Runs from a container image",
+  "updateContainerHint": "Update the image instead of the code inside it. Data on the volume is kept.",
+  "updateNotGitTitle": "Can't update itself",
+  "updateNotGitHint": "This install did not come from Git. Run neorouter update in a terminal.",
+  "updateDetails": "Details of the last update",
+  "updateReadyTitle": "Version {version} is ready",
+  "@updateReadyTitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateReadySubtitle": "You have {current} · {channel} channel",
+  "@updateReadySubtitle": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNow": "Update now",
+  "updateWhatsNew": "What's new",
+  "updateConfirmTitle": "Update to {version}?",
+  "@updateConfirmTitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateConfirmMessage": "NeoRouter saves a backup, installs the new version and restarts. This takes a few minutes. If anything fails, it goes back to the current version.",
+  "updatingTitle": "Updating NeoRouter",
+  "updatingToTitle": "Updating to {version}",
+  "@updatingToTitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateReconnecting": "Restarting NeoRouter…",
+  "updateHandsOff": "Nothing to do here. This page reconnects by itself when NeoRouter is back.",
+  "updateDoneTitle": "Updated to {version}",
+  "@updateDoneTitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateDoneReloading": "Reloading the app to load the new version…",
+  "updateReload": "Reload",
+  "updateFailedTitle": "The update did not finish",
   "serverInfoHint": "What this NeoRouter instance runs and where apps reach it.",
   "versionLabel": "Version",
   "capabilitiesLabel": "Capabilities",

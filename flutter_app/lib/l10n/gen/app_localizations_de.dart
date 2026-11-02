@@ -1559,6 +1559,111 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
+  String get updatesTitle => 'Updates';
+
+  @override
+  String get updatesHint =>
+      'NeoRouter aktualisiert sich selbst von GitHub. Einstellungen, Keys und Nutzung bleiben erhalten.';
+
+  @override
+  String get updateChannel => 'Kanal';
+
+  @override
+  String get updateChannelHint =>
+      'Stabil folgt main. Beta bekommt neue Funktionen zuerst.';
+
+  @override
+  String get channelStable => 'Stabil';
+
+  @override
+  String get channelBeta => 'Beta';
+
+  @override
+  String get updateCheckNow => 'Jetzt prüfen';
+
+  @override
+  String get updateNeverChecked => 'Noch nicht geprüft';
+
+  @override
+  String get updateUpToDate => 'Du hast die neueste Version';
+
+  @override
+  String get updateCheckFailed =>
+      'GitHub ist nicht erreichbar. Das letzte Ergebnis wird angezeigt.';
+
+  @override
+  String get updateContainerTitle => 'Läuft als Container-Image';
+
+  @override
+  String get updateContainerHint =>
+      'Aktualisiere das Image statt des Codes darin. Daten auf dem Volume bleiben erhalten.';
+
+  @override
+  String get updateNotGitTitle => 'Kann sich nicht selbst aktualisieren';
+
+  @override
+  String get updateNotGitHint =>
+      'Diese Installation stammt nicht aus Git. Führe neorouter update im Terminal aus.';
+
+  @override
+  String get updateDetails => 'Details des letzten Updates';
+
+  @override
+  String updateReadyTitle(String version) {
+    return 'Version $version ist bereit';
+  }
+
+  @override
+  String updateReadySubtitle(String current, String channel) {
+    return 'Du hast $current · Kanal $channel';
+  }
+
+  @override
+  String get updateNow => 'Jetzt aktualisieren';
+
+  @override
+  String get updateWhatsNew => 'Neuigkeiten';
+
+  @override
+  String updateConfirmTitle(String version) {
+    return 'Auf $version aktualisieren?';
+  }
+
+  @override
+  String get updateConfirmMessage =>
+      'NeoRouter sichert deine Daten, installiert die neue Version und startet neu. Das dauert ein paar Minuten. Schlägt etwas fehl, kehrt es zur aktuellen Version zurück.';
+
+  @override
+  String get updatingTitle => 'NeoRouter wird aktualisiert';
+
+  @override
+  String updatingToTitle(String version) {
+    return 'Aktualisiere auf $version';
+  }
+
+  @override
+  String get updateReconnecting => 'NeoRouter startet neu …';
+
+  @override
+  String get updateHandsOff =>
+      'Du musst nichts tun. Diese Seite verbindet sich von selbst wieder, sobald NeoRouter zurück ist.';
+
+  @override
+  String updateDoneTitle(String version) {
+    return 'Auf $version aktualisiert';
+  }
+
+  @override
+  String get updateDoneReloading =>
+      'Die App wird neu geladen, um die neue Version zu laden …';
+
+  @override
+  String get updateReload => 'Neu laden';
+
+  @override
+  String get updateFailedTitle => 'Das Update wurde nicht abgeschlossen';
+
+  @override
   String get serverInfoHint =>
       'Was diese NeoRouter-Instanz ausführt und wo Apps sie erreichen.';
 

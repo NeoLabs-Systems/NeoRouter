@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
+import 'main_admin_update.dart';
 import 'main_controller.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
@@ -78,15 +79,19 @@ class _AdminScreenState extends State<AdminScreen> {
   bool _refreshing = false;
   String? _error;
 
+  late final UpdateWatcher _updates = UpdateWatcher(widget.controller.api);
+
   @override
   void initState() {
     super.initState();
     _load();
+    _updates.load();
   }
 
   @override
   void dispose() {
     _privacyPoll?.cancel();
+    _updates.dispose();
     _search.dispose();
     _aaKey.dispose();
     super.dispose();
@@ -154,6 +159,7 @@ class _AdminScreenState extends State<AdminScreen> {
         _AdminSearchEntry(t.users, _AdminTab.users, 'accounts konten people email username admin role delete disable'),
         _AdminSearchEntry(t.registrationOpenLabel, _AdminTab.users, 'registration registrierung signup sign-up open close'),
         _AdminSearchEntry(t.serverTitle, _AdminTab.server, 'version endpoint url capabilities server'),
+        _AdminSearchEntry(t.updatesTitle, _AdminTab.server, 'update upgrade version channel beta stable github release aktualisieren'),
         _AdminSearchEntry(t.privacyModelTitle, _AdminTab.server, 'privacy filter openai datenschutz pii ai detection'),
         _AdminSearchEntry(t.metadataSources, _AdminTab.metadata, 'models.dev openrouter prices preise context intelligence'),
         _AdminSearchEntry(t.aaKey, _AdminTab.metadata, 'artificial analysis benchmark key api'),
@@ -174,6 +180,7 @@ class _AdminScreenState extends State<AdminScreen> {
       padding: pagePadding(context),
       children: <Widget>[
         ScreenHeader(title: t.navAdmin, description: t.adminDescription),
+        UpdateBanner(watcher: _updates),
         TextField(
           controller: _search,
           onChanged: (_) => setState(() {}),
@@ -273,6 +280,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 SettingsRow(label: t.capabilitiesLabel, control: Text(capabilities, style: TextStyle(color: palette.textSoft, fontSize: 13))),
               ],
             ),
+            UpdateSettings(watcher: _updates),
             SettingsGroup(
               title: t.privacyModelTitle,
               description: t.privacyModelHint,

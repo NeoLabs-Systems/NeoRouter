@@ -2869,6 +2869,180 @@ abstract class AppL10n {
   /// **'{count} accounts on this server.'**
   String usersCount(String count);
 
+  /// No description provided for @updatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates'**
+  String get updatesTitle;
+
+  /// No description provided for @updatesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter updates itself from GitHub. Your settings, keys and usage are kept.'**
+  String get updatesHint;
+
+  /// No description provided for @updateChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel'**
+  String get updateChannel;
+
+  /// No description provided for @updateChannelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Stable follows main. Beta gets new features first.'**
+  String get updateChannelHint;
+
+  /// No description provided for @channelStable.
+  ///
+  /// In en, this message translates to:
+  /// **'Stable'**
+  String get channelStable;
+
+  /// No description provided for @channelBeta.
+  ///
+  /// In en, this message translates to:
+  /// **'Beta'**
+  String get channelBeta;
+
+  /// No description provided for @updateCheckNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Check now'**
+  String get updateCheckNow;
+
+  /// No description provided for @updateNeverChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Not checked yet'**
+  String get updateNeverChecked;
+
+  /// No description provided for @updateUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'You have the latest version'**
+  String get updateUpToDate;
+
+  /// No description provided for @updateCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach GitHub. Showing the last result.'**
+  String get updateCheckFailed;
+
+  /// No description provided for @updateContainerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs from a container image'**
+  String get updateContainerTitle;
+
+  /// No description provided for @updateContainerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the image instead of the code inside it. Data on the volume is kept.'**
+  String get updateContainerHint;
+
+  /// No description provided for @updateNotGitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t update itself'**
+  String get updateNotGitTitle;
+
+  /// No description provided for @updateNotGitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This install did not come from Git. Run neorouter update in a terminal.'**
+  String get updateNotGitHint;
+
+  /// No description provided for @updateDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details of the last update'**
+  String get updateDetails;
+
+  /// No description provided for @updateReadyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} is ready'**
+  String updateReadyTitle(String version);
+
+  /// No description provided for @updateReadySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You have {current} · {channel} channel'**
+  String updateReadySubtitle(String current, String channel);
+
+  /// No description provided for @updateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Update now'**
+  String get updateNow;
+
+  /// No description provided for @updateWhatsNew.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s new'**
+  String get updateWhatsNew;
+
+  /// No description provided for @updateConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update to {version}?'**
+  String updateConfirmTitle(String version);
+
+  /// No description provided for @updateConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter saves a backup, installs the new version and restarts. This takes a few minutes. If anything fails, it goes back to the current version.'**
+  String get updateConfirmMessage;
+
+  /// No description provided for @updatingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating NeoRouter'**
+  String get updatingTitle;
+
+  /// No description provided for @updatingToTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating to {version}'**
+  String updatingToTitle(String version);
+
+  /// No description provided for @updateReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Restarting NeoRouter…'**
+  String get updateReconnecting;
+
+  /// No description provided for @updateHandsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to do here. This page reconnects by itself when NeoRouter is back.'**
+  String get updateHandsOff;
+
+  /// No description provided for @updateDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated to {version}'**
+  String updateDoneTitle(String version);
+
+  /// No description provided for @updateDoneReloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reloading the app to load the new version…'**
+  String get updateDoneReloading;
+
+  /// No description provided for @updateReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get updateReload;
+
+  /// No description provided for @updateFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The update did not finish'**
+  String get updateFailedTitle;
+
   /// No description provided for @serverInfoHint.
   ///
   /// In en, this message translates to:

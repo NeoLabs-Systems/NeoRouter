@@ -177,6 +177,12 @@ class RouterApi {
   Future<Map<String, dynamic>> updateAdminSettings(Map<String, Object?> body) => client.patch('$_base/admin/settings', body);
   Future<Map<String, dynamic>> refreshMetadata() => client.post('$_base/admin/metadata/refresh');
 
+  // ---- updates --------------------------------------------------------------
+  Future<Map<String, dynamic>> updateStatus() => client.get('$_base/admin/update');
+  Future<Map<String, dynamic>> checkForUpdate() => client.post('$_base/admin/update/check');
+  Future<Map<String, dynamic>> startUpdate() => client.post('$_base/admin/update');
+  Future<Map<String, dynamic>> setUpdateChannel(String channel) => client.putJson('$_base/admin/update/channel', <String, Object>{'channel': channel});
+
   static List<T> _list<T>(Map<String, dynamic> payload, String key, T Function(Map<String, dynamic>) build) =>
       (payload[key] as List? ?? const <Object>[]).map((item) => build(Map<String, dynamic>.from(item as Map))).toList();
 
