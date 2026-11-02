@@ -6630,6 +6630,72 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Connected app'**
   String get connectedApp;
+
+  /// No description provided for @priorityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority'**
+  String get priorityTitle;
+
+  /// No description provided for @priorityMenuHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'When your models are busy'**
+  String get priorityMenuHeading;
+
+  /// No description provided for @priorityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get priorityHigh;
+
+  /// No description provided for @priorityNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get priorityNormal;
+
+  /// No description provided for @priorityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get priorityLow;
+
+  /// No description provided for @priorityHighHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Goes first.'**
+  String get priorityHighHint;
+
+  /// No description provided for @priorityNormalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Takes its turn. The default.'**
+  String get priorityNormalHint;
+
+  /// No description provided for @priorityLowHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Lets the others go first.'**
+  String get priorityLowHint;
+
+  /// No description provided for @priorityHighLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'High priority'**
+  String get priorityHighLabel;
+
+  /// No description provided for @priorityNormalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal priority'**
+  String get priorityNormalLabel;
+
+  /// No description provided for @priorityLowLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Low priority'**
+  String get priorityLowLabel;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -384,17 +384,22 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   // for the day is no reason to keep the client hanging.
   const ensureRunning = async () => {
     const waitUntil = Math.min(Date.now() + config.routing.queueWaitMs, startedAt + config.routing.totalBudgetMs);
-    while (!running.size) {
-      if (startNext()) return true;
-      if (clientAbort.signal.aborted || attemptsStarted >= config.routing.maxAttempts) return false;
-      const now = Date.now();
-      freesUpAt = plan.freesUpAt(now);
-      if (freesUpAt === null || freesUpAt > waitUntil) return false;
-      const pause = Math.min(waitUntil - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random()));
-      await sleep(pause);
-      queuedMs += Date.now() - now;
+    try {
+      while (!running.size) {
+        if (startNext()) return true;
+        if (clientAbort.signal.aborted || attemptsStarted >= config.routing.maxAttempts) return false;
+        const now = Date.now();
+        freesUpAt = plan.freesUpAt(now);
+        if (freesUpAt === null || freesUpAt > waitUntil) return false;
+        plan.joinQueue(now);
+        const pause = Math.min(waitUntil - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random()));
+        await sleep(pause);
+        queuedMs += Date.now() - now;
+      }
+      return true;
+    } finally {
+      plan.leaveQueue();
     }
-    return true;
   };
 
   const settle = (attempt) => {

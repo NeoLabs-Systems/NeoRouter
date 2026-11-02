@@ -3713,4 +3713,37 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get connectedApp => 'Connected app';
+
+  @override
+  String get priorityTitle => 'Priority';
+
+  @override
+  String get priorityMenuHeading => 'When your models are busy';
+
+  @override
+  String get priorityHigh => 'High';
+
+  @override
+  String get priorityNormal => 'Normal';
+
+  @override
+  String get priorityLow => 'Low';
+
+  @override
+  String get priorityHighHint => 'Goes first.';
+
+  @override
+  String get priorityNormalHint => 'Takes its turn. The default.';
+
+  @override
+  String get priorityLowHint => 'Lets the others go first.';
+
+  @override
+  String get priorityHighLabel => 'High priority';
+
+  @override
+  String get priorityNormalLabel => 'Normal priority';
+
+  @override
+  String get priorityLowLabel => 'Low priority';
 }

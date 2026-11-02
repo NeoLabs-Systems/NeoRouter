@@ -1088,5 +1088,16 @@
   "connectedAppsTitle": "Verbundene Apps",
   "connectedAppsHint": "Apps, die sich mit NeoRouter angemeldet haben. Widerrufe eine, um sie zu trennen.",
   "connectedVia": "Verbunden · {host}",
-  "connectedApp": "Verbundene App"
+  "connectedApp": "Verbundene App",
+  "priorityTitle": "Priorität",
+  "priorityMenuHeading": "Wenn deine Modelle ausgelastet sind",
+  "priorityHigh": "Hoch",
+  "priorityNormal": "Normal",
+  "priorityLow": "Niedrig",
+  "priorityHighHint": "Kommt zuerst dran.",
+  "priorityNormalHint": "Reiht sich normal ein. Der Standard.",
+  "priorityLowHint": "Lässt die anderen vor.",
+  "priorityHighLabel": "Hohe Priorität",
+  "priorityNormalLabel": "Normale Priorität",
+  "priorityLowLabel": "Niedrige Priorität"
 }

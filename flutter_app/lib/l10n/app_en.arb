@@ -2027,5 +2027,16 @@
       }
     }
   },
-  "connectedApp": "Connected app"
+  "connectedApp": "Connected app",
+  "priorityTitle": "Priority",
+  "priorityMenuHeading": "When your models are busy",
+  "priorityHigh": "High",
+  "priorityNormal": "Normal",
+  "priorityLow": "Low",
+  "priorityHighHint": "Goes first.",
+  "priorityNormalHint": "Takes its turn. The default.",
+  "priorityLowHint": "Lets the others go first.",
+  "priorityHighLabel": "High priority",
+  "priorityNormalLabel": "Normal priority",
+  "priorityLowLabel": "Low priority"
 }

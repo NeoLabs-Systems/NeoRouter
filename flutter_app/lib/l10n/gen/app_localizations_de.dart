@@ -3740,4 +3740,37 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get connectedApp => 'Verbundene App';
+
+  @override
+  String get priorityTitle => 'Priorität';
+
+  @override
+  String get priorityMenuHeading => 'Wenn deine Modelle ausgelastet sind';
+
+  @override
+  String get priorityHigh => 'Hoch';
+
+  @override
+  String get priorityNormal => 'Normal';
+
+  @override
+  String get priorityLow => 'Niedrig';
+
+  @override
+  String get priorityHighHint => 'Kommt zuerst dran.';
+
+  @override
+  String get priorityNormalHint => 'Reiht sich normal ein. Der Standard.';
+
+  @override
+  String get priorityLowHint => 'Lässt die anderen vor.';
+
+  @override
+  String get priorityHighLabel => 'Hohe Priorität';
+
+  @override
+  String get priorityNormalLabel => 'Normale Priorität';
+
+  @override
+  String get priorityLowLabel => 'Niedrige Priorität';
 }
