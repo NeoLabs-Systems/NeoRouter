@@ -22,9 +22,8 @@
   <a href="https://discord.gg/f59rg2RwUT"><img src="https://img.shields.io/badge/Join%20NeoLabs-Discord-5865F2?style=for-the-badge&amp;logo=discord&amp;logoColor=white" alt="Join the NeoLabs Discord"></a>
 </p>
 
-<p align="center">
 https://github.com/user-attachments/assets/f42be679-1e12-4cb1-9c00-d0f3c15bf403
-</p>
+
 
 <table>
   <tr>
