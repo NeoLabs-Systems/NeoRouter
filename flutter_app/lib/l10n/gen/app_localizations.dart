@@ -3493,6 +3493,216 @@ abstract class AppL10n {
   /// **'Requests'**
   String get tabRequests;
 
+  /// No description provided for @tabLearned.
+  ///
+  /// In en, this message translates to:
+  /// **'Learned'**
+  String get tabLearned;
+
+  /// No description provided for @learnedEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing learned yet'**
+  String get learnedEmptyTitle;
+
+  /// No description provided for @learnedEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter learns from every answer. Send a few requests and watch this fill up.'**
+  String get learnedEmptyMessage;
+
+  /// No description provided for @learnedExperience.
+  ///
+  /// In en, this message translates to:
+  /// **'Experience'**
+  String get learnedExperience;
+
+  /// No description provided for @learnedExperienceCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'recent answers'**
+  String get learnedExperienceCaption;
+
+  /// No description provided for @learnedKnowHow.
+  ///
+  /// In en, this message translates to:
+  /// **'Kinds of work'**
+  String get learnedKnowHow;
+
+  /// No description provided for @learnedKnowHowCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} models compared'**
+  String learnedKnowHowCaption(String count);
+
+  /// No description provided for @learnedRescued.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescued'**
+  String get learnedRescued;
+
+  /// No description provided for @learnedRescuedCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'by a backup, 30 days'**
+  String get learnedRescuedCaption;
+
+  /// No description provided for @learnedFirstTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Right first time'**
+  String get learnedFirstTry;
+
+  /// No description provided for @learnedFirstTryCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'first choice answered'**
+  String get learnedFirstTryCaption;
+
+  /// No description provided for @learnedUpFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'up from {value}'**
+  String learnedUpFrom(String value);
+
+  /// No description provided for @learnedWas.
+  ///
+  /// In en, this message translates to:
+  /// **'was {value}'**
+  String learnedWas(String value);
+
+  /// No description provided for @learnedCurveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How often its first choice answers'**
+  String get learnedCurveTitle;
+
+  /// No description provided for @learnedMapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What works for what'**
+  String get learnedMapTitle;
+
+  /// No description provided for @learnedLegendWorse.
+  ///
+  /// In en, this message translates to:
+  /// **'Often fails'**
+  String get learnedLegendWorse;
+
+  /// No description provided for @learnedLegendBetter.
+  ///
+  /// In en, this message translates to:
+  /// **'Works'**
+  String get learnedLegendBetter;
+
+  /// No description provided for @learnedLegendBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Its top pick'**
+  String get learnedLegendBest;
+
+  /// No description provided for @learnedCellLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{rate} worked · {answers} answers'**
+  String learnedCellLine(String rate, String answers);
+
+  /// No description provided for @learnedCellVotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Rated {liked} up, {disliked} down'**
+  String learnedCellVotes(String liked, String disliked);
+
+  /// No description provided for @learnedBestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Who it trusts with what'**
+  String get learnedBestTitle;
+
+  /// No description provided for @learnedFastestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest it has measured'**
+  String get learnedFastestTitle;
+
+  /// No description provided for @learnedWorked.
+  ///
+  /// In en, this message translates to:
+  /// **'{rate} worked'**
+  String learnedWorked(String rate);
+
+  /// No description provided for @learnedFoundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Found out on its own'**
+  String get learnedFoundTitle;
+
+  /// No description provided for @learnedLimitRpm.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} allows {value} requests a minute'**
+  String learnedLimitRpm(String name, String value);
+
+  /// No description provided for @learnedLimitRpd.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} allows {value} requests a day'**
+  String learnedLimitRpd(String name, String value);
+
+  /// No description provided for @learnedLimitTpm.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} allows {value} tokens a minute'**
+  String learnedLimitTpm(String name, String value);
+
+  /// No description provided for @learnedLimitTpd.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} allows {value} tokens a day'**
+  String learnedLimitTpd(String name, String value);
+
+  /// No description provided for @learnedRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} needs room for {value} tokens to finish'**
+  String learnedRoom(String name, String value);
+
+  /// No description provided for @learnedResting.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is resting until {time}'**
+  String learnedResting(String name, String time);
+
+  /// No description provided for @learnedReasonLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'It reached its limit'**
+  String get learnedReasonLimit;
+
+  /// No description provided for @learnedReasonAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'The account needs attention'**
+  String get learnedReasonAccount;
+
+  /// No description provided for @learnedReasonMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'It isn\'t available right now'**
+  String get learnedReasonMissing;
+
+  /// No description provided for @learnedReasonIncompatible.
+  ///
+  /// In en, this message translates to:
+  /// **'It can\'t handle these requests'**
+  String get learnedReasonIncompatible;
+
+  /// No description provided for @learnedReasonFailing.
+  ///
+  /// In en, this message translates to:
+  /// **'It kept failing'**
+  String get learnedReasonFailing;
+
   /// No description provided for @metricTokens.
   ///
   /// In en, this message translates to:

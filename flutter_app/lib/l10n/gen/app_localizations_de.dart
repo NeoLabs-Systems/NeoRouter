@@ -1928,6 +1928,137 @@ class AppL10nDe extends AppL10n {
   String get tabRequests => 'Anfragen';
 
   @override
+  String get tabLearned => 'Gelernt';
+
+  @override
+  String get learnedEmptyTitle => 'Noch nichts gelernt';
+
+  @override
+  String get learnedEmptyMessage =>
+      'NeoRouter lernt aus jeder Antwort. Schick ein paar Anfragen und sieh zu, wie sich das hier füllt.';
+
+  @override
+  String get learnedExperience => 'Erfahrung';
+
+  @override
+  String get learnedExperienceCaption => 'aktuelle Antworten';
+
+  @override
+  String get learnedKnowHow => 'Arten von Arbeit';
+
+  @override
+  String learnedKnowHowCaption(String count) {
+    return '$count Modelle verglichen';
+  }
+
+  @override
+  String get learnedRescued => 'Gerettet';
+
+  @override
+  String get learnedRescuedCaption => 'durch Ersatz, 30 Tage';
+
+  @override
+  String get learnedFirstTry => 'Beim ersten Mal richtig';
+
+  @override
+  String get learnedFirstTryCaption => 'erste Wahl antwortete';
+
+  @override
+  String learnedUpFrom(String value) {
+    return 'vorher $value';
+  }
+
+  @override
+  String learnedWas(String value) {
+    return 'vorher $value';
+  }
+
+  @override
+  String get learnedCurveTitle => 'Wie oft seine erste Wahl antwortet';
+
+  @override
+  String get learnedMapTitle => 'Was wofür taugt';
+
+  @override
+  String get learnedLegendWorse => 'Scheitert oft';
+
+  @override
+  String get learnedLegendBetter => 'Funktioniert';
+
+  @override
+  String get learnedLegendBest => 'Seine erste Wahl';
+
+  @override
+  String learnedCellLine(String rate, String answers) {
+    return '$rate geklappt · $answers Antworten';
+  }
+
+  @override
+  String learnedCellVotes(String liked, String disliked) {
+    return '$liked positiv, $disliked negativ bewertet';
+  }
+
+  @override
+  String get learnedBestTitle => 'Wem es was anvertraut';
+
+  @override
+  String get learnedFastestTitle => 'Die schnellsten Messungen';
+
+  @override
+  String learnedWorked(String rate) {
+    return '$rate geklappt';
+  }
+
+  @override
+  String get learnedFoundTitle => 'Selbst herausgefunden';
+
+  @override
+  String learnedLimitRpm(String name, String value) {
+    return '$name erlaubt $value Anfragen pro Minute';
+  }
+
+  @override
+  String learnedLimitRpd(String name, String value) {
+    return '$name erlaubt $value Anfragen pro Tag';
+  }
+
+  @override
+  String learnedLimitTpm(String name, String value) {
+    return '$name erlaubt $value Tokens pro Minute';
+  }
+
+  @override
+  String learnedLimitTpd(String name, String value) {
+    return '$name erlaubt $value Tokens pro Tag';
+  }
+
+  @override
+  String learnedRoom(String name, String value) {
+    return '$name braucht Platz für $value Tokens, um fertig zu werden';
+  }
+
+  @override
+  String learnedResting(String name, String time) {
+    return '$name pausiert bis $time';
+  }
+
+  @override
+  String get learnedReasonLimit => 'Es hat sein Limit erreicht';
+
+  @override
+  String get learnedReasonAccount => 'Das Konto braucht Aufmerksamkeit';
+
+  @override
+  String get learnedReasonMissing => 'Es ist gerade nicht verfügbar';
+
+  @override
+  String get learnedReasonIncompatible =>
+      'Es kann diese Anfragen nicht verarbeiten';
+
+  @override
+  String get learnedReasonFailing => 'Es ist wiederholt fehlgeschlagen';
+
+  @override
   String metricTokens(String count) {
     return '$count Tokens';
   }

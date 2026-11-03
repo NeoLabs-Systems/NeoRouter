@@ -58,6 +58,25 @@ function recordFeedback(ref, task, good, now) {
   update(ref, task, (row) => { row[good ? 'liked' : 'disliked'] += 1; }, now);
 }
 
+/** A stored row as it stands now, without changing it. */
+function faded(row, now = Date.now()) {
+  return decay({ ...row }, now);
+}
+
+/**
+ * What the counts add up to: the success rate, and that rate weighed by how
+ * much evidence stands behind it and what people said, so one lucky answer
+ * does not outrank a thousand good ones.
+ */
+function standing({ successes, failures, liked, disliked }) {
+  const outcomes = successes + failures;
+  const rate = (successes + 2) / (outcomes + 3);
+  const share = outcomes / (outcomes + OUTCOME_CONFIDENCE);
+  const votes = liked + disliked;
+  const quality = 1 + (votes / (votes + FEEDBACK_CONFIDENCE)) * ((liked + 1) / (votes + 2) - 0.5) * 0.3;
+  return { rate, share, quality, standing: ((1 - share) * 0.5 + share * rate) * quality };
+}
+
 /**
  * How the model does on this task, for scoring: reliability blended towards
  * its success rate on the task, and a quality factor from feedback (1 = none).
@@ -65,16 +84,11 @@ function recordFeedback(ref, task, good, now) {
 function adjust(ref, task, reliability, now = Date.now()) {
   if (!ref || !task) return { reliability, quality: 1 };
   const row = decay({ ...load(ref, task) }, now);
-  const outcomes = row.successes + row.failures;
-  const rate = (row.successes + 2) / (outcomes + 3);
-  const share = outcomes / (outcomes + OUTCOME_CONFIDENCE);
-  const votes = row.liked + row.disliked;
-  const liked = (row.liked + 1) / (votes + 2);
-  const confidence = votes / (votes + FEEDBACK_CONFIDENCE);
+  const { rate, share, quality } = standing(row);
   return {
     reliability: (1 - share) * reliability + share * rate,
     // 0.85–1.15: a model people keep rating down for a task drops behind.
-    quality: 1 + confidence * (liked - 0.5) * 0.3,
+    quality,
   };
 }
 
@@ -83,4 +97,4 @@ function resetForTests() {
   loadedTasks.clear();
 }
 
-module.exports = { recordOutcome, recordFeedback, adjust, resetForTests };
+module.exports = { recordOutcome, recordFeedback, adjust, faded, standing, resetForTests };

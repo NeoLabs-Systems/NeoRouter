@@ -1072,6 +1072,149 @@
   "activityDescription": "What your apps asked for and how NeoRouter answered. Only metadata is kept – never your messages.",
   "tabOverview": "Overview",
   "tabRequests": "Requests",
+  "tabLearned": "Learned",
+  "learnedEmptyTitle": "Nothing learned yet",
+  "learnedEmptyMessage": "NeoRouter learns from every answer. Send a few requests and watch this fill up.",
+  "learnedExperience": "Experience",
+  "learnedExperienceCaption": "recent answers",
+  "learnedKnowHow": "Kinds of work",
+  "learnedKnowHowCaption": "{count} models compared",
+  "@learnedKnowHowCaption": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedRescued": "Rescued",
+  "learnedRescuedCaption": "by a backup, 30 days",
+  "learnedFirstTry": "Right first time",
+  "learnedFirstTryCaption": "first choice answered",
+  "learnedUpFrom": "up from {value}",
+  "@learnedUpFrom": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedWas": "was {value}",
+  "@learnedWas": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCurveTitle": "How often its first choice answers",
+  "learnedMapTitle": "What works for what",
+  "learnedLegendWorse": "Often fails",
+  "learnedLegendBetter": "Works",
+  "learnedLegendBest": "Its top pick",
+  "learnedCellLine": "{rate} worked · {answers} answers",
+  "@learnedCellLine": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "answers": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCellVotes": "Rated {liked} up, {disliked} down",
+  "@learnedCellVotes": {
+    "placeholders": {
+      "liked": {
+        "type": "String"
+      },
+      "disliked": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedBestTitle": "Who it trusts with what",
+  "learnedFastestTitle": "Fastest it has measured",
+  "learnedWorked": "{rate} worked",
+  "@learnedWorked": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedFoundTitle": "Found out on its own",
+  "learnedLimitRpm": "{name} allows {value} requests a minute",
+  "@learnedLimitRpm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedLimitRpd": "{name} allows {value} requests a day",
+  "@learnedLimitRpd": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedLimitTpm": "{name} allows {value} tokens a minute",
+  "@learnedLimitTpm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedLimitTpd": "{name} allows {value} tokens a day",
+  "@learnedLimitTpd": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedRoom": "{name} needs room for {value} tokens to finish",
+  "@learnedRoom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedResting": "{name} is resting until {time}",
+  "@learnedResting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedReasonLimit": "It reached its limit",
+  "learnedReasonAccount": "The account needs attention",
+  "learnedReasonMissing": "It isn't available right now",
+  "learnedReasonIncompatible": "It can't handle these requests",
+  "learnedReasonFailing": "It kept failing",
   "metricTokens": "{count} tokens",
   "@metricTokens": {
     "placeholders": {

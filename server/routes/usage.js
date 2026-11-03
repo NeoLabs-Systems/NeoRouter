@@ -19,6 +19,9 @@ const keyIdsOf = (req) => String(req.query.keyIds || '').split(',').map((id) => 
 
 router.get('/analytics', (req, res) => res.json(usage.analytics(req.space.ownerId, String(req.query.range || '24h'), Date.now(), { keyIds: keyIdsOf(req) })));
 
+// What routing learned from this space's traffic.
+router.get('/learning', (req, res) => res.json(require('../services/usage/learning_stats').learning(req.space.ownerId)));
+
 router.get('/logs', (req, res) => res.json({
   logs: usage.logs(req.space.ownerId, {
     limit: Number(req.query.limit) || 100,

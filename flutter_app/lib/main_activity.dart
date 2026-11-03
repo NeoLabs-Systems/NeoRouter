@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
 import 'main_dashboard.dart';
+import 'main_learning.dart';
 import 'main_routing.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
@@ -17,9 +18,10 @@ import 'src/models.dart';
 double _num(Object? value) => value is num ? value.toDouble() : 0;
 double? _maybe(Object? value) => value is num ? value.toDouble() : null;
 
-enum _ActivityTab { overview, requests }
+enum _ActivityTab { overview, learned, requests }
 
-/// What happened: an overview with a few charts, and the request list.
+/// What happened: an overview with a few charts, what routing learned from
+/// it, and the request list.
 class ActivityScreen extends StatefulWidget {
   const ActivityScreen({super.key, required this.controller});
 
@@ -68,14 +70,18 @@ class _ActivityScreenState extends State<ActivityScreen> {
         PageTabs<_ActivityTab>(
           tabs: <({_ActivityTab value, String label, int? count})>[
             (value: _ActivityTab.overview, label: t.tabOverview, count: null),
+            (value: _ActivityTab.learned, label: t.tabLearned, count: null),
             (value: _ActivityTab.requests, label: t.tabRequests, count: null),
           ],
           selected: _tab,
           onChanged: (value) => setState(() => _tab = value),
         ),
-        if (_keys.length > 1) _KeyFilter(keys: _keys, selected: _keyIds, onChanged: (value) => setState(() => _keyIds = value)),
+        // What it learned belongs to the models, not to any one key.
+        if (_keys.length > 1 && _tab != _ActivityTab.learned) _KeyFilter(keys: _keys, selected: _keyIds, onChanged: (value) => setState(() => _keyIds = value)),
         if (_tab == _ActivityTab.overview)
           _Overview(key: ValueKey<String>('$_range|${(_keyIds.toList()..sort()).join(',')}'), controller: widget.controller, range: _range, keyIds: _keyIds.toList())
+        else if (_tab == _ActivityTab.learned)
+          LearnedView(controller: widget.controller)
         else
           _RequestList(controller: widget.controller, keyIds: _keyIds.toList()),
       ],
