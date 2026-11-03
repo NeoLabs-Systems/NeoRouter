@@ -8,6 +8,9 @@ const { ProviderError, KINDS, fromNetworkError } = require('../../providers/prov
 const accounts = require('../../services/providers/account_service');
 const { RoutingPlan, explainNoModel, maxOutputFor } = require('../../services/routing/router');
 const learning = require('../../services/routing/learning');
+const capacity = require('../../services/routing/capacity');
+const experience = require('../../services/routing/task/experience');
+const retries = require('../../services/routing/task/retries');
 const stats = require('../../services/routing/stats_store');
 const loadTracker = require('../../services/routing/load_tracker');
 const plans = require('../../services/routing/plans');
@@ -218,6 +221,10 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     // Apps that know what they ask for can say so (one of the task kinds).
     taskHint: req.get?.('x-neorouter-task') || null,
   });
+  // The same conversation again right after an answer: that answer was no good.
+  const retryId = internal ? null : retries.fingerprint(key.id, canonical.messages);
+  const repeated = retryId && retries.repeatedAnswer(retryId);
+  if (repeated) experience.recordFeedback(repeated.ref, repeated.task, false);
   if (plan.pacing) res.set('X-NeoRouter-Budget-Pace', plan.pacing.state);
   if (plan.task) res.set('X-NeoRouter-Task', `${plan.task.primary}; difficulty=${plan.task.difficulty}`);
 
@@ -383,7 +390,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   // It only waits when a candidate frees up within the window: a model out
   // for the day is no reason to keep the client hanging.
   const ensureRunning = async () => {
-    const waitUntil = Math.min(Date.now() + config.routing.queueWaitMs, startedAt + config.routing.totalBudgetMs);
+    const waitUntil = Math.min(Date.now() + capacity.queueWaitMs(key, config.routing.queueWaitMs), startedAt + config.routing.totalBudgetMs);
     try {
       while (!running.size) {
         if (startNext()) return true;
@@ -410,7 +417,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   await ensureRunning();
   while (running.size) {
     const newest = [...running].reduce((a, b) => (b.started > a.started ? b : a));
-    const canHedge = config.routing.hedging && running.size < config.routing.maxParallel
+    const canHedge = config.routing.hedging && !capacity.isShort(key.user_id) && running.size < config.routing.maxParallel
       && attemptsStarted < config.routing.maxAttempts && [...running].every((item) => item.entry.isFree);
     let timer = null;
     const contenders = [...running].map((item) => item.promise);
@@ -434,6 +441,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
       lastError = error;
       trail.push(trailItem(attempt.entry, error.kind, { status: error.status, ms: Date.now() - attempt.started, message: String(error.message).slice(0, 200) }));
       const policy = learning.onFailure(attempt.entry, error, { estimatedTokens: inputTokens, maxTokens: canonical.max_tokens });
+      plan.noteFailure(attempt.entry, error.kind);
       if (error.kind === KINDS.AUTH) accounts.validateAccount(attempt.entry.accountId).catch(() => {});
       badRequests = error.kind === KINDS.BAD_REQUEST ? badRequests + 1 : 0;
       if (!policy.fallback || badRequests >= MAX_CONSECUTIVE_BAD_REQUESTS) {
@@ -456,6 +464,8 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
       learning.onSlow(other.entry, Date.now() - other.started);
     }
     running.delete(attempt);
+    capacity.record(key.user_id, true);
+    if (retryId && plan.task) retries.rememberAnswer(retryId, { ref: attempt.entry.ref, task: plan.task.primary });
     try {
       await commit(attempt, outcome.result);
     } finally {
@@ -494,6 +504,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     ? explainNoModel(rejected)
     : `All ${trail.length} attempt(s) failed. Last error: ${lastError?.message || 'unknown'}`;
   finish({ status: 'error', http_status: status, error_code: code, error_message: message });
+  capacity.record(key.user_id, false);
   // When a model frees up later, say when to come back.
   const retryAfterSeconds = freesUpAt ? Math.max(1, Math.ceil((freesUpAt - Date.now()) / 1000)) : null;
   if (retryAfterSeconds && !res.headersSent) res.set('Retry-After', String(retryAfterSeconds));

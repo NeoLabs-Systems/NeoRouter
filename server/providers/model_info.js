@@ -6,7 +6,7 @@
 // exactly zero or the provider labels the model free. Unknown never means free.
 
 const NON_CHAT_PATTERNS = [
-  ['embedding', /embed|bge-|e5-|gte-|nomic-embed|text-similarity/i],
+  ['embedding', /embed|bge-|e5-|gte-|nomic-embed|text-similarity|(^|\/)voyage-/i],
   ['rerank', /rerank/i],
   // Audio is split by direction: speech-to-text and text-to-speech.
   ['transcription', /whisper|transcri|(^|[-_/])asr([-_]|$)|parakeet|canary-/i],
@@ -16,12 +16,13 @@ const NON_CHAT_PATTERNS = [
   ['other', /lyria|music|audio/i],
   // Editing models need an input video, which /v1/videos does not take.
   ['other', /video-(edit|upscale)|(^|\/)aleph|detector/i],
-  ['image', /dall-e|stable-diffusion|sdxl|flux|imagen|image-gen|gpt-image|kolors|seedream|nano-banana|-image(-|$)/i],
+  // "diffusion" alone also names text models such as diffusiongemma.
+  ['image', /dall-e|diffusion(?!gemma)|sdxl|flux|imagen|image-gen|gpt-image|kolors|seedream|nano-banana|-image(-|$)|animerge|lucid-origin|(^|\/)phoenix-\d/i],
   ['video', /\bvideo\b|veo-|sora|wan2|(^|[/-])kling|hailuo/i],
   // Other routers ("openrouter/auto", "kilo-auto/frontier", Jev Router) pick a
   // model themselves at an unpredictable price; NeoRouter does the routing.
   ['router', /(^|\/)auto(-beta)?$|(^|\/)kilo-auto\/|jev-router|(^|\/)openrouter\/free$|(^|\/)router$/i],
-  ['moderation', /moderation|llama-guard|shieldgemma|prompt-guard|safeguard|content-safety|nemoguard|safety-guard|topic-control/i],
+  ['moderation', /moderation|llama-guard|shieldgemma|prompt-guard|safeguard|content-safety|nemoguard|safety-guard|topic-control|qwen[\d.]*guard/i],
   // Agents, tool-only and legacy multimodal endpoints that do not accept plain chat.
   ['other', /deep-research|computer-use|robotics|antigravity|deplot|kosmos|fuyu|calibration|reward|embedqa|parse|translat|\bocr\b|-ocr|retriever/i],
 ];

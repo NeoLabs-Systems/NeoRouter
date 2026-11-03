@@ -240,6 +240,26 @@ function buildBenchmarkKeys(records) {
   return { exact, loose };
 }
 
+// A size-less match may not cross sizes: a 405b model is not its 70b sibling.
+// When either side names no size, the name is all there is to go on.
+function sameSize(modelText, record) {
+  const sizes = (text) => String(text || '').toLowerCase().split(/[\s./:_-]+/).filter((token) => PARAM_TOKEN.test(token));
+  const asked = sizes(modelText);
+  const known = [...sizes(record?.slug), ...sizes(record?.name)];
+  return !asked.length || !known.length || asked.some((size) => known.includes(size));
+}
+
+// The benchmark index and the model's benchmark scores should tell one story.
+// When they disagree widely (a newer model below its predecessor while beating
+// it on every skill), neither is taken at its word.
+const INDEX_SKILL_GAP = 0.15;
+function reconcileWithSkills(index, skills) {
+  const values = Object.values(skills || {});
+  if (!values.length) return index;
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  return Math.abs(mean - index) > INDEX_SKILL_GAP ? (index + mean) / 2 : index;
+}
+
 // The benchmark record for a model, by canonical id or by any of its ids.
 function lookupBenchmark(canonical, modelIds = []) {
   const direct = indexes.aa?.get(canonical);
@@ -254,7 +274,7 @@ function lookupBenchmark(canonical, modelIds = []) {
     for (const text of candidates) {
       const { withoutParams } = benchmarkKeys(text);
       const match = indexes.benchmark.loose.get(withoutParams);
-      if (match) return match;
+      if (match && sameSize(text, match)) return match;
     }
   }
   return direct || null;
@@ -437,7 +457,7 @@ function computeCanonical(canonical, sampleModelIds = [], capability = 'chat') {
     source = guess.weightSum ? 'heuristic' : 'default';
     confidence = Math.min(0.5, guess.weightSum * 0.5);
   } else if (aa?.intelligenceIndex) {
-    intelligence = Math.min(1, aa.intelligenceIndex / (indexes.aaScale || AA_INDEX_SCALE));
+    intelligence = reconcileWithSkills(Math.min(1, aa.intelligenceIndex / (indexes.aaScale || AA_INDEX_SCALE)), skillsOf(aa));
     source = aa.indexDerived ? 'artificial_analysis_benchmarks' : 'artificial_analysis';
     confidence = aa.indexDerived ? 0.8 : 0.9;
   } else {
@@ -524,6 +544,8 @@ function resetForTests(seed) {
 }
 
 module.exports = {
+  sameSize,
+  reconcileWithSkills,
   refreshSources,
   recomputeCanonical,
   recomputeAll,

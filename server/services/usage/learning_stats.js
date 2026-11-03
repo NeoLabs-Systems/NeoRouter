@@ -18,33 +18,42 @@ const SKILLS_OF_TASK = new Map(KINDS.map((kind) => [kind.id, kind.skills]));
 // One model, whichever provider or account served it.
 const nameOf = (row) => row.display_name || row.model_id;
 
-// How often the model the router chose first was the one that answered, per
-// day. Rising means it has stopped trying models that would fail.
+// How often the model the router chose first answered, per day, among requests
+// where a model could be tried at all. Requests that found every model busy say
+// nothing about the choice: they are counted apart, as no capacity.
 function firstTryCurve(userId, now) {
   const since = Math.floor((now - CURVE_DAYS * DAY) / DAY) * DAY + DAY;
   const days = new Map();
   let rescued = 0;
-  const rows = getDatabase().prepare('SELECT created_at, status, trail_json FROM requests WHERE user_id = ? AND created_at >= ? ORDER BY created_at');
+  let noCapacity = 0;
+  const rows = getDatabase().prepare('SELECT created_at, status, error_code, trail_json FROM requests WHERE user_id = ? AND created_at >= ? ORDER BY created_at');
   for (const row of rows.iterate(userId, since)) {
     const bucket = Math.floor(row.created_at / DAY) * DAY;
-    if (!days.has(bucket)) days.set(bucket, { bucket, requests: 0, firstTry: 0 });
+    if (!days.has(bucket)) days.set(bucket, { bucket, requests: 0, tried: 0, firstTry: 0 });
     const day = days.get(bucket);
-    // A hedge that lost a race was not a wrong choice, only a slower one.
-    const missed = JSON.parse(row.trail_json || '[]').some((step) => step.outcome !== 'success' && step.outcome !== 'hedge_lost');
     day.requests += 1;
-    if (row.status === 'success' && !missed) day.firstTry += 1;
-    if (row.status === 'success' && missed) rescued += 1;
+    const trail = JSON.parse(row.trail_json || '[]');
+    if (!trail.length) {
+      if (row.status === 'error' && /no_model_available/i.test(row.error_code || '')) noCapacity += 1;
+      continue;
+    }
+    day.tried += 1;
+    // A hedge that lost a race was not a wrong choice, only a slower one.
+    const worked = (step) => step.outcome === 'success' || step.outcome === 'hedge_lost';
+    if (worked(trail[0])) day.firstTry += 1;
+    if (row.status === 'success' && !trail.every(worked)) rescued += 1;
   }
-  const curve = [...days.values()].map((day) => ({ ...day, rate: day.firstTry / day.requests }));
+  const curve = [...days.values()].filter((day) => day.tried > 0).map((day) => ({ ...day, rate: day.firstTry / day.tried }));
   const share = (items) => {
-    const requests = items.reduce((sum, day) => sum + day.requests, 0);
-    return requests ? items.reduce((sum, day) => sum + day.firstTry, 0) / requests : null;
+    const tried = items.reduce((sum, day) => sum + day.tried, 0);
+    return tried ? items.reduce((sum, day) => sum + day.firstTry, 0) / tried : null;
   };
   // Thirds of the range, so one odd day does not decide the headline.
   const third = Math.max(1, Math.floor(curve.length / 3));
   return {
     curve,
     rescued,
+    noCapacity,
     firstTryThen: curve.length >= 3 ? share(curve.slice(0, third)) : null,
     firstTryNow: curve.length ? share(curve.slice(-third)) : null,
   };
@@ -64,11 +73,13 @@ function taskKnowledge(userId, now) {
     const entry = entries.get(row.model_ref);
     if (!entry) continue;
     const faded = experience.faded(row, now);
-    const key = `${row.task}|${entry.canonicalId}`;
+    // Ids can differ ("beam", "beam-1.0-501b"); one benchmark record is one model.
+    const model = entry.skills ? `${entry.intelligence}|${JSON.stringify(entry.skills)}` : entry.canonicalId;
+    const key = `${row.task}|${model}`;
     if (!cells.has(key)) {
       cells.set(key, {
         task: row.task,
-        model: entry.canonicalId,
+        model,
         name: entry.displayName || entry.modelId,
         successes: 0,
         failures: 0,
@@ -175,6 +186,7 @@ function learning(userId, now = Date.now()) {
     modelsKnown: modelWeight.size,
     measurements: models.reduce((sum, model) => sum + model.samples, 0),
     rescued: curve.rescued,
+    noCapacity: curve.noCapacity,
     firstTryThen: curve.firstTryThen,
     firstTryNow: curve.firstTryNow,
     curve: curve.curve,

@@ -201,6 +201,7 @@ class LiveSession {
     this.lastError = error;
     this.trail.push({ model: entry.id, outcome: error.kind, status: error.status, ms: Date.now() - attemptStarted, message: String(error.message).slice(0, 200) });
     const policy = learning.onFailure(entry, error, { estimatedTokens: 0 });
+    this.routing.noteFailure(entry, error.kind);
     if (error.kind === KINDS.AUTH) accounts.validateAccount(entry.accountId).catch(() => {});
     return policy.fallback;
   }

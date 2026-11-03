@@ -79,6 +79,8 @@ function learnFromMessage(message) {
   return metric ? { metric, value } : null;
 }
 
+const ACCESS_REFUSED = /not available on the .{0,30}plan|model agreement|not allowed to access|needs your consent|phone verification|verify your (phone|account)|upgrade your plan/i;
+
 function classifyHttpError(status, body, headers) {
   const message = extractMessage(body) || `HTTP ${status}`;
   const retryAfterMs = parseRetryAfter(headers);
@@ -95,6 +97,9 @@ function classifyHttpError(status, body, headers) {
     if (status === 403 && /region|country|location|not available in your|not (yet )?available to you|being rolled out|no access to (this )?model/i.test(message)) {
       return new ProviderError(KINDS.NOT_FOUND, message, options);
     }
+    // The key is fine; this model or plan wants something only a person can
+    // do. Retrying soon or re-checking the key cannot help.
+    if (ACCESS_REFUSED.test(message)) return new ProviderError(KINDS.NOT_FOUND, message, options);
     return new ProviderError(KINDS.AUTH, message, options);
   }
   if (status === 402) return new ProviderError(KINDS.PAYMENT, message, options);

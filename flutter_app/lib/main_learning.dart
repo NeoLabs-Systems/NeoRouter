@@ -93,6 +93,9 @@ class _LearnedViewState extends State<LearnedView> {
           const SizedBox(height: 28),
           SectionCard(
             title: t.learnedCurveTitle,
+            trailing: _num(data['noCapacity']) > 0
+                ? Text(t.learnedNoCapacity(formatCount(_num(data['noCapacity']))), style: TextStyle(fontSize: 12.5, color: neoRouterPaletteOf(context).textMuted))
+                : null,
             child: _Curve(curve: curve),
           ),
         ],

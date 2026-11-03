@@ -28,6 +28,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<RequestLog> _logs = <RequestLog>[];
   Map<String, dynamic> _totals = <String, dynamic>{};
   Map<String, dynamic>? _capacity;
+  Map<String, dynamic>? _health;
   bool _loading = true;
   String? _error;
   final ScrollController _scroll = ScrollController();
@@ -56,7 +57,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final api = widget.controller.api;
       final results = await Future.wait(<Future<Object>>[api.accounts(), api.keys(), api.logs(limit: 5), api.summary('7d'), api.capacity()]);
+      // Worth showing, not worth failing the whole home screen for.
+      final health = await api.usageHealth().then<Map<String, dynamic>?>((value) => value).catchError((Object _) => null);
+      if (!mounted) return;
       setState(() {
+        _health = health;
         _accounts = results[0] as List<ProviderAccount>;
         _keys = (results[1] as List<RouterKey>).where((key) => !key.revoked).toList();
         _logs = results[2] as List<RequestLog>;
@@ -84,15 +89,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final controller = widget.controller;
     final active = _accounts.where((account) => account.enabled).toList();
     final problems = active.where((account) => account.status == 'invalid' || account.status == 'error').toList();
+    final failing = ((_health?['failing'] as List?) ?? const <Object>[]).cast<Map>();
     final working = active.where((account) => account.status == 'healthy').length;
     final setupDone = _accounts.isNotEmpty && _keys.isNotEmpty && _logs.isNotEmpty;
     final status = _loading
         ? ''
         : active.isEmpty
         ? t.homeStatusEmpty
-        : problems.isEmpty
+        : _health?['shortOfCapacity'] == true
+        ? t.problemCapacityTitle
+        : problems.isEmpty && failing.isEmpty
         ? t.homeStatusOk('$working')
-        : t.homeStatusIssues('${problems.length}');
+        : t.homeStatusIssues('${problems.length + failing.length}');
     final padding = pagePadding(context);
     // The live view fills the window; everything else waits below it.
     final heroHeight = (MediaQuery.sizeOf(context).height - padding.top - 20).clamp(460.0, 1100.0);
@@ -126,6 +134,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     for (final account in problems) ...<Widget>[_ProblemNotice(account: account, onFix: () => controller.go(AppPage.providers)), const SizedBox(height: AppSpacing.sm)],
+                    if (_health?['shortOfCapacity'] == true) ...<Widget>[
+                      _TrafficNotice(title: t.problemCapacityTitle, message: t.problemCapacity(formatCount(_health!['failed'] as num), formatCount(_health!['requests'] as num))),
+                      const SizedBox(height: AppSpacing.sm),
+                    ],
+                    for (final item in failing) ...<Widget>[
+                      _TrafficNotice(
+                        title: t.problemFailingTitle('${item['label']}'),
+                        message: <String>[t.problemFailing(formatCount(item['successes'] as num), formatCount(item['attempts'] as num)), if (item['lastProblem'] != null) '${item['lastProblem']}'].join(' '),
+                        onFix: () => controller.go(AppPage.providers),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                    ],
                     if (problems.isNotEmpty) const SizedBox(height: AppSpacing.sm),
                     if (!setupDone) ...<Widget>[_SetupChecklist(controller: controller, providers: _accounts.length, keys: _keys.length, requests: _logs.length), const SizedBox(height: 28)],
                     if (_logs.isNotEmpty) ...<Widget>[SettingsHeading(title: t.homeLast7Days), _WeekStrip(totals: _totals), const SizedBox(height: 28)],
@@ -156,6 +176,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// What the traffic shows, as opposed to what the connection's key check says.
+class _TrafficNotice extends StatelessWidget {
+  const _TrafficNotice({required this.title, required this.message, this.onFix});
+
+  final String title;
+  final String message;
+  final VoidCallback? onFix;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    return AppCard(
+      padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
+      child: Row(
+        children: <Widget>[
+          const ToneDot(tone: PillTone.error, size: 8),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
+                const SizedBox(height: 2),
+                Text(message, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, color: palette.textSoft)),
+              ],
+            ),
+          ),
+          if (onFix != null) ...<Widget>[
+            const SizedBox(width: AppSpacing.sm),
+            OutlinedButton(onPressed: onFix, child: Text(t.homeFix)),
+          ],
+        ],
+      ),
     );
   }
 }

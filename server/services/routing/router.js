@@ -7,6 +7,7 @@ const concurrency = require('./concurrency');
 const quota = require('../quota/quota_service');
 const stats = require('./stats_store');
 const scoring = require('./scoring');
+const accountHealth = require('./account_health');
 const profiles = require('./profiles');
 const budget = require('../budget/budget_service');
 const pacing = require('../budget/pacing');
@@ -31,6 +32,10 @@ const QUALITY_PROFILE_SHARE = 0.25;
 const QUALITY_GAP = 0.3;
 const QUALITY_GATE_FACTOR = 0.45;
 const { FEATURE_FLOOR } = scoring;
+// Speed and price can outweigh skill, but only so far: a model below half of
+// what the task needs (within these limits) counts for less.
+const WEAK_FOR_TASK_FACTOR = 0.6;
+const weakBelow = (need) => Math.max(0.12, Math.min(0.3, (need ?? 0) * 0.5));
 
 function globToRegExp(pattern) {
   const escaped = String(pattern).replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
@@ -119,6 +124,12 @@ function maxOutputFor(request, entry) {
   return request.max_tokens || Math.min(entry.maxOutput || DEFAULT_OUTPUT_TOKENS, DEFAULT_OUTPUT_TOKENS);
 }
 
+// How many failures one connection may cost a single request. A provider with
+// many models must not use up every attempt before others get a turn.
+const MAX_FAILURES_PER_ACCOUNT = 2;
+// Failures that say the connection is struggling, not that this request is odd.
+const CONNECTION_FAILURES = new Set(['rate_limit', 'quota_exhausted', 'payment', 'auth', 'not_found', 'server', 'network', 'timeout']);
+
 // Hard filters. Returns a reason string when the entry cannot serve.
 function rejection(entry, ctx, now) {
   const { key, needs, inputTokens, request, constraints, freeOnly } = ctx;
@@ -126,6 +137,8 @@ function rejection(entry, ctx, now) {
   if (!entry.available) return 'model_unavailable';
   if (!entry.accountEnabled || entry.accountStatus === 'disabled' || entry.accountStatus === 'invalid') return 'account_unavailable';
   if (!allowedByKey(entry, key)) return 'not_allowed_for_key';
+  if ((ctx.accountFailures?.get(entry.accountId) || 0) >= MAX_FAILURES_PER_ACCOUNT && !ctx.primaryRefs.has(entry.ref)) return 'account_failing';
+  if (accountHealth.restingUntil(entry.accountId, now) && !ctx.primaryRefs.has(entry.ref)) return 'account_resting';
   const kind = kindAllowed(entry, key, freeOnly);
   if (kind) return kind;
   if (ctx.tokenLimitReached && (entry.isFree || entry.isPlan)) return 'token_limit';
@@ -273,7 +286,7 @@ const REJECTION_GROUPS = [
   ['key', ['not_free', 'not_allowed_for_key', 'other_kind', 'price_unknown', 'budget_exhausted'], 'are not allowed for this key'],
   ['tokens', ['token_limit'], "are past this key's token limit until it resets"],
   ['credits', ['needs_credits'], 'need credits, and their connection is set to free'],
-  ['busy', ['quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'held_for_priority', 'plan_used_up', 'not_available'], 'are used up, rate-limited or cooling down for now'],
+  ['busy', ['account_failing', 'account_resting', 'quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'held_for_priority', 'plan_used_up', 'not_available'], 'are used up, rate-limited or cooling down for now'],
   ['fit', ['no_tools', 'no_vision', 'context_too_small', 'context_unknown', 'needs_more_tokens', 'incompatible'], 'cannot handle this request (tools, images or its size)'],
   ['profile', ['below_min_intelligence', 'too_expensive', 'too_slow', 'provider_not_included', 'provider_excluded', 'model_excluded', 'kind_not_in_style'], "are left out by the routing style"],
 ];
@@ -337,6 +350,7 @@ class RoutingPlan {
     // Outcomes are learned per kind of task (learning.js).
     if (this.task) for (const entry of this.entries) entry.task = this.task.primary;
     this.primaryRefs = new Set();
+    this.accountFailures = new Map();
     if (!this.parsed.auto) this.scopeToRequestedModel();
   }
 
@@ -361,7 +375,7 @@ class RoutingPlan {
   }
 
   context() {
-    return { tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost };
+    return { accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost };
   }
 
   rank({ includeRejected = false, sample = true, now = Date.now() } = {}) {
@@ -419,6 +433,8 @@ class RoutingPlan {
       let value = base * quotaFactor * penalty * load;
       if (qualityProfile && features.intelligence < bestIntelligence - QUALITY_GAP) value *= QUALITY_GATE_FACTOR;
       value *= plans.factor(item.entry);
+      // Far too weak for this task: taken only when nothing better can serve.
+      if (this.task && item.details.capability < weakBelow(this.need)) value *= WEAK_FOR_TASK_FACTOR;
       // A custom style's preference between free, subscription and paid models.
       item.tier = this.profile.constraints.kinds ? kindTier(this.profile.constraints.kinds, item.entry) : 0;
       if ((this.needs.tools && item.entry.tools === null) || (this.needs.json && item.entry.json === false)) value *= UNKNOWN_CAPABILITY_FACTOR;
@@ -509,6 +525,11 @@ class RoutingPlan {
     }
     this.leaveQueue();
     this.stopWaiting = priority.join([...targets], this.key.priority);
+  }
+
+  // A failed attempt, so this request moves on from a connection that keeps failing.
+  noteFailure(entry, kind) {
+    if (CONNECTION_FAILURES.has(kind)) this.accountFailures.set(entry.accountId, (this.accountFailures.get(entry.accountId) || 0) + 1);
   }
 
   leaveQueue() {

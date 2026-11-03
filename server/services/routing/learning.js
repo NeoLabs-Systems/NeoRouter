@@ -8,6 +8,7 @@ const quota = require('../quota/quota_service');
 const billing = require('../providers/billing_check');
 const { getDatabase } = require('../../db/database');
 const experience = require('./task/experience');
+const accountHealth = require('./account_health');
 
 // Failures that say the model handled this kind of task badly (as opposed to
 // limits, outages or bad requests, which say nothing about the task).
@@ -20,6 +21,10 @@ const DAY = 24 * HOUR;
 const RATE_LIMIT_COOLDOWN_MS = 90 * SECOND;
 const QUOTA_LADDER_MS = [2 * MINUTE, 10 * MINUTE, HOUR, DAY];
 const NOT_FOUND_LADDER_MS = [6 * HOUR, DAY, 7 * DAY];
+// A rate limit on a model that recently answered ends soon. One that has not
+// answered in an hour keeps refusing, so it is asked less and less often.
+const RATE_LIMIT_LADDER_MS = [RATE_LIMIT_COOLDOWN_MS, 5 * MINUTE, 30 * MINUTE, 2 * HOUR, 6 * HOUR];
+const STILL_ANSWERING_MS = HOUR;
 const MAX_RETRY_AFTER_MS = DAY;
 
 // How each error kind changes what the router believes about a model.
@@ -32,8 +37,8 @@ function policyFor(error) {
     case KINDS.AUTH: return { weight: 1, penalty: 3, breaker: false, fallback: true };
     case KINDS.NOT_FOUND: return { weight: 1, penalty: 2, breaker: false, fallback: true };
     case KINDS.CONTEXT_LENGTH: return { weight: 0, penalty: 0, breaker: false, fallback: true };
-    case KINDS.TRUNCATED: return { weight: 0.25, penalty: 0.5, breaker: false, fallback: true };
-    case KINDS.BAD_REQUEST: return { weight: 0.5, penalty: 0.5, breaker: false, fallback: true };
+    case KINDS.TRUNCATED: return { weight: 0.25, penalty: 0.5, breaker: false, fallback: true, perAccount: false };
+    case KINDS.BAD_REQUEST: return { weight: 0.5, penalty: 0.5, breaker: false, fallback: true, perAccount: false };
     case KINDS.TIMEOUT: return { weight: 1, penalty: 1.5, breaker: true, fallback: true };
     case KINDS.SERVER:
     case KINDS.NETWORK:
@@ -47,8 +52,11 @@ function policyFor(error) {
 function cooldownFor(error, row, now) {
   const retryAfter = Number.isFinite(error.retryAfterMs) ? Math.min(error.retryAfterMs, MAX_RETRY_AFTER_MS) : null;
   switch (error.kind) {
-    case KINDS.RATE_LIMIT:
-      return { until: now + Math.max(retryAfter || 0, RATE_LIMIT_COOLDOWN_MS), reason: 'rate_limited', escalate: false };
+    case KINDS.RATE_LIMIT: {
+      const answering = row.last_success_at && now - row.last_success_at < STILL_ANSWERING_MS;
+      const step = answering ? RATE_LIMIT_COOLDOWN_MS : RATE_LIMIT_LADDER_MS[Math.min(row.cooldown_level, RATE_LIMIT_LADDER_MS.length - 1)];
+      return { until: now + Math.max(retryAfter || 0, step), reason: 'rate_limited', escalate: !answering };
+    }
     case KINDS.QUOTA_EXHAUSTED: {
       if (error.learned?.value === 0) return { until: now + DAY, reason: 'no_free_quota', escalate: false };
       const step = QUOTA_LADDER_MS[Math.min(row.cooldown_level, QUOTA_LADDER_MS.length - 1)];
@@ -97,6 +105,7 @@ function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, now = 
   // "Too many concurrent requests" says nothing about the per-minute rate:
   // the account is busy, not used up, so no cooldown and no exhausted rpm.
   const busy = error.kind === KINDS.RATE_LIMIT && concurrency.onRateLimited(entry, error, { now });
+  if (!busy && policy.perAccount !== false) accountHealth.onFailure(entry.accountId, now);
   const current = stats.snapshot(entry.ref, now);
   const cooldown = busy ? null : cooldownFor(error, current, now);
   stats.recordFailure(entry.ref, {
@@ -131,6 +140,7 @@ function onSlow(entry, elapsedMs, now = Date.now()) {
 
 function onSuccess(entry, measurement, headers, now = Date.now()) {
   stats.recordSuccess(entry.ref, measurement, now);
+  accountHealth.onSuccess(entry.accountId);
   experience.recordOutcome(entry.ref, entry.task, true, now);
   concurrency.onSuccess(entry, { now });
   if (headers) {

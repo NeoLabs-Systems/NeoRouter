@@ -3445,6 +3445,30 @@ abstract class AppL10n {
   /// **'{name} needs attention'**
   String problemTitle(String name);
 
+  /// No description provided for @problemFailingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is not answering'**
+  String problemFailingTitle(String name);
+
+  /// No description provided for @problemFailing.
+  ///
+  /// In en, this message translates to:
+  /// **'{successes} of {attempts} attempts worked in the last day.'**
+  String problemFailing(String successes, String attempts);
+
+  /// No description provided for @problemCapacityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Many requests go unanswered'**
+  String get problemCapacityTitle;
+
+  /// No description provided for @problemCapacity.
+  ///
+  /// In en, this message translates to:
+  /// **'{failed} of {requests} failed in the last day. Your connections cannot keep up: connect more, or send less.'**
+  String problemCapacity(String failed, String requests);
+
   /// No description provided for @problemKeyRejected.
   ///
   /// In en, this message translates to:
@@ -3550,13 +3574,13 @@ abstract class AppL10n {
   /// No description provided for @learnedFirstTry.
   ///
   /// In en, this message translates to:
-  /// **'Right first time'**
+  /// **'First choice answered'**
   String get learnedFirstTry;
 
   /// No description provided for @learnedFirstTryCaption.
   ///
   /// In en, this message translates to:
-  /// **'first choice answered'**
+  /// **'when a model was free'**
   String get learnedFirstTryCaption;
 
   /// No description provided for @learnedUpFrom.
@@ -3576,6 +3600,12 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'How often its first choice answers'**
   String get learnedCurveTitle;
+
+  /// No description provided for @learnedNoCapacity.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} requests found no model free in 30 days'**
+  String learnedNoCapacity(String count);
 
   /// No description provided for @learnedMapTitle.
   ///

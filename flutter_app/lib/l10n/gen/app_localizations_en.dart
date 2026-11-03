@@ -1880,6 +1880,24 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String problemFailingTitle(String name) {
+    return '$name is not answering';
+  }
+
+  @override
+  String problemFailing(String successes, String attempts) {
+    return '$successes of $attempts attempts worked in the last day.';
+  }
+
+  @override
+  String get problemCapacityTitle => 'Many requests go unanswered';
+
+  @override
+  String problemCapacity(String failed, String requests) {
+    return '$failed of $requests failed in the last day. Your connections cannot keep up: connect more, or send less.';
+  }
+
+  @override
   String get problemKeyRejected =>
       'The provider rejected the key. Update it to use this connection again.';
 
@@ -1942,10 +1960,10 @@ class AppL10nEn extends AppL10n {
   String get learnedRescuedCaption => 'by a backup, 30 days';
 
   @override
-  String get learnedFirstTry => 'Right first time';
+  String get learnedFirstTry => 'First choice answered';
 
   @override
-  String get learnedFirstTryCaption => 'first choice answered';
+  String get learnedFirstTryCaption => 'when a model was free';
 
   @override
   String learnedUpFrom(String value) {
@@ -1959,6 +1977,11 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get learnedCurveTitle => 'How often its first choice answers';
+
+  @override
+  String learnedNoCapacity(String count) {
+    return '$count requests found no model free in 30 days';
+  }
 
   @override
   String get learnedMapTitle => 'What works for what';

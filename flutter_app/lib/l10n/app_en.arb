@@ -1043,6 +1043,37 @@
       }
     }
   },
+  "problemFailingTitle": "{name} is not answering",
+  "@problemFailingTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "problemFailing": "{successes} of {attempts} attempts worked in the last day.",
+  "@problemFailing": {
+    "placeholders": {
+      "successes": {
+        "type": "String"
+      },
+      "attempts": {
+        "type": "String"
+      }
+    }
+  },
+  "problemCapacityTitle": "Many requests go unanswered",
+  "problemCapacity": "{failed} of {requests} failed in the last day. Your connections cannot keep up: connect more, or send less.",
+  "@problemCapacity": {
+    "placeholders": {
+      "failed": {
+        "type": "String"
+      },
+      "requests": {
+        "type": "String"
+      }
+    }
+  },
   "problemKeyRejected": "The provider rejected the key. Update it to use this connection again.",
   "requestFailed": "Failed: {reason}",
   "@requestFailed": {
@@ -1088,8 +1119,8 @@
   },
   "learnedRescued": "Rescued",
   "learnedRescuedCaption": "by a backup, 30 days",
-  "learnedFirstTry": "Right first time",
-  "learnedFirstTryCaption": "first choice answered",
+  "learnedFirstTry": "First choice answered",
+  "learnedFirstTryCaption": "when a model was free",
   "learnedUpFrom": "up from {value}",
   "@learnedUpFrom": {
     "placeholders": {
@@ -1107,6 +1138,14 @@
     }
   },
   "learnedCurveTitle": "How often its first choice answers",
+  "learnedNoCapacity": "{count} requests found no model free in 30 days",
+  "@learnedNoCapacity": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "learnedMapTitle": "What works for what",
   "learnedMapHelp": "One score out of 100 for each kind of work: benchmarks, your ratings, measured speed and how reliably it answered. Price is not part of it.",
   "learnedLegendWorse": "Lower",

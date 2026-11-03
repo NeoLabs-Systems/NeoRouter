@@ -28,16 +28,29 @@
 
 | Error kind | Effect |
 |---|---|
-| rate_limit (429) | penalty +2, cooldown max(Retry-After, 90 s), limit learned from message |
+| rate_limit (429) | penalty +2, cooldown max(Retry-After, 90 s), limit learned from message; with no answer in the last hour the cooldown climbs 90 s → 5 min → 30 min → 2 h → 6 h |
 | quota_exhausted | cooldown ladder 2 min → 10 min → 1 h → 24 h |
 | payment (402) | cooldown 24 h |
 | auth (401/403) | cooldown 30 min, background key re-check, account disabled after 3 confirmed rejections |
-| not_found | cooldown 6 h |
+| not_found, or 401/403 about the model or plan (not on this plan, consent, phone verification) | cooldown 6 h → 24 h → 7 d |
 | context_length | no penalty, context window learned |
 | server / timeout / network / empty / invalid tool JSON | failure + penalty, counts for circuit breaker (3 in 15 min → 10 min pause, then half-open probe) |
 | slow (> 2.5 × own EWMA) | soft failure, small penalty |
 
 Outcome counts decay with a 24 h half-life, penalties with a 5 min half-life.
+
+One connection may cost a single request two failed attempts, then the others
+get a turn. After 30 failures in a row without a success, a whole connection
+rests for 5 minutes, doubling up to an hour (`account_health.js`). While at least
+30 % of a user's recent requests go unanswered (`capacity.js`), requests wait
+5 seconds instead of 45 for a model to free up (high-priority keys still wait in
+full) and no hedges are sent. A client sending the same conversation again within
+3 minutes of an answer counts as a bad rating of that answer; only a hash of the
+conversation is kept, in memory.
+
+Benchmark scores with a confidence below 0.5 are pulled towards 0.25, so a model
+nobody measured cannot outrank measured ones, and a model below half of what the
+task needs (at least 0.12, at most 0.3) keeps 60 % of its score.
 
 Streams are committed to the client only after the first real output arrives,
 so silent or failing providers are replaced transparently.

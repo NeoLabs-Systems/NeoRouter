@@ -83,6 +83,8 @@ test('first-try answers count per day, and a lost hedge is not a miss', async ()
     VALUES (?, ?, ?, 'openai', 'auto', ?, ?)`);
   const missed = JSON.stringify([{ model: 'a/b', outcome: 'rate_limit' }, { model: 'c/d', outcome: 'success' }]);
   const raced = JSON.stringify([{ model: 'a/b', outcome: 'hedge_lost' }, { model: 'c/d', outcome: 'success' }]);
+  getDatabase().prepare(`INSERT INTO requests (id, user_id, created_at, api_format, requested_model, status, error_code, trail_json)
+    VALUES ('busy-1', ?, ?, 'openai', 'auto', 'error', 'NO_MODEL_AVAILABLE', '[]')`).run(user, now);
   add.run('old-1', user, now - 20 * DAY, 'success', missed);
   add.run('old-2', user, now - 20 * DAY, 'success', raced);
   add.run('mid-1', user, now - 10 * DAY, 'success', raced);
@@ -90,6 +92,7 @@ test('first-try answers count per day, and a lost hedge is not a miss', async ()
 
   const { body } = await api('/usage/learning');
   assert.equal(body.rescued, 1);
+  assert.equal(body.noCapacity, 1, 'no model free says nothing about the choice');
   assert.equal(body.curve.length, 3);
   assert.equal(body.firstTryThen, 0.5);
   assert.equal(body.firstTryNow, 1);

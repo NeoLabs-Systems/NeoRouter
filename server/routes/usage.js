@@ -19,6 +19,9 @@ const keyIdsOf = (req) => String(req.query.keyIds || '').split(',').map((id) => 
 
 router.get('/analytics', (req, res) => res.json(usage.analytics(req.space.ownerId, String(req.query.range || '24h'), Date.now(), { keyIds: keyIdsOf(req) })));
 
+// How connections really did over the last day, and whether requests go unanswered.
+router.get('/health', (req, res) => res.json(require('../services/usage/connection_health').health(req.space.ownerId)));
+
 // What routing learned from this space's traffic.
 router.get('/learning', (req, res) => res.json(require('../services/usage/learning_stats').learning(req.space.ownerId)));
 

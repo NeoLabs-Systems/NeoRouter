@@ -12,6 +12,7 @@ const { ProviderError, KINDS, fromNetworkError } = require('../../providers/prov
 const accounts = require('../../services/providers/account_service');
 const { RoutingPlan, explainNoModel } = require('../../services/routing/router');
 const learning = require('../../services/routing/learning');
+const capacity = require('../../services/routing/capacity');
 const loadTracker = require('../../services/routing/load_tracker');
 const plans = require('../../services/routing/plans');
 const quota = require('../../services/quota/quota_service');
@@ -102,7 +103,7 @@ async function runCapability({ req, res = null, key, capability, method, request
   let badRequests = 0;
   // Like chat: when every candidate is only blocked for a moment, wait for
   // the first one to free up instead of failing.
-  const waitUntil = Math.min(startedAt + config.routing.queueWaitMs, startedAt + config.routing.totalBudgetMs);
+  const waitUntil = Math.min(startedAt + capacity.queueWaitMs(key, config.routing.queueWaitMs), startedAt + config.routing.totalBudgetMs);
   const nextChoice = async () => {
     try {
       for (;;) {
@@ -157,6 +158,7 @@ async function runCapability({ req, res = null, key, capability, method, request
       lastError = error;
       trail.push(trailItem(entry, error.kind, { status: error.status, ms: Date.now() - attemptStarted, message: String(error.message).slice(0, 200) }));
       const policy = learning.onFailure(entry, error, { estimatedTokens: inputTokens });
+      plan.noteFailure(entry, error.kind);
       if (error.kind === KINDS.AUTH) accounts.validateAccount(entry.accountId).catch(() => {});
       badRequests = error.kind === KINDS.BAD_REQUEST ? badRequests + 1 : 0;
       if (!policy.fallback || badRequests >= MAX_CONSECUTIVE_BAD_REQUESTS) break;
