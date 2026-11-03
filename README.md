@@ -6,7 +6,7 @@
 
 <p align="center"><strong>Every model. One endpoint.</strong></p>
 
-Browser analytics are enabled by default and can be disabled; see [analytics](docs/analytics.md).
+Browser and coarse server analytics are enabled by default and can be disabled; see [analytics](docs/analytics.md).
 
 <p align="center">
   Connect any inference provider, from free tiers to paid APIs and your own servers.<br>
