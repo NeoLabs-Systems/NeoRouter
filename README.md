@@ -6,6 +6,8 @@
 
 <p align="center"><strong>Every model. One endpoint.</strong></p>
 
+Browser analytics are enabled by default and can be disabled; see [analytics](docs/analytics.md).
+
 <p align="center">
   Connect any inference provider, from free tiers to paid APIs and your own servers.<br>
   NeoRouter checks every key, imports every model and routes each request to the best one right now.

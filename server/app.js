@@ -66,6 +66,7 @@ function createApp() {
   // must revalidate them; ETags keep that cheap.
   const revalidate = (res) => res.setHeader('Cache-Control', 'private, no-cache');
   const appWebRoot = WEB_CLIENT_DIR;
+  require('./analytics').registerAnalytics(app, { appWebRoot, landingRoot: LANDING_DIR });
   app.use('/app', express.static(appWebRoot, { extensions: ['html'], fallthrough: true, setHeaders: revalidate }));
   app.use('/app', (req, res, next) => {
     // During development the Flutter app runs on its own dev server.
