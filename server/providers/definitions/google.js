@@ -26,6 +26,9 @@ module.exports = {
       '^gemini-embedding-(001|2)(-preview)?$',
       '^gemini-(2\\.5|3\\.\\d)-flash(-lite)?(-preview)?-tts(-preview)?$',
       '^gemini-\\d+(\\.\\d+)?-transcribe$',
+      // Live voice runs on the free tier too (a full call on a project without
+      // billing, 2026-10-29). A model Google refuses just moves on to the next.
+      '^gemini-.*(-live|-native-audio)',
     ],
     note: 'Free only while the Google Cloud project behind the key has no billing account; with billing enabled every request is charged. NeoRouter verifies this automatically and only treats models with a free tier as free.',
     verify: { type: 'paid_model_probe', paidOnlyModels: ['^gemini-\\d+(\\.\\d+)?-pro-preview$', '^gemini-4-argon$', '^gemini-pro-latest$'] },

@@ -262,3 +262,16 @@ test('providers with free models offer "Free", and a free connection skips model
   assert.equal(rejection(entry(false, 'free_tier', paid.reason), ctx, Date.now()), 'needs_credits');
   assert.notEqual(rejection(entry(false, 'paid', paid.reason), ctx, Date.now()), 'needs_credits', 'a paid connection still uses it');
 });
+
+test('Google live models are free only once the account is confirmed to have no billing', () => {
+  const { classify } = require('../../server/services/catalog/free_classifier');
+  const definition = registry.get('google');
+  const judge = (modelId, billingState) => classify({ definition, billingMode: 'free_tier', billingState, modelId });
+  for (const modelId of ['gemini-3.8-live', 'gemini-3.1-flash-live-preview', 'gemini-2.5-flash-native-audio-latest', 'gemini-3.5-transcribe-live', 'gemini-3.5-live-translate-preview']) {
+    assert.equal(judge(modelId, 'free').isFree, true, modelId);
+    assert.deepEqual(judge(modelId, 'paid'), { isFree: false, reason: 'billing_active' }, modelId);
+    assert.deepEqual(judge(modelId, 'unknown'), { isFree: false, reason: 'billing_unverified' }, modelId);
+  }
+  assert.equal(judge('gemini-robotics-er-2-streaming-preview', 'free').isFree, false);
+  assert.equal(judge('gemini-3.1-pro-preview', 'free').isFree, false);
+});
