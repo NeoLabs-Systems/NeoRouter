@@ -10,7 +10,6 @@ const { execFile, spawn, spawnSync } = require('node:child_process');
 const { APP_DIR, LOG_DIR, ensureRuntimeDirs } = require('../../../runtime/paths');
 const { detectContainer } = require('../../../runtime/container');
 const {
-  compareVersions,
   getReleaseChannelLabel,
   parseReleaseChannel,
   readConfiguredReleaseChannel,
@@ -68,7 +67,6 @@ function status() {
   const version = installedVersion();
   // A check for another channel says nothing about this one.
   const known = lastCheck.channel === channel ? lastCheck : { checked: false, update: null };
-  const update = known.update && compareVersions(known.update.version, version) !== 0 ? known.update : null;
   return {
     version,
     channel,
@@ -77,7 +75,7 @@ function status() {
     blockedReason: blockedReason(),
     checkedAt: known.checkedAt || null,
     checkFailed: Boolean(known.checkedAt) && known.checked === false,
-    available: update,
+    available: known.update,
     job: {
       state: job.state,
       phase: job.phase,
