@@ -88,3 +88,34 @@ test('an install without the app sources (npm) downloads the prebuilt web client
   assert.equal(built, true);
   assert.equal(fs.readFileSync(path.join(ws.webDir, 'index.html'), 'utf8'), 'prebuilt');
 });
+
+function buildWith(version) {
+  const ws = workspace();
+  const { run, calls } = commands({ root: ws.root, prebuilt: false });
+  const upgrades = [];
+  buildBundledWebClientIfPossible({
+    flutterAppDir: ws.appDir,
+    webClientDir: ws.webDir,
+    runCommand: (command, args, options) => (args[0] === '--version'
+      ? { status: 0, stdout: `Welcome\n{"frameworkVersion":"${version}"}` }
+      : run(command, args, options)),
+    commandExistsFn: (cmd) => cmd === 'flutter',
+    onFlutterUpgradeStart: (target) => upgrades.push(target),
+    fail,
+  });
+  return { commands: calls.map((call) => call.slice(1).join(' ')), upgrades };
+}
+
+test('an older Flutter is upgraded before the build', () => {
+  const { commands: ran, upgrades } = buildWith('3.35.5');
+  assert.equal(upgrades.length, 1);
+  assert.ok(ran.indexOf('upgrade') < ran.indexOf('pub get'));
+});
+
+test('a new enough Flutter is left alone', () => {
+  assert.ok(!buildWith('3.47.9').commands.includes('upgrade'));
+});
+
+test('a Flutter that reports no version is left alone', () => {
+  assert.ok(!buildWith('0.0.0-unknown').commands.includes('upgrade'));
+});
