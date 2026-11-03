@@ -29,7 +29,9 @@ function registerAnalytics(app, { appWebRoot, landingRoot }) {
     }
     if (appPage) html = html.replace('<base href="/">', '<base href="/app/">');
     html = html.replace(/<\/head>/i, '<script defer src="/_neolabs/analytics.js"></script>\n</head>');
-    res.set('Cache-Control', 'no-store');
+    // Like every web file (app.js): always revalidated, and the ETag send() adds
+    // keeps that cheap while still catching a new release or a changed setting.
+    res.set('Cache-Control', 'private, no-cache');
     return res.type('html').send(html);
   });
 }
