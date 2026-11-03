@@ -3583,23 +3583,71 @@ abstract class AppL10n {
   /// **'What works for what'**
   String get learnedMapTitle;
 
+  /// No description provided for @learnedMapHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'One score out of 100 for each kind of work: benchmarks, your ratings, measured speed and how reliably it answered. Price is not part of it.'**
+  String get learnedMapHelp;
+
   /// No description provided for @learnedLegendWorse.
   ///
   /// In en, this message translates to:
-  /// **'Often fails'**
+  /// **'Lower'**
   String get learnedLegendWorse;
 
   /// No description provided for @learnedLegendBetter.
   ///
   /// In en, this message translates to:
-  /// **'Works'**
+  /// **'Higher'**
   String get learnedLegendBetter;
 
   /// No description provided for @learnedLegendBest.
   ///
   /// In en, this message translates to:
-  /// **'Its top pick'**
+  /// **'Best so far'**
   String get learnedLegendBest;
+
+  /// No description provided for @learnedLegendEstimated.
+  ///
+  /// In en, this message translates to:
+  /// **'~ partly estimated, no benchmark'**
+  String get learnedLegendEstimated;
+
+  /// No description provided for @learnedLegendFails.
+  ///
+  /// In en, this message translates to:
+  /// **'Often fails for you'**
+  String get learnedLegendFails;
+
+  /// No description provided for @learnedCellScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score: {value} of 100'**
+  String learnedCellScore(String value);
+
+  /// No description provided for @learnedCellBenchmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmarks and ratings: {value}'**
+  String learnedCellBenchmark(String value);
+
+  /// No description provided for @learnedCellEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated quality: {value}, no benchmark yet'**
+  String learnedCellEstimate(String value);
+
+  /// No description provided for @learnedCellSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed: {value}'**
+  String learnedCellSpeed(String value);
+
+  /// No description provided for @learnedBestLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{score} of 100 · {rate} worked · {answers} answers'**
+  String learnedBestLine(String score, String rate, String answers);
 
   /// No description provided for @learnedCellLine.
   ///
@@ -3616,7 +3664,7 @@ abstract class AppL10n {
   /// No description provided for @learnedBestTitle.
   ///
   /// In en, this message translates to:
-  /// **'Who it trusts with what'**
+  /// **'Best so far for each kind of work'**
   String get learnedBestTitle;
 
   /// No description provided for @learnedFastestTitle.

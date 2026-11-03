@@ -30,7 +30,7 @@ const RELATIVE_BLEND = 0.5;
 const QUALITY_PROFILE_SHARE = 0.25;
 const QUALITY_GAP = 0.3;
 const QUALITY_GATE_FACTOR = 0.45;
-const FEATURE_FLOOR = 0.02;
+const { FEATURE_FLOOR } = scoring;
 
 function globToRegExp(pattern) {
   const escaped = String(pattern).replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');

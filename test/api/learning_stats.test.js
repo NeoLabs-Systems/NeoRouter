@@ -54,6 +54,28 @@ test('the best model for a task weighs evidence, not one lucky answer', async ()
   assert.ok(cell.rate > 0.4 && cell.rate < 0.6, `rate ${cell.rate}`);
 });
 
+test('being good at the work beats merely answering: a reliable weak model is not the best', async () => {
+  const db = getDatabase();
+  const canonical = (id) => db.prepare('SELECT canonical_id FROM models WHERE model_id = ?').get(id).canonical_id;
+  const score = db.prepare(`INSERT OR REPLACE INTO model_metadata (canonical_id, intelligence, intelligence_source, skills_json) VALUES (?, ?, ?, ?)`);
+  score.run(canonical('good-model'), 0.3, 'artificial_analysis', JSON.stringify({ coding: 0.35 }));
+  score.run(canonical('poor-model'), 0.8, 'calibrated', JSON.stringify({ coding: 0.9 }));
+  const poor = modelRef('poor-model');
+  for (let i = 0; i < 40; i++) experience.recordOutcome(poor, 'coding', i % 10 !== 0);
+
+  const { body } = await api('/usage/learning');
+  const coding = body.best.find((item) => item.task === 'coding');
+  assert.equal(coding.name, 'poor-model', 'stronger in benchmarks, though it fails more often');
+  assert.equal(coding.benchmarked, false, 'its score is an estimate, and says so');
+  const weak = body.map.cells.find((item) => item.task === 'coding' && item.name === 'good-model');
+  assert.ok(weak.rate > 0.9, `it does answer: ${weak.rate}`);
+  assert.ok(weak.quality < 0.4, `but it is weak at coding: ${weak.quality}`);
+  assert.equal(weak.benchmarked, true);
+  assert.ok(weak.score < coding.score, 'one score takes both into account');
+  const strong = body.map.cells.find((item) => item.task === 'coding' && item.name === 'poor-model');
+  assert.ok(strong.score < strong.quality, 'and a track record of failures costs it');
+});
+
 test('first-try answers count per day, and a lost hedge is not a miss', async () => {
   const now = Date.now();
   const user = getDatabase().prepare('SELECT id FROM users WHERE username = ?').get('learner').id;

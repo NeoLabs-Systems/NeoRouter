@@ -64,9 +64,8 @@ function faded(row, now = Date.now()) {
 }
 
 /**
- * What the counts add up to: the success rate, and that rate weighed by how
- * much evidence stands behind it and what people said, so one lucky answer
- * does not outrank a thousand good ones.
+ * What the counts add up to: the success rate, how much evidence stands behind
+ * it, and the quality factor from what people said.
  */
 function standing({ successes, failures, liked, disliked }) {
   const outcomes = successes + failures;
@@ -74,7 +73,7 @@ function standing({ successes, failures, liked, disliked }) {
   const share = outcomes / (outcomes + OUTCOME_CONFIDENCE);
   const votes = liked + disliked;
   const quality = 1 + (votes / (votes + FEEDBACK_CONFIDENCE)) * ((liked + 1) / (votes + 2) - 0.5) * 0.3;
-  return { rate, share, quality, standing: ((1 - share) * 0.5 + share * rate) * quality };
+  return { rate, share, quality };
 }
 
 /**

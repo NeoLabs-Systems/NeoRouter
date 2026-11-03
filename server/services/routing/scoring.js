@@ -149,4 +149,27 @@ function score(entry, { weights, quotaFactor = 1, random, sample = true, now = D
   };
 }
 
-module.exports = { score, reliability, speed, cost, blendedPrice, adaptWeights, sampleBeta, logScale };
+// Floor for each feature, so one zero cannot wipe out a geometric mean.
+const FEATURE_FLOOR = 0.02;
+
+/**
+ * What a model is worth for a kind of task apart from its price and from what
+ * is going on right now: benchmarks and ratings, measured speed, and its track
+ * record, weighed as a style weighs them. A weighted geometric mean, so a model
+ * has to be decent on every axis.
+ */
+function worth(entry, { weights, task, now = Date.now() }) {
+  const snapshot = stats.snapshot(entry.ref, now);
+  const learned = experience.adjust(entry.ref, task.primary, reliability(snapshot, { sample: false }), now);
+  const features = {
+    intelligence: Math.min(1, taskIntelligence(entry.intelligence ?? DEFAULT_INTELLIGENCE, entry.skills, task.skills) * learned.quality),
+    speed: speed(entry, snapshot),
+    reliability: learned.reliability,
+  };
+  const total = weights.intelligence + weights.speed + weights.reliability;
+  const value = Math.exp(Object.keys(features)
+    .reduce((sum, feature) => sum + (weights[feature] / total) * Math.log(Math.max(features[feature], FEATURE_FLOOR)), 0));
+  return { value, features };
+}
+
+module.exports = { score, worth, FEATURE_FLOOR, reliability, speed, cost, blendedPrice, adaptWeights, sampleBeta, logScale };

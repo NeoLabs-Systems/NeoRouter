@@ -3,12 +3,17 @@
 const { getDatabase } = require('../../db/database');
 const stats = require('../routing/stats_store');
 const experience = require('../routing/task/experience');
+const scoring = require('../routing/scoring');
+const { PRESETS } = require('../routing/profiles');
+const catalog = require('../catalog/catalog_service');
+const { KINDS } = require('../routing/task/kinds');
 
 const DAY = 86_400_000;
 const CURVE_DAYS = 30;
 const MAP_TASKS = 8;
 const MAP_MODELS = 8;
 const FACTS = 12;
+const SKILLS_OF_TASK = new Map(KINDS.map((kind) => [kind.id, kind.skills]));
 
 // One model, whichever provider or account served it.
 const nameOf = (row) => row.display_name || row.model_id;
@@ -45,32 +50,53 @@ function firstTryCurve(userId, now) {
   };
 }
 
-// What it knows per kind of task, with the same fading and the same evidence
-// weighting routing itself uses, across every copy of a model.
+// What it knows per kind of task, across every copy of a model. `score` is the
+// one number for how good a model is at that work, on the balanced style's
+// weights: benchmarks and ratings, measured speed and track record, as routing
+// values a model apart from its price. A model counts as its best copy.
 function taskKnowledge(userId, now) {
-  const rows = getDatabase().prepare(`SELECT s.*, m.canonical_id, m.model_id, m.display_name FROM model_task_stats s
-    JOIN models m ON m.id = s.model_ref JOIN provider_accounts a ON a.id = m.account_id WHERE a.user_id = ?`).all(userId);
+  const rows = getDatabase().prepare(`SELECT s.* FROM model_task_stats s JOIN models m ON m.id = s.model_ref
+    JOIN provider_accounts a ON a.id = m.account_id WHERE a.user_id = ?`).all(userId);
+  const entries = new Map(catalog.listForUser(userId, { includeUnavailable: true }).map((entry) => [entry.ref, entry]));
+  const { weights } = PRESETS.balanced;
   const cells = new Map();
   for (const row of rows) {
+    const entry = entries.get(row.model_ref);
+    if (!entry) continue;
     const faded = experience.faded(row, now);
-    const key = `${row.task}|${row.canonical_id}`;
-    if (!cells.has(key)) cells.set(key, { task: row.task, model: row.canonical_id, name: nameOf(row), successes: 0, failures: 0, liked: 0, disliked: 0 });
+    const key = `${row.task}|${entry.canonicalId}`;
+    if (!cells.has(key)) {
+      cells.set(key, {
+        task: row.task,
+        model: entry.canonicalId,
+        name: entry.displayName || entry.modelId,
+        successes: 0,
+        failures: 0,
+        liked: 0,
+        disliked: 0,
+        score: -1,
+        // Measured by benchmarks or set by hand, as opposed to worked out from price and size.
+        benchmarked: entry.intelligenceSource === 'manual' || /^artificial_analysis/.test(entry.intelligenceSource || ''),
+      });
+    }
     const cell = cells.get(key);
     for (const field of ['successes', 'failures', 'liked', 'disliked']) cell[field] += faded[field];
+    const { value, features } = scoring.worth(entry, { weights, task: { primary: row.task, skills: SKILLS_OF_TASK.get(row.task) }, now });
+    if (value > cell.score) Object.assign(cell, { score: value, quality: features.intelligence, speed: features.speed });
   }
-  return [...cells.values()].map((cell) => {
-    const seen = experience.standing(cell);
-    return {
-      task: cell.task,
-      model: cell.model,
-      name: cell.name,
-      answers: Math.round(cell.successes + cell.failures),
-      rate: seen.rate,
-      standing: seen.standing,
-      liked: Math.round(cell.liked),
-      disliked: Math.round(cell.disliked),
-    };
-  }).filter((cell) => cell.answers > 0);
+  return [...cells.values()].map((cell) => ({
+    task: cell.task,
+    model: cell.model,
+    name: cell.name,
+    answers: Math.round(cell.successes + cell.failures),
+    score: cell.score,
+    quality: cell.quality,
+    speed: cell.speed,
+    benchmarked: cell.benchmarked,
+    rate: experience.standing(cell).rate,
+    liked: Math.round(cell.liked),
+    disliked: Math.round(cell.disliked),
+  })).filter((cell) => cell.answers > 0);
 }
 
 // Speed and reliability it measured itself, across every copy of a model.
@@ -137,8 +163,8 @@ function learning(userId, now = Date.now()) {
   const taskIds = busiest(taskWeight, MAP_TASKS);
   // Each task's best model always gets a column, then the busiest ones.
   const best = taskIds.map((task) => {
-    const [top] = cells.filter((cell) => cell.task === task).sort((a, b) => b.standing - a.standing || b.answers - a.answers);
-    return { task, answers: taskWeight.get(task), model: top.model, name: top.name, rate: top.rate, modelAnswers: top.answers };
+    const [top] = cells.filter((cell) => cell.task === task).sort((a, b) => b.score - a.score || b.answers - a.answers);
+    return { task, answers: taskWeight.get(task), model: top.model, name: top.name, score: top.score, benchmarked: top.benchmarked, rate: top.rate, modelAnswers: top.answers };
   });
   const modelIds = [...new Set([...best.map((item) => item.model), ...busiest(modelWeight, MAP_MODELS)])].slice(0, MAP_MODELS);
   const names = new Map(cells.map((cell) => [cell.model, cell.name]));
@@ -156,8 +182,7 @@ function learning(userId, now = Date.now()) {
     map: {
       tasks: taskIds,
       models: modelIds.map((model) => ({ model, name: names.get(model) })),
-      cells: cells.filter((cell) => taskIds.includes(cell.task) && modelIds.includes(cell.model))
-        .map(({ standing, ...cell }) => cell),
+      cells: cells.filter((cell) => taskIds.includes(cell.task) && modelIds.includes(cell.model)),
     },
     fastest: models.filter((model) => model.latencyMs !== null).sort((a, b) => a.latencyMs - b.latencyMs).slice(0, 5),
     discoveries: facts,

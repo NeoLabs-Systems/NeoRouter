@@ -227,8 +227,9 @@ class _Curve extends StatelessWidget {
   }
 }
 
-/// Kinds of work against models: the brighter the cell, the better that model
-/// did. The model routing rates highest for each kind of work is ringed.
+/// Kinds of work against models: each cell is one score for how good the model
+/// is at that work, from benchmarks and experience. A red edge marks one that
+/// often failed for this user, and the highest score per kind of work is ringed.
 class _ExperienceMap extends StatelessWidget {
   const _ExperienceMap({required this.map, required this.best});
 
@@ -249,6 +250,8 @@ class _ExperienceMap extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        Text(t.learnedMapHelp, style: TextStyle(fontSize: 12.5, height: 1.4, color: palette.textMuted)),
+        const SizedBox(height: 6),
         LayoutBuilder(
           builder: (context, constraints) {
             // Task names get less room on a phone, where the map scrolls sideways.
@@ -333,7 +336,7 @@ class _ExperienceMap extends StatelessWidget {
                   height: 6,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(AppRadius.pill),
-                    gradient: LinearGradient(colors: <Color>[palette.error.withValues(alpha: 0.5), palette.accent.withValues(alpha: 0.1), palette.accent]),
+                    gradient: LinearGradient(colors: <Color>[palette.accent.withValues(alpha: 0.1), palette.accent]),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -352,6 +355,19 @@ class _ExperienceMap extends StatelessWidget {
                 Text(t.learnedLegendBest, style: TextStyle(fontSize: 12, color: palette.textMuted)),
               ],
             ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(3), border: Border.all(color: palette.error, width: 1.4)),
+                ),
+                const SizedBox(width: 6),
+                Text(t.learnedLegendFails, style: TextStyle(fontSize: 12, color: palette.textMuted)),
+              ],
+            ),
+            Text(t.learnedLegendEstimated, style: TextStyle(fontSize: 12, color: palette.textMuted)),
           ],
         ),
       ],
@@ -367,10 +383,10 @@ class _Cell extends StatelessWidget {
   final int delay;
   final String tooltipTitle;
 
-  Color _color(NeoRouterPalette palette, double rate) {
-    if (rate < 0.6) return palette.error.withValues(alpha: 0.18 + (0.6 - rate) * 0.8);
-    return palette.accent.withValues(alpha: 0.08 + math.pow((rate - 0.6) / 0.4, 1.6) * 0.82);
-  }
+  // Below this share of usable answers a model gets the red edge.
+  static const double _failsOften = 0.8;
+
+  Color _color(NeoRouterPalette palette, double score) => palette.accent.withValues(alpha: 0.06 + math.pow(score, 1.3) * 0.84);
 
   @override
   Widget build(BuildContext context) {
@@ -387,7 +403,10 @@ class _Cell extends StatelessWidget {
       );
     }
     final rate = _num(item['rate']);
-    final fill = _color(palette, rate);
+    String points(Object? value) => '${(_num(value) * 100).round()}';
+    final score = points(item['score']);
+    final benchmarked = item['benchmarked'] == true;
+    final fill = _color(palette, _num(item['score']));
     // Dark or light numbers by how bright the cell really is, in either theme.
     final ink = Color.alphaBlend(fill, palette.surface).computeLuminance() > 0.3 ? const Color(0xFF171F1A) : palette.text;
     final total = 500 + delay;
@@ -396,6 +415,9 @@ class _Cell extends StatelessWidget {
     return Tooltip(
       message: <String>[
         tooltipTitle,
+        t.learnedCellScore(score),
+        benchmarked ? t.learnedCellBenchmark(points(item['quality'])) : t.learnedCellEstimate(points(item['quality'])),
+        t.learnedCellSpeed(points(item['speed'])),
         t.learnedCellLine(_percent(rate), formatCount(_num(item['answers']))),
         if (liked + disliked > 0) t.learnedCellVotes('$liked', '$disliked'),
       ].join('\n'),
@@ -413,10 +435,14 @@ class _Cell extends StatelessWidget {
           decoration: BoxDecoration(
             color: fill,
             borderRadius: BorderRadius.circular(AppRadius.tag),
-            border: winner ? Border.all(color: palette.text, width: 1.4) : null,
+            border: winner
+                ? Border.all(color: palette.text, width: 1.4)
+                : rate < _failsOften
+                ? Border.all(color: palette.error, width: 1.4)
+                : null,
           ),
           child: Text(
-            '${(rate * 100).round()}',
+            benchmarked ? score : '~$score',
             style: TextStyle(fontSize: 12.5, fontWeight: winner ? FontWeight.w700 : FontWeight.w500, color: ink),
           ),
         ),
@@ -425,7 +451,7 @@ class _Cell extends StatelessWidget {
   }
 }
 
-/// One card per kind of work, naming the model it trusts most with it.
+/// One card per kind of work, naming the model that has done best at it.
 class _BestPerTask extends StatelessWidget {
   const _BestPerTask({required this.best});
 
@@ -463,13 +489,20 @@ class _BestPerTask extends StatelessWidget {
                         borderRadius: BorderRadius.circular(AppRadius.pill),
                         child: LinearProgressIndicator(
                           minHeight: 4,
-                          value: _num(item['rate']),
+                          value: _num(item['score']),
                           backgroundColor: palette.surfaceRaised,
                           valueColor: AlwaysStoppedAnimation<Color>(palette.accent),
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(t.learnedCellLine(_percent(_num(item['rate'])), formatCount(_num(item['modelAnswers']))), style: TextStyle(fontSize: 12, color: palette.textMuted)),
+                      Text(
+                        t.learnedBestLine(
+                          '${item['benchmarked'] == true ? '' : '~'}${(_num(item['score']) * 100).round()}',
+                          _percent(_num(item['rate'])),
+                          formatCount(_num(item['modelAnswers'])),
+                        ),
+                        style: TextStyle(fontSize: 12, color: palette.textMuted),
+                      ),
                     ],
                   ),
                 ),

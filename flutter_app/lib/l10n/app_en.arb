@@ -1108,9 +1108,58 @@
   },
   "learnedCurveTitle": "How often its first choice answers",
   "learnedMapTitle": "What works for what",
-  "learnedLegendWorse": "Often fails",
-  "learnedLegendBetter": "Works",
-  "learnedLegendBest": "Its top pick",
+  "learnedMapHelp": "One score out of 100 for each kind of work: benchmarks, your ratings, measured speed and how reliably it answered. Price is not part of it.",
+  "learnedLegendWorse": "Lower",
+  "learnedLegendBetter": "Higher",
+  "learnedLegendBest": "Best so far",
+  "learnedLegendEstimated": "~ partly estimated, no benchmark",
+  "learnedLegendFails": "Often fails for you",
+  "learnedCellScore": "Score: {value} of 100",
+  "@learnedCellScore": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCellBenchmark": "Benchmarks and ratings: {value}",
+  "@learnedCellBenchmark": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCellEstimate": "Estimated quality: {value}, no benchmark yet",
+  "@learnedCellEstimate": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCellSpeed": "Speed: {value}",
+  "@learnedCellSpeed": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedBestLine": "{score} of 100 · {rate} worked · {answers} answers",
+  "@learnedBestLine": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      },
+      "answers": {
+        "type": "String"
+      }
+    }
+  },
   "learnedCellLine": "{rate} worked · {answers} answers",
   "@learnedCellLine": {
     "placeholders": {
@@ -1133,7 +1182,7 @@
       }
     }
   },
-  "learnedBestTitle": "Who it trusts with what",
+  "learnedBestTitle": "Best so far for each kind of work",
   "learnedFastestTitle": "Fastest it has measured",
   "learnedWorked": "{rate} worked",
   "@learnedWorked": {

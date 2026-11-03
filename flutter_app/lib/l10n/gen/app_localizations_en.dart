@@ -1964,13 +1964,48 @@ class AppL10nEn extends AppL10n {
   String get learnedMapTitle => 'What works for what';
 
   @override
-  String get learnedLegendWorse => 'Often fails';
+  String get learnedMapHelp =>
+      'One score out of 100 for each kind of work: benchmarks, your ratings, measured speed and how reliably it answered. Price is not part of it.';
 
   @override
-  String get learnedLegendBetter => 'Works';
+  String get learnedLegendWorse => 'Lower';
 
   @override
-  String get learnedLegendBest => 'Its top pick';
+  String get learnedLegendBetter => 'Higher';
+
+  @override
+  String get learnedLegendBest => 'Best so far';
+
+  @override
+  String get learnedLegendEstimated => '~ partly estimated, no benchmark';
+
+  @override
+  String get learnedLegendFails => 'Often fails for you';
+
+  @override
+  String learnedCellScore(String value) {
+    return 'Score: $value of 100';
+  }
+
+  @override
+  String learnedCellBenchmark(String value) {
+    return 'Benchmarks and ratings: $value';
+  }
+
+  @override
+  String learnedCellEstimate(String value) {
+    return 'Estimated quality: $value, no benchmark yet';
+  }
+
+  @override
+  String learnedCellSpeed(String value) {
+    return 'Speed: $value';
+  }
+
+  @override
+  String learnedBestLine(String score, String rate, String answers) {
+    return '$score of 100 · $rate worked · $answers answers';
+  }
 
   @override
   String learnedCellLine(String rate, String answers) {
@@ -1983,7 +2018,7 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get learnedBestTitle => 'Who it trusts with what';
+  String get learnedBestTitle => 'Best so far for each kind of work';
 
   @override
   String get learnedFastestTitle => 'Fastest it has measured';
