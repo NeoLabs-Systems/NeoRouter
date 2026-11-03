@@ -2004,7 +2004,25 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get learnedMapHelp =>
-      'Eine Punktzahl von 100 je Art von Arbeit: Benchmarks, deine Bewertungen, gemessenes Tempo und wie zuverlässig es geantwortet hat. Der Preis zählt nicht mit.';
+      'Eine Punktzahl von 100 je Art von Arbeit, aus Benchmarks, deinen Bewertungen, gemessenem Tempo und Zuverlässigkeit. Mit dem Regler gewichtest du sie anders. Der Preis zählt nicht mit.';
+
+  @override
+  String get learnedTuneTitle => 'Am besten für das, was du brauchst';
+
+  @override
+  String get learnedTuneFast => 'Tempo';
+
+  @override
+  String get learnedTuneBalanced => 'Ausgewogen';
+
+  @override
+  String get learnedTuneSmart => 'Qualität';
+
+  @override
+  String get learnedTuneFree => 'Nur gratis';
+
+  @override
+  String get learnedTuneNoFree => 'Noch hat kein Gratis-Modell geantwortet.';
 
   @override
   String get learnedLegendWorse => 'Niedriger';

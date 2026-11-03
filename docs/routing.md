@@ -44,13 +44,13 @@ get a turn. After 30 failures in a row without a success, a whole connection
 rests for 5 minutes, doubling up to an hour (`account_health.js`). While at least
 30 % of a user's recent requests go unanswered (`capacity.js`), requests wait
 5 seconds instead of 45 for a model to free up (high-priority keys still wait in
-full) and no hedges are sent. A client sending the same conversation again within
+full) and at most one hedge runs per request. A client sending the same conversation again within
 3 minutes of an answer counts as a bad rating of that answer; only a hash of the
 conversation is kept, in memory.
 
 Benchmark scores with a confidence below 0.5 are pulled towards 0.25, so a model
-nobody measured cannot outrank measured ones, and a model below half of what the
-task needs (at least 0.12, at most 0.3) keeps 60 % of its score.
+nobody measured cannot outrank measured ones, and a model far below what the task
+needs (under 0.08 to 0.12) keeps 60 % of its score.
 
 Streams are committed to the client only after the first real output arrives,
 so silent or failing providers are replaced transparently.

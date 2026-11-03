@@ -33,7 +33,7 @@ test.before(async () => {
   // The dead connection looks best, so it is always tried first.
   const db = getDatabase();
   const score = db.prepare('INSERT OR REPLACE INTO model_metadata (canonical_id, intelligence, intelligence_source, intelligence_confidence) VALUES (?, ?, ?, ?)');
-  for (const row of db.prepare("SELECT canonical_id c, model_id m FROM models").all()) score.run(row.c, row.m.startsWith('fail-') ? 0.95 : 0.1, 'artificial_analysis', 0.9);
+  for (const row of db.prepare("SELECT canonical_id c, model_id m FROM models").all()) score.run(row.c, row.m.startsWith('fail-') ? 0.95 : 0.06, 'artificial_analysis', 0.9);
 });
 
 test.after(async () => {
@@ -73,7 +73,7 @@ test('a model far too weak for the task keeps only part of its score', () => {
   const key = db.prepare("SELECT * FROM router_keys WHERE name = 'limits'").get();
   const plan = new RoutingPlan({ userId: key.user_id, key, request: { messages: [{ role: 'user', content: 'Write a python function that reverses a list.' }] }, requestedModel: 'auto', needs: {}, inputTokens: 100 });
   const weak = plan.rank({ sample: false }).find((item) => item.entry.modelId === 'ok-alive');
-  assert.ok(weak.details.capability < 0.12, `capability ${weak.details.capability}`);
+  assert.ok(weak.details.capability < 0.08, `capability ${weak.details.capability}`);
   const { quota, penalty, load } = weak.details.factors;
   // At most 60 %: on a style that favours quality its own gate applies as well.
   assert.ok(weak.score / (weak.details.base * quota * penalty * load) <= 0.6 + 1e-9);

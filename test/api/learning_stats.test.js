@@ -26,13 +26,14 @@ test.before(async () => {
 
 test.after(async () => { await upstream.close(); });
 
+const bestFor = (body, task) => body.cells.filter((cell) => cell.task === task).sort((a, b) => b.score - a.score)[0];
 const modelRef = (id) => getDatabase().prepare('SELECT id FROM models WHERE model_id = ?').get(id).id;
 
 test('nothing learned yet is an empty answer, not an error', async () => {
   const response = await api('/usage/learning');
   assert.equal(response.status, 200);
   assert.equal(response.body.answers, 0);
-  assert.deepEqual(response.body.best, []);
+  assert.deepEqual(response.body.cells, []);
   assert.equal(response.body.firstTryNow, null);
 });
 
@@ -46,11 +47,11 @@ test('the best model for a task weighs evidence, not one lucky answer', async ()
   const { body } = await api('/usage/learning');
   assert.equal(body.tasksKnown, 2);
   assert.equal(body.modelsKnown, 2);
-  const coding = body.best.find((item) => item.task === 'coding');
+  const coding = bestFor(body, 'coding');
   assert.equal(coding.name, 'good-model');
-  assert.equal(coding.answers, 41);
-  assert.equal(body.map.tasks[0], 'coding');
-  const cell = body.map.cells.find((item) => item.task === 'translation');
+  assert.equal(body.tasks[0], 'coding');
+  assert.equal(body.models[0], coding.model, 'most answers first');
+  const cell = body.cells.find((item) => item.task === 'translation');
   assert.ok(cell.rate > 0.4 && cell.rate < 0.6, `rate ${cell.rate}`);
 });
 
@@ -64,16 +65,17 @@ test('being good at the work beats merely answering: a reliable weak model is no
   for (let i = 0; i < 40; i++) experience.recordOutcome(poor, 'coding', i % 10 !== 0);
 
   const { body } = await api('/usage/learning');
-  const coding = body.best.find((item) => item.task === 'coding');
+  const coding = bestFor(body, 'coding');
   assert.equal(coding.name, 'poor-model', 'stronger in benchmarks, though it fails more often');
   assert.equal(coding.benchmarked, false, 'its score is an estimate, and says so');
-  const weak = body.map.cells.find((item) => item.task === 'coding' && item.name === 'good-model');
+  const weak = body.cells.find((item) => item.task === 'coding' && item.name === 'good-model');
   assert.ok(weak.rate > 0.9, `it does answer: ${weak.rate}`);
   assert.ok(weak.quality < 0.4, `but it is weak at coding: ${weak.quality}`);
   assert.equal(weak.benchmarked, true);
   assert.ok(weak.score < coding.score, 'one score takes both into account');
-  const strong = body.map.cells.find((item) => item.task === 'coding' && item.name === 'poor-model');
-  assert.ok(strong.score < strong.quality, 'and a track record of failures costs it');
+  const strong = body.cells.find((item) => item.task === 'coding' && item.name === 'poor-model');
+  assert.ok(strong.reliability < weak.reliability, 'and a track record of failures costs it');
+  assert.equal(strong.free.quality, strong.quality, 'its free copy is the one it has');
 });
 
 test('first-try answers count per day, and a lost hedge is not a miss', async () => {

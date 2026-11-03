@@ -417,7 +417,10 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   await ensureRunning();
   while (running.size) {
     const newest = [...running].reduce((a, b) => (b.started > a.started ? b : a));
-    const canHedge = config.routing.hedging && !capacity.isShort(key.user_id) && running.size < config.routing.maxParallel
+    // Short of capacity: one attempt on the side at most. That still rescues a
+    // stuck request, but does not spend free quota others are queueing for.
+    const parallel = capacity.isShort(key.user_id) ? Math.min(2, config.routing.maxParallel) : config.routing.maxParallel;
+    const canHedge = config.routing.hedging && running.size < parallel
       && attemptsStarted < config.routing.maxAttempts && [...running].every((item) => item.entry.isFree);
     let timer = null;
     const contenders = [...running].map((item) => item.promise);

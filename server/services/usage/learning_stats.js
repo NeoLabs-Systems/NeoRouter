@@ -10,8 +10,6 @@ const { KINDS } = require('../routing/task/kinds');
 
 const DAY = 86_400_000;
 const CURVE_DAYS = 30;
-const MAP_TASKS = 8;
-const MAP_MODELS = 8;
 const FACTS = 12;
 const SKILLS_OF_TASK = new Map(KINDS.map((kind) => [kind.id, kind.skills]));
 
@@ -62,7 +60,8 @@ function firstTryCurve(userId, now) {
 // What it knows per kind of task, across every copy of a model. `score` is the
 // one number for how good a model is at that work, on the balanced style's
 // weights: benchmarks and ratings, measured speed and track record, as routing
-// values a model apart from its price. A model counts as its best copy.
+// values a model apart from its price. A model counts as its best copy. The
+// three parts go along, so the app can rank for any mix of them.
 function taskKnowledge(userId, now) {
   const rows = getDatabase().prepare(`SELECT s.* FROM model_task_stats s JOIN models m ON m.id = s.model_ref
     JOIN provider_accounts a ON a.id = m.account_id WHERE a.user_id = ?`).all(userId);
@@ -86,6 +85,8 @@ function taskKnowledge(userId, now) {
         liked: 0,
         disliked: 0,
         score: -1,
+        free: null,
+        freeScore: -1,
         // Measured by benchmarks or set by hand, as opposed to worked out from price and size.
         benchmarked: entry.intelligenceSource === 'manual' || /^artificial_analysis/.test(entry.intelligenceSource || ''),
       });
@@ -93,7 +94,9 @@ function taskKnowledge(userId, now) {
     const cell = cells.get(key);
     for (const field of ['successes', 'failures', 'liked', 'disliked']) cell[field] += faded[field];
     const { value, features } = scoring.worth(entry, { weights, task: { primary: row.task, skills: SKILLS_OF_TASK.get(row.task) }, now });
-    if (value > cell.score) Object.assign(cell, { score: value, quality: features.intelligence, speed: features.speed });
+    if (value > cell.score) Object.assign(cell, { score: value, quality: features.intelligence, speed: features.speed, reliability: features.reliability });
+    // Its best free copy, for when only free models count.
+    if (entry.isFree && value > cell.freeScore) Object.assign(cell, { freeScore: value, free: { quality: features.intelligence, speed: features.speed, reliability: features.reliability } });
   }
   return [...cells.values()].map((cell) => ({
     task: cell.task,
@@ -103,6 +106,8 @@ function taskKnowledge(userId, now) {
     score: cell.score,
     quality: cell.quality,
     speed: cell.speed,
+    reliability: cell.reliability,
+    free: cell.free,
     benchmarked: cell.benchmarked,
     rate: experience.standing(cell).rate,
     liked: Math.round(cell.liked),
@@ -170,15 +175,8 @@ function learning(userId, now = Date.now()) {
     taskWeight.set(cell.task, (taskWeight.get(cell.task) || 0) + cell.answers);
     modelWeight.set(cell.model, (modelWeight.get(cell.model) || 0) + cell.answers);
   }
-  const busiest = (weights, limit) => [...weights.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([key]) => key);
-  const taskIds = busiest(taskWeight, MAP_TASKS);
-  // Each task's best model always gets a column, then the busiest ones.
-  const best = taskIds.map((task) => {
-    const [top] = cells.filter((cell) => cell.task === task).sort((a, b) => b.score - a.score || b.answers - a.answers);
-    return { task, answers: taskWeight.get(task), model: top.model, name: top.name, score: top.score, benchmarked: top.benchmarked, rate: top.rate, modelAnswers: top.answers };
-  });
-  const modelIds = [...new Set([...best.map((item) => item.model), ...busiest(modelWeight, MAP_MODELS)])].slice(0, MAP_MODELS);
-  const names = new Map(cells.map((cell) => [cell.model, cell.name]));
+  // Busiest first; the app ranks them for whatever the person is after.
+  const busiest = (weights) => [...weights.entries()].sort((a, b) => b[1] - a[1]).map(([key]) => key);
 
   return {
     answers: [...taskWeight.values()].reduce((sum, value) => sum + value, 0),
@@ -190,12 +188,9 @@ function learning(userId, now = Date.now()) {
     firstTryThen: curve.firstTryThen,
     firstTryNow: curve.firstTryNow,
     curve: curve.curve,
-    best,
-    map: {
-      tasks: taskIds,
-      models: modelIds.map((model) => ({ model, name: names.get(model) })),
-      cells: cells.filter((cell) => taskIds.includes(cell.task) && modelIds.includes(cell.model)),
-    },
+    tasks: busiest(taskWeight),
+    models: busiest(modelWeight),
+    cells,
     fastest: models.filter((model) => model.latencyMs !== null).sort((a, b) => a.latencyMs - b.latencyMs).slice(0, 5),
     discoveries: facts,
   };

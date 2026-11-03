@@ -32,10 +32,11 @@ const QUALITY_PROFILE_SHARE = 0.25;
 const QUALITY_GAP = 0.3;
 const QUALITY_GATE_FACTOR = 0.45;
 const { FEATURE_FLOOR } = scoring;
-// Speed and price can outweigh skill, but only so far: a model below half of
-// what the task needs (within these limits) counts for less.
+// Speed and price can outweigh skill, but only so far: a model that is truly
+// out of its depth counts for less. Kept low on purpose, so small fast models
+// that are good enough stay in the running on a style that wants speed.
 const WEAK_FOR_TASK_FACTOR = 0.6;
-const weakBelow = (need) => Math.max(0.12, Math.min(0.3, (need ?? 0) * 0.5));
+const weakBelow = (need) => Math.max(0.08, Math.min(0.12, (need ?? 0) * 0.3));
 
 function globToRegExp(pattern) {
   const escaped = String(pattern).replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');

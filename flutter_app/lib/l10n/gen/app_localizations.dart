@@ -3616,8 +3616,44 @@ abstract class AppL10n {
   /// No description provided for @learnedMapHelp.
   ///
   /// In en, this message translates to:
-  /// **'One score out of 100 for each kind of work: benchmarks, your ratings, measured speed and how reliably it answered. Price is not part of it.'**
+  /// **'One score out of 100 for each kind of work, from benchmarks, your ratings, measured speed and how reliably it answered. Move the slider to weigh them differently. Price is not part of it.'**
   String get learnedMapHelp;
+
+  /// No description provided for @learnedTuneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Best for what you need'**
+  String get learnedTuneTitle;
+
+  /// No description provided for @learnedTuneFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get learnedTuneFast;
+
+  /// No description provided for @learnedTuneBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get learnedTuneBalanced;
+
+  /// No description provided for @learnedTuneSmart.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality'**
+  String get learnedTuneSmart;
+
+  /// No description provided for @learnedTuneFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free only'**
+  String get learnedTuneFree;
+
+  /// No description provided for @learnedTuneNoFree.
+  ///
+  /// In en, this message translates to:
+  /// **'No free model has answered yet.'**
+  String get learnedTuneNoFree;
 
   /// No description provided for @learnedLegendWorse.
   ///

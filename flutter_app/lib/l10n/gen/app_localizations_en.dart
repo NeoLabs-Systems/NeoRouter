@@ -1988,7 +1988,25 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get learnedMapHelp =>
-      'One score out of 100 for each kind of work: benchmarks, your ratings, measured speed and how reliably it answered. Price is not part of it.';
+      'One score out of 100 for each kind of work, from benchmarks, your ratings, measured speed and how reliably it answered. Move the slider to weigh them differently. Price is not part of it.';
+
+  @override
+  String get learnedTuneTitle => 'Best for what you need';
+
+  @override
+  String get learnedTuneFast => 'Speed';
+
+  @override
+  String get learnedTuneBalanced => 'Balanced';
+
+  @override
+  String get learnedTuneSmart => 'Quality';
+
+  @override
+  String get learnedTuneFree => 'Free only';
+
+  @override
+  String get learnedTuneNoFree => 'No free model has answered yet.';
 
   @override
   String get learnedLegendWorse => 'Lower';

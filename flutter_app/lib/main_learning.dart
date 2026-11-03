@@ -9,6 +9,7 @@ import 'main_routing.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
+import 'src/learned_ranking.dart';
 
 double _num(Object? value) => value is num ? value.toDouble() : 0;
 double? _maybe(Object? value) => value is num ? value.toDouble() : null;
@@ -70,8 +71,7 @@ class _LearnedViewState extends State<LearnedView> {
     }
     final then = _maybe(data['firstTryThen']);
     final now = _maybe(data['firstTryNow']);
-    final best = ((data['best'] as List?) ?? const <Object>[]).cast<Map>();
-    final map = Map<String, dynamic>.from((data['map'] as Map?) ?? const <String, dynamic>{});
+    final cells = ((data['cells'] as List?) ?? const <Object>[]).cast<Map>();
     final fastest = ((data['fastest'] as List?) ?? const <Object>[]).cast<Map>();
     final facts = ((data['discoveries'] as List?) ?? const <Object>[]).cast<Map>();
     return Column(
@@ -99,15 +99,13 @@ class _LearnedViewState extends State<LearnedView> {
             child: _Curve(curve: curve),
           ),
         ],
-        if (best.isNotEmpty) ...<Widget>[
+        if (cells.isNotEmpty) ...<Widget>[
           const SizedBox(height: 28),
-          SectionCard(
-            title: t.learnedMapTitle,
-            child: _ExperienceMap(map: map, best: best),
+          _BestExplorer(
+            cells: cells,
+            tasks: ((data['tasks'] as List?) ?? const <Object>[]).cast<String>(),
+            models: ((data['models'] as List?) ?? const <Object>[]).cast<String>(),
           ),
-          const SizedBox(height: 28),
-          SettingsHeading(title: t.learnedBestTitle),
-          _BestPerTask(best: best),
         ],
         if (fastest.isNotEmpty || facts.isNotEmpty) ...<Widget>[
           const SizedBox(height: 28),
@@ -226,6 +224,84 @@ class _Curve extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The map and the "best" cards, ranked for what the person is after: a slider
+/// from speed to quality, with the routing styles as its stops, and free only.
+/// Everything is worked out here, so they follow the slider without a reload.
+class _BestExplorer extends StatefulWidget {
+  const _BestExplorer({required this.cells, required this.tasks, required this.models});
+
+  final List<Map> cells;
+  final List<String> tasks;
+  final List<String> models;
+
+  @override
+  State<_BestExplorer> createState() => _BestExplorerState();
+}
+
+class _BestExplorerState extends State<_BestExplorer> {
+  double _position = LearnedStyle.balanced;
+  bool _freeOnly = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final view = rankLearned(cells: widget.cells, tasks: widget.tasks, models: widget.models, position: _position, freeOnly: _freeOnly);
+    Widget stop(String label, double position, Alignment alignment) {
+      final selected = (_position - position).abs() < 0.13;
+      return Expanded(
+        child: Align(
+          alignment: alignment,
+          child: TextButton(
+            onPressed: () => setState(() => _position = position),
+            style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8), minimumSize: const Size(0, 32), tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+            child: Text(label, style: TextStyle(fontSize: 13, fontWeight: selected ? FontWeight.w600 : FontWeight.w400, color: selected ? palette.text : palette.textMuted)),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SectionCard(
+          title: t.learnedTuneTitle,
+          trailing: FilterChip(
+            label: Text(t.learnedTuneFree),
+            selected: _freeOnly,
+            onSelected: (value) => setState(() => _freeOnly = value),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  stop(t.learnedTuneFast, LearnedStyle.fast, Alignment.centerLeft),
+                  stop(t.learnedTuneBalanced, LearnedStyle.balanced, Alignment.center),
+                  stop(t.learnedTuneSmart, LearnedStyle.smart, Alignment.centerRight),
+                ],
+              ),
+              Slider(value: _position, divisions: 20, activeColor: palette.accent, onChanged: (value) => setState(() => _position = value)),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        if (view.best.isEmpty)
+          AppCard(child: Text(t.learnedTuneNoFree, style: TextStyle(color: palette.textMuted)))
+        else ...<Widget>[
+          SectionCard(
+            title: t.learnedMapTitle,
+            child: _ExperienceMap(map: <String, dynamic>{'tasks': view.tasks, 'models': view.models, 'cells': view.cells}, best: view.best),
+          ),
+          const SizedBox(height: 28),
+          SettingsHeading(title: t.learnedBestTitle),
+          _BestPerTask(best: view.best),
+        ],
+      ],
     );
   }
 }
@@ -432,7 +508,8 @@ class _Cell extends StatelessWidget {
           opacity: progress,
           child: Transform.scale(scale: 0.86 + 0.14 * progress, child: child),
         ),
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
           margin: const EdgeInsets.all(2),
           alignment: Alignment.center,
           decoration: BoxDecoration(
