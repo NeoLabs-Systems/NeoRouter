@@ -60,6 +60,11 @@ function createApp() {
   app.use('/api/v1/playground/media', express.json({ limit: '36mb' }));
   app.use(express.json({ limit: '2mb' }));
   app.use('/api/v1', require('./routes'));
+  app.get('/api/public/status', (_req, res) => {
+    const status = require('./public_status');
+    res.set('Cache-Control', 'no-store');
+    res.json({ ...status.buildPublicStatus(), history: status.history.history() });
+  });
 
   // Flutter web and landing files keep the same names across releases (the
   // icon font is rebuilt with only the icons in use), so browsers and CDNs
