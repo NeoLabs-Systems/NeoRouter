@@ -955,6 +955,8 @@
   "keyRateLimit": "Rate-Limit",
   "keyRequestsPerMinute": "Anfragen pro Minute",
   "keyTokenLimit": "Token-Limit",
+  "keyMaxPriceTitle": "Maximalpreis pro Million Tokens",
+  "keyMaxPricePerMillion": "pro Million Tokens",
   "keyTokensPer": "Tokens pro",
   "keyTokenHint": "Zählt die Tokens auf Gratis- und Abo-Modellen. Ist es erreicht, wartet der Key bis zum Zurücksetzen.",
   "keyTokenFallsBack": "Zählt die Tokens auf Gratis- und Abo-Modellen. Ist es erreicht, übernehmen Bezahl-Modelle im Rahmen des Budgets.",
