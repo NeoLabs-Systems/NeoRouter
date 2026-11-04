@@ -1198,7 +1198,9 @@ class _AccountLimits extends StatelessWidget {
       if (fraction >= _lowFraction) low.add((model: model, window: windows.first, fraction: fraction));
     }
     low.sort((a, b) => b.fraction.compareTo(a.fraction));
+    final limits = (group['limits'] as List? ?? const <dynamic>[]).cast<Map>();
     final rows = <Widget>[
+      for (final limit in limits) _LimitRow(limit: limit),
       // Plan windows get a usage bar; other probes (balances) stay plain values.
       for (final probe in probes.where((item) => '${item['metric']}'.startsWith('plan_') && item['limit'] != null))
         _WindowRow(title: metricLabel(t, '${probe['metric']}'), window: probe),
@@ -1225,6 +1227,7 @@ class _AccountLimits extends StatelessWidget {
         ),
       for (final item in low.take(6))
         _WindowRow(title: '${shortModelName('${item.model['id']}')} · ${metricLabel(t, '${item.window['metric']}')}', window: item.window),
+      _ModelLimits(models: models),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1237,6 +1240,108 @@ class _AccountLimits extends StatelessWidget {
         else
           SettingsCardList(children: rows),
       ],
+    );
+  }
+}
+
+String _limitSource(AppL10n t, String source) => switch (source) {
+  'manual' => t.limitSourceManual,
+  'header' => t.limitSourceHeader,
+  'learned' => t.limitSourceLearned,
+  _ => t.limitSourceCurated,
+};
+
+String _limitRange(Map perModel) {
+  final low = (perModel['min'] as num).toInt();
+  final high = (perModel['max'] as num).toInt();
+  return low == high ? formatCount(low) : '${formatCount(low)}–${formatCount(high)}';
+}
+
+/// One kind of limit of an account: what all its models share and what each
+/// model gets, with where the number comes from.
+class _LimitRow extends StatelessWidget {
+  const _LimitRow({required this.limit});
+
+  final Map limit;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final shared = limit['shared'] as Map?;
+    final perModel = limit['perModel'] as Map?;
+    final sources = <String>{
+      if (shared != null) '${shared['source']}',
+      if (perModel != null) ...(perModel['sources'] as List).map((item) => '$item'),
+    };
+    final values = <String>[
+      if (shared != null) t.limitSharedValue(formatCount((shared['limit'] as num).toInt())),
+      if (perModel != null) t.limitPerModelValue(_limitRange(perModel)),
+    ];
+    return SettingsRow(
+      label: metricLabel(t, '${limit['metric']}'),
+      description: sources.map((source) => _limitSource(t, source)).join(' · '),
+      control: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
+          for (final value in values) Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: palette.text)),
+        ],
+      ),
+    );
+  }
+}
+
+String _modelLimitSummary(AppL10n t, Map model) {
+  final byMetric = <String, num>{};
+  for (final window in (model['windows'] as List).cast<Map>()) {
+    final value = window['limit'];
+    if (value is num && value > 0 && window['source'] != 'error') byMetric['${window['metric']}'] = value;
+  }
+  String part(String metric, String Function(String) label) => byMetric.containsKey(metric) ? label(formatCount(byMetric[metric]!.toInt())) : '';
+  return <String>[
+    part('rpm', t.limitShortRpm),
+    part('rpd', t.limitShortRpd),
+    part('tpm', t.limitShortTpm),
+    part('tpd', t.limitShortTpd),
+  ].where((item) => item.isNotEmpty).join(' · ');
+}
+
+/// Every model's own limits, folded away until someone wants them.
+class _ModelLimits extends StatelessWidget {
+  const _ModelLimits({required this.models});
+
+  final List<Map> models;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final rows = <({String name, String summary})>[
+      for (final model in models)
+        if (_modelLimitSummary(t, model).isNotEmpty) (name: shortModelName('${model['id']}'), summary: _modelLimitSummary(t, model)),
+    ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    if (rows.isEmpty) return const SizedBox.shrink();
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 20),
+        childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+        title: Text(t.limitsPerModelTitle('${rows.length}'), style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: palette.text)),
+        children: <Widget>[
+          for (final row in rows)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Expanded(flex: 5, child: Text(row.name, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, color: palette.text))),
+                  const SizedBox(width: 12),
+                  Expanded(flex: 6, child: Text(row.summary, textAlign: TextAlign.end, style: TextStyle(fontSize: 12.5, color: palette.textSoft))),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

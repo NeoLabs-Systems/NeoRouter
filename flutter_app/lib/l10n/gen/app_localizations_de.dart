@@ -2359,7 +2359,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get limitsDescription =>
-      'Was vom Kontingent jedes Anbieters heute noch übrig ist. Minutenlimits setzen sich von selbst zurück und NeoRouter weicht ihnen aus, daher siehst du nur Tageskontingente und Modelle, die knapp werden.';
+      'Die Limits jedes Anbieters und was vom heutigen Kontingent übrig ist. Sie stammen aus der Dokumentation und den Antworten des Anbieters; NeoRouter weicht ihnen von selbst aus.';
 
   @override
   String limitResets(String time) {
@@ -2377,6 +2377,56 @@ class AppL10nDe extends AppL10n {
   @override
   String limitConcurrentDocumented(String count) {
     return 'bis $count';
+  }
+
+  @override
+  String get limitsSectionTitle => 'Limits';
+
+  @override
+  String limitSharedValue(String value) {
+    return '$value für alle Modelle';
+  }
+
+  @override
+  String limitPerModelValue(String value) {
+    return '$value pro Modell';
+  }
+
+  @override
+  String get limitSourceCurated => 'dokumentiert';
+
+  @override
+  String get limitSourceHeader => 'vom Anbieter gemeldet';
+
+  @override
+  String get limitSourceLearned => 'aus den Antworten gelernt';
+
+  @override
+  String get limitSourceManual => 'von dir gesetzt';
+
+  @override
+  String limitsPerModelTitle(String count) {
+    return 'Limits pro Modell ($count)';
+  }
+
+  @override
+  String limitShortRpm(String value) {
+    return '$value/Min.';
+  }
+
+  @override
+  String limitShortRpd(String value) {
+    return '$value/Tag';
+  }
+
+  @override
+  String limitShortTpm(String value) {
+    return '$value Tokens/Min.';
+  }
+
+  @override
+  String limitShortTpd(String value) {
+    return '$value Tokens/Tag';
   }
 
   @override

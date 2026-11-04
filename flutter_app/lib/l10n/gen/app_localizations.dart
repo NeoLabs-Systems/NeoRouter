@@ -4210,7 +4210,7 @@ abstract class AppL10n {
   /// No description provided for @limitsDescription.
   ///
   /// In en, this message translates to:
-  /// **'What is left of each provider\'s allowance today. Per-minute limits reset on their own and NeoRouter routes around them, so only daily allowances and models running low are shown.'**
+  /// **'Each provider\'s limits and what is left of today\'s allowance. Limits come from the provider\'s documentation and answers; NeoRouter routes around them on its own.'**
   String get limitsDescription;
 
   /// No description provided for @limitResets.
@@ -4236,6 +4236,78 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'up to {count}'**
   String limitConcurrentDocumented(String count);
+
+  /// No description provided for @limitsSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Limits'**
+  String get limitsSectionTitle;
+
+  /// No description provided for @limitSharedValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} for all models'**
+  String limitSharedValue(String value);
+
+  /// No description provided for @limitPerModelValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} per model'**
+  String limitPerModelValue(String value);
+
+  /// No description provided for @limitSourceCurated.
+  ///
+  /// In en, this message translates to:
+  /// **'documented'**
+  String get limitSourceCurated;
+
+  /// No description provided for @limitSourceHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'reported by the provider'**
+  String get limitSourceHeader;
+
+  /// No description provided for @limitSourceLearned.
+  ///
+  /// In en, this message translates to:
+  /// **'learned from its answers'**
+  String get limitSourceLearned;
+
+  /// No description provided for @limitSourceManual.
+  ///
+  /// In en, this message translates to:
+  /// **'set by you'**
+  String get limitSourceManual;
+
+  /// No description provided for @limitsPerModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Limits per model ({count})'**
+  String limitsPerModelTitle(String count);
+
+  /// No description provided for @limitShortRpm.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}/min'**
+  String limitShortRpm(String value);
+
+  /// No description provided for @limitShortRpd.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}/day'**
+  String limitShortRpd(String value);
+
+  /// No description provided for @limitShortTpm.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} tokens/min'**
+  String limitShortTpm(String value);
+
+  /// No description provided for @limitShortTpd.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} tokens/day'**
+  String limitShortTpd(String value);
 
   /// No description provided for @addAnotherAccount.
   ///

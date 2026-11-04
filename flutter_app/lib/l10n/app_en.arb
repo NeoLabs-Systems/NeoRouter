@@ -1443,7 +1443,7 @@
       }
     }
   },
-  "limitsDescription": "What is left of each provider's allowance today. Per-minute limits reset on their own and NeoRouter routes around them, so only daily allowances and models running low are shown.",
+  "limitsDescription": "Each provider's limits and what is left of today's allowance. Limits come from the provider's documentation and answers; NeoRouter routes around them on its own.",
   "limitResets": "resets {time}",
   "@limitResets": {
     "placeholders": {
@@ -1465,6 +1465,67 @@
   "@limitConcurrentDocumented": {
     "placeholders": {
       "count": {
+        "type": "String"
+      }
+    }
+  },
+  "limitsSectionTitle": "Limits",
+  "limitSharedValue": "{value} for all models",
+  "@limitSharedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "limitPerModelValue": "{value} per model",
+  "@limitPerModelValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "limitSourceCurated": "documented",
+  "limitSourceHeader": "reported by the provider",
+  "limitSourceLearned": "learned from its answers",
+  "limitSourceManual": "set by you",
+  "limitsPerModelTitle": "Limits per model ({count})",
+  "@limitsPerModelTitle": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "limitShortRpm": "{value}/min",
+  "@limitShortRpm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "limitShortRpd": "{value}/day",
+  "@limitShortRpd": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "limitShortTpm": "{value} tokens/min",
+  "@limitShortTpm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "limitShortTpd": "{value} tokens/day",
+  "@limitShortTpd": {
+    "placeholders": {
+      "value": {
         "type": "String"
       }
     }

@@ -9,6 +9,7 @@ const accounts = require('../services/providers/account_service');
 const quota = require('../services/quota/quota_service');
 const { requirePermission } = require('../middleware/space');
 
+const { summarizeLimits } = require('../services/quota/limit_summary');
 const router = express.Router();
 router.use(requirePermission('activity.view'));
 
@@ -56,7 +57,7 @@ router.get('/quotas', (req, res) => {
     for (const item of pool) if (!group.pool.some((existing) => existing.metric === item.metric)) group.pool.push(item);
     if (own.length || entry.isFree) group.models.push({ ref: entry.ref, id: entry.id, name: entry.name, isFree: entry.isFree, windows: own });
   }
-  res.json({ accounts: [...byAccount.values()] });
+  res.json({ accounts: [...byAccount.values()].map((group) => ({ ...group, limits: summarizeLimits(group) })) });
 });
 
 module.exports = router;
