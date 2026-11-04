@@ -12,6 +12,7 @@ const { createLogger } = require('../../utils/logger');
 const modelsDev = require('./metadata/models_dev');
 const openrouterPublic = require('./metadata/openrouter_public');
 const artificialAnalysis = require('./metadata/artificial_analysis');
+const openrouterBenchmarks = require('./metadata/openrouter_benchmarks');
 const taskSkills = require('../routing/task/skills');
 const artificialAnalysisMedia = require('./metadata/artificial_analysis_media');
 const mteb = require('./metadata/mteb');
@@ -45,7 +46,7 @@ function loadState() {
   try {
     state = JSON.parse(fs.readFileSync(cacheFile(), 'utf8'));
   } catch {
-    state = { modelsDev: {}, openrouter: [], artificialAnalysis: [], artificialAnalysisMedia: {}, mteb: {}, fetchedAt: {} };
+    state = { modelsDev: {}, openrouter: [], openrouterBenchmarks: null, artificialAnalysis: [], artificialAnalysisMedia: {}, mteb: {}, fetchedAt: {} };
   }
   buildIndexes();
   return state;
@@ -192,6 +193,7 @@ function buildIndexes() {
     for (const key of [canonicalId(record.slug), canonicalId(record.name)]) if (key && !aa.has(key)) aa.set(key, record);
   }
   indexes = { byCanonical, aa, fits, aaScale: aaMax > 0 ? aaMax : AA_INDEX_SCALE, calibration: null, benchmark: buildBenchmarkKeys(state.artificialAnalysis || []), media: artificialAnalysisMedia.buildIndexes(state.artificialAnalysisMedia) };
+  indexes.openrouter = buildOpenRouterIndex(state.openrouterBenchmarks?.models || []);
   indexes.calibration = fitCalibration();
 }
 
@@ -253,11 +255,112 @@ function sameSize(modelText, record) {
 // When they disagree widely (a newer model below its predecessor while beating
 // it on every skill), neither is taken at its word.
 const INDEX_SKILL_GAP = 0.15;
+const AA_SHARE = 0.6;
 function reconcileWithSkills(index, skills) {
   const values = Object.values(skills || {});
   if (!values.length) return index;
   const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
   return Math.abs(mean - index) > INDEX_SKILL_GAP ? (index + mean) / 2 : index;
+}
+
+// OpenRouter's benchmark results, findable like the others, and for each
+// benchmark how its accuracy translates to the intelligence scale. The curve
+// comes from models both sources measured; without any (no Artificial Analysis
+// key) the accuracy is taken relative to the best in the data.
+function buildOpenRouterIndex(models) {
+  const exact = new Map();
+  const loose = new Map();
+  for (const model of models) {
+    const { withParams, withoutParams } = benchmarkKeys(model.slug.split('/').pop());
+    exact.set(canonicalId(model.slug), model);
+    if (withParams && !exact.has(withParams)) exact.set(withParams, model);
+    // Two sizes of one model make the size-less name ambiguous.
+    if (withoutParams) loose.set(withoutParams, loose.has(withoutParams) ? null : model);
+  }
+  const curves = {};
+  const best = {};
+  const agreement = {};
+  for (const name of ['gpqa', 'tau']) {
+    const pairs = [];
+    let top = 0;
+    for (const model of models) {
+      const value = model.benchmarks[name];
+      if (!Number.isFinite(value)) continue;
+      top = Math.max(top, value);
+      const record = lookupBenchmark(canonicalId(model.slug), [model.slug]);
+      if (record?.intelligenceIndex && !record.indexDerived) pairs.push([value, record.intelligenceIndex]);
+    }
+    best[name] = top;
+    const rho = pairs.length >= MIN_FIT_PAIRS ? spearman(pairs) : 0;
+    if (rho > 0) {
+      curves[name] = isotonic(pairs);
+      // How far this benchmark may speak for a model overall: by how well it
+      // ranks models the way the fuller index does.
+      agreement[name] = rho * rho;
+    }
+  }
+  return { exact, loose, curves, best, agreement };
+}
+
+function lookupOpenRouter(canonical, modelIds = []) {
+  const index = indexes.openrouter;
+  if (!index) return null;
+  if (index.exact.has(canonical)) return index.exact.get(canonical);
+  for (const id of modelIds) {
+    const text = String(id).split('/').pop();
+    const { withParams, withoutParams } = benchmarkKeys(text);
+    if (index.exact.has(withParams)) return index.exact.get(withParams);
+    const match = index.loose.get(withoutParams);
+    if (match && sameSize(text, match)) return match;
+  }
+  return null;
+}
+
+// A model's OpenRouter results on the intelligence scale, as skills.
+function openRouterSkills(model) {
+  const index = indexes.openrouter;
+  if (!model || !index) return null;
+  const scaled = (name) => {
+    const value = model.benchmarks[name];
+    if (!Number.isFinite(value)) return null;
+    // Compared with the fuller index and found to rank models very differently:
+    // its scale cannot be trusted, so it gets no say. Checked again on each snapshot.
+    if (index.curves[name] && index.agreement[name] < MIN_RANK_AGREEMENT) return null;
+    if (index.curves[name]) return Math.min(1, mapScore(index.curves[name], value) / (indexes.aaScale || AA_INDEX_SCALE));
+    return index.best[name] > 0 ? value / index.best[name] : null;
+  };
+  const skills = {};
+  const reasoning = scaled('gpqa');
+  const agentic = scaled('tau');
+  if (reasoning !== null) skills.reasoning = reasoning;
+  if (agentic !== null) skills.agentic = agentic;
+  return Object.keys(skills).length ? skills : null;
+}
+
+// One overall number from those skills, each as far as its benchmark agrees
+// with the fuller index. Without that index to compare with, they count equally.
+function openRouterOverall(skills) {
+  const agreement = indexes.openrouter?.agreement || {};
+  const compared = Object.keys(agreement).length > 0;
+  let total = 0;
+  let weight = 0;
+  for (const [skill, name] of [['reasoning', 'gpqa'], ['agentic', 'tau']]) {
+    if (!Number.isFinite(skills[skill])) continue;
+    const share = compared ? (agreement[name] || 0) : 1;
+    total += share * skills[skill];
+    weight += share;
+  }
+  return weight > 0 ? total / weight : null;
+}
+
+// Where both sources measured a skill they count equally.
+function mergeSkills(first, second) {
+  if (!first || !second) return first || second || null;
+  const merged = { ...first };
+  for (const [skill, value] of Object.entries(second)) {
+    merged[skill] = Number((Number.isFinite(first[skill]) ? (first[skill] + value) / 2 : value).toFixed(4));
+  }
+  return merged;
 }
 
 // The benchmark record for a model, by canonical id or by any of its ids.
@@ -363,6 +466,7 @@ async function refreshSources() {
   const tasks = [
     ['modelsDev', () => modelsDev.fetchSource()],
     ['openrouter', () => openrouterPublic.fetchSource()],
+    ['openrouterBenchmarks', () => openrouterBenchmarks.fetchSource({ previous: state.openrouterBenchmarks })],
   ];
   const aaKey = getArtificialAnalysisKey();
   if (aaKey) {
@@ -424,6 +528,7 @@ function computeCanonical(canonical, sampleModelIds = [], capability = 'chat') {
   // Media models are scored by their arena ELO, never by the chat index.
   const arena = capability !== 'chat' ? artificialAnalysisMedia.lookup(indexes.media, capability, sampleModelIds) : null;
   const aa = capability === 'chat' ? lookupBenchmark(canonical, sampleModelIds) : null;
+  const orSkills = capability === 'chat' ? openRouterSkills(lookupOpenRouter(canonical, sampleModelIds)) : null;
   const paidPrices = records.map((record) => record.priceOut).filter((price) => Number.isFinite(price) && price > 0);
   const marketPrice = median(paidPrices);
   const params = parameterCount(sampleModelIds[0] || '') ?? sampleModelIds.map(parameterCount).find(Boolean) ?? null;
@@ -457,9 +562,16 @@ function computeCanonical(canonical, sampleModelIds = [], capability = 'chat') {
     source = guess.weightSum ? 'heuristic' : 'default';
     confidence = Math.min(0.5, guess.weightSum * 0.5);
   } else if (aa?.intelligenceIndex) {
-    intelligence = reconcileWithSkills(Math.min(1, aa.intelligenceIndex / (indexes.aaScale || AA_INDEX_SCALE)), skillsOf(aa));
+    const measured = reconcileWithSkills(Math.min(1, aa.intelligenceIndex / (indexes.aaScale || AA_INDEX_SCALE)), skillsOf(aa));
+    // Its overall index covers far more ground than OpenRouter's two benchmarks.
+    const overall = orSkills ? openRouterOverall(orSkills) : null;
+    intelligence = overall === null ? measured : AA_SHARE * measured + (1 - AA_SHARE) * overall;
     source = aa.indexDerived ? 'artificial_analysis_benchmarks' : 'artificial_analysis';
     confidence = aa.indexDerived ? 0.8 : 0.9;
+  } else if (orSkills) {
+    intelligence = openRouterOverall(orSkills) ?? Object.values(orSkills)[0];
+    source = 'openrouter_benchmarks';
+    confidence = 0.8;
   } else {
     const guess = heuristicIntelligence(records, sampleModelIds, aa);
     const calibration = indexes.calibration;
@@ -484,7 +596,7 @@ function computeCanonical(canonical, sampleModelIds = [], capability = 'chat') {
     supports_reasoning: toFlag(reasoning),
     release_date: releaseDate || arena?.releaseDate || null,
     params_b: params,
-    skills_json: aa && skillsOf(aa) ? JSON.stringify(skillsOf(aa)) : null,
+    skills_json: mergeSkills(aa ? skillsOf(aa) : null, orSkills) ? JSON.stringify(mergeSkills(aa ? skillsOf(aa) : null, orSkills)) : null,
     sources_json: JSON.stringify([...new Set([...records.map((record) => record.source), ...(aa ? ['artificial_analysis'] : []), ...(arena ? ['artificial_analysis_arena'] : [])])]),
   };
 }
@@ -546,6 +658,7 @@ function resetForTests(seed) {
 module.exports = {
   sameSize,
   reconcileWithSkills,
+  openRouterAgreement: () => indexes.openrouter?.agreement || {},
   refreshSources,
   recomputeCanonical,
   recomputeAll,

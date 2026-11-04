@@ -3517,6 +3517,18 @@ abstract class AppL10n {
   /// **'Requests'**
   String get tabRequests;
 
+  /// No description provided for @keyMaxPriceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Max price per million tokens'**
+  String get keyMaxPriceTitle;
+
+  /// No description provided for @keyMaxPricePerMillion.
+  ///
+  /// In en, this message translates to:
+  /// **'per million tokens'**
+  String get keyMaxPricePerMillion;
+
   /// No description provided for @tabLearned.
   ///
   /// In en, this message translates to:
@@ -3616,8 +3628,26 @@ abstract class AppL10n {
   /// No description provided for @learnedMapHelp.
   ///
   /// In en, this message translates to:
-  /// **'One score out of 100 for each kind of work, from benchmarks, your ratings, measured speed and how reliably it answered. Move the slider to weigh them differently. Price is not part of it.'**
+  /// **'Every model you can use right now, scored out of 100 for each kind of work: benchmarks first, then your ratings, measured speed and how reliably it answered. Move the slider to weigh them differently. Price is not part of it.'**
   String get learnedMapHelp;
+
+  /// No description provided for @learnedSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmarks: Artificial Analysis; OpenRouter (openrouter.ai), CC BY 4.0.'**
+  String get learnedSources;
+
+  /// No description provided for @learnedNotTried.
+  ///
+  /// In en, this message translates to:
+  /// **'Not tried yet: benchmarks only'**
+  String get learnedNotTried;
+
+  /// No description provided for @learnedBestLineNew.
+  ///
+  /// In en, this message translates to:
+  /// **'{score} of 100 · not tried yet, benchmarks only'**
+  String learnedBestLineNew(String score);
 
   /// No description provided for @learnedTuneTitle.
   ///
@@ -3670,7 +3700,7 @@ abstract class AppL10n {
   /// No description provided for @learnedLegendBest.
   ///
   /// In en, this message translates to:
-  /// **'Best so far'**
+  /// **'Best'**
   String get learnedLegendBest;
 
   /// No description provided for @learnedLegendEstimated.
@@ -3730,7 +3760,7 @@ abstract class AppL10n {
   /// No description provided for @learnedBestTitle.
   ///
   /// In en, this message translates to:
-  /// **'Best so far for each kind of work'**
+  /// **'Best for each kind of work'**
   String get learnedBestTitle;
 
   /// No description provided for @learnedFastestTitle.

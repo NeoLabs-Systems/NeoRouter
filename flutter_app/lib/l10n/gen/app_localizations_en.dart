@@ -1930,6 +1930,12 @@ class AppL10nEn extends AppL10n {
   String get tabRequests => 'Requests';
 
   @override
+  String get keyMaxPriceTitle => 'Max price per million tokens';
+
+  @override
+  String get keyMaxPricePerMillion => 'per million tokens';
+
+  @override
   String get tabLearned => 'Learned';
 
   @override
@@ -1988,7 +1994,19 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get learnedMapHelp =>
-      'One score out of 100 for each kind of work, from benchmarks, your ratings, measured speed and how reliably it answered. Move the slider to weigh them differently. Price is not part of it.';
+      'Every model you can use right now, scored out of 100 for each kind of work: benchmarks first, then your ratings, measured speed and how reliably it answered. Move the slider to weigh them differently. Price is not part of it.';
+
+  @override
+  String get learnedSources =>
+      'Benchmarks: Artificial Analysis; OpenRouter (openrouter.ai), CC BY 4.0.';
+
+  @override
+  String get learnedNotTried => 'Not tried yet: benchmarks only';
+
+  @override
+  String learnedBestLineNew(String score) {
+    return '$score of 100 · not tried yet, benchmarks only';
+  }
 
   @override
   String get learnedTuneTitle => 'Best for what you need';
@@ -2015,7 +2033,7 @@ class AppL10nEn extends AppL10n {
   String get learnedLegendBetter => 'Higher';
 
   @override
-  String get learnedLegendBest => 'Best so far';
+  String get learnedLegendBest => 'Best';
 
   @override
   String get learnedLegendEstimated => '~ partly estimated, no benchmark';
@@ -2059,7 +2077,7 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get learnedBestTitle => 'Best so far for each kind of work';
+  String get learnedBestTitle => 'Best for each kind of work';
 
   @override
   String get learnedFastestTitle => 'Fastest it has measured';

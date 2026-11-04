@@ -1946,6 +1946,12 @@ class AppL10nDe extends AppL10n {
   String get tabRequests => 'Anfragen';
 
   @override
+  String get keyMaxPriceTitle => 'Maximalpreis pro Million Tokens';
+
+  @override
+  String get keyMaxPricePerMillion => 'pro Million Tokens';
+
+  @override
   String get tabLearned => 'Gelernt';
 
   @override
@@ -2004,7 +2010,19 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get learnedMapHelp =>
-      'Eine Punktzahl von 100 je Art von Arbeit, aus Benchmarks, deinen Bewertungen, gemessenem Tempo und Zuverlässigkeit. Mit dem Regler gewichtest du sie anders. Der Preis zählt nicht mit.';
+      'Jedes Modell, das du gerade nutzen kannst, mit einer Punktzahl von 100 je Art von Arbeit: zuerst Benchmarks, dann deine Bewertungen, gemessenes Tempo und Zuverlässigkeit. Mit dem Regler gewichtest du sie anders. Der Preis zählt nicht mit.';
+
+  @override
+  String get learnedSources =>
+      'Benchmarks: Artificial Analysis; OpenRouter (openrouter.ai), CC BY 4.0.';
+
+  @override
+  String get learnedNotTried => 'Noch nicht probiert: nur Benchmarks';
+
+  @override
+  String learnedBestLineNew(String score) {
+    return '$score von 100 · noch nicht probiert, nur Benchmarks';
+  }
 
   @override
   String get learnedTuneTitle => 'Am besten für das, was du brauchst';
@@ -2031,7 +2049,7 @@ class AppL10nDe extends AppL10n {
   String get learnedLegendBetter => 'Höher';
 
   @override
-  String get learnedLegendBest => 'Bisher am besten';
+  String get learnedLegendBest => 'Am besten';
 
   @override
   String get learnedLegendEstimated => '~ teils geschätzt, kein Benchmark';
@@ -2075,7 +2093,7 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
-  String get learnedBestTitle => 'Bisher am besten je Art von Arbeit';
+  String get learnedBestTitle => 'Am besten je Art von Arbeit';
 
   @override
   String get learnedFastestTitle => 'Die schnellsten Messungen';

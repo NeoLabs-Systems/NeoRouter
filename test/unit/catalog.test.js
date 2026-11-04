@@ -275,3 +275,69 @@ test('Google live models are free only once the account is confirmed to have no 
   assert.equal(judge('gemini-robotics-er-2-streaming-preview', 'free').isFree, false);
   assert.equal(judge('gemini-3.1-pro-preview', 'free').isFree, false);
 });
+
+test('OpenRouter benchmarks: the newest version and the middle host speak for a model', () => {
+  const { toModels } = require('../../server/services/catalog/metadata/openrouter_benchmarks');
+  const row = (permaslug, provider, accuracy, questions = 200, at = '2026-11-01') => ({ benchmark: 'gpqa_diamond', model_slug: 'lab/model-a', model_name: 'Model A', model_permaslug: permaslug, provider_name: provider, accuracy, total_questions: questions, last_run_timestamp: at });
+  const [model, ...rest] = toModels([
+    row('lab/model-a-old', 'Old', 0.2, 200, '2026-09-01'),
+    row('lab/model-a-new', 'Good', 0.9),
+    row('lab/model-a-new', 'Fine', 0.88),
+    row('lab/model-a-new', 'Broken', 0.01),
+    row('lab/model-a-new', 'Too few', 1, 5),
+    { ...row('lab/model-a-new', 'Zero', 0), benchmark: 'unknown' },
+  ]);
+  assert.equal(rest.length, 0);
+  assert.equal(model.benchmarks.gpqa, 0.88);
+  assert.equal(model.benchmarks.tau, undefined);
+});
+
+test('the OpenRouter snapshot of the day is used, falling back to the one before', async () => {
+  const { fetchSource } = require('../../server/services/catalog/metadata/openrouter_benchmarks');
+  const now = Date.parse('2026-11-04T01:00:00Z');
+  const asked = [];
+  const original = global.fetch;
+  global.fetch = async (url) => {
+    asked.push(url.split('/').pop());
+    if (url.endsWith('2026-11-04.json')) return { ok: false, status: 404 };
+    return { ok: true, json: async () => ({ snapshot_date: '2026-11-03', rows: [{ benchmark: 'gpqa_diamond', model_slug: 'a/b', model_permaslug: 'a/b-1', accuracy: 0.5, total_questions: 100, last_run_timestamp: '2026-11-01' }] }) };
+  };
+  try {
+    const result = await fetchSource({ now });
+    assert.deepEqual(asked, ['2026-11-04.json', '2026-11-03.json']);
+    assert.equal(result.snapshotDate, '2026-11-03');
+    const previous = { snapshotDate: '2026-11-04', models: [] };
+    assert.equal(await fetchSource({ now, previous }), previous, 'a dated file never changes');
+    assert.equal(asked.length, 2);
+  } finally {
+    global.fetch = original;
+  }
+});
+
+test('OpenRouter scores work with no Artificial Analysis key, and a model only it knows counts as measured', () => {
+  metadata.resetForTests({ openrouterBenchmarks: { snapshotDate: '2026-11-04', models: [
+    { slug: 'lab/strong-1', name: 'Strong', benchmarks: { gpqa: 0.95, tau: 0.8 } },
+    { slug: 'lab/weak-1', name: 'Weak', benchmarks: { gpqa: 0.475, tau: 0.4 } },
+  ] } });
+  const strong = metadata.computeCanonical('strong1', ['lab/strong-1'], 'chat');
+  const weak = metadata.computeCanonical('weak1', ['lab/weak-1'], 'chat');
+  assert.equal(strong.intelligence_source, 'openrouter_benchmarks');
+  assert.equal(strong.intelligence, 1);
+  assert.equal(weak.intelligence, 0.5);
+  assert.deepEqual(JSON.parse(weak.skills_json), { reasoning: 0.5, agentic: 0.5 });
+  metadata.resetForTests({});
+});
+
+test('a benchmark that ranks models unlike the fuller index gets no say', () => {
+  const names = Array.from({ length: 12 }, (_, i) => `lab/model-${i}`);
+  metadata.resetForTests({
+    artificialAnalysis: names.map((slug, i) => ({ slug: slug.split('/')[1], name: slug, intelligenceIndex: 10 + i * 5, benchmarks: {} })),
+    openrouterBenchmarks: { snapshotDate: '2026-11-04', models: names.map((slug, i) => ({ slug, name: slug, benchmarks: { gpqa: 0.3 + i * 0.05, tau: 0.5 + ((i * 7) % 12) * 0.01 } })) },
+  });
+  const agreement = metadata.openRouterAgreement();
+  assert.ok(agreement.gpqa > 0.9);
+  const skills = JSON.parse(metadata.computeCanonical('model11', ['lab/model-11'], 'chat').skills_json);
+  assert.ok(skills.reasoning > 0.9);
+  if (agreement.tau !== undefined && agreement.tau < 0.3) assert.equal(skills.agentic, undefined);
+  metadata.resetForTests({});
+});

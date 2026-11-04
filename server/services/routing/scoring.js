@@ -173,17 +173,24 @@ const FEATURE_FLOOR = 0.02;
  * has to be decent on every axis.
  */
 function worth(entry, { weights, task, now = Date.now() }) {
+  const features = worthParts(entry, { task, now });
+  return { value: combineWorth(features, weights), features };
+}
+
+function worthParts(entry, { task, now = Date.now() }) {
   const snapshot = stats.snapshot(entry.ref, now);
   const learned = experience.adjust(entry.ref, task.primary, reliability(snapshot, { sample: false }), now);
-  const features = {
+  return {
     intelligence: Math.min(1, taskIntelligence(trustedIntelligence(entry), entry.skills, task.skills) * learned.quality),
     speed: speed(entry, snapshot),
     reliability: learned.reliability,
   };
-  const total = weights.intelligence + weights.speed + weights.reliability;
-  const value = Math.exp(Object.keys(features)
-    .reduce((sum, feature) => sum + (weights[feature] / total) * Math.log(Math.max(features[feature], FEATURE_FLOOR)), 0));
-  return { value, features };
 }
 
-module.exports = { score, worth, trustedIntelligence, FEATURE_FLOOR, reliability, speed, cost, blendedPrice, adaptWeights, sampleBeta, logScale };
+function combineWorth(features, weights) {
+  const total = weights.intelligence + weights.speed + weights.reliability;
+  return Math.exp(Object.keys(features)
+    .reduce((sum, feature) => sum + (weights[feature] / total) * Math.log(Math.max(features[feature], FEATURE_FLOOR)), 0));
+}
+
+module.exports = { score, worth, worthParts, combineWorth, trustedIntelligence, FEATURE_FLOOR, reliability, speed, cost, blendedPrice, adaptWeights, sampleBeta, logScale };

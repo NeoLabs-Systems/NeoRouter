@@ -5,6 +5,7 @@ const stats = require('../routing/stats_store');
 const experience = require('../routing/task/experience');
 const scoring = require('../routing/scoring');
 const { PRESETS } = require('../routing/profiles');
+const { needsCredits } = require('../routing/router');
 const catalog = require('../catalog/catalog_service');
 const { KINDS } = require('../routing/task/kinds');
 
@@ -12,6 +13,13 @@ const DAY = 86_400_000;
 const CURVE_DAYS = 30;
 const FACTS = 12;
 const SKILLS_OF_TASK = new Map(KINDS.map((kind) => [kind.id, kind.skills]));
+// Measured models listed even when they have had no traffic yet.
+const UNTRIED_MODELS = 60;
+const BENCHMARK_SOURCES = /^(artificial_analysis|openrouter_benchmarks)/;
+// Cooldowns that outlast the moment: refused for this account, not merely busy.
+const LASTING_COOLDOWNS = new Set(['not_available', 'payment_required', 'auth_failed', 'incompatible', 'no_free_quota']);
+const NO_EVIDENCE_RELIABILITY = 0.85;
+const NO_ANSWERS = Object.freeze({ successes: 0, failures: 0, liked: 0, disliked: 0 });
 
 // One model, whichever provider or account served it.
 const nameOf = (row) => row.display_name || row.model_id;
@@ -57,62 +65,92 @@ function firstTryCurve(userId, now) {
   };
 }
 
-// What it knows per kind of task, across every copy of a model. `score` is the
-// one number for how good a model is at that work, on the balanced style's
-// weights: benchmarks and ratings, measured speed and track record, as routing
-// values a model apart from its price. A model counts as its best copy. The
-// three parts go along, so the app can rank for any mix of them.
+// Whether a copy can take a request at all, for a key that allows it. Short
+// cooldowns pass: a model that is merely busy can still be the best one.
+function usable(entry, now) {
+  if (!entry.enabled || !entry.available || !entry.accountEnabled || entry.accountStatus === 'disabled' || entry.accountStatus === 'invalid') return false;
+  if (needsCredits(entry)) return false;
+  const { reason } = stats.availability(entry.ref, now);
+  return !LASTING_COOLDOWNS.has(reason);
+}
+
+// How reliably a model delivered this kind of work: its usable answers, not the
+// rate limits it hit, since being popular says nothing about what it is good at.
+// Without much to go on it starts from an ordinary value.
+function workedRate(standing) {
+  return standing.share * standing.rate + (1 - standing.share) * NO_EVIDENCE_RELIABILITY;
+}
+
+// What it knows per kind of task about every model this person can use, not
+// only the ones that happened to get traffic: a model nobody tried can still be
+// the best one. `score` is the one number for how good it is at that work, on the
+// balanced style's weights; the parts go along, so the app can rank for any mix.
+// A model counts as its best copy.
 function taskKnowledge(userId, now) {
   const rows = getDatabase().prepare(`SELECT s.* FROM model_task_stats s JOIN models m ON m.id = s.model_ref
     JOIN provider_accounts a ON a.id = m.account_id WHERE a.user_id = ?`).all(userId);
-  const entries = new Map(catalog.listForUser(userId, { includeUnavailable: true }).map((entry) => [entry.ref, entry]));
+  const entries = catalog.listForUser(userId, { includeUnavailable: true }).filter((entry) => usable(entry, now));
+  const byRef = new Map(entries.map((entry) => [entry.ref, entry]));
+  const counts = new Map();
+  const tasks = new Set();
+  for (const row of rows) {
+    if (!byRef.has(row.model_ref)) continue;
+    tasks.add(row.task);
+    counts.set(`${row.model_ref}|${row.task}`, experience.faded(row, now));
+  }
+  const measuredByBenchmarks = (entry) => entry.intelligenceSource === 'manual' || BENCHMARK_SOURCES.test(entry.intelligenceSource || '');
+  // A model only OpenRouter knows has a score for reasoning and little else:
+  // measured for the work that calls on it, an estimate for the rest.
+  const measuredFor = (entry, task) => {
+    if (!measuredByBenchmarks(entry)) return false;
+    if (entry.intelligenceSource !== 'openrouter_benchmarks') return true;
+    const needed = Object.keys(SKILLS_OF_TASK.get(task) || {});
+    return !needed.length || needed.some((skill) => Number.isFinite(entry.skills?.[skill]));
+  };
+  // Ids can differ ("beam", "beam-1.0-501b"); one benchmark record is one model.
+  const modelOf = (entry) => (entry.skills ? `${entry.intelligence}|${JSON.stringify(entry.skills)}` : entry.canonicalId);
+  const tried = new Set(rows.filter((row) => byRef.has(row.model_ref)).map((row) => modelOf(byRef.get(row.model_ref))));
+  // The strongest measured models too, whatever their traffic. Others stay out,
+  // or the list would hold every model of every connection.
+  const strongest = new Set([...new Set(entries.filter(measuredByBenchmarks).sort((a, b) => (b.intelligence ?? 0) - (a.intelligence ?? 0)).map(modelOf))].slice(0, UNTRIED_MODELS));
   const { weights } = PRESETS.balanced;
   const cells = new Map();
-  for (const row of rows) {
-    const entry = entries.get(row.model_ref);
-    if (!entry) continue;
-    const faded = experience.faded(row, now);
-    // Ids can differ ("beam", "beam-1.0-501b"); one benchmark record is one model.
-    const model = entry.skills ? `${entry.intelligence}|${JSON.stringify(entry.skills)}` : entry.canonicalId;
-    const key = `${row.task}|${model}`;
-    if (!cells.has(key)) {
-      cells.set(key, {
-        task: row.task,
-        model,
-        name: entry.displayName || entry.modelId,
-        successes: 0,
-        failures: 0,
-        liked: 0,
-        disliked: 0,
-        score: -1,
-        free: null,
-        freeScore: -1,
-        // Measured by benchmarks or set by hand, as opposed to worked out from price and size.
-        benchmarked: entry.intelligenceSource === 'manual' || /^artificial_analysis/.test(entry.intelligenceSource || ''),
-      });
+  for (const entry of entries) {
+    const model = modelOf(entry);
+    if (!tried.has(model) && !strongest.has(model)) continue;
+    for (const task of tasks) {
+      const key = `${task}|${model}`;
+      if (!cells.has(key)) {
+        cells.set(key, { task, model, name: entry.displayName || entry.modelId, successes: 0, failures: 0, liked: 0, disliked: 0, score: -1, free: null, freeScore: -1, benchmarked: measuredFor(entry, task) });
+      }
+      const cell = cells.get(key);
+      const faded = counts.get(`${entry.ref}|${task}`);
+      if (faded) for (const field of ['successes', 'failures', 'liked', 'disliked']) cell[field] += faded[field];
+      const features = scoring.worthParts(entry, { task: { primary: task, skills: SKILLS_OF_TASK.get(task) }, now });
+      const parts = { ...features, reliability: workedRate(experience.standing(faded || NO_ANSWERS)) };
+      const value = scoring.combineWorth(parts, weights);
+      if (value > cell.score) Object.assign(cell, { score: value, quality: parts.intelligence, speed: parts.speed, reliability: parts.reliability });
+      if (entry.isFree && value > cell.freeScore) Object.assign(cell, { freeScore: value, free: { quality: parts.intelligence, speed: parts.speed, reliability: parts.reliability } });
     }
-    const cell = cells.get(key);
-    for (const field of ['successes', 'failures', 'liked', 'disliked']) cell[field] += faded[field];
-    const { value, features } = scoring.worth(entry, { weights, task: { primary: row.task, skills: SKILLS_OF_TASK.get(row.task) }, now });
-    if (value > cell.score) Object.assign(cell, { score: value, quality: features.intelligence, speed: features.speed, reliability: features.reliability });
-    // Its best free copy, for when only free models count.
-    if (entry.isFree && value > cell.freeScore) Object.assign(cell, { freeScore: value, free: { quality: features.intelligence, speed: features.speed, reliability: features.reliability } });
   }
-  return [...cells.values()].map((cell) => ({
-    task: cell.task,
-    model: cell.model,
-    name: cell.name,
-    answers: Math.round(cell.successes + cell.failures),
-    score: cell.score,
-    quality: cell.quality,
-    speed: cell.speed,
-    reliability: cell.reliability,
-    free: cell.free,
-    benchmarked: cell.benchmarked,
-    rate: experience.standing(cell).rate,
-    liked: Math.round(cell.liked),
-    disliked: Math.round(cell.disliked),
-  })).filter((cell) => cell.answers > 0);
+  return [...cells.values()].map((cell) => {
+    const answers = Math.round(cell.successes + cell.failures);
+    return {
+      task: cell.task,
+      model: cell.model,
+      name: cell.name,
+      answers,
+      score: cell.score,
+      quality: cell.quality,
+      speed: cell.speed,
+      reliability: cell.reliability,
+      free: cell.free,
+      benchmarked: cell.benchmarked,
+      rate: answers ? experience.standing(cell).rate : null,
+      liked: Math.round(cell.liked),
+      disliked: Math.round(cell.disliked),
+    };
+  });
 }
 
 // Speed and reliability it measured itself, across every copy of a model.
@@ -172,6 +210,7 @@ function learning(userId, now = Date.now()) {
   const taskWeight = new Map();
   const modelWeight = new Map();
   for (const cell of cells) {
+    if (!cell.answers) continue;
     taskWeight.set(cell.task, (taskWeight.get(cell.task) || 0) + cell.answers);
     modelWeight.set(cell.model, (modelWeight.get(cell.model) || 0) + cell.answers);
   }

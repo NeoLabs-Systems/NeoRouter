@@ -11,8 +11,12 @@ class LearnedStyle {
 
 const int _maxTasks = 8;
 const int _maxModels = 8;
-// A model with fewer answers only wins a kind of work when nothing has more.
+// Without a benchmark, a model needs this many answers to win a kind of work.
 const int _minAnswersToWin = 5;
+// Like routing: a model far too weak for the work keeps part of its score, so
+// speed alone cannot make it the best.
+const double _weakBelow = 0.12;
+const double _weakFactor = 0.6;
 // Same floor as routing (scoring.js), so one zero cannot wipe out a score.
 const double _floor = 0.02;
 
@@ -63,19 +67,22 @@ LearnedView rankLearned({required List<Map> cells, required List<String> tasks, 
     final parts = freeOnly ? free as Map : cell;
     final quality = _num(parts['quality']);
     final speed = _num(parts['speed']);
+    final score = learnedScore(quality: quality, speed: speed, reliability: _num(parts['reliability']), position: position);
     scored.add(<String, Object?>{
       ...cell.cast<String, Object?>(),
       'quality': quality,
       'speed': speed,
-      'score': learnedScore(quality: quality, speed: speed, reliability: _num(parts['reliability']), position: position),
+      'score': quality < _weakBelow ? score * _weakFactor : score,
     });
   }
   final shownTasks = tasks.where((task) => scored.any((cell) => cell['task'] == task)).take(_maxTasks).toList();
   final best = <Map<String, Object?>>[];
   for (final task in shownTasks) {
     final candidates = scored.where((cell) => cell['task'] == task).toList();
-    final proven = candidates.where((cell) => _num(cell['answers']) >= _minAnswersToWin).toList();
-    final pool = proven.isEmpty ? candidates : proven;
+    // Measured by benchmarks, or proven in use. Estimates only win by default.
+    final trusted = candidates.where((cell) => cell['benchmarked'] == true || _num(cell['answers']) >= _minAnswersToWin).toList();
+    final measured = trusted.where((cell) => cell['benchmarked'] == true).toList();
+    final pool = measured.isNotEmpty ? measured : (trusted.isNotEmpty ? trusted : candidates);
     pool.sort((a, b) {
       final byScore = _num(b['score']).compareTo(_num(a['score']));
       return byScore != 0 ? byScore : _num(b['answers']).compareTo(_num(a['answers']));
@@ -83,9 +90,16 @@ LearnedView rankLearned({required List<Map> cells, required List<String> tasks, 
     final top = pool.first;
     best.add(<String, Object?>{...top, 'modelAnswers': top['answers']});
   }
-  // Each kind of work's best model always gets a column, then the busiest.
-  final known = scored.map((cell) => cell['model']).toSet();
-  final columnIds = <String>{for (final item in best) '${item['model']}', ...models.where(known.contains)}.take(_maxModels).toList();
+  // Each kind of work's best model always gets a column, then the highest
+  // scores overall: this map shows what is best, not what was used most.
+  final strength = <String, double>{};
+  for (final cell in scored) {
+    if (!shownTasks.contains(cell['task'])) continue;
+    final id = '${cell['model']}';
+    strength[id] = (strength[id] ?? 0) + _num(cell['score']);
+  }
+  final strongest = strength.keys.toList()..sort((a, b) => strength[b]!.compareTo(strength[a]!));
+  final columnIds = <String>{for (final item in best) '${item['model']}', ...strongest}.take(_maxModels).toList();
   final nameOf = <String, Object?>{for (final cell in scored) '${cell['model']}': cell['name']};
   return LearnedView(
     tasks: shownTasks,

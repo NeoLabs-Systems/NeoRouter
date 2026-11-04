@@ -1103,6 +1103,8 @@
   "activityDescription": "What your apps asked for and how NeoRouter answered. Only metadata is kept – never your messages.",
   "tabOverview": "Overview",
   "tabRequests": "Requests",
+  "keyMaxPriceTitle": "Max price per million tokens",
+  "keyMaxPricePerMillion": "per million tokens",
   "tabLearned": "Learned",
   "learnedEmptyTitle": "Nothing learned yet",
   "learnedEmptyMessage": "NeoRouter learns from every answer. Send a few requests and watch this fill up.",
@@ -1147,7 +1149,17 @@
     }
   },
   "learnedMapTitle": "What works for what",
-  "learnedMapHelp": "One score out of 100 for each kind of work, from benchmarks, your ratings, measured speed and how reliably it answered. Move the slider to weigh them differently. Price is not part of it.",
+  "learnedMapHelp": "Every model you can use right now, scored out of 100 for each kind of work: benchmarks first, then your ratings, measured speed and how reliably it answered. Move the slider to weigh them differently. Price is not part of it.",
+  "learnedSources": "Benchmarks: Artificial Analysis; OpenRouter (openrouter.ai), CC BY 4.0.",
+  "learnedNotTried": "Not tried yet: benchmarks only",
+  "learnedBestLineNew": "{score} of 100 · not tried yet, benchmarks only",
+  "@learnedBestLineNew": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
   "learnedTuneTitle": "Best for what you need",
   "learnedTuneFast": "Speed",
   "learnedTuneBalanced": "Balanced",
@@ -1156,7 +1168,7 @@
   "learnedTuneNoFree": "No free model has answered yet.",
   "learnedLegendWorse": "Lower",
   "learnedLegendBetter": "Higher",
-  "learnedLegendBest": "Best so far",
+  "learnedLegendBest": "Best",
   "learnedLegendEstimated": "~ partly estimated, no benchmark",
   "learnedLegendFails": "Often fails for you",
   "learnedCellScore": "Score: {value} of 100",
@@ -1227,7 +1239,7 @@
       }
     }
   },
-  "learnedBestTitle": "Best so far for each kind of work",
+  "learnedBestTitle": "Best for each kind of work",
   "learnedFastestTitle": "Fastest it has measured",
   "learnedWorked": "{rate} worked",
   "@learnedWorked": {
@@ -2087,8 +2099,6 @@
   "keyRateLimit": "Rate limit",
   "keyRequestsPerMinute": "requests per minute",
   "keyTokenLimit": "Token limit",
-  "keyMaxPriceTitle": "Max price per million tokens",
-  "keyMaxPricePerMillion": "per million tokens",
   "keyTokensPer": "tokens per",
   "keyTokenHint": "Counts the tokens used on free and subscription models. Once reached, the key waits until it resets.",
   "keyTokenFallsBack": "Counts the tokens used on free and subscription models. Once reached, paid models take over within the budget.",

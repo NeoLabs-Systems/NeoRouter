@@ -144,7 +144,7 @@ function rejection(entry, ctx, now) {
   if (kind) return kind;
   if (ctx.tokenLimitReached && (entry.isFree || entry.isPlan)) return 'token_limit';
   // A connection on "Free" has no credits: its models that are not free fail.
-  if (entry.billingMode === 'free_tier' && !entry.isFree && !entry.isPlan && NEEDS_CREDITS.has(entry.freeReason)) return 'needs_credits';
+  if (needsCredits(entry)) return 'needs_credits';
   if (ctx.onlyKind && modelKind(entry) !== ctx.onlyKind) return 'other_kind';
   if (constraints.kinds && !(constraints.kinds[modelKind(entry)] > 0)) return 'kind_not_in_style';
   if (needs.tools && entry.tools === false) return 'no_tools';
@@ -281,6 +281,10 @@ function preferCheaperEquals(scored, weightOf = () => 1) {
 // Free-classifier reasons that mean the model is simply not free (as opposed
 // to an unverified free tier, which may still work).
 const NEEDS_CREDITS = new Set(['not_in_free_tier', 'paid', 'price_unknown']);
+
+function needsCredits(entry) {
+  return entry.billingMode === 'free_tier' && !entry.isFree && !entry.isPlan && NEEDS_CREDITS.has(entry.freeReason);
+}
 
 // Why no model could take a request, in words: groups of rejection reasons
 // with their counts, largest first.
@@ -575,4 +579,4 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
   };
 }
 
-module.exports = { RoutingPlan, explainNoModel, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, routeAllowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor };
+module.exports = { needsCredits, RoutingPlan, explainNoModel, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, routeAllowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor };

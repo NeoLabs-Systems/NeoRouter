@@ -50,8 +50,7 @@ test('the best model for a task weighs evidence, not one lucky answer', async ()
   const coding = bestFor(body, 'coding');
   assert.equal(coding.name, 'good-model');
   assert.equal(body.tasks[0], 'coding');
-  assert.equal(body.models[0], coding.model, 'most answers first');
-  const cell = body.cells.find((item) => item.task === 'translation');
+  const cell = body.cells.find((item) => item.task === 'translation' && item.name === 'poor-model');
   assert.ok(cell.rate > 0.4 && cell.rate < 0.6, `rate ${cell.rate}`);
 });
 
@@ -117,4 +116,37 @@ test('another account sees none of it', async () => {
   assert.equal(body.answers, 0);
   assert.deepEqual(body.discoveries, []);
   assert.deepEqual(body.curve, []);
+});
+
+test('the best can be a model nobody tried; one the account cannot use is left out', async () => {
+  const db = getDatabase();
+  const account = db.prepare("SELECT account_id a FROM models WHERE model_id = 'good-model'").get().a;
+  const add = db.prepare("INSERT INTO models (account_id, model_id, display_name, canonical_id, capability, is_free, free_reason, enabled, available) VALUES (?, ?, ?, ?, 'chat', ?, ?, 1, 1)");
+  add.run(account, 'never-tried', 'never-tried', 'nevertried', 1, 'free_tier_account');
+  add.run(account, 'needs-money', 'needs-money', 'needsmoney', 0, 'not_in_free_tier');
+  const score = db.prepare("INSERT OR REPLACE INTO model_metadata (canonical_id, intelligence, intelligence_source, intelligence_confidence) VALUES (?, 0.97, 'artificial_analysis', 0.9)");
+  score.run('nevertried');
+  score.run('needsmoney');
+  const { body } = await api('/usage/learning');
+  const cell = body.cells.find((item) => item.task === 'coding' && item.model === 'nevertried');
+  assert.equal(cell.answers, 0);
+  assert.equal(cell.rate, null);
+  assert.equal(cell.benchmarked, true);
+  assert.equal(cell.reliability, 0.85);
+  assert.equal(bestFor(body, 'coding').model, 'nevertried');
+  assert.ok(!body.cells.some((item) => item.model === 'needsmoney'), 'no credits on a free connection');
+  assert.ok(!body.models.includes('nevertried'), 'traffic counts only what was used');
+});
+
+test('a model known only by its reasoning score is measured for reasoning, not for coding', async () => {
+  const db = getDatabase();
+  const account = db.prepare("SELECT account_id a FROM models WHERE model_id = 'good-model'").get().a;
+  db.prepare("INSERT INTO models (account_id, model_id, display_name, canonical_id, capability, is_free, free_reason, enabled, available) VALUES (?, 'thinker', 'thinker', 'thinker', 'chat', 1, 'free_tier_account', 1, 1)").run(account);
+  db.prepare("INSERT OR REPLACE INTO model_metadata (canonical_id, intelligence, intelligence_source, intelligence_confidence, skills_json) VALUES ('thinker', 0.99, 'openrouter_benchmarks', 0.8, ?)").run(JSON.stringify({ reasoning: 0.99 }));
+  const reasoningRef = db.prepare("SELECT id FROM models WHERE model_id = 'good-model'").get().id;
+  experience.recordOutcome(reasoningRef, 'reasoning', true);
+  const { body } = await api('/usage/learning');
+  const cell = (task) => body.cells.find((item) => item.task === task && item.name === 'thinker');
+  assert.equal(cell('coding').benchmarked, false);
+  assert.equal(cell('reasoning').benchmarked, true);
 });

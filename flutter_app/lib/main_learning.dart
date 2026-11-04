@@ -330,6 +330,8 @@ class _ExperienceMap extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Text(t.learnedMapHelp, style: TextStyle(fontSize: 12.5, height: 1.4, color: palette.textMuted)),
+        const SizedBox(height: 4),
+        Text(t.learnedSources, style: TextStyle(fontSize: 11.5, height: 1.4, color: palette.textMuted)),
         const SizedBox(height: 6),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -464,6 +466,7 @@ class _Cell extends StatelessWidget {
 
   // Below this share of usable answers a model gets the red edge.
   static const double _failsOften = 0.8;
+  static const int _minAnswersToJudge = 5;
 
   Color _color(NeoRouterPalette palette, double score) => palette.accent.withValues(alpha: 0.06 + math.pow(score, 1.3) * 0.84);
 
@@ -482,6 +485,7 @@ class _Cell extends StatelessWidget {
       );
     }
     final rate = _num(item['rate']);
+    final answers = _num(item['answers']);
     String points(Object? value) => '${(_num(value) * 100).round()}';
     final score = points(item['score']);
     final benchmarked = item['benchmarked'] == true;
@@ -497,7 +501,7 @@ class _Cell extends StatelessWidget {
         t.learnedCellScore(score),
         benchmarked ? t.learnedCellBenchmark(points(item['quality'])) : t.learnedCellEstimate(points(item['quality'])),
         t.learnedCellSpeed(points(item['speed'])),
-        t.learnedCellLine(_percent(rate), formatCount(_num(item['answers']))),
+        answers > 0 ? t.learnedCellLine(_percent(rate), formatCount(answers)) : t.learnedNotTried,
         if (liked + disliked > 0) t.learnedCellVotes('$liked', '$disliked'),
       ].join('\n'),
       child: TweenAnimationBuilder<double>(
@@ -517,7 +521,7 @@ class _Cell extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.tag),
             border: winner
                 ? Border.all(color: palette.text, width: 1.4)
-                : rate < _failsOften
+                : answers >= _minAnswersToJudge && rate < _failsOften
                 ? Border.all(color: palette.error, width: 1.4)
                 : null,
           ),
@@ -576,11 +580,13 @@ class _BestPerTask extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        t.learnedBestLine(
-                          '${item['benchmarked'] == true ? '' : '~'}${(_num(item['score']) * 100).round()}',
-                          _percent(_num(item['rate'])),
-                          formatCount(_num(item['modelAnswers'])),
-                        ),
+                        _num(item['modelAnswers']) > 0
+                            ? t.learnedBestLine(
+                                '${item['benchmarked'] == true ? '' : '~'}${(_num(item['score']) * 100).round()}',
+                                _percent(_num(item['rate'])),
+                                formatCount(_num(item['modelAnswers'])),
+                              )
+                            : t.learnedBestLineNew('${(_num(item['score']) * 100).round()}'),
                         style: TextStyle(fontSize: 12, color: palette.textMuted),
                       ),
                     ],

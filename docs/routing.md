@@ -58,8 +58,12 @@ so silent or failing providers are replaced transparently.
 ## Intelligence
 
 `server/services/catalog/metadata_service.js` combines models.dev and
-OpenRouter (prices, context, capabilities, release dates) and, if an admin
-configured a key, Artificial Analysis (benchmark index, measured speed).
+OpenRouter (prices, context, capabilities, release dates), OpenRouter's daily
+benchmark leaderboard (GPQA Diamond and tau2-bench airline, the newest 90 days;
+CC BY 4.0) and, if an admin configured a key, Artificial Analysis (benchmark
+index, measured speed). Where both benchmark sources know a model, its overall
+score is 60 % Artificial Analysis and 40 % OpenRouter. An OpenRouter benchmark
+that ranks models very differently from the fuller index gets no say.
 Without a benchmark the score is a heuristic of market price, parameter count,
 recency and reasoning support. Users can override it per model.
 
