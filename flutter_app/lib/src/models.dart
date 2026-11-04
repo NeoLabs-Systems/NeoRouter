@@ -219,6 +219,7 @@ class RouterKey {
   // Who goes first when models are busy: high, normal or low.
   String get priority => raw['priority'] as String? ?? 'normal';
   int? get tokenLimit => _int(raw['tokenLimit']);
+  double? get maxPricePerMillion => _double(raw['maxPricePerMillion']);
   String get tokenPeriod => raw['tokenPeriod'] as String? ?? 'monthly';
   int? get tokensUsed => _int(raw['tokensUsed']);
   String? get tokenResetsAt => raw['tokenResetsAt'] as String?;

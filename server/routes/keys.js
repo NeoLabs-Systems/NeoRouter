@@ -19,11 +19,14 @@ const keyInput = z.object({
   budgetUsd: z.number().min(0).nullable().optional(),
   budgetPeriod: z.enum(['total', 'monthly', 'daily']).optional(),
   rpmLimit: z.number().int().positive().nullable().optional(),
-  // Who goes first when models are busy.
-  priority: z.enum(LEVELS).optional(),
+  // Maximum price per million tokens for paid models used with this key.
+  // When set, models whose output price exceeds this limit are rejected.
+  maxPricePerMillion: z.number().min(0).nullable().optional(),
   // Tokens on free and subscription models per period (null = no limit).
   tokenLimit: z.number().int().positive().nullable().optional(),
   tokenPeriod: z.enum(['total', 'monthly', 'daily']).optional(),
+  // Who goes first when models are busy.
+  priority: z.enum(LEVELS).optional(),
   allowedModels: z.array(z.string().min(1).max(200)).max(200).optional(),
   profile: z.string().max(80).optional(),
   expiresAt: z.string().datetime().nullable().optional(),

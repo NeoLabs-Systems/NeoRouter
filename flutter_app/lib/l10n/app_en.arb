@@ -2087,6 +2087,8 @@
   "keyRateLimit": "Rate limit",
   "keyRequestsPerMinute": "requests per minute",
   "keyTokenLimit": "Token limit",
+  "keyMaxPriceTitle": "Max price per million tokens",
+  "keyMaxPricePerMillion": "per million tokens",
   "keyTokensPer": "tokens per",
   "keyTokenHint": "Counts the tokens used on free and subscription models. Once reached, the key waits until it resets.",
   "keyTokenFallsBack": "Counts the tokens used on free and subscription models. Once reached, paid models take over within the budget.",

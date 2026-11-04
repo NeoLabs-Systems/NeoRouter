@@ -50,6 +50,8 @@ function publicKey(row) {
     rpmLimit: row.rpm_limit,
     // Who goes first when models are busy.
     priority: row.priority || 'normal',
+    // Maximum price per million tokens for paid models (null = no limit).
+    maxPricePerMillion: row.max_price_per_million === null || row.max_price_per_million === undefined ? null : row.max_price_per_million,
     // Tokens on free and subscription models, per period.
     tokenLimit: row.token_limit,
     tokenPeriod: row.token_period || 'monthly',
@@ -80,13 +82,14 @@ function create(userId, input, createdBy = userId, app = null) {
   const allowed = kinds(input);
   getDatabase().prepare(`INSERT INTO router_keys
     (id, user_id, name, prefix, key_hash, mode, budget_usd, budget_period, rpm_limit, allowed_models_json, profile, expires_at, created_by_user_id, allow_free, allow_plan,
-      app_name, app_origin, app_scopes_json, token_limit, token_period, priority)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      app_name, app_origin, app_scopes_json, token_limit, token_period, priority, max_price_per_million)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run(id, userId, input.name, prefix, sha256(secret), allowed.mode, input.budgetUsd ?? null,
       input.budgetPeriod || 'total', input.rpmLimit ?? null, JSON.stringify(input.allowedModels || []),
       input.profile || 'balanced', input.expiresAt || null, createdBy, allowed.allowFree, allowed.allowPlan,
       app?.name ?? null, app?.origin ?? null, app ? JSON.stringify(app.scopes || []) : null,
-      input.tokenLimit ?? null, input.tokenPeriod || 'monthly', input.priority || 'normal');
+      input.tokenLimit ?? null, input.tokenPeriod || 'monthly', input.priority || 'normal',
+      input.maxPricePerMillion ?? null);
   return { key: get(userId, id), secret };
 }
 
@@ -109,7 +112,7 @@ function update(userId, id, input) {
   assertProfile(userId, input.profile);
   const allowed = kinds(input, row);
   getDatabase().prepare(`UPDATE router_keys SET name = ?, mode = ?, budget_usd = ?, budget_period = ?, rpm_limit = ?,
-    allowed_models_json = ?, profile = ?, expires_at = ?, allow_free = ?, allow_plan = ?, token_limit = ?, token_period = ?, priority = ? WHERE id = ?`)
+    allowed_models_json = ?, profile = ?, expires_at = ?, allow_free = ?, allow_plan = ?, token_limit = ?, token_period = ?, priority = ?, max_price_per_million = ? WHERE id = ?`)
     .run(
       input.name ?? row.name,
       allowed.mode,
@@ -124,6 +127,7 @@ function update(userId, id, input) {
       input.tokenLimit !== undefined ? input.tokenLimit : row.token_limit,
       input.tokenPeriod ?? row.token_period,
       input.priority ?? row.priority,
+      input.maxPricePerMillion !== undefined ? input.maxPricePerMillion : row.max_price_per_million,
       id,
     );
   return get(userId, id);

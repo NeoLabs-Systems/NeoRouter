@@ -448,6 +448,7 @@ class _KeyFormState extends State<_KeyForm> {
   late final TextEditingController _budget = TextEditingController(text: widget.existing?.budgetUsd?.toString() ?? '');
   late final TextEditingController _rpm = TextEditingController(text: widget.existing?.rpmLimit?.toString() ?? '');
   late final TextEditingController _tokens = TextEditingController(text: widget.existing?.tokenLimit?.toString() ?? '');
+  late final TextEditingController _maxPrice = TextEditingController(text: widget.existing?.maxPricePerMillion?.toString() ?? '');
   late String _tokenPeriod = widget.existing?.tokenPeriod ?? 'monthly';
   // Kinds of model ("kind:speech") have their own chips; the text keeps models and routings.
   late final TextEditingController _allowed = TextEditingController(text: widget.existing?.allowedModels.where((item) => !item.startsWith('kind:')).join('\n') ?? '');
@@ -498,6 +499,7 @@ class _KeyFormState extends State<_KeyForm> {
     _budget.dispose();
     _rpm.dispose();
     _tokens.dispose();
+    _maxPrice.dispose();
     _allowed.dispose();
     super.dispose();
   }
@@ -537,6 +539,7 @@ class _KeyFormState extends State<_KeyForm> {
       'budgetUsd': _paid ? double.tryParse(_budget.text.trim().replaceAll(',', '.')) : null,
       'budgetPeriod': _period,
       'rpmLimit': int.tryParse(_rpm.text.trim()),
+      'maxPricePerMillion': _paid ? double.tryParse(_maxPrice.text.trim().replaceAll(',', '.')) : null,
       'tokenLimit': _free || _plan ? int.tryParse(_tokens.text.trim().replaceAll(RegExp(r'[^0-9]'), '')) : null,
       'tokenPeriod': _tokenPeriod,
       'allowedModels': _allowedList(),
@@ -583,6 +586,7 @@ class _KeyFormState extends State<_KeyForm> {
                 period: _period,
                 rpm: _rpm,
                 tokens: _tokens,
+                maxPrice: _maxPrice,
                 tokenPeriod: _tokenPeriod,
                 onFree: (value) => setState(() => _free = value),
                 onPlan: (value) => setState(() => _plan = value),
@@ -687,6 +691,7 @@ class KeyAccessFields extends StatelessWidget {
     required this.rpm,
     required this.tokens,
     required this.tokenPeriod,
+    required this.maxPrice,
     required this.onFree,
     required this.onPlan,
     required this.onPaid,
@@ -702,6 +707,7 @@ class KeyAccessFields extends StatelessWidget {
   final TextEditingController rpm;
   final TextEditingController tokens;
   final String tokenPeriod;
+  final TextEditingController maxPrice;
   final ValueChanged<bool> onFree;
   final ValueChanged<bool> onPlan;
   final ValueChanged<bool> onPaid;
@@ -729,10 +735,12 @@ class KeyAccessFields extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         // Every key: how many requests a minute.
         _LimitRow(label: t.keyRateLimit, controller: rpm, unit: t.keyRequestsPerMinute),
-        // Paid models: a spending limit.
+        // Paid models: a spending limit and a maximum price per million tokens.
         if (paid) ...<Widget>[
           const SizedBox(height: AppSpacing.sm),
           _LimitRow(label: t.keyBudgetTitle, controller: budget, prefix: r'$ ', decimal: true, unit: t.spendingLimitPer, period: period, onPeriod: onPeriod),
+          const SizedBox(height: AppSpacing.sm),
+          _LimitRow(label: t.keyMaxPriceTitle, controller: maxPrice, decimal: true, unit: t.keyMaxPricePerMillion),
           const SizedBox(height: 4),
           Text(free || plan ? t.budgetFallsBack : t.budgetStops, style: hint),
         ],

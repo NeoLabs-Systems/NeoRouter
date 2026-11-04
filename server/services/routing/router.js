@@ -159,6 +159,7 @@ function rejection(entry, ctx, now) {
   if (constraints.excludeModels?.some((pattern) => globToRegExp(pattern).test(entry.id))) return 'model_excluded';
   if (constraints.minIntelligence !== null && constraints.minIntelligence !== undefined && (entry.intelligence ?? 0) < constraints.minIntelligence) return 'below_min_intelligence';
   if (constraints.maxPriceOut !== null && constraints.maxPriceOut !== undefined && !entry.isFree && !entry.isPlan && (entry.priceOut === null || entry.priceOut > constraints.maxPriceOut)) return 'too_expensive';
+  if (key.max_price_per_million !== null && key.max_price_per_million !== undefined && !entry.isFree && !entry.isPlan && (entry.priceOut === null || entry.priceOut > key.max_price_per_million)) return 'key_too_expensive';
   if (constraints.maxTtftMs && entry.stats.ttftMs && entry.stats.ttftMs > constraints.maxTtftMs) return 'too_slow';
   if (!entry.isFree && !entry.isPlan) {
     const hasBudget = key.budget_usd !== null && key.budget_usd !== undefined;
@@ -284,12 +285,12 @@ const NEEDS_CREDITS = new Set(['not_in_free_tier', 'paid', 'price_unknown']);
 // Why no model could take a request, in words: groups of rejection reasons
 // with their counts, largest first.
 const REJECTION_GROUPS = [
-  ['key', ['not_free', 'not_allowed_for_key', 'other_kind', 'price_unknown', 'budget_exhausted'], 'are not allowed for this key'],
   ['tokens', ['token_limit'], "are past this key's token limit until it resets"],
   ['credits', ['needs_credits'], 'need credits, and their connection is set to free'],
   ['busy', ['account_failing', 'account_resting', 'quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'held_for_priority', 'plan_used_up', 'not_available'], 'are used up, rate-limited or cooling down for now'],
   ['fit', ['no_tools', 'no_vision', 'context_too_small', 'context_unknown', 'needs_more_tokens', 'incompatible'], 'cannot handle this request (tools, images or its size)'],
   ['profile', ['below_min_intelligence', 'too_expensive', 'too_slow', 'provider_not_included', 'provider_excluded', 'model_excluded', 'kind_not_in_style'], "are left out by the routing style"],
+  ['key', ['not_free', 'not_allowed_for_key', 'other_kind', 'price_unknown', 'budget_exhausted', 'key_too_expensive'], 'are not allowed for this key'],
 ];
 
 function explainNoModel(rejected, capability = 'chat') {

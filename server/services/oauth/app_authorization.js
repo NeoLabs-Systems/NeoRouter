@@ -227,6 +227,7 @@ function issueKey(request, approval, origin) {
     rpmLimit: access.rpmLimit ?? null,
     tokenLimit: access.allowFree || access.allowPlan ? access.tokenLimit ?? null : null,
     tokenPeriod: access.tokenPeriod,
+    maxPricePerMillion: access.allowPaid ? access.maxPricePerMillion ?? null : null,
   }, approval.actorId, { name: request.name, origin: request.redirect?.host || null, scopes: request.scopes });
   return {
     access_token: secret,
