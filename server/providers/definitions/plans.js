@@ -123,6 +123,29 @@ module.exports = [
     // Never pretend to be another client: Kimi treats a faked User-Agent as a violation.
     quirks: { userAgent: 'NeoRouter' },
   },
+  {
+    id: 'opencode_go',
+    label: 'OpenCode Go',
+    description: 'The OpenCode Go subscription: open and partner models for coding agents, with monthly usage limits.',
+    category: 'plan',
+    website: 'https://opencode.ai/go',
+    adapter: 'openai_compatible',
+    baseUrl: 'https://opencode.ai/inference/go/v1',
+    // Without a session header Go refuses the request ("MissingSessionID").
+    headers: { 'x-opencode-session': 'neorouter' },
+    // The "Contributor" models are cheaper or free in exchange for training on
+    // the prompts, so they start switched off.
+    models: { optIn: ['contributor'] },
+    // /models is public: the key and the subscription are checked with a 1-token request.
+    validate: { chatProbe: true, probeModels: ['glm-5.3-flash'] },
+    billing: {
+      defaultMode: 'plan',
+      plan: { note: 'A monthly dollar limit per model, with a 5-hour window (20% of it) and a weekly one (50%). OpenCode shows what is left in its console, not through an API, so NeoRouter learns a limit when a model is refused. With Extra Usage on, OpenCode carries on from your balance.' },
+      note: 'Needs the Go subscription ($10 a month, Go Plus $40). Some models (DeepSeek among them) need the workspace Privacy setting on Global regions. Muse Spark Contributor and Iceman Contributor train on your prompts, so they start switched off. Grok, GPT and Claude Haiku keep requests for 30 days; most others keep none.',
+      source: 'https://opencode.ai/docs/go/',
+      checkedAt: '2026-11-04',
+    },
+  },
 ];
 
 module.exports.minimaxWindows = minimaxWindows;

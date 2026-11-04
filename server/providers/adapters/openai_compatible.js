@@ -48,12 +48,17 @@ class OpenAICompatibleAdapter extends BaseAdapter {
   async validate() {
     if (!this.definition.validate?.chatProbe) return super.validate();
     try {
-      const model = (await this.listModels()).find((entry) => entry.kind === 'chat');
+      const chat = (await this.listModels()).filter((entry) => entry.kind === 'chat');
+      // The cheap models named by the definition, then any that is not free.
+      const preferred = (this.definition.validate.probeModels || []).map((id) => chat.find((entry) => entry.id === id)).find(Boolean);
+      const model = preferred || chat.find((entry) => !entry.freeHint) || chat[0];
       if (!model) return { status: 'unknown', message: 'No chat model available to probe the key.' };
       await this.chat({ messages: [{ role: 'user', content: 'ping' }], max_tokens: 1 }, { modelId: model.id, timeoutMs: 30_000 });
       return { status: 'healthy', message: null };
     } catch (error) {
       if (error.kind === KINDS.AUTH) return { status: 'invalid', message: error.message };
+      // The key was accepted; this one model is just not open to the account.
+      if (error.kind === KINDS.NOT_FOUND) return { status: 'healthy', message: null };
       return { status: 'unknown', message: error.message };
     }
   }
@@ -82,6 +87,10 @@ class OpenAICompatibleAdapter extends BaseAdapter {
       }
     }
     listed.push(...(this.definition.extraModels || []).map((entry) => normalizeModel(entry)));
+    const optIn = (spec.optIn || []).map((pattern) => new RegExp(pattern, 'i'));
+    listed = listed
+      .filter((model) => !(spec.excludeFree && model.priceKnown && model.freeHint))
+      .map((model) => (optIn.some((pattern) => pattern.test(model.id)) ? { ...model, optIn: true } : model));
     const known = new Set();
     return [...listed, ...manual].filter((model) => !known.has(model.id) && known.add(model.id));
   }

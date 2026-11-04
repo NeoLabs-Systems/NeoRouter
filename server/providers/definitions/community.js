@@ -58,7 +58,23 @@ module.exports = [
     billing: { freeTierModels: [':free$'], note: 'Only models ending in ":free" are free, sharing 500K tokens a day (1M with Telegram verified); all others are billed.', source: 'https://xkiro.com', checkedAt: '2026-10-29' },
     limits: { pool: 'account', poolMatch: ':free$', account: { tpd: 500000 } },
   }),
-  community('opencode', 'OpenCode Zen', 'https://opencode.ai/zen/v1', { headers: { 'x-opencode-session': 'neorouter' } }),
+  // Pay as you go from a prepaid balance. The models it lists at no price work
+  // only inside OpenCode itself: from any other client, with any key, they answer
+  // "Free usage limit reached. Free models work in OpenCode" (checked live
+  // 2026-11-04), so they are left out instead of being offered as free. /models is
+  // public, so the key is checked with a 1-token request. Requests need a session
+  // header. /zen/v1 is the older address of the same API.
+  community('opencode', 'OpenCode Zen', 'https://opencode.ai/inference/v1', {
+    website: 'https://opencode.ai/docs/zen/',
+    headers: { 'x-opencode-session': 'neorouter' },
+    models: { excludeFree: true },
+    validate: { chatProbe: true, probeModels: ['glm-5.3-flash'] },
+    billing: {
+      note: 'Pay as you go from a prepaid balance. Its free models only work inside OpenCode, so NeoRouter leaves them out. OpenAI and Anthropic models keep requests for 30 days; most others keep nothing.',
+      source: 'https://opencode.ai/docs/zen/',
+      checkedAt: '2026-11-04',
+    },
+  }),
   community('airforce', 'api.airforce', 'https://api.airforce/v1'),
   community('apinex', 'Apinex', 'https://api.apinex.bond/v1', { validate: { path: '/balance' }, limits: { pool: 'account', account: { rpm: 5 } } }),
   community('blaze', 'BlazeAPI', 'https://api.blazeapi.org/paid/v1', { validate: { path: '/usage' } }),

@@ -79,7 +79,10 @@ function learnFromMessage(message) {
   return metric ? { metric, value } : null;
 }
 
-const ACCESS_REFUSED = /not available on the .{0,30}plan|model agreement|not allowed to access|needs your consent|phone verification|verify your (phone|account)|upgrade your plan/i;
+const ACCESS_REFUSED = /not available on the .{0,30}plan|model agreement|not allowed to access|needs your consent|phone verification|verify your (phone|account)|upgrade your plan|requires? global regions?/i;
+// The account cannot pay: no balance, or no subscription behind the key. The
+// status is not reliable here (OpenCode Go says 403 for it).
+const NEEDS_PAYMENT = /(active|valid).{0,40}subscription is required|insufficient (account )?(funds|balance|credits?)/i;
 
 function classifyHttpError(status, body, headers) {
   const message = extractMessage(body) || `HTTP ${status}`;
@@ -93,6 +96,11 @@ function classifyHttpError(status, body, headers) {
   if ((status === 400 || status === 403) && /terms acceptance|accept the terms|requires? (you to )?accept/i.test(message)) {
     return new ProviderError(KINDS.NOT_FOUND, message, options);
   }
+  if ((status === 400 || status === 401 || status === 403) && NEEDS_PAYMENT.test(message)) {
+    return new ProviderError(KINDS.PAYMENT, message, options);
+  }
+  // A setting only a person can change (a workspace's region): this model, not the key.
+  if (status === 400 && ACCESS_REFUSED.test(message)) return new ProviderError(KINDS.NOT_FOUND, message, options);
   if (status === 401 || status === 403) {
     if (status === 403 && /region|country|location|not available in your|not (yet )?available to you|being rolled out|no access to (this )?model/i.test(message)) {
       return new ProviderError(KINDS.NOT_FOUND, message, options);

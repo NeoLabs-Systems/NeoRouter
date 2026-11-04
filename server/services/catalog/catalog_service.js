@@ -25,10 +25,10 @@ async function syncAccount(accountId) {
   const seen = new Set();
   const upsert = db.prepare(`INSERT INTO models
     (account_id, model_id, display_name, canonical_id, capability, context_window, max_output, supports_tools, supports_vision,
-     supports_json, supports_reasoning, price_in, price_out, price_source, is_free, free_reason, available, raw_json, price_unit, price_per_unit, last_seen_at)
+     supports_json, supports_reasoning, price_in, price_out, price_source, is_free, free_reason, available, raw_json, price_unit, price_per_unit, enabled, last_seen_at)
     VALUES (@account_id, @model_id, @display_name, @canonical_id, @capability, @context_window, @max_output, @supports_tools,
      @supports_vision, @supports_json, @supports_reasoning, @price_in, @price_out, @price_source, @is_free, @free_reason, 1, @raw_json,
-     @price_unit, @price_per_unit,
+     @price_unit, @price_per_unit, @enabled,
      strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     ON CONFLICT(account_id, model_id) DO UPDATE SET display_name = excluded.display_name, canonical_id = excluded.canonical_id,
       capability = excluded.capability, context_window = excluded.context_window, max_output = excluded.max_output,
@@ -62,6 +62,8 @@ async function syncAccount(accountId) {
         raw_json: JSON.stringify({ freeHint: model.freeHint, priceKnown: model.priceKnown, ...(model.decision ? { decision: true } : {}) }),
         price_unit: model.priceUnit || null,
         price_per_unit: model.unitPrice ?? null,
+        // Only a new model starts switched off; the ON CONFLICT update leaves a choice alone.
+        enabled: model.optIn ? 0 : 1,
       });
     }
     const existing = db.prepare('SELECT id, model_id FROM models WHERE account_id = ?').all(accountId);

@@ -77,10 +77,22 @@ const definitionSchema = z.object({
   headers: z.record(z.string()).default({}),
   chatPath: z.string().optional(),
   // extraPaths: further listings, e.g. OpenRouter's /embeddings/models.
-  models: z.object({ path: z.string().optional(), static: z.array(z.any()).optional(), extraPaths: z.array(z.string()).default([]) }).default({}),
+  // excludeFree: leave out models the listing prices at zero, for hosts whose free
+  // models only work in their own app. optIn: models (matching these patterns)
+  // that are listed but start switched off, because using them has a catch such
+  // as training on the prompts.
+  models: z.object({
+    path: z.string().optional(),
+    static: z.array(z.any()).optional(),
+    extraPaths: z.array(z.string()).default([]),
+    excludeFree: z.boolean().optional(),
+    optIn: z.array(z.string()).default([]),
+  }).default({}),
   // Models a provider serves but does not list (NVIDIA's FLUX endpoints).
   extraModels: z.array(z.object({ id: z.string(), name: z.string().optional(), type: z.string().optional() })).default([]),
-  validate: z.union([z.literal(false), z.object({ path: z.string().optional(), chatProbe: z.boolean().optional() })]).optional(),
+  // chatProbe: check the key with a 1-token chat request, for hosts whose /models is public.
+  // probeModels: the cheap models to try for it first.
+  validate: z.union([z.literal(false), z.object({ path: z.string().optional(), chatProbe: z.boolean().optional(), probeModels: z.array(z.string()).optional() })]).optional(),
   billing: z.object({
     defaultMode: z.enum(['free_tier', 'paid', 'plan', 'plan_paid']),
     // A subscription with an included allowance this provider sells for API use.
