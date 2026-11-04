@@ -341,3 +341,100 @@ test('a benchmark that ranks models unlike the fuller index gets no say', () => 
   if (agreement.tau !== undefined && agreement.tau < 0.3) assert.equal(skills.agentic, undefined);
   metadata.resetForTests({});
 });
+
+test('Artificial Analysis: a Free key reads every page of the /free list', async () => {
+  const aa = require('../../server/services/catalog/metadata/artificial_analysis');
+  aa.resetForTests();
+  const asked = [];
+  const original = global.fetch;
+  const pages = { 1: { data: [{ id: 'a', slug: 'one' }], pagination: { page: 1, total_pages: 2, has_more: true } }, 2: { data: [{ id: 'b', slug: 'two' }], pagination: { page: 2, total_pages: 2, has_more: false } } };
+  global.fetch = async (url, options) => {
+    asked.push(url.replace('https://artificialanalysis.ai/api/v2/', ''));
+    assert.equal(options.headers['x-api-key'], 'test-key');
+    if (url.endsWith('/language/models')) return { ok: false, status: 403 };
+    return { ok: true, status: 200, json: async () => pages[new URL(url).searchParams.get('page') || 1] };
+  };
+  try {
+    const items = await aa.fetchList('language/models', { apiKey: 'test-key' });
+    assert.deepEqual(items.map((item) => item.slug), ['one', 'two']);
+    assert.deepEqual(asked, ['language/models', 'language/models/free', 'language/models/free?page=2']);
+    asked.length = 0;
+    await aa.fetchList('media/text-to-image/models', { apiKey: 'test-key' });
+    assert.equal(asked[0], 'media/text-to-image/models/free', 'the tier is remembered, saving a request');
+  } finally {
+    global.fetch = original;
+    aa.resetForTests();
+  }
+});
+
+test('Artificial Analysis: a failed page keeps the list we already have', async () => {
+  const aa = require('../../server/services/catalog/metadata/artificial_analysis');
+  aa.resetForTests();
+  const original = global.fetch;
+  let call = 0;
+  global.fetch = async () => {
+    call += 1;
+    return call === 1 ? { ok: true, status: 200, json: async () => ({ data: [{ slug: 'one' }], pagination: { has_more: true } }) } : { ok: false, status: 429 };
+  };
+  try {
+    await assert.rejects(aa.fetchSource({ apiKey: 'k' }), /page 2 .*429|429/);
+  } finally {
+    global.fetch = original;
+    aa.resetForTests();
+  }
+});
+
+test('Artificial Analysis: records read the current response shape', () => {
+  const { toRecord } = require('../../server/services/catalog/metadata/artificial_analysis');
+  const record = toRecord({
+    id: 'id-1', slug: 'claude-sonnet-5-5-medium', name: 'Claude Sonnet 5.5', release_date: '2026-09-28',
+    evaluations: { artificial_analysis_intelligence_index: 30.8, artificial_analysis_coding_index: null },
+    performance: { median_output_tokens_per_second: 88.82, median_time_to_first_token_seconds: 1.47 },
+  });
+  assert.deepEqual(record, { id: 'id-1', slug: 'claude-sonnet-5-5-medium', name: 'Claude Sonnet 5.5', intelligenceIndex: 30.8, benchmarks: {}, outputTps: 88.82, ttftSeconds: 1.47, releaseDate: '2026-09-28' });
+});
+
+test('Artificial Analysis: the Pro names of benchmarks map onto the ones skills use', () => {
+  const { toRecord } = require('../../server/services/catalog/metadata/artificial_analysis');
+  const record = toRecord({ slug: 'm', name: 'M', evaluations: { gpqa_diamond: 0.917, aa_lcr: 0.797, terminalbench_v4_0: 0.419, hle: 0.423, scicode: null, critpt: 0.191 } });
+  assert.deepEqual(record.benchmarks, { gpqa: 0.917, lcr: 0.797, terminalbench_hard: 0.419, hle: 0.423 });
+});
+
+test('Artificial Analysis: benchmark scores the Free list lacks are kept, old index values are not', () => {
+  const { mergeKnown } = require('../../server/services/catalog/metadata/artificial_analysis');
+  const merged = mergeKnown(
+    [{ id: 'x', slug: 'kept', name: 'Kept', intelligenceIndex: 30, benchmarks: {} }],
+    [
+      { slug: 'kept', name: 'Kept', intelligenceIndex: 70, benchmarks: { gpqa: 0.9 } },
+      { slug: 'dropped', name: 'Dropped', intelligenceIndex: 60, indexDerived: true, benchmarks: { hle: 0.2 } },
+      { slug: 'nothing', name: 'Nothing', intelligenceIndex: 50, benchmarks: {} },
+    ],
+  );
+  assert.deepEqual(merged.map((record) => record.slug), ['kept', 'dropped']);
+  assert.equal(merged[0].intelligenceIndex, 30);
+  assert.deepEqual(merged[0].benchmarks, { gpqa: 0.9 });
+  assert.equal(merged[1].intelligenceIndex, null, 'on the old scale, so it is estimated again');
+  assert.deepEqual(merged[1].benchmarks, { hle: 0.2 });
+});
+
+test('Artificial Analysis media lists use the new paths', async () => {
+  const aa = require('../../server/services/catalog/metadata/artificial_analysis');
+  const media = require('../../server/services/catalog/metadata/artificial_analysis_media');
+  aa.resetForTests();
+  const asked = [];
+  const original = global.fetch;
+  global.fetch = async (url) => {
+    asked.push(url.replace('https://artificialanalysis.ai/api/v2/', ''));
+    if (!url.endsWith('/free')) return { ok: false, status: 403 };
+    return { ok: true, status: 200, json: async () => ({ data: [{ slug: 'm', name: 'M', elo: 1200, model_creator: { name: 'Lab' } }, { slug: 'no-elo', name: 'N', elo: null }] }) };
+  };
+  try {
+    const result = await media.fetchSource({ apiKey: 'k' });
+    assert.deepEqual(asked, ['media/text-to-image/models', 'media/text-to-image/models/free', 'media/text-to-speech/models/free', 'media/text-to-video/models/free']);
+    assert.deepEqual(result.image, [{ slug: 'm', name: 'M', creator: 'Lab', elo: 1200, releaseDate: null }]);
+    assert.ok(!asked.some((path) => path.includes('data/')), 'no legacy path');
+  } finally {
+    global.fetch = original;
+    aa.resetForTests();
+  }
+});

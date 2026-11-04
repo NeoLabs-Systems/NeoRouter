@@ -19,6 +19,7 @@ const mteb = require('./metadata/mteb');
 
 const logger = createLogger('metadata');
 const AA_SETTING = 'artificial_analysis_key';
+const AA_REFRESH_MS = 6 * 60 * 60 * 1000;
 
 // Heuristic weights when no benchmark index is available. Each signal is
 // normalized to [0, 1]; missing signals drop out and lower the confidence.
@@ -146,6 +147,11 @@ function deriveIndexes(records) {
     if (rho * rho >= MIN_RANK_AGREEMENT && rho > 0) fits[name] = { curve: isotonic(pairs), weight: rho * rho };
   }
   for (const record of records) {
+    // Estimates are worked out again: the index they derive from may have moved.
+    if (record.indexDerived) {
+      record.intelligenceIndex = null;
+      record.indexDerived = false;
+    }
     if (record.intelligenceIndex || !record.benchmarks) continue;
     let weight = 0;
     let total = 0;
@@ -461,6 +467,14 @@ function setArtificialAnalysisKey(key) {
   else settings.setGlobal(AA_SETTING, encryptString(key));
 }
 
+// A Free key gets 100 requests a day, and one refresh takes about seven. The
+// other sources refresh hourly; this one more rarely. Data from before the
+// current API (records without an id) is replaced as soon as possible.
+function artificialAnalysisDue(now = Date.now()) {
+  const fetchedAt = Date.parse(state.fetchedAt?.artificialAnalysis || '') || 0;
+  return now - fetchedAt >= AA_REFRESH_MS || !(state.artificialAnalysis || []).some((record) => record.id);
+}
+
 async function refreshSources() {
   loadState();
   const tasks = [
@@ -469,8 +483,8 @@ async function refreshSources() {
     ['openrouterBenchmarks', () => openrouterBenchmarks.fetchSource({ previous: state.openrouterBenchmarks })],
   ];
   const aaKey = getArtificialAnalysisKey();
-  if (aaKey) {
-    tasks.push(['artificialAnalysis', () => artificialAnalysis.fetchSource({ apiKey: aaKey })]);
+  if (aaKey && artificialAnalysisDue()) {
+    tasks.push(['artificialAnalysis', () => artificialAnalysis.fetchSource({ apiKey: aaKey, previous: state.artificialAnalysis })]);
     tasks.push(['artificialAnalysisMedia', () => artificialAnalysisMedia.fetchSource({ apiKey: aaKey })]);
   }
   const results = {};

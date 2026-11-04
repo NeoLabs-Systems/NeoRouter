@@ -64,6 +64,11 @@ CC BY 4.0) and, if an admin configured a key, Artificial Analysis (benchmark
 index, measured speed). Where both benchmark sources know a model, its overall
 score is 60 % Artificial Analysis and 40 % OpenRouter. An OpenRouter benchmark
 that ranks models very differently from the fuller index gets no say.
+
+Artificial Analysis refreshes every 6 hours: a Free key allows 100 requests a day.
+Free lists carry the index and speed but no per-benchmark scores, so the scores
+already known are kept (a Pro key keeps them current); models without an index
+get one estimated from them.
 Without a benchmark the score is a heuristic of market price, parameter count,
 recency and reasoning support. Users can override it per model.
 
