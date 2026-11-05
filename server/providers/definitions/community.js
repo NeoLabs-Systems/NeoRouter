@@ -66,7 +66,9 @@ module.exports = [
   // header. /zen/v1 is the older address of the same API.
   community('opencode', 'OpenCode Zen', 'https://opencode.ai/inference/v1', {
     website: 'https://opencode.ai/docs/zen/',
-    headers: { 'x-opencode-session': 'neorouter' },
+    // The conversation id goes in x-opencode-session (the client's own, else derived), and OpenCode asks clients to name themselves.
+    sessionHeader: 'x-opencode-session',
+    quirks: { userAgent: 'NeoRouter' },
     models: { excludeFree: true },
     validate: { chatProbe: true, probeModels: ['glm-5.3-flash'] },
     billing: {

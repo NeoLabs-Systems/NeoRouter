@@ -50,6 +50,8 @@ class RouterApi {
   Future<Map<String, dynamic>> createAccount(Map<String, Object?> body) => client.post('$_base/providers/accounts', _clean(body));
   Future<ProviderAccount> updateAccount(String id, Map<String, Object?> body) async =>
       ProviderAccount(Map<String, dynamic>.from((await client.patch('$_base/providers/accounts/$id', _clean(body)))['account'] as Map));
+  /// A number sets a limit the person states for the account, null clears it, absent keeps it.
+  Future<void> setAccountLimits(String id, Map<String, int?> limits) => client.put('$_base/providers/accounts/$id/limits', limits);
   Future<void> deleteAccount(String id) => client.delete('$_base/providers/accounts/$id');
   Future<Map<String, dynamic>> validateAccount(String id) => client.post('$_base/providers/accounts/$id/validate');
   Future<Map<String, dynamic>> syncAccount(String id) => client.post('$_base/providers/accounts/$id/sync');

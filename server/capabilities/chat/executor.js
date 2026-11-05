@@ -1,6 +1,7 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const { clientSession } = require('../../providers/session_id');
 const { getConfig } = require('../../config/env');
 const webSearch = require('./web_search');
 const { HttpError } = require('../../middleware/error_handler');
@@ -116,11 +117,11 @@ function toolCallRequired(canonical) {
 
 const missingToolCall = () => new ProviderError(KINDS.INVALID_OUTPUT, 'The model ignored tool_choice and answered without a tool call.');
 
-async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs }) {
+async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs, sessionId }) {
   const startedAt = Date.now();
   const mustCallTool = toolCallRequired(canonical);
   if (!stream) {
-    const { response, headers } = await adapter.chat(canonical, { modelId: entry.modelId, signal, timeoutMs, model: entry });
+    const { response, headers } = await adapter.chat(canonical, { modelId: entry.modelId, signal, timeoutMs, model: entry, sessionId });
     const choice = response?.choices?.[0];
     const message = choice?.message;
     // A reasoning model can spend a small max_tokens entirely on thinking;
@@ -135,7 +136,7 @@ async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs
   const controller = new AbortController();
   const combined = AbortSignal.any([signal, controller.signal]);
   let headers = null;
-  const iterator = adapter.stream(canonical, { modelId: entry.modelId, signal: combined, onHeaders: (value) => { headers = value; }, model: entry })[Symbol.asyncIterator]();
+  const iterator = adapter.stream(canonical, { modelId: entry.modelId, signal: combined, onHeaders: (value) => { headers = value; }, model: entry, sessionId })[Symbol.asyncIterator]();
   const firstTimer = setTimeout(() => controller.abort(new ProviderError(KINDS.TIMEOUT, 'No output before the first-token timeout.')), timeoutMs);
   const accumulator = new StreamAccumulator();
   const buffered = [];
@@ -193,6 +194,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     throw new HttpError(400, 'INVALID_REQUEST', `The request body could not be read: ${error.message}`);
   }
   if (!canonical.messages.length) throw new HttpError(400, 'INVALID_REQUEST', 'The request contains no messages.');
+  const sessionId = clientSession(req);
 
   const rpm = internal ? { allowed: true } : routerKeys.consumeRpm(key);
   if (!rpm.allowed) {
@@ -369,7 +371,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     quota.recordRequest(entry, inputTokens);
     plans.onSent(entry);
     const timeoutMs = Math.min(adapter.timeoutMs, config.routing.totalBudgetMs - (Date.now() - startedAt));
-    attempt.promise = runAttempt({ entry, adapter, canonical, stream, signal: AbortSignal.any([clientAbort.signal, controller.signal]), timeoutMs })
+    attempt.promise = runAttempt({ entry, adapter, canonical, stream, signal: AbortSignal.any([clientAbort.signal, controller.signal]), timeoutMs, sessionId })
       .then((result) => ({ attempt, result }), (error) => ({ attempt, error }));
     running.add(attempt);
     attemptsStarted += 1;

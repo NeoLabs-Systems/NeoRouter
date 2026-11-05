@@ -75,6 +75,8 @@ const definitionSchema = z.object({
   keyOptional: z.boolean().default(false),
   fields: z.array(z.object({ key: z.string(), label: z.string(), required: z.boolean().default(true), placeholder: z.string().optional() })).default([]),
   headers: z.record(z.string()).default({}),
+  // A header that carries the conversation id of each request (see session_id.js).
+  sessionHeader: z.string().optional(),
   chatPath: z.string().optional(),
   // extraPaths: further listings, e.g. OpenRouter's /embeddings/models.
   // excludeFree: leave out models the listing prices at zero, for hosts whose free

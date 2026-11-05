@@ -9,6 +9,7 @@
 // without new evidence, so a single burst never caps an account for good.
 const registry = require('../../providers/registry');
 const loadTracker = require('./load_tracker');
+const accountLimits = require('../quota/account_limits');
 
 const FORGET_AFTER_MS = 60 * 60 * 1000;
 const SUCCESSES_TO_PROBE_UP = 10;
@@ -30,8 +31,11 @@ function current(accountId, now) {
   return item || null;
 }
 
-/** { limit, source: 'learned' | 'documented' } or null when unknown. */
+/** { limit, source: 'manual' | 'learned' | 'documented' } or null when unknown. */
 function limitFor(entry, now = Date.now()) {
+  // A number the person stated is exact: it never fades and is never learned over.
+  const stated = accountLimits.get(entry.accountId).concurrent;
+  if (stated) return { limit: stated, source: 'manual' };
   const item = current(entry.accountId, now);
   const known = documented(entry);
   if (item) return { limit: known ? Math.min(item.limit, known) : item.limit, source: 'learned' };
@@ -47,6 +51,7 @@ const isConcurrencyError = (error) => CONCURRENCY_PATTERN.test(String(error?.mes
  */
 function onRateLimited(entry, error, { running = loadTracker.inflight(entry).account, now = Date.now() } = {}) {
   const explicit = isConcurrencyError(error);
+  if (accountLimits.get(entry.accountId).concurrent) return explicit;
   if (!explicit && running < 2) return false;
   const item = current(entry.accountId, now);
   const limit = Math.max(1, running - 1);
@@ -69,6 +74,7 @@ function onSuccess(entry, { running = loadTracker.inflight(entry).account, now =
 
 function resetForTests() {
   learned.clear();
+  accountLimits.resetForTests();
 }
 
 module.exports = { limitFor, onRateLimited, onSuccess, isConcurrencyError, resetForTests };

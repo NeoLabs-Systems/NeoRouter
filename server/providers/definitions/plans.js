@@ -24,6 +24,23 @@ function minimaxWindows(data) {
   return results;
 }
 
+// OpenCode Go reports the console's three meters: the 5-hour block (rolling),
+// the week and the month, each as the share used and when it resets.
+// GET /usage -> { usage: { rolling|weekly|monthly: { status, percent, resetsAt } } }
+function opencodeGoWindows(data) {
+  const meters = data?.usage || data || {};
+  const windows = [['rolling', 'plan_5h'], ['weekly', 'plan_week'], ['monthly', 'plan_month']];
+  const results = [];
+  for (const [name, metric] of windows) {
+    const meter = meters[name];
+    const used = Number(meter?.percent ?? meter?.usagePercent);
+    if (!meter || !Number.isFinite(used)) continue;
+    const resetAt = Date.parse(meter.resetsAt) || (Number(meter.resetInSec) ? Date.now() + Number(meter.resetInSec) * 1000 : null);
+    results.push({ metric, limit: 100, remaining: Math.max(0, Math.min(100, Math.round(100 - used))), resetAt });
+  }
+  return results;
+}
+
 module.exports = [
   {
     id: 'chatgpt',
@@ -131,8 +148,11 @@ module.exports = [
     website: 'https://opencode.ai/go',
     adapter: 'openai_compatible',
     baseUrl: 'https://opencode.ai/inference/go/v1',
-    // Without a session header Go refuses the request ("MissingSessionID").
-    headers: { 'x-opencode-session': 'neorouter' },
+    // Without a session id Go refuses the request ("MissingSessionID"). It wants
+    // the conversation's own id (for routing and prompt caching) and a client name.
+    sessionHeader: 'x-opencode-session',
+    quirks: { userAgent: 'NeoRouter' },
+    quota: { probe: { path: '/usage', parse: opencodeGoWindows } },
     // The "Contributor" models are cheaper or free in exchange for training on
     // the prompts, so they start switched off.
     models: { optIn: ['contributor'] },
@@ -140,7 +160,7 @@ module.exports = [
     validate: { chatProbe: true, probeModels: ['glm-5.3-flash'] },
     billing: {
       defaultMode: 'plan',
-      plan: { note: 'A monthly dollar limit per model, with a 5-hour window (20% of it) and a weekly one (50%). OpenCode shows what is left in its console, not through an API, so NeoRouter learns a limit when a model is refused. With Extra Usage on, OpenCode carries on from your balance.' },
+      plan: { note: 'A monthly dollar limit per model, with a 5-hour window (20% of it) and a weekly one (50%). NeoRouter reads the three windows from the OpenCode usage endpoint. With Extra Usage on, OpenCode carries on from your balance.' },
       note: 'Needs the Go subscription ($10 a month, Go Plus $40). Some models (DeepSeek among them) need the workspace Privacy setting on Global regions. Muse Spark Contributor and Iceman Contributor train on your prompts, so they start switched off. Grok, GPT and Claude Haiku keep requests for 30 days; most others keep none.',
       source: 'https://opencode.ai/docs/go/',
       checkedAt: '2026-11-04',
@@ -149,3 +169,4 @@ module.exports = [
 ];
 
 module.exports.minimaxWindows = minimaxWindows;
+module.exports.opencodeGoWindows = opencodeGoWindows;

@@ -1140,6 +1140,14 @@ class _LimitsViewState extends State<_LimitsView> {
     }
   }
 
+  Future<void> _edit(Map<String, dynamic> group) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => _LimitsDialog(controller: widget.controller, account: Map<String, dynamic>.from(group['account'] as Map)),
+    );
+    if (saved == true) await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
@@ -1152,7 +1160,10 @@ class _LimitsViewState extends State<_LimitsView> {
         children: <Widget>[
           Text(t.limitsDescription, style: TextStyle(color: neoRouterPaletteOf(context).textSoft, fontSize: 13.5, height: 1.45)),
           const SizedBox(height: AppSpacing.lg),
-          for (final group in _accounts) ...<Widget>[_AccountLimits(group: group), const SizedBox(height: 28)],
+          for (final group in _accounts) ...<Widget>[
+            _AccountLimits(group: group, canEdit: widget.controller.can('providers.manage'), onEdit: () => _edit(group)),
+            const SizedBox(height: 28),
+          ],
         ],
       ),
     );
@@ -1176,9 +1187,11 @@ double _usedFraction(Map window) {
 bool _worthShowing(Map window) => _dailyMetrics.contains('${window['metric']}') || _usedFraction(window) >= 1;
 
 class _AccountLimits extends StatelessWidget {
-  const _AccountLimits({required this.group});
+  const _AccountLimits({required this.group, required this.canEdit, required this.onEdit});
 
   final Map<String, dynamic> group;
+  final bool canEdit;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -1232,7 +1245,10 @@ class _AccountLimits extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        SettingsHeading(title: '${account['label']}'),
+        SettingsHeading(
+          title: '${account['label']}',
+          trailing: canEdit ? TextButton.icon(onPressed: onEdit, icon: const Icon(Icons.tune_rounded, size: 17), label: Text(t.limitsEdit)) : null,
+        ),
         if (rows.isEmpty)
           AppCard(
             child: Text(t.noQuotaData, style: TextStyle(color: palette.textSoft)),
@@ -1342,6 +1358,125 @@ class _ModelLimits extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+const List<String> _statedMetrics = <String>['rpm', 'rpd', 'tpm', 'tpd', 'concurrent'];
+
+/// States what an account can take. A number wins over everything NeoRouter
+/// reads or learns; an empty field gives the decision back to NeoRouter.
+class _LimitsDialog extends StatefulWidget {
+  const _LimitsDialog({required this.controller, required this.account});
+
+  final NeoRouterController controller;
+  final Map<String, dynamic> account;
+
+  @override
+  State<_LimitsDialog> createState() => _LimitsDialogState();
+}
+
+class _LimitsDialogState extends State<_LimitsDialog> {
+  late final Map<String, TextEditingController> _fields;
+  late final Map<String, num> _before;
+  String? _error;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _before = <String, num>{
+      for (final entry in ((widget.account['limits'] as Map?) ?? const <String, Object?>{}).entries) '${entry.key}': entry.value as num,
+    };
+    _fields = <String, TextEditingController>{
+      for (final metric in _statedMetrics) metric: TextEditingController(text: _before[metric]?.toInt().toString() ?? ''),
+    };
+  }
+
+  @override
+  void dispose() {
+    for (final field in _fields.values) {
+      field.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final t = AppL10n.of(context);
+    final body = <String, int?>{};
+    for (final metric in _statedMetrics) {
+      final text = _fields[metric]!.text.trim().replaceAll(RegExp(r'[ _,.]'), '');
+      if (text.isEmpty) {
+        if (_before.containsKey(metric)) body[metric] = null;
+        continue;
+      }
+      final value = int.tryParse(text);
+      if (value == null || value < 1) {
+        setState(() => _error = t.limitsInvalid);
+        return;
+      }
+      if (_before[metric]?.toInt() != value) body[metric] = value;
+    }
+    if (body.isEmpty) {
+      Navigator.of(context).pop(false);
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.controller.api.setAccountLimits('${widget.account['id']}', body);
+      if (mounted) Navigator.of(context).pop(true);
+    } on ApiException catch (error) {
+      setState(() => _error = error.message);
+    } catch (_) {
+      setState(() => _error = t.serverUnreachable);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final labels = <String, String>{
+      'rpm': t.metricRpm,
+      'rpd': t.metricRpd,
+      'tpm': t.metricTpm,
+      'tpd': t.metricTpd,
+      'concurrent': t.limitConcurrent,
+    };
+    return AlertDialog(
+      title: Text(t.limitsEditTitle('${widget.account['label']}')),
+      content: SizedBox(
+        width: 420,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(t.limitsEditHint, style: TextStyle(color: palette.textSoft, fontSize: 13, height: 1.45)),
+              const SizedBox(height: AppSpacing.md),
+              for (final metric in _statedMetrics) ...<Widget>[
+                TextField(
+                  controller: _fields[metric],
+                  keyboardType: TextInputType.number,
+                  inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.allow(RegExp(r'[0-9 _,.]'))],
+                  decoration: InputDecoration(labelText: labels[metric], hintText: t.limitAutomatic),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+              if (_error != null) Text(_error!, style: TextStyle(color: palette.error, fontSize: 13)),
+            ],
+          ),
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(false), child: Text(t.cancel)),
+        FilledButton(onPressed: _saving ? null : _save, child: Text(t.save)),
+      ],
     );
   }
 }

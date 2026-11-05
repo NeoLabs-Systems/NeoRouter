@@ -119,6 +119,9 @@ function publicAccount(row) {
     freeAvailable: Boolean(definition && (declaresFreeModels(definition.billing) || counts.free > 0)),
     // On "Free": every model is in the free tier, or only some are.
     freeTierAll: Boolean(definition?.billing.freeTierAll),
+    // What the person stated, and the in-flight limit in force with its source (manual, learned or documented).
+    limits: require('../quota/account_limits').get(row.id),
+    concurrency: require('../routing/concurrency').limitFor({ accountId: row.id, definitionId: row.definition_id }),
   };
 }
 

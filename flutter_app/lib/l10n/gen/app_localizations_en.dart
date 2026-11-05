@@ -2366,6 +2366,24 @@ class AppL10nEn extends AppL10n {
   String get limitsSectionTitle => 'Limits';
 
   @override
+  String get limitsEdit => 'Set limits';
+
+  @override
+  String limitsEditTitle(String name) {
+    return 'Limits for $name';
+  }
+
+  @override
+  String get limitsEditHint =>
+      'A number you enter always wins over what NeoRouter reads or learns, and never fades. Leave a field empty and NeoRouter works it out itself.';
+
+  @override
+  String get limitsInvalid => 'Enter a whole number, 1 or more.';
+
+  @override
+  String get limitAutomatic => 'automatic';
+
+  @override
   String limitSharedValue(String value) {
     return '$value for all models';
   }

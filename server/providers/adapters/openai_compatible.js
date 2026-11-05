@@ -3,6 +3,7 @@
 const { BaseAdapter } = require('./base_adapter');
 const { readSse, assertNoEmbeddedError } = require('../http');
 const { normalizeModel } = require('../model_info');
+const { derivedSession } = require('../session_id');
 const { ProviderError, KINDS } = require('../provider_error');
 
 function stripSchemaKeys(value, keys) {
@@ -95,9 +96,16 @@ class OpenAICompatibleAdapter extends BaseAdapter {
     return [...listed, ...manual].filter((model) => !known.has(model.id) && known.add(model.id));
   }
 
-  async chat(canonical, { modelId, signal, timeoutMs }) {
+  // The conversation id for hosts that route by it: the client's own, else one derived from the conversation.
+  sessionHeaders(canonical, sessionId) {
+    const name = this.definition.sessionHeader;
+    return name ? { [name]: sessionId || derivedSession(canonical, this.account.id || '') } : {};
+  }
+
+  async chat(canonical, { modelId, signal, timeoutMs, sessionId }) {
     const { data, headers } = await this.http(this.chatPath(), {
       method: 'POST',
+      headers: this.sessionHeaders(canonical, sessionId),
       body: this.buildBody(canonical, modelId, false),
       signal,
       timeoutMs: timeoutMs || this.timeoutMs,
@@ -109,10 +117,10 @@ class OpenAICompatibleAdapter extends BaseAdapter {
     return { response: data, headers };
   }
 
-  async *stream(canonical, { modelId, signal, onHeaders }) {
+  async *stream(canonical, { modelId, signal, onHeaders, sessionId }) {
     const response = await this.request(this.url(this.chatPath()), {
       method: 'POST',
-      headers: this.headers({ Accept: 'text/event-stream' }),
+      headers: this.headers({ Accept: 'text/event-stream', ...this.sessionHeaders(canonical, sessionId) }),
       body: this.buildBody(canonical, modelId, true),
       signal,
       raw: true,

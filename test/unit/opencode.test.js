@@ -52,7 +52,7 @@ test('OpenCode Zen: models that only work inside OpenCode are not offered, paid 
     assert.equal(classify({ definition, billingMode: 'paid', modelId: model.id, listing: model }).isFree, false, model.id);
   }
   assert.equal(definition.baseUrl, 'https://opencode.ai/inference/v1');
-  assert.equal(definition.headers['x-opencode-session'], 'neorouter');
+  assert.equal(definition.sessionHeader, 'x-opencode-session');
 });
 
 test('OpenCode Go: a plan, free models count as free, training models start switched off', async () => {
@@ -60,7 +60,7 @@ test('OpenCode Go: a plan, free models count as free, training models start swit
   assert.equal(definition.category, 'plan');
   assert.equal(definition.billing.defaultMode, 'plan');
   assert.equal(definition.baseUrl, 'https://opencode.ai/inference/go/v1');
-  assert.equal(definition.headers['x-opencode-session'], 'neorouter', 'Go refuses a request without it');
+  assert.equal(definition.sessionHeader, 'x-opencode-session', 'Go refuses a request without it');
   const models = await adapter.listModels();
   assert.equal(models.length, 5, 'free models are kept on Go: the subscription covers them');
   assert.deepEqual(models.filter((model) => model.optIn).map((model) => model.id), ['iceman-contributor-free', 'muse-spark-1.3-contributor']);
@@ -119,4 +119,51 @@ test("OpenCode's refusals are read by what they mean", () => {
   assert.equal(kind(401, 'Missing API key.'), KINDS.AUTH, 'a missing key is still a key problem');
   assert.equal(kind(400, 'messages must not be empty'), KINDS.BAD_REQUEST, 'an ordinary bad request is still the caller\'s');
   assert.equal(kind(429, 'Free usage limit reached. Free models work in OpenCode'), KINDS.RATE_LIMIT);
+});
+
+test('Go usage windows: the console meters become plan windows with what is left', () => {
+  const windows = require('../../server/providers/definitions/plans').opencodeGoWindows({
+    usage: {
+      rolling: { status: 'ok', percent: 2, resetsAt: '2026-11-05T10:00:00.000Z' },
+      weekly: { status: 'ok', percent: 58, resetsAt: '2026-11-09T00:00:00.000Z' },
+      monthly: { status: 'rate-limited', percent: 100, resetsAt: '2026-11-13T09:14:35.000Z' },
+    },
+  });
+  assert.deepEqual(windows, [
+    { metric: 'plan_5h', limit: 100, remaining: 98, resetAt: Date.parse('2026-11-05T10:00:00.000Z') },
+    { metric: 'plan_week', limit: 100, remaining: 42, resetAt: Date.parse('2026-11-09T00:00:00.000Z') },
+    { metric: 'plan_month', limit: 100, remaining: 0, resetAt: Date.parse('2026-11-13T09:14:35.000Z') },
+  ]);
+  const { opencodeGoWindows } = require('../../server/providers/definitions/plans');
+  assert.deepEqual(opencodeGoWindows({}), [], 'an answer without meters is no data, not an empty plan');
+  assert.deepEqual(opencodeGoWindows({ usage: { weekly: { status: 'ok' } } }), []);
+  assert.equal(registry.get('opencode_go').quota.probe.path, '/usage');
+});
+
+test('OpenCode requests carry the conversation id: the client\'s own, else one derived from the conversation', async () => {
+  const { clientSession, derivedSession } = require('../../server/providers/session_id');
+  const seen = [];
+  for (const id of ['opencode', 'opencode_go']) {
+    const { adapter } = adapterFor(id, []);
+    adapter.http = async (_path, options) => { seen.push(options.headers['x-opencode-session']); return { data: { choices: [] }, headers: {} }; };
+    const first = { messages: [{ role: 'system', content: 'be brief' }, { role: 'user', content: 'plan my week' }] };
+    const later = { messages: [...first.messages, { role: 'assistant', content: 'ok' }, { role: 'user', content: 'and Friday?' }] };
+    const other = { messages: [{ role: 'user', content: 'something else' }] };
+    await adapter.chat(first, { modelId: 'm' });
+    await adapter.chat(later, { modelId: 'm' });
+    await adapter.chat(other, { modelId: 'm' });
+    await adapter.chat(first, { modelId: 'm', sessionId: 'client-42' });
+  }
+  const [a, b, c, d] = seen;
+  assert.equal(a, b, 'every turn of one conversation shares its id');
+  assert.notEqual(a, c, 'another conversation gets another id');
+  assert.equal(d, 'client-42', 'the client\'s own id wins');
+  assert.notEqual(a, 'neorouter', 'never one constant');
+  assert.notEqual(derivedSession(registry.get('opencode') && { messages: [{ role: 'user', content: 'x' }] }, 'acc-1'), derivedSession({ messages: [{ role: 'user', content: 'x' }] }, 'acc-2'), 'accounts do not share sessions');
+
+  const header = (name) => (key) => (key === name ? 'abc-123' : undefined);
+  assert.equal(clientSession({ get: header('x-opencode-session') }), 'abc-123');
+  assert.equal(clientSession({ get: header('x-claude-code-session-id') }), 'abc-123');
+  assert.equal(clientSession({ get: () => 'bad value with spaces' }), null);
+  assert.equal(clientSession(undefined), null);
 });

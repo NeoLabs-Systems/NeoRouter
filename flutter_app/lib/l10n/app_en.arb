@@ -1470,6 +1470,18 @@
     }
   },
   "limitsSectionTitle": "Limits",
+  "limitsEdit": "Set limits",
+  "limitsEditTitle": "Limits for {name}",
+  "@limitsEditTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "limitsEditHint": "A number you enter always wins over what NeoRouter reads or learns, and never fades. Leave a field empty and NeoRouter works it out itself.",
+  "limitsInvalid": "Enter a whole number, 1 or more.",
+  "limitAutomatic": "automatic",
   "limitSharedValue": "{value} for all models",
   "@limitSharedValue": {
     "placeholders": {

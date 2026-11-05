@@ -3,6 +3,7 @@
 const { getDatabase } = require('../../db/database');
 const registry = require('../../providers/registry');
 const { parseRateLimitHeaders } = require('./header_parser');
+const accountLimits = require('./account_limits');
 
 // Usage is counted in one-minute buckets per scope. A scope is either one
 // model ("m:<ref>") or a pool shared by several models of one account
@@ -73,7 +74,9 @@ function scopesFor(entry) {
   const scopes = [{ key: `m:${entry.ref}`, curated: modelCurated, kind: 'model' }];
   const accountCurated = spec.account || {};
   const poolApplies = matches(spec.poolMatch, entry.modelId);
-  if (poolApplies && (Object.keys(accountCurated).length || spec.pool === 'account')) {
+  const stated = accountLimits.get(entry.accountId);
+  const hasStated = METRICS.some((metric) => stated[metric]);
+  if ((poolApplies && (Object.keys(accountCurated).length || spec.pool === 'account')) || hasStated) {
     scopes.push({ key: `p:${entry.accountId}`, curated: accountCurated, kind: 'pool' });
   }
   return scopes;
@@ -119,7 +122,10 @@ function usageOf(scope, now = Date.now()) {
 function effectiveLimits(scope) {
   load();
   const result = {};
+  // A limit a person stated for the account outranks everything inferred.
+  const stated = scope.kind === 'pool' ? accountLimits.get(scope.key.slice(2)) : {};
   for (const metric of METRICS) {
+    if (stated[metric]) { result[metric] = { value: stated[metric], source: 'manual' }; continue; }
     const stored = limits.get(`${scope.key}|${metric}`);
     if (stored) result[metric] = { value: stored.value, source: stored.source };
     else if (scope.curated[metric]) result[metric] = { value: scope.curated[metric], source: 'curated' };
@@ -243,6 +249,7 @@ function resetForTests() {
   dirty.clear();
   limits.clear();
   states.clear();
+  accountLimits.resetForTests();
   loaded = false;
 }
 

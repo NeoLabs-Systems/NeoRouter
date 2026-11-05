@@ -4243,6 +4243,36 @@ abstract class AppL10n {
   /// **'Limits'**
   String get limitsSectionTitle;
 
+  /// No description provided for @limitsEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Set limits'**
+  String get limitsEdit;
+
+  /// No description provided for @limitsEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Limits for {name}'**
+  String limitsEditTitle(String name);
+
+  /// No description provided for @limitsEditHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A number you enter always wins over what NeoRouter reads or learns, and never fades. Leave a field empty and NeoRouter works it out itself.'**
+  String get limitsEditHint;
+
+  /// No description provided for @limitsInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a whole number, 1 or more.'**
+  String get limitsInvalid;
+
+  /// No description provided for @limitAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'automatic'**
+  String get limitAutomatic;
+
   /// No description provided for @limitSharedValue.
   ///
   /// In en, this message translates to:

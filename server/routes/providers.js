@@ -5,6 +5,7 @@ const { z } = require('zod');
 const registry = require('../providers/registry');
 const billing = require('../services/providers/billing_check');
 const accounts = require('../services/providers/account_service');
+const accountLimits = require('../services/quota/account_limits');
 const codexOAuth = require('../services/providers/codex_oauth');
 const catalog = require('../services/catalog/catalog_service');
 const { validate } = require('../middleware/validate');
@@ -97,6 +98,17 @@ router.patch('/accounts/:id', requirePermission('providers.manage'), validate(ac
   if (req.body.billingMode !== undefined || req.body.secret !== undefined) await billing.verifyAccount(req.params.id);
   res.json({ account: accounts.get(req.space.ownerId, account.id) });
 }));
+
+// States what this account can take; a number wins over everything the router
+// infers, null clears it. Absent fields stay as they are.
+const limitValue = z.number().int().min(1).max(10_000_000_000).nullable().optional();
+const accountLimitsInput = z.object({ rpm: limitValue, rpd: limitValue, tpm: limitValue, tpd: limitValue, concurrent: limitValue }).strict();
+
+router.put('/accounts/:id/limits', requirePermission('providers.manage'), validate(accountLimitsInput), (req, res) => {
+  accounts.getRow(req.space.ownerId, req.params.id);
+  accountLimits.set(req.params.id, req.body);
+  res.json({ account: accounts.get(req.space.ownerId, req.params.id) });
+});
 
 router.delete('/accounts/:id', requirePermission('providers.delete'), (req, res) => { accounts.remove(req.space.ownerId, req.params.id); res.status(204).end(); });
 
