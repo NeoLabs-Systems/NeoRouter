@@ -91,7 +91,7 @@ function hedgeDelay(entry, stream) {
 }
 
 function trailItem(entry, outcome, extra = {}) {
-  return { model: entry.id, ref: entry.ref, outcome, ...extra };
+  return { model: entry.id, ref: entry.ref, outcome, ...(entry.tryingLuck ? { luck: true } : {}), ...extra };
 }
 
 // Wraps the remaining upstream iterator so idle gaps abort the attempt.
@@ -399,7 +399,11 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
         if (clientAbort.signal.aborted || attemptsStarted >= config.routing.maxAttempts) return false;
         const now = Date.now();
         freesUpAt = plan.freesUpAt(now);
-        if (freesUpAt === null || freesUpAt > waitUntil) return false;
+        if (freesUpAt === null || freesUpAt > waitUntil) {
+          // Better to try what may work again than to answer "no model available".
+          if (plan.enableLongShots({ now })) continue;
+          return false;
+        }
         plan.joinQueue(now);
         const pause = Math.min(waitUntil - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random()));
         await sleep(pause);

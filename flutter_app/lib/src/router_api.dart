@@ -54,6 +54,8 @@ class RouterApi {
   Future<void> setAccountLimits(String id, Map<String, int?> limits) => client.put('$_base/providers/accounts/$id/limits', limits);
   Future<void> deleteAccount(String id) => client.delete('$_base/providers/accounts/$id');
   Future<Map<String, dynamic>> validateAccount(String id) => client.post('$_base/providers/accounts/$id/validate');
+  /// The person fixed what was wrong: the router forgets what it held against the connection and tries it again.
+  Future<Map<String, dynamic>> markAccountFixed(String id) => client.post('$_base/providers/accounts/$id/mark-fixed');
   Future<Map<String, dynamic>> syncAccount(String id) => client.post('$_base/providers/accounts/$id/sync');
   Future<Map<String, dynamic>> probeQuota(String id) => client.post('$_base/providers/accounts/$id/quota');
 

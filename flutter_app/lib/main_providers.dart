@@ -180,6 +180,13 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
           if (items.isEmpty) return t.quotaProbeEmpty;
           return items.map((item) => t.quotaProbeResult(metricLabel(t, '${item['metric']}'), '${item['remaining']}')).join(' · ');
         });
+      case _AccountAction.fixed:
+        await _run(account.id, () async {
+          final result = await api.markAccountFixed(account.id);
+          final validation = result['validation'] as Map?;
+          final failing = validation != null && validation['status'] == 'invalid';
+          return failing ? t.markFixedStillFailing('${validation['message'] ?? ''}') : t.markFixedDone;
+        });
       case _AccountAction.edit:
         await _edit(account);
       case _AccountAction.another:
@@ -280,7 +287,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
   }
 }
 
-enum _AccountAction { check, sync, balance, edit, another, remove }
+enum _AccountAction { check, sync, balance, fixed, edit, another, remove }
 
 /// A provider connected with several accounts: one row for the provider, its
 /// accounts in a dropdown under it.
@@ -491,6 +498,7 @@ class _AccountRow extends StatelessWidget {
                     _menuItem(_AccountAction.check, Icons.verified_user_outlined, t.revalidate),
                     _menuItem(_AccountAction.sync, Icons.sync_rounded, t.syncModels),
                     _menuItem(_AccountAction.balance, Icons.account_balance_wallet_outlined, t.probeQuota),
+                    _menuItem(_AccountAction.fixed, Icons.build_circle_outlined, t.markFixed),
                     _menuItem(_AccountAction.edit, Icons.edit_outlined, t.editProvider),
                     _menuItem(_AccountAction.another, Icons.add_rounded, t.addAnotherAccount),
                   ],

@@ -525,6 +525,18 @@ class AppL10nEn extends AppL10n {
   String get probeQuota => 'Check balance';
 
   @override
+  String get markFixed => 'Mark as fixed';
+
+  @override
+  String get markFixedDone =>
+      'Fresh start: NeoRouter forgot the cooldowns and will try this connection again.';
+
+  @override
+  String markFixedStillFailing(String message) {
+    return 'Fresh start, but the key check says: $message';
+  }
+
+  @override
   String get removeProvider => 'Remove connection';
 
   @override

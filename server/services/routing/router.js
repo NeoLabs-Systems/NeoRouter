@@ -139,7 +139,7 @@ function rejection(entry, ctx, now) {
   if (!entry.accountEnabled || entry.accountStatus === 'disabled' || entry.accountStatus === 'invalid') return 'account_unavailable';
   if (!allowedByKey(entry, key)) return 'not_allowed_for_key';
   if ((ctx.accountFailures?.get(entry.accountId) || 0) >= MAX_FAILURES_PER_ACCOUNT && !ctx.primaryRefs.has(entry.ref)) return 'account_failing';
-  if (accountHealth.restingUntil(entry.accountId, now) && !ctx.primaryRefs.has(entry.ref)) return 'account_resting';
+  if (!ctx.longShot && accountHealth.restingUntil(entry.accountId, now) && !ctx.primaryRefs.has(entry.ref)) return 'account_resting';
   const kind = kindAllowed(entry, key, freeOnly);
   if (kind) return kind;
   if (ctx.tokenLimitReached && (entry.isFree || entry.isPlan)) return 'token_limit';
@@ -171,7 +171,7 @@ function rejection(entry, ctx, now) {
   const minOutput = stats.snapshot(entry.ref, now).min_output_tokens;
   if (request.max_tokens && minOutput && request.max_tokens < minOutput && !ctx.primaryRefs.has(entry.ref)) return 'needs_more_tokens';
   const available = stats.availability(entry.ref, now);
-  if (!available.available) return available.reason;
+  if (!available.available && !(ctx.longShot && LONG_SHOT_REASONS.has(available.reason))) return available.reason;
   const planReason = plans.rejection(entry, now);
   if (planReason) return planReason;
   // An account at its (learned or documented) concurrency limit takes no more work right now.
@@ -313,6 +313,12 @@ function explainNoModel(rejected, capability = 'chat') {
 // Cooldowns that end by themselves; whether waiting helps depends on when.
 const SHORT_COOLDOWNS = new Set(['rate_limited', 'quota_exhausted', 'circuit_open', 'cooldown']);
 const BUSY_RECHECK_MS = 1000;
+// When nothing else can serve, connections held back only by what the router
+// believes about their health are tried anyway: a rate limit or outage may be
+// over, a model that went missing may be back. Not the ones a person must fix
+// (payment, key, a model that rejects this kind of request).
+const LONG_SHOT_REASONS = new Set(['rate_limited', 'quota_exhausted', 'not_available', 'circuit_open', 'cooldown', 'account_resting']);
+const MAX_LONG_SHOTS = 3;
 const MINUTE_MS = 60_000;
 
 class RoutingPlan {
@@ -357,6 +363,8 @@ class RoutingPlan {
     if (this.task) for (const entry of this.entries) entry.task = this.task.primary;
     this.primaryRefs = new Set();
     this.accountFailures = new Map();
+    this.longShot = false;
+    this.longShotsLeft = MAX_LONG_SHOTS;
     if (!this.parsed.auto) this.scopeToRequestedModel();
   }
 
@@ -381,7 +389,7 @@ class RoutingPlan {
   }
 
   context() {
-    return { accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost };
+    return { longShot: this.longShot, accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost };
   }
 
   rank({ includeRejected = false, sample = true, now = Date.now() } = {}) {
@@ -492,7 +500,28 @@ class RoutingPlan {
       }
     }
     this.tried.add(choice.entry.ref);
+    if (this.longShot && this.heldBack(choice.entry, now)) {
+      choice.entry.tryingLuck = true;
+      this.longShotsLeft -= 1;
+      if (this.longShotsLeft <= 0) this.longShot = false;
+    }
     return choice;
+  }
+
+  // Held back only by its health record (not by a limit, a policy or a request it cannot serve).
+  heldBack(entry, now = Date.now()) {
+    return LONG_SHOT_REASONS.has(rejection(entry, { ...this.context(), longShot: false }, now));
+  }
+
+  // Nothing else can serve: allow a few tries of connections held back only
+  // by their health record. False when there is none (or they were used up).
+  enableLongShots({ filter = null, now = Date.now() } = {}) {
+    if (this.longShot || this.longShotsLeft <= 0) return false;
+    const ctx = { ...this.context(), longShot: true };
+    const possible = this.entries.some((entry) => !this.tried.has(entry.ref) && (!filter || filter(entry))
+      && this.heldBack(entry, now) && !rejection(entry, ctx, now));
+    this.longShot = possible;
+    return possible;
   }
 
   // When the soonest candidate that is only blocked for now (rate-limited,
@@ -579,4 +608,4 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
   };
 }
 
-module.exports = { needsCredits, RoutingPlan, explainNoModel, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, routeAllowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor };
+module.exports = { LONG_SHOT_REASONS, MAX_LONG_SHOTS, needsCredits, RoutingPlan, explainNoModel, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, routeAllowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor };

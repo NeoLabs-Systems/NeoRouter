@@ -27,7 +27,7 @@ const QUEUE_MIN_POLL_MS = 200;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function trailItem(entry, outcome, extra = {}) {
-  return { model: entry.id, outcome, ...extra };
+  return { model: entry.id, outcome, ...(entry.tryingLuck ? { luck: true } : {}), ...extra };
 }
 
 /**
@@ -111,7 +111,11 @@ async function runCapability({ req, res = null, key, capability, method, request
         if (choice) return choice;
         const now = Date.now();
         freesUpAt = plan.freesUpAt(now, supported);
-        if (freesUpAt === null || freesUpAt > waitUntil) return null;
+        if (freesUpAt === null || freesUpAt > waitUntil) {
+          // Better to try what may work again than to answer "no model available".
+          if (plan.enableLongShots({ filter: supported, now })) continue;
+          return null;
+        }
         plan.joinQueue(now, supported);
         await sleep(Math.min(waitUntil - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random())));
         queuedMs += Date.now() - now;

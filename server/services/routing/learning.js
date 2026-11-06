@@ -105,15 +105,18 @@ function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, now = 
   // "Too many concurrent requests" says nothing about the per-minute rate:
   // the account is busy, not used up, so no cooldown and no exhausted rpm.
   const busy = error.kind === KINDS.RATE_LIMIT && concurrency.onRateLimited(entry, error, { now });
-  if (!busy && policy.perAccount !== false) accountHealth.onFailure(entry.accountId, now);
+  // A connection a person marked as fixed gets a few failures forgiven: they
+  // leave no cooldown, rest or penalty, so it is really tried again.
+  const forgiven = !busy && policy.perAccount !== false && accountHealth.takeChance(entry.accountId);
+  if (!busy && !forgiven && policy.perAccount !== false) accountHealth.onFailure(entry.accountId, now);
   const current = stats.snapshot(entry.ref, now);
-  const cooldown = busy ? null : cooldownFor(error, current, now);
+  const cooldown = busy || forgiven ? null : cooldownFor(error, current, now);
   stats.recordFailure(entry.ref, {
     // Busy is not unreliable: it neither costs reliability nor earns a penalty.
-    weight: busy ? 0 : policy.weight,
-    penalty: busy ? 0 : policy.penalty,
+    weight: busy || forgiven ? 0 : policy.weight,
+    penalty: busy || forgiven ? 0 : policy.penalty,
     message: `${error.kind}: ${error.message}`,
-    countsForBreaker: policy.breaker,
+    countsForBreaker: policy.breaker && !forgiven,
     cooldownUntil: cooldown?.until || 0,
     cooldownReason: cooldown?.reason || null,
     escalate: cooldown?.escalate || false,
@@ -125,7 +128,7 @@ function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, now = 
   }
   if (error.learned?.value) quota.learnLimit(entry, error.learned);
   if (error.kind === KINDS.QUOTA_EXHAUSTED) billing.observeFailure(entry, error);
-  if (error.kind === KINDS.QUOTA_EXHAUSTED || (error.kind === KINDS.RATE_LIMIT && !busy)) {
+  if (!forgiven && (error.kind === KINDS.QUOTA_EXHAUSTED || (error.kind === KINDS.RATE_LIMIT && !busy))) {
     quota.markExhausted(entry, error.kind === KINDS.QUOTA_EXHAUSTED ? 'rpd' : 'rpm', cooldown?.until || null, now);
   }
   return policy;

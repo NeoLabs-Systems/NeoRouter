@@ -241,6 +241,16 @@
   "revalidate": "Check key",
   "syncModels": "Refresh models",
   "probeQuota": "Check balance",
+  "markFixed": "Mark as fixed",
+  "markFixedDone": "Fresh start: NeoRouter forgot the cooldowns and will try this connection again.",
+  "markFixedStillFailing": "Fresh start, but the key check says: {message}",
+  "@markFixedStillFailing": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "removeProvider": "Remove connection",
   "removeProviderConfirm": "Remove {name}? Its models are no longer used. You can add it again at any time.",
   "@removeProviderConfirm": {

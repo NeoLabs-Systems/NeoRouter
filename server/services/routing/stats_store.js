@@ -143,6 +143,20 @@ function clearCooldown(ref) {
   });
 }
 
+// A clean slate for a model a person says works again: no cooldown, breaker or
+// penalty, and the failures that made it look unreliable are forgotten.
+function forgive(ref) {
+  return update(ref, (row) => {
+    row.cooldown_until = 0;
+    row.cooldown_reason = null;
+    row.cooldown_level = 0;
+    row.breaker_open_until = 0;
+    row.recent_failures_json = '[]';
+    row.penalty = 0;
+    row.failures = 0;
+  });
+}
+
 // A half-open breaker lets exactly one probe through after it expires; the
 // probe's outcome closes it again (success) or reopens it (failure).
 function availability(ref, now = Date.now()) {
@@ -156,4 +170,4 @@ function resetForTests() {
   cache.clear();
 }
 
-module.exports = { snapshot, recordSuccess, recordSlow, recordFailure, raiseMinOutputTokens, clearCooldown, availability, resetForTests, MAX_PENALTY };
+module.exports = { snapshot, recordSuccess, recordSlow, recordFailure, raiseMinOutputTokens, clearCooldown, forgive, availability, resetForTests, MAX_PENALTY };

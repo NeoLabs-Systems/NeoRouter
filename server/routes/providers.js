@@ -5,6 +5,7 @@ const { z } = require('zod');
 const registry = require('../providers/registry');
 const billing = require('../services/providers/billing_check');
 const accounts = require('../services/providers/account_service');
+const { markAccountFixed } = require('../services/routing/fixed');
 const accountLimits = require('../services/quota/account_limits');
 const codexOAuth = require('../services/providers/codex_oauth');
 const catalog = require('../services/catalog/catalog_service');
@@ -109,6 +110,15 @@ router.put('/accounts/:id/limits', requirePermission('providers.manage'), valida
   accountLimits.set(req.params.id, req.body);
   res.json({ account: accounts.get(req.space.ownerId, req.params.id) });
 });
+
+// The person fixed what was wrong: forget the cooldowns, rests and failures held
+// against this connection, check the key again and give it fresh chances.
+router.post('/accounts/:id/mark-fixed', requirePermission('providers.manage'), asyncRoute(async (req, res) => {
+  accounts.getRow(req.space.ownerId, req.params.id);
+  const fixed = markAccountFixed(req.params.id);
+  const validation = await accounts.validateAccount(req.params.id).catch((error) => ({ status: 'unknown', message: error.message }));
+  res.json({ fixed, validation, account: accounts.get(req.space.ownerId, req.params.id) });
+}));
 
 router.delete('/accounts/:id', requirePermission('providers.delete'), (req, res) => { accounts.remove(req.space.ownerId, req.params.id); res.status(204).end(); });
 

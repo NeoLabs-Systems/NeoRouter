@@ -202,6 +202,19 @@ function markExhausted(entry, metric, resetAt, now = Date.now()) {
   setState(scope.key, metric, { limit: null, remaining: 0, resetAt }, 'error', now);
 }
 
+// Drops the "used up until later" marks that refusals left on an account and its models.
+function clearObservedExhaustion(accountId, refs = []) {
+  load();
+  const scopes = new Set([`p:${accountId}`, `a:${accountId}`, ...refs.map((ref) => `m:${ref}`)]);
+  const db = getDatabase();
+  for (const [key, state] of [...states]) {
+    const scope = key.split('|')[0];
+    if (state.source !== 'error' || !scopes.has(scope)) continue;
+    states.delete(key);
+    db.prepare('DELETE FROM quota_state WHERE scope_key = ? AND metric = ? AND source = ?').run(scope, key.split('|')[1], 'error');
+  }
+}
+
 function evaluate(entry, estimatedTokens = 0, now = Date.now()) {
   let headroom = 1;
   let blocked = null;
@@ -263,6 +276,7 @@ module.exports = {
   observeHeaders,
   learnLimit,
   markExhausted,
+  clearObservedExhaustion,
   setLimit,
   clearLimit,
   setState,

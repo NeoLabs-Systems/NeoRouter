@@ -1051,6 +1051,24 @@ abstract class AppL10n {
   /// **'Check balance'**
   String get probeQuota;
 
+  /// No description provided for @markFixed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as fixed'**
+  String get markFixed;
+
+  /// No description provided for @markFixedDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Fresh start: NeoRouter forgot the cooldowns and will try this connection again.'**
+  String get markFixedDone;
+
+  /// No description provided for @markFixedStillFailing.
+  ///
+  /// In en, this message translates to:
+  /// **'Fresh start, but the key check says: {message}'**
+  String markFixedStillFailing(String message);
+
   /// No description provided for @removeProvider.
   ///
   /// In en, this message translates to:

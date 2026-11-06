@@ -528,6 +528,18 @@ class AppL10nDe extends AppL10n {
   String get probeQuota => 'Guthaben prüfen';
 
   @override
+  String get markFixed => 'Als repariert markieren';
+
+  @override
+  String get markFixedDone =>
+      'Neuer Anfang: NeoRouter hat die Pausen vergessen und versucht diese Verbindung wieder.';
+
+  @override
+  String markFixedStillFailing(String message) {
+    return 'Neuer Anfang, aber die Schlüsselprüfung meldet: $message';
+  }
+
+  @override
   String get removeProvider => 'Verbindung entfernen';
 
   @override

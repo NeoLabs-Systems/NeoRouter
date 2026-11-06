@@ -72,9 +72,14 @@ function onSuccess(entry, { running = loadTracker.inflight(entry).account, now =
   }
 }
 
+/** Drops what was learned about an account (a person says it works again). */
+function forget(accountId) {
+  learned.delete(accountId);
+}
+
 function resetForTests() {
   learned.clear();
   accountLimits.resetForTests();
 }
 
-module.exports = { limitFor, onRateLimited, onSuccess, isConcurrencyError, resetForTests };
+module.exports = { forget, limitFor, onRateLimited, onSuccess, isConcurrencyError, resetForTests };
