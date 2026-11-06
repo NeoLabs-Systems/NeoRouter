@@ -901,6 +901,60 @@ abstract class AppL10n {
   /// **'ChatGPT connected'**
   String get chatgptConnected;
 
+  /// No description provided for @nousSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Nous Portal'**
+  String get nousSignIn;
+
+  /// No description provided for @nousSignInAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again'**
+  String get nousSignInAgain;
+
+  /// No description provided for @nousSignInHint.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter shows a code. Enter it in Nous Portal to let it use your subscription and credits.'**
+  String get nousSignInHint;
+
+  /// No description provided for @nousEnterCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter this code in Nous Portal'**
+  String get nousEnterCode;
+
+  /// No description provided for @nousOpenPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Nous Portal'**
+  String get nousOpenPage;
+
+  /// No description provided for @nousWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for you to confirm…'**
+  String get nousWaiting;
+
+  /// No description provided for @nousExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'The code expired. Start again.'**
+  String get nousExpired;
+
+  /// No description provided for @nousConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Nous Portal connected'**
+  String get nousConnected;
+
+  /// No description provided for @nousSignedInAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in as {email}'**
+  String nousSignedInAs(String email);
+
   /// No description provided for @apiKey.
   ///
   /// In en, this message translates to:

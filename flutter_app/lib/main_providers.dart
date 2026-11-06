@@ -645,21 +645,26 @@ class _ProviderFormState extends State<_ProviderForm> {
     super.dispose();
   }
 
-  bool get _signInOnly => widget.definition.connect == 'codex_device';
+  // Device sign-ins: ChatGPT (Codex) and Nous Portal. Both show a code and
+  // poll until it is approved, so they share one block.
+  bool get _signInOnly => widget.definition.connect == 'codex_device' || widget.definition.connect == 'nous_device';
+  bool get _nous => widget.definition.connect == 'nous_device';
 
-  Future<void> _startChatgptSignIn() async {
+  Future<void> _startSignIn() async {
     final t = AppL10n.of(context);
     setState(() {
       _connecting = true;
       _error = null;
     });
     try {
-      final login = await widget.controller.api.chatgptLoginStart(accountId: widget.account?.id, billingMode: _billing);
+      final login = _nous
+          ? await widget.controller.api.nousLoginStart(accountId: widget.account?.id)
+          : await widget.controller.api.chatgptLoginStart(accountId: widget.account?.id, billingMode: _billing);
       if (!mounted) return;
       setState(() => _deviceLogin = login);
       await launchUrl(Uri.parse('${login['verificationUrl']}'));
       final seconds = ((login['interval'] as num?) ?? 5).toInt().clamp(2, 30);
-      _devicePoll = Timer.periodic(Duration(seconds: seconds), (_) => _pollChatgptSignIn());
+      _devicePoll = Timer.periodic(Duration(seconds: seconds), (_) => _pollSignIn());
     } on ApiException catch (error) {
       setState(() => _error = error.message);
     } catch (_) {
@@ -671,22 +676,24 @@ class _ProviderFormState extends State<_ProviderForm> {
 
   bool _polling = false;
 
-  Future<void> _pollChatgptSignIn() async {
+  Future<void> _pollSignIn() async {
     final login = _deviceLogin;
     if (login == null || _polling) return;
     _polling = true;
     final t = AppL10n.of(context);
     try {
-      final result = await widget.controller.api.chatgptLoginPoll('${login['loginId']}');
+      final result = _nous
+          ? await widget.controller.api.nousLoginPoll('${login['loginId']}')
+          : await widget.controller.api.chatgptLoginPoll('${login['loginId']}');
       if (!mounted) return;
       if (result['status'] == 'done') {
         _devicePoll?.cancel();
-        Navigator.of(context).pop(_editing ? t.saved : t.chatgptConnected);
+        Navigator.of(context).pop(_editing ? t.saved : (_nous ? t.nousConnected : t.chatgptConnected));
       } else if (result['status'] == 'expired') {
         _devicePoll?.cancel();
         setState(() {
           _deviceLogin = null;
-          _error = t.chatgptExpired;
+          _error = _nous ? t.nousExpired : t.chatgptExpired;
         });
       }
     } on ApiException catch (error) {
@@ -863,21 +870,23 @@ class _ProviderFormState extends State<_ProviderForm> {
                 const SizedBox(height: AppSpacing.md),
                 if (_deviceLogin == null) ...<Widget>[
                   FilledButton.icon(
-                    onPressed: _connecting ? null : _startChatgptSignIn,
+                    onPressed: _connecting ? null : _startSignIn,
                     icon: _connecting
                         ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.login_rounded, size: 18),
-                    label: Text(_editing ? t.chatgptSignInAgain : t.chatgptSignIn),
+                    label: Text(_editing
+                        ? (_nous ? t.nousSignInAgain : t.chatgptSignInAgain)
+                        : (_nous ? t.nousSignIn : t.chatgptSignIn)),
                   ),
                   const SizedBox(height: 6),
-                  Text(t.chatgptSignInHint, style: TextStyle(color: palette.textMuted, fontSize: 12.5, height: 1.4)),
+                  Text(_nous ? t.nousSignInHint : t.chatgptSignInHint, style: TextStyle(color: palette.textMuted, fontSize: 12.5, height: 1.4)),
                 ] else
                   AppCard(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(t.chatgptEnterCode, style: TextStyle(color: palette.textSoft, fontSize: 13)),
+                        Text(_nous ? t.nousEnterCode : t.chatgptEnterCode, style: TextStyle(color: palette.textSoft, fontSize: 13)),
                         const SizedBox(height: 6),
                         Row(
                           children: <Widget>[
@@ -895,25 +904,25 @@ class _ProviderFormState extends State<_ProviderForm> {
                         TextButton.icon(
                           onPressed: () => launchUrl(Uri.parse('${_deviceLogin!['verificationUrl']}')),
                           icon: const Icon(Icons.open_in_new_rounded, size: 15),
-                          label: Text(t.chatgptOpenPage),
+                          label: Text(_nous ? t.nousOpenPage : t.chatgptOpenPage),
                         ),
                         Row(
                           children: <Widget>[
                             const SizedBox.square(dimension: 14, child: CircularProgressIndicator(strokeWidth: 2)),
                             const SizedBox(width: 10),
-                            Text(t.chatgptWaiting, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+                            Text(_nous ? t.nousWaiting : t.chatgptWaiting, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
                           ],
                         ),
                       ],
                     ),
                   ),
               ],
-              if (!_signInOnly) ...<Widget>[
+              if (!_signInOnly || _nous) ...<Widget>[
                 const SizedBox(height: AppSpacing.md),
                 TextField(
                   controller: _secret,
                   obscureText: true,
-                  autofocus: !_editing && definition.id != 'openrouter',
+                  autofocus: !_editing && definition.id != 'openrouter' && !_nous,
                   decoration: InputDecoration(
                     labelText: _editing
                         ? t.apiKeyKeep
