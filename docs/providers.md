@@ -82,6 +82,25 @@ every 6 hours. Until it returns "free", rule 4 does not apply.
 Only use `freeTierAll` when the provider cannot charge at all on that plan, and
 record `source` and `checkedAt` whenever free-tier facts change.
 
+## Signing in instead of pasting a key
+
+Some providers are connected with their own sign-in, which returns an OAuth
+token instead of an API key. Set `connect`:
+
+- `codex_device` — ChatGPT (Codex) plans, `server/services/providers/codex_oauth.js`.
+- `nous_device` — Nous Portal subscriptions and credits,
+  `server/services/providers/nous_oauth.js`.
+
+Both use a device code (the user approves a code in the browser, so it works on
+a server without one) and store the tokens as the account secret, refreshed
+before they expire. Routes live in `server/routes/providers.js`
+(`/providers/chatgpt/login`, `/providers/nous/login`); a definition with `connect`
+must have an adapter that knows how to turn the stored secret into an auth
+header (`adapters/codex.js`, `adapters/nous.js`).
+
+A `connect` provider may also accept a pasted key: the Nous adapter sends an
+API key as it is and only treats a three-part JWT as sign-in tokens.
+
 ## Non-OpenAI protocols
 
 Adapters live in `server/providers/adapters/` and implement `validate`,

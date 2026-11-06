@@ -440,6 +440,36 @@ class AppL10nEn extends AppL10n {
   String get chatgptConnected => 'ChatGPT connected';
 
   @override
+  String get nousSignIn => 'Sign in with Nous Portal';
+
+  @override
+  String get nousSignInAgain => 'Sign in again';
+
+  @override
+  String get nousSignInHint =>
+      'NeoRouter shows a code. Enter it in Nous Portal to let it use your subscription and credits.';
+
+  @override
+  String get nousEnterCode => 'Enter this code in Nous Portal';
+
+  @override
+  String get nousOpenPage => 'Open Nous Portal';
+
+  @override
+  String get nousWaiting => 'Waiting for you to confirm…';
+
+  @override
+  String get nousExpired => 'The code expired. Start again.';
+
+  @override
+  String get nousConnected => 'Nous Portal connected';
+
+  @override
+  String nousSignedInAs(String email) {
+    return 'Signed in as $email';
+  }
+
+  @override
   String get apiKey => 'API key';
 
   @override
