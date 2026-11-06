@@ -112,6 +112,13 @@ function autoModels(key, entries, type) {
   return list;
 }
 
+// The same model is offered by several providers, so a picker that only shows
+// the name cannot tell the copies apart: "Llama 3.3 70B (Groq)".
+function listedName(entry) {
+  const provider = entry.providerName || entry.providerSlug;
+  return provider && !entry.name.toLowerCase().includes(provider.toLowerCase()) ? `${entry.name} (${provider})` : entry.name;
+}
+
 router.get('/models', requireRouterKey, (req, res) => {
   const key = req.routerKey;
   // ?type=embedding (or image, speech, transcription, moderation, video) lists another kind.
@@ -123,7 +130,7 @@ router.get('/models', requireRouterKey, (req, res) => {
   const entries = reachable.filter((entry) => routeAllowedByKey(entry.id, key));
   if (req.get('anthropic-version')) {
     const data = [...autos.map((auto) => ({ type: 'model', id: auto.id, display_name: auto.name, created_at: new Date().toISOString() })),
-      ...entries.map((entry) => ({ type: 'model', id: entry.id, display_name: entry.name, created_at: new Date().toISOString() }))];
+      ...entries.map((entry) => ({ type: 'model', id: entry.id, display_name: listedName(entry), created_at: new Date().toISOString() }))];
     return res.json({ data, has_more: false, first_id: data[0]?.id || null, last_id: data[data.length - 1]?.id || null });
   }
   return res.json({
@@ -135,7 +142,7 @@ router.get('/models', requireRouterKey, (req, res) => {
         object: 'model',
         created,
         owned_by: entry.providerSlug,
-        name: entry.name,
+        name: listedName(entry),
         context_length: entry.contextWindow,
         pricing: entry.isFree || entry.isPlan ? { prompt: '0', completion: '0' } : { prompt: entry.priceIn === null ? null : String(entry.priceIn / 1e6), completion: entry.priceOut === null ? null : String(entry.priceOut / 1e6) },
         neorouter: {
