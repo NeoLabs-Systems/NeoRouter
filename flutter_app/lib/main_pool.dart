@@ -1,10 +1,12 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
+import 'main_activity.dart';
 import 'main_controller.dart';
 import 'main_pool_graph.dart';
 import 'main_shared.dart';
@@ -95,17 +97,17 @@ class _PoolSwitchState extends State<PoolSwitch> {
 
 /// Picks connections as tiles: one tap selects, a tick shows it. With many
 /// connections a filter narrows the list; "All" and "None" act on what is shown.
-/// With [levels], each tile has a ⋯ menu for how much of it is shared.
+/// With [onEdit], each tile has a ⋯ to choose which kinds of its models are shared.
 class ConnectionPicker extends StatefulWidget {
-  const ConnectionPicker({super.key, required this.accounts, required this.selected, required this.onChanged, this.levels, this.onLevel});
+  const ConnectionPicker({super.key, required this.accounts, required this.selected, required this.onChanged, this.kinds, this.onEdit});
 
   final List<ShareableAccount> accounts;
   final Set<String> selected;
   final ValueChanged<Set<String>> onChanged;
 
-  /// Level per selected connection (free, plan, paid); null hides the menu.
-  final Map<String, String>? levels;
-  final void Function(ShareableAccount account, String level)? onLevel;
+  /// Kinds (free, plan, paid) each selected connection shares.
+  final Map<String, Set<String>>? kinds;
+  final ValueChanged<ShareableAccount>? onEdit;
 
   @override
   State<ConnectionPicker> createState() => _ConnectionPickerState();
@@ -159,14 +161,14 @@ class _ConnectionPickerState extends State<ConnectionPicker> {
                     child: _ConnectionTile(
                       account: account,
                       selected: widget.selected.contains(account.id),
-                      level: widget.levels == null ? null : widget.levels![account.id] ?? 'free',
-                      onLevel: widget.onLevel == null ? null : (level) => widget.onLevel!(account, level),
+                      kinds: widget.kinds?[account.id],
+                      onEdit: widget.onEdit == null ? null : () => widget.onEdit!(account),
                       onTap: () => widget.selected.contains(account.id)
                           ? widget.onChanged(<String>{...widget.selected}..remove(account.id))
-                          : account.freeModels > 0 || widget.onLevel == null
+                          : account.freeModels > 0 || widget.onEdit == null
                           ? widget.onChanged(<String>{...widget.selected, account.id})
-                          // Nothing free: pick how much of it to share instead.
-                          : widget.onLevel!(account, account.planModels > 0 ? 'plan' : 'paid'),
+                          // Nothing free: choose what to share instead.
+                          : widget.onEdit!(account),
                     ),
                   ),
               ],
@@ -178,54 +180,31 @@ class _ConnectionPickerState extends State<ConnectionPicker> {
   }
 }
 
-/// The ⋯ on a connection tile: share only its free models, also its
-/// subscription models, or also its paid ones. Only kinds it has are offered.
-class _LevelMenu extends StatelessWidget {
-  const _LevelMenu({required this.account, required this.level, required this.onLevel});
-
-  final ShareableAccount account;
-  final String? level;
-  final ValueChanged<String> onLevel;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppL10n.of(context);
-    final palette = neoRouterPaletteOf(context);
-    final options = <(String, String)>[
-      if (account.freeModels > 0) ('free', t.poolLevelFree),
-      if (account.planModels > 0) ('plan', t.poolLevelPlan),
-      if (account.paidModels > 0) ('paid', t.poolLevelPaid),
-    ];
-    return SizedBox.square(
-      dimension: 28,
-      child: PopupMenuButton<String>(
-        tooltip: t.poolLevelMenu,
-        padding: EdgeInsets.zero,
-        iconSize: 18,
-        icon: Icon(Icons.more_vert_rounded, color: palette.textMuted),
-        onSelected: onLevel,
-        itemBuilder: (_) => <PopupMenuEntry<String>>[
-          for (final (value, label) in options)
-            CheckedPopupMenuItem<String>(value: value, checked: value == level, child: Text(label)),
-        ],
-      ),
-    );
-  }
-}
-
 class _ConnectionTile extends StatelessWidget {
-  const _ConnectionTile({required this.account, required this.selected, required this.onTap, this.level, this.onLevel});
+  const _ConnectionTile({required this.account, required this.selected, required this.onTap, this.kinds, this.onEdit});
 
   final ShareableAccount account;
   final bool selected;
   final VoidCallback onTap;
-  final String? level;
-  final ValueChanged<String>? onLevel;
+  final Set<String>? kinds;
+  final VoidCallback? onEdit;
 
-  // What the tile says it shares (selected) or could share.
+  // The ticked kinds it actually has models of.
+  Set<String> get _shared => <String>{
+    if (account.freeModels > 0 && kinds!.contains('free')) 'free',
+    if (account.planModels > 0 && kinds!.contains('plan')) 'plan',
+    if (account.paidModels > 0 && kinds!.contains('paid')) 'paid',
+  };
+
+  // Shares more than free models: shown in the accent colour.
+  bool get _costs => selected && kinds != null && _shared.any((kind) => kind != 'free');
+
+  // What the tile shares (when it shares more than free models) or could share.
   String _subtitle(AppL10n t) {
-    if (selected && level == 'plan') return t.poolSharesPlan;
-    if (selected && level == 'paid') return t.poolSharesPaid;
+    if (_costs) {
+      final shared = _shared;
+      return <String>[if (shared.contains('free')) t.kindFreeShort, if (shared.contains('plan')) t.kindPlanShort, if (shared.contains('paid')) t.kindPaidShort].join(' · ');
+    }
     if (account.freeModels > 0) return t.poolFreeModels('${account.freeModels}');
     return account.planModels > 0 ? t.poolPlanModels('${account.planModels}') : t.poolPaidModels('${account.paidModels}');
   }
@@ -254,7 +233,7 @@ class _ConnectionTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(account.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: palette.text)),
-                    Text(_subtitle(t), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: selected && level != null && level != 'free' ? palette.accent : palette.textMuted)),
+                    Text(_subtitle(t), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: _costs ? palette.accent : palette.textMuted)),
                   ],
                 ),
               ),
@@ -265,7 +244,17 @@ class _ConnectionTile extends StatelessWidget {
                     ? Icon(Icons.check_circle_rounded, key: const ValueKey<bool>(true), size: 18, color: palette.accent)
                     : Icon(Icons.circle_outlined, key: const ValueKey<bool>(false), size: 18, color: palette.borderStrong),
               ),
-              if (onLevel != null) _LevelMenu(account: account, level: selected ? level ?? 'free' : null, onLevel: onLevel!),
+              // Only where there is a choice: a connection with one kind of model is just picked or not.
+              if (onEdit != null && account.kinds > 1)
+                IconButton(
+                  tooltip: AppL10n.of(context).poolKindsMenu,
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints.tightFor(width: 28, height: 28),
+                  padding: EdgeInsets.zero,
+                  iconSize: 18,
+                  icon: Icon(Icons.more_vert_rounded, color: palette.textMuted),
+                  onPressed: onEdit,
+                ),
             ],
           ),
         ),
@@ -449,7 +438,7 @@ class _StartOrJoin extends StatelessWidget {
   }
 }
 
-enum _PoolSection { overview, sharing, settings }
+enum _PoolSection { overview, activity, sharing, settings }
 
 /// One pool: a card with its name, switch and invite button, then its tabs.
 class _PoolPage extends StatefulWidget {
@@ -528,6 +517,7 @@ class _PoolPageState extends State<_PoolPage> {
         PageTabs<_PoolSection>(
           tabs: <({_PoolSection value, String label, int? count})>[
             (value: _PoolSection.overview, label: t.poolTabOverview, count: null),
+            (value: _PoolSection.activity, label: t.navActivity, count: null),
             if (manage) (value: _PoolSection.sharing, label: t.poolTabSharing, count: pool.sharedAccountIds.length),
             if (manage) (value: _PoolSection.settings, label: t.poolTabSettings, count: null),
           ],
@@ -537,6 +527,7 @@ class _PoolPageState extends State<_PoolPage> {
         const SizedBox(height: AppSpacing.lg),
         switch (_section) {
           _PoolSection.overview => _PoolOverview(controller: widget.controller, pool: pool, onEditSharing: () => _openSection(_PoolSection.sharing)),
+          _PoolSection.activity => _PoolActivitySection(key: ValueKey<String>('activity-${pool.id}'), controller: widget.controller, pool: pool),
           _PoolSection.sharing => _SharingSection(key: ValueKey<String>('share-${pool.id}'), controller: widget.controller, pool: pool),
           _PoolSection.settings => _PoolSettingsSection(controller: widget.controller, pool: pool, onLeft: widget.onLeft),
         },
@@ -942,47 +933,40 @@ class _SharingSection extends StatefulWidget {
 
 class _SharingSectionState extends State<_SharingSection> {
   late Set<String> _selected = widget.pool.sharedAccountIds.toSet();
-  late Map<String, String> _levels = Map<String, String>.of(widget.pool.shareLevels);
+  late Map<String, Set<String>> _kinds = Map<String, Set<String>>.of(widget.pool.shareKinds);
   bool _saving = false;
 
   bool get _changed {
     final saved = widget.pool.sharedAccountIds.toSet();
-    final savedLevels = widget.pool.shareLevels;
-    return saved.length != _selected.length || !saved.containsAll(_selected) || _selected.any((id) => (_levels[id] ?? 'free') != (savedLevels[id] ?? 'free'));
+    final savedKinds = widget.pool.shareKinds;
+    return saved.length != _selected.length || !saved.containsAll(_selected) || _selected.any((id) => !setEquals(_kindsOf(id), savedKinds[id] ?? const <String>{'free'}));
   }
 
   void _discard() => setState(() {
     _selected = widget.pool.sharedAccountIds.toSet();
-    _levels = Map<String, String>.of(widget.pool.shareLevels);
+    _kinds = Map<String, Set<String>>.of(widget.pool.shareKinds);
   });
 
-  // Subscription and paid sharing cost the owner, so each needs a clear yes.
-  Future<void> _setLevel(ShareableAccount account, String level) async {
-    final t = AppL10n.of(context);
-    if (level != 'free') {
-      final confirmed = await confirmAction(
-        context,
-        title: level == 'plan' ? t.poolPlanConfirmTitle(account.label) : t.poolPaidConfirmTitle(account.label),
-        message: level == 'plan'
-            ? t.poolPlanConfirmBody(widget.pool.name)
-            : account.hasBalance
-            ? t.poolPaidConfirmPrepaid(widget.pool.name)
-            : t.poolPaidConfirmBilled(widget.pool.name),
-        confirmLabel: level == 'plan' ? t.poolPlanConfirm : t.poolPaidConfirm,
-        cancelLabel: t.cancel,
-      );
-      if (!confirmed || !mounted) return;
-    }
+  Set<String> _kindsOf(String id) => _kinds[id] ?? const <String>{'free'};
+
+  Future<void> _edit(ShareableAccount account) async {
+    final current = _selected.contains(account.id) ? _kindsOf(account.id) : <String>{if (account.freeModels > 0) 'free'};
+    final next = await showDialog<Set<String>>(context: context, builder: (_) => _ShareKindsDialog(account: account, poolName: widget.pool.name, initial: current));
+    if (next == null || !mounted) return;
     setState(() {
-      _levels[account.id] = level;
-      _selected = <String>{..._selected, account.id};
+      if (next.isEmpty) {
+        _selected = <String>{..._selected}..remove(account.id);
+      } else {
+        _kinds[account.id] = next;
+        _selected = <String>{..._selected, account.id};
+      }
     });
   }
 
   Future<void> _save() async {
     setState(() => _saving = true);
-    final levels = <String, String>{for (final id in _selected) id: _levels[id] ?? 'free'};
-    await _apply(context, widget.controller, () => widget.controller.api.updatePoolShare(widget.pool.id, <String, Object?>{'sharedAccountIds': _selected.toList(), 'shareLevels': levels}));
+    final kinds = <String, List<String>>{for (final id in _selected) id: _kindsOf(id).toList()};
+    await _apply(context, widget.controller, () => widget.controller.api.updatePoolShare(widget.pool.id, <String, Object?>{'sharedAccountIds': _selected.toList(), 'shareKinds': kinds}));
     if (mounted) setState(() => _saving = false);
   }
 
@@ -1011,7 +995,7 @@ class _SharingSectionState extends State<_SharingSection> {
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: ConnectionPicker(accounts: accounts, selected: _selected, levels: _levels, onLevel: _setLevel, onChanged: (next) => setState(() => _selected = next)),
+              child: ConnectionPicker(accounts: accounts, selected: _selected, kinds: _kinds, onEdit: _edit, onChanged: (next) => setState(() => _selected = next)),
             ),
           ],
         ),
@@ -1027,6 +1011,180 @@ class _SharingSectionState extends State<_SharingSection> {
           ],
         ),
         InlineHint(message: t.poolTosNotice),
+      ],
+    );
+  }
+}
+
+/// Which kinds of one connection's models a pool gets, as in a key's access
+/// choice: free, subscription and paid, each ticked on its own. Subscription
+/// and paid cost the owner, so ticking one asks for a clear yes.
+class _ShareKindsDialog extends StatefulWidget {
+  const _ShareKindsDialog({required this.account, required this.poolName, required this.initial});
+
+  final ShareableAccount account;
+  final String poolName;
+  final Set<String> initial;
+
+  @override
+  State<_ShareKindsDialog> createState() => _ShareKindsDialogState();
+}
+
+class _ShareKindsDialogState extends State<_ShareKindsDialog> {
+  late final Set<String> _kinds = <String>{...widget.initial};
+
+  Future<void> _toggle(String kind, bool on) async {
+    final t = AppL10n.of(context);
+    final account = widget.account;
+    if (on && kind != 'free') {
+      final confirmed = await confirmAction(
+        context,
+        title: kind == 'plan' ? t.poolPlanConfirmTitle(account.label) : t.poolPaidConfirmTitle(account.label),
+        message: kind == 'plan'
+            ? t.poolPlanConfirmBody(widget.poolName)
+            : account.hasBalance
+            ? t.poolPaidConfirmPrepaid(widget.poolName)
+            : t.poolPaidConfirmBilled(widget.poolName),
+        confirmLabel: kind == 'plan' ? t.poolPlanConfirm : t.poolPaidConfirm,
+        cancelLabel: t.cancel,
+      );
+      if (!confirmed || !mounted) return;
+    }
+    setState(() => on ? _kinds.add(kind) : _kinds.remove(kind));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final account = widget.account;
+    KindCheck check(String kind, String title, int count, String hint) => KindCheck(
+      title: count > 0 ? '$title · $count' : title,
+      description: count > 0 ? hint : t.poolKindNone,
+      value: _kinds.contains(kind),
+      onChanged: count > 0 ? (on) => _toggle(kind, on) : null,
+    );
+    return DialogFrame(
+      title: t.poolKindsTitle(account.label),
+      subtitle: Text(t.poolKindsHint),
+      leading: ProviderAvatar(label: account.label, size: 36),
+      maxWidth: 460,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          check('free', t.kindFree, account.freeModels, t.poolKindFreeHint),
+          check('plan', t.kindPlan, account.planModels, t.poolKindPlanHint),
+          check('paid', t.kindPaid, account.paidModels, account.hasBalance ? t.poolKindPaidBalance : t.poolKindPaidBilled),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.cancel)),
+        FilledButton(onPressed: () => Navigator.of(context).pop(<String>{..._kinds}), child: Text(t.poolKindsApply)),
+      ],
+    );
+  }
+}
+
+/// What partners used of this person's connections in one pool, and what
+/// they used of partners': totals, then the most used connections, models
+/// and partners. Counts only; the server keeps no content.
+class _PoolActivitySection extends StatefulWidget {
+  const _PoolActivitySection({super.key, required this.controller, required this.pool});
+
+  final NeoRouterController controller;
+  final PoolInfo pool;
+
+  @override
+  State<_PoolActivitySection> createState() => _PoolActivitySectionState();
+}
+
+class _PoolActivitySectionState extends State<_PoolActivitySection> {
+  int _days = 7;
+  Map<String, dynamic>? _data;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _error = null);
+    try {
+      final data = await widget.controller.api.poolActivity(widget.pool.id, _days);
+      if (mounted) setState(() => _data = data);
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final data = _data;
+    Map<String, dynamic> side(String name) => Map<String, dynamic>.from((data?[name] as Map?) ?? const <String, dynamic>{});
+    List<Map> rows(Map<String, dynamic> from, String name) => ((from[name] as List?) ?? const <Object>[]).cast<Map>();
+    int count(Object? value) => (value as num?)?.toInt() ?? 0;
+    String line(Map row) => t.poolRankingLine(formatCount(count(row['requests'])), formatCount(count(row['tokens'])));
+    final given = side('given');
+    final taken = side('taken');
+    final empty = data != null && count(given['requests']) == 0 && count(taken['requests']) == 0;
+    Widget ranking(String title, List<Map> items) => ActivityRanking(title: title, rows: items, label: shortModelName, detail: line);
+    Widget pair(Widget left, Widget right) => LayoutBuilder(
+      builder: (context, constraints) => constraints.maxWidth < 720
+          ? Column(children: <Widget>[left, const SizedBox(height: AppSpacing.lg), right])
+          : Row(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[Expanded(child: left), const SizedBox(width: AppSpacing.lg), Expanded(child: right)]),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Align(
+          alignment: Alignment.centerRight,
+          child: SegmentedButton<int>(
+            showSelectedIcon: false,
+            segments: <ButtonSegment<int>>[
+              ButtonSegment<int>(value: 7, label: Text(t.range7d)),
+              ButtonSegment<int>(value: 30, label: Text(t.range30d)),
+            ],
+            selected: <int>{_days},
+            onSelectionChanged: (value) {
+              setState(() => _days = value.first);
+              _load();
+            },
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AsyncBody(
+          loading: data == null && _error == null,
+          error: _error,
+          onRetry: _load,
+          child: empty
+              ? AppCard(child: EmptyState(icon: Icons.hub_outlined, title: t.poolActivityEmptyTitle, message: t.poolActivityEmpty))
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    MetricStrip(
+                      metrics: <({String label, String value, String? caption})>[
+                        (label: t.poolActivityGivenMetric, value: formatCount(count(given['requests'])), caption: t.metricTokens(formatCount(count(given['tokens'])))),
+                        (label: t.poolActivityTakenMetric, value: formatCount(count(taken['requests'])), caption: t.metricTokens(formatCount(count(taken['tokens'])))),
+                        (label: t.poolActivityCost, value: formatUsd(((given['costUsd'] as num?) ?? 0).toDouble()), caption: t.poolActivityCostCaption),
+                      ],
+                    ),
+                    if (count(given['requests']) > 0) ...<Widget>[
+                      const SizedBox(height: 28),
+                      SettingsHeading(title: t.poolActivityGiven),
+                      pair(ranking(t.byConnection, rows(given, 'byConnection')), ranking(t.topModelsTitle, rows(given, 'byModel'))),
+                      const SizedBox(height: AppSpacing.lg),
+                      ranking(t.poolActivityByPartner, rows(given, 'byPartner')),
+                    ],
+                    if (count(taken['requests']) > 0) ...<Widget>[
+                      const SizedBox(height: 28),
+                      SettingsHeading(title: t.poolActivityTaken),
+                      pair(ranking(t.poolActivityByPartner, rows(taken, 'byPartner')), ranking(t.topModelsTitle, rows(taken, 'byModel'))),
+                    ],
+                  ],
+                ),
+        ),
       ],
     );
   }

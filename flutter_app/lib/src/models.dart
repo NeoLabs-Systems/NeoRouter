@@ -138,6 +138,8 @@ class ProviderAccount {
   String get billingState => raw['billingState'] as String? ?? 'unknown';
   String? get billingMessage => raw['billingMessage'] as String?;
   bool get billingVerifiable => raw['billingVerifiable'] == true;
+  /// The person's call for all its models: auto, free or paid.
+  String get classification => raw['classification'] as String? ?? 'auto';
   bool get enabled => raw['enabled'] == true;
   String get status => raw['status'] as String? ?? 'unknown';
   String? get statusMessage => raw['statusMessage'] as String?;
@@ -370,6 +372,8 @@ class ShareableAccount {
   /// Subscription and pay-as-you-go models: shared only at a level the owner picks.
   int get planModels => _int(raw['planModels']) ?? 0;
   int get paidModels => _int(raw['paidModels']) ?? 0;
+  /// How many kinds (free, subscription, paid) it has models of.
+  int get kinds => <int>[freeModels, planModels, paidModels].where((count) => count > 0).length;
   /// The provider reports a balance: partner use spends it instead of being billed.
   bool get hasBalance => raw['hasBalance'] == true;
 }
@@ -397,8 +401,8 @@ class PoolInfo {
   List<PoolPartner> get partners => (raw['partners'] as List? ?? const <Object>[]).map((item) => PoolPartner(_map(item))).toList();
   int get onlinePartners => partners.where((partner) => partner.state == 'online').length;
   List<String> get sharedAccountIds => _strings(raw['sharedAccountIds']);
-  /// How much of each shared connection this pool gets: free, plan or paid.
-  Map<String, String> get shareLevels => _map(raw['shareLevels']).map((key, value) => MapEntry(key, '$value'));
+  /// Which kinds of models (free, plan, paid) each shared connection gives this pool.
+  Map<String, Set<String>> get shareKinds => _map(raw['shareKinds']).map((key, value) => MapEntry(key, _strings(value).toSet()));
   List<Map<String, dynamic>> get invites => (raw['invites'] as List? ?? const <Object>[]).map(_map).toList();
   PoolShare get share => PoolShare(_map(raw['share']));
 }

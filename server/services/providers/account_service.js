@@ -107,6 +107,8 @@ function publicAccount(row) {
     billingCheckedAt: row.billing_checked_at,
     billingNote: definition?.billing.note || null,
     billingVerifiable: Boolean(definition?.billing.verify),
+    // The person's call for all its models: auto, free or paid.
+    classification: row.classification || 'auto',
     enabled: Boolean(row.enabled),
     status: row.status,
     statusMessage: row.status_message,
@@ -224,6 +226,7 @@ async function create(userId, input, createdBy = userId, actor = null) {
     .run(id, userId, definition.id, slug, label, baseUrl,
       input.secret ? encryptString(input.secret) : null, JSON.stringify(options), billingMode,
       result.status === 'healthy' ? 'healthy' : 'error', result.message || null, createdBy, prepaid);
+  if (input.classification && input.classification !== 'auto') getDatabase().prepare('UPDATE provider_accounts SET classification = ? WHERE id = ?').run(input.classification, id);
   return { account: publicAccount(getRow(userId, id)), validation: result };
 }
 
@@ -280,6 +283,7 @@ async function update(userId, accountId, input, actor = null) {
       accountId,
     );
   if (input.billingMode !== undefined) db.prepare('UPDATE provider_accounts SET prepaid = ? WHERE id = ?').run(storedBilling(input.billingMode).prepaid, accountId);
+  if (input.classification !== undefined) db.prepare('UPDATE provider_accounts SET classification = ? WHERE id = ?').run(input.classification === 'auto' ? null : input.classification, accountId);
   return publicAccount(getRow(userId, accountId));
 }
 

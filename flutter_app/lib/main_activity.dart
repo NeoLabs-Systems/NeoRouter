@@ -183,12 +183,12 @@ class _OverviewState extends State<_Overview> {
         const SizedBox(height: 28),
         LayoutBuilder(
           builder: (context, constraints) {
-            final models = _Ranking(title: t.topModelsTitle, rows: (data['byModel'] as List).cast<Map>(), label: shortModelName);
-            final providers = _Ranking(title: t.byConnection, rows: (data['byProvider'] as List).cast<Map>());
-            final keys = _Ranking(title: t.byKey, rows: (data['byKey'] as List).cast<Map>());
+            final models = ActivityRanking(title: t.topModelsTitle, rows: (data['byModel'] as List).cast<Map>(), label: shortModelName);
+            final providers = ActivityRanking(title: t.byConnection, rows: (data['byProvider'] as List).cast<Map>());
+            final keys = ActivityRanking(title: t.byKey, rows: (data['byKey'] as List).cast<Map>());
             // Shown once more than one kind of model (chat, embeddings, …) was used.
             final kindRows = ((data['byCapability'] as List?) ?? const <Object>[]).cast<Map>();
-            final kinds = kindRows.length > 1 ? _Ranking(title: t.activityKind, rows: kindRows, label: (id) => capabilityInfo(id).label(t)) : null;
+            final kinds = kindRows.length > 1 ? ActivityRanking(title: t.activityKind, rows: kindRows, label: (id) => capabilityInfo(id).label(t)) : null;
             if (constraints.maxWidth < 860) {
               return Column(
                 children: <Widget>[
@@ -223,13 +223,15 @@ class _OverviewState extends State<_Overview> {
   }
 }
 
-/// Top entries with a thin neutral bar for their share.
-class _Ranking extends StatelessWidget {
-  const _Ranking({required this.title, required this.rows, this.label});
+/// Top entries with a thin neutral bar for their share (rows carry key,
+/// name and requests). [detail] says what the right side shows per row.
+class ActivityRanking extends StatelessWidget {
+  const ActivityRanking({super.key, required this.title, required this.rows, this.label, this.detail});
 
   final String title;
   final List<Map> rows;
   final String Function(String)? label;
+  final String Function(Map row)? detail;
 
   @override
   Widget build(BuildContext context) {
@@ -260,7 +262,7 @@ class _Ranking extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          t.rankingLine(formatCount(_num(row['requests'])), formatMs(_maybe(row['latencyP50']))),
+                          detail?.call(row) ?? t.rankingLine(formatCount(_num(row['requests'])), formatMs(_maybe(row['latencyP50']))),
                           style: TextStyle(fontSize: 12.5, color: palette.textMuted),
                         ),
                       ],

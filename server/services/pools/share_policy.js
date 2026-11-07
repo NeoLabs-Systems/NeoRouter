@@ -8,9 +8,9 @@
 //   2. Daily caps per partner: requests, tokens, and requests at once.
 //   3. Balance: a partner who takes far more than they give (over the last
 //      week) gets gradually lower caps. Never a hard stop.
-// Only models on connections the owner chose to share are offered, up to the
-// level chosen for that connection in that pool: free (the default), plan
-// (also subscription models) or paid (also pay-as-you-go models).
+// Only models on connections the owner chose to share are offered, and only
+// the kinds chosen for that connection in that pool: free (the default), plan
+// (subscription) and paid (pay as you go), each on its own.
 const { getDatabase } = require('../../db/database');
 const { HttpError } = require('../../middleware/error_handler');
 const quota = require('../quota/quota_service');
@@ -24,8 +24,8 @@ const DEFAULT_SHARE = Object.freeze({ requestsPerDay: 300, tokensPerDay: 600_000
 const SHARE_BOUNDS = Object.freeze({ requestsPerDay: [1, 100_000], tokensPerDay: [1_000, 100_000_000], concurrent: [1, 20], reserve: [0, 0.9] });
 const BALANCE = Object.freeze({ days: 7, minRequests: 100, tolerated: 3, floor: 0.25 });
 const BUSY_RETRY_SECONDS = 2;
-// Sharing levels, each including the ones before it.
-const SHARE_LEVELS = Object.freeze(['free', 'plan', 'paid']);
+// The kinds of model a shared connection can give a pool.
+const SHARE_KINDS = Object.freeze(['free', 'plan', 'paid']);
 const kindOf = (entry) => (entry.isFree ? 'free' : entry.isPlan ? 'plan' : 'paid');
 
 function shareSettings(pool) {
@@ -112,12 +112,12 @@ function admit(key, now = Date.now()) {
 const sharedCache = new Map();
 const SHARED_TTL_MS = 5000;
 
-// The level this connection is shared at in this pool, or null (each pool has its own list).
-function shareLevelOf(poolId, accountId, now = Date.now()) {
+// The kinds this connection shares in this pool, or null (each pool has its own list).
+function shareKindsOf(poolId, accountId, now = Date.now()) {
   const id = `${poolId}|${accountId}`;
   const hit = sharedCache.get(id);
   if (hit && now - hit.at < SHARED_TTL_MS) return hit.value;
-  const value = store.shareLevelOf(poolId, accountId);
+  const value = store.shareKindsOf(poolId, accountId);
   if (sharedCache.size > 5000) sharedCache.clear();
   sharedCache.set(id, { at: now, value });
   return value;
@@ -126,8 +126,7 @@ function shareLevelOf(poolId, accountId, now = Date.now()) {
 // Whether partners in this pool are offered this model at all.
 function offers(poolId, entry, now = Date.now()) {
   if (!poolId || isPeerEntry(entry)) return false;
-  const level = shareLevelOf(poolId, entry.accountId, now);
-  return Boolean(level) && SHARE_LEVELS.indexOf(kindOf(entry)) <= SHARE_LEVELS.indexOf(level);
+  return Boolean(shareKindsOf(poolId, entry.accountId, now)?.includes(kindOf(entry)));
 }
 
 // The pool a partner key belongs to (null when its link is gone).
@@ -158,7 +157,7 @@ function sharingWith(key) {
   return Boolean(link && pool && !pool.paused && link.status === 'active');
 }
 
-// change: { shared, level } (see store.setShare). False for a connection that is not one's own.
+// change: { shared, kinds } (see store.setShare). False for a connection that is not one's own.
 function setAccountShare(userId, poolId, accountId, change) {
   const own = getDatabase().prepare("SELECT 1 FROM provider_accounts WHERE id = ? AND user_id = ? AND definition_id != 'neorouter_peer'").get(accountId, userId);
   if (!own) return false;
@@ -176,4 +175,4 @@ function resetForTests() {
   sharedCache.clear();
 }
 
-module.exports = { SHARE_LEVELS, DEFAULT_SHARE, SHARE_BOUNDS, BALANCE, shareSettings, balance, capsFor, admit, rejection, offers, poolOfKey, sharingWith, setAccountShare, forget, resetForTests };
+module.exports = { SHARE_KINDS, DEFAULT_SHARE, SHARE_BOUNDS, BALANCE, shareSettings, balance, capsFor, admit, rejection, offers, poolOfKey, sharingWith, setAccountShare, forget, resetForTests };

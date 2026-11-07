@@ -6160,44 +6160,158 @@ abstract class AppL10n {
   /// No description provided for @poolShareHint.
   ///
   /// In en, this message translates to:
-  /// **'Free models from the connections you choose; use ⋯ on a connection to share its subscription or paid models too. Your own requests always come first.'**
+  /// **'Free models from the connections you pick; with ⋯ you choose for each one whether its subscription or paid models are shared too. Your own requests always come first.'**
   String get poolShareHint;
 
-  /// No description provided for @poolLevelMenu.
+  /// No description provided for @classificationTitle.
   ///
   /// In en, this message translates to:
-  /// **'What to share'**
-  String get poolLevelMenu;
+  /// **'Free or paid'**
+  String get classificationTitle;
 
-  /// No description provided for @poolLevelFree.
+  /// No description provided for @classificationAuto.
   ///
   /// In en, this message translates to:
-  /// **'Only free models'**
-  String get poolLevelFree;
+  /// **'Automatic'**
+  String get classificationAuto;
 
-  /// No description provided for @poolLevelPlan.
+  /// No description provided for @classificationFree.
   ///
   /// In en, this message translates to:
-  /// **'Also subscription models'**
-  String get poolLevelPlan;
+  /// **'All free'**
+  String get classificationFree;
 
-  /// No description provided for @poolLevelPaid.
+  /// No description provided for @classificationPaid.
   ///
   /// In en, this message translates to:
-  /// **'Also paid models'**
-  String get poolLevelPaid;
+  /// **'All paid'**
+  String get classificationPaid;
 
-  /// No description provided for @poolSharesPlan.
+  /// No description provided for @classificationHint.
   ///
   /// In en, this message translates to:
-  /// **'Free + subscription'**
-  String get poolSharesPlan;
+  /// **'Automatic uses what NeoRouter worked out for each model. Set it yourself if that is wrong; a choice on a single model still wins.'**
+  String get classificationHint;
 
-  /// No description provided for @poolSharesPaid.
+  /// No description provided for @classificationFreeWarning.
   ///
   /// In en, this message translates to:
-  /// **'Free + paid'**
-  String get poolSharesPaid;
+  /// **'Only if this connection never charges you: every model is then treated as free, including for keys that may only use free models.'**
+  String get classificationFreeWarning;
+
+  /// No description provided for @poolActivityGiven.
+  ///
+  /// In en, this message translates to:
+  /// **'What partners used of yours'**
+  String get poolActivityGiven;
+
+  /// No description provided for @poolActivityTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'What you used of partners'**
+  String get poolActivityTaken;
+
+  /// No description provided for @poolActivityGivenMetric.
+  ///
+  /// In en, this message translates to:
+  /// **'Given'**
+  String get poolActivityGivenMetric;
+
+  /// No description provided for @poolActivityTakenMetric.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken'**
+  String get poolActivityTakenMetric;
+
+  /// No description provided for @poolActivityCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost to you'**
+  String get poolActivityCost;
+
+  /// No description provided for @poolActivityCostCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'from paid models you share'**
+  String get poolActivityCostCaption;
+
+  /// No description provided for @poolActivityByPartner.
+  ///
+  /// In en, this message translates to:
+  /// **'By partner'**
+  String get poolActivityByPartner;
+
+  /// No description provided for @poolActivityEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing shared yet'**
+  String get poolActivityEmptyTitle;
+
+  /// No description provided for @poolActivityEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Once partners use your connections, or you theirs, it shows up here. Only counts are kept, never content.'**
+  String get poolActivityEmpty;
+
+  /// No description provided for @poolRankingLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{requests} · {tokens} tokens'**
+  String poolRankingLine(String requests, String tokens);
+
+  /// No description provided for @poolKindsMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what to share'**
+  String get poolKindsMenu;
+
+  /// No description provided for @poolKindsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What {name} shares'**
+  String poolKindsTitle(String name);
+
+  /// No description provided for @poolKindsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Partners use free models first, then subscription, then paid ones.'**
+  String get poolKindsHint;
+
+  /// No description provided for @poolKindFreeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Never cost you anything.'**
+  String get poolKindFreeHint;
+
+  /// No description provided for @poolKindPlanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use up your subscription’s limits. Many subscriptions do not allow sharing.'**
+  String get poolKindPlanHint;
+
+  /// No description provided for @poolKindPaidBilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Billed to you per use.'**
+  String get poolKindPaidBilled;
+
+  /// No description provided for @poolKindPaidBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend your prepaid balance.'**
+  String get poolKindPaidBalance;
+
+  /// No description provided for @poolKindNone.
+  ///
+  /// In en, this message translates to:
+  /// **'This connection has none.'**
+  String get poolKindNone;
+
+  /// No description provided for @poolKindsApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get poolKindsApply;
 
   /// No description provided for @poolPlanModels.
   ///

@@ -93,16 +93,16 @@ function assertPeerKey(value) {
 }
 
 // In this pool, exactly these of the person's own connections are shared;
-// levels sets some of their levels (the others keep theirs, new ones start at free).
-function setSharedAccounts(userId, poolId, accountIds = [], levels = {}) {
+// kinds sets what some of them share (the others keep theirs, new ones share free models).
+function setSharedAccounts(userId, poolId, accountIds = [], kinds = {}) {
   const wanted = new Set(accountIds.map(String));
   const rows = getDatabase().prepare("SELECT id FROM provider_accounts WHERE user_id = ? AND definition_id != 'neorouter_peer'").all(userId);
-  for (const row of rows) sharePolicy.setAccountShare(userId, poolId, row.id, { shared: wanted.has(row.id), level: levels[row.id] });
+  for (const row of rows) sharePolicy.setAccountShare(userId, poolId, row.id, { shared: wanted.has(row.id), kinds: kinds[row.id] });
 }
 
 // Own connections with chat models that could be shared, and how many of
 // each kind: free, plan (subscription) and paid. Plan and paid models are only
-// shared at a level the owner picks. hasBalance: the provider reports a
+// shared where the owner ticks them. hasBalance: the provider reports a
 // balance, so paid partner use spends it; otherwise it is billed.
 function shareableAccounts(userId) {
   return getDatabase().prepare(`SELECT a.id, a.label, a.definition_id, a.enabled,
@@ -493,12 +493,12 @@ async function updateShare(userId, poolId, input) {
   const next = { ...pool.share };
   for (const field of Object.keys(sharePolicy.DEFAULT_SHARE)) if (input[field] !== undefined) next[field] = input[field];
   store.updatePool(userId, poolId, { share: sharePolicy.shareSettings({ share: next }) });
-  if (Array.isArray(input.sharedAccountIds)) setSharedAccounts(userId, poolId, input.sharedAccountIds, input.shareLevels);
+  if (Array.isArray(input.sharedAccountIds)) setSharedAccounts(userId, poolId, input.sharedAccountIds, input.shareKinds);
   await announceShared(userId, poolId);
   return summary(userId);
 }
 
-// One connection in one pool: { shared } on or off, { level } how much of it.
+// One connection in one pool: { shared } on or off, { kinds } which kinds of its models.
 async function setAccountShared(userId, poolId, accountId, change) {
   requirePool(userId, poolId);
   if (!sharePolicy.setAccountShare(userId, poolId, accountId, change)) throw fail(404, 'ACCOUNT_NOT_FOUND', 'This connection does not exist.');
@@ -568,7 +568,7 @@ function poolView(userId, pool, { canManage }) {
     partners: store.members(userId, pool.poolId).filter((member) => member.memberId !== me).map((member) => partnerView(userId, pool, member)),
     share: sharePolicy.shareSettings(pool),
     sharedAccountIds: store.sharedAccountIds(userId, pool.poolId),
-    shareLevels: store.shareLevels(userId, pool.poolId),
+    shareKinds: store.shareKinds(userId, pool.poolId),
     invites: pool.isHost && canManage ? store.invites(userId, pool.poolId) : [],
   };
 }
@@ -586,6 +586,6 @@ function summary(userId, { canManage = true } = {}) {
 module.exports = {
   MAX_MEMBERS, MAX_POOLS,
   create, createInvite, revokeInvite, parseInvite, preview, join, leave, removeMember, sync, syncAll,
-  updateShare, setAccountShared, setPartnerPaused, setPoolPaused, summary,
+  requirePool, updateShare, setAccountShared, setPartnerPaused, setPoolPaused, summary,
   handlePreview, handleJoin, handleIntroduce, handleMemberList, handleTicket, handleLeave, handleRemove, handleDissolve, handleSharedChanged,
 };

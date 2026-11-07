@@ -2060,13 +2060,49 @@
     }
   },
   "poolShareTitle": "What you share",
-  "poolShareHint": "Free models from the connections you choose; use ⋯ on a connection to share its subscription or paid models too. Your own requests always come first.",
-  "poolLevelMenu": "What to share",
-  "poolLevelFree": "Only free models",
-  "poolLevelPlan": "Also subscription models",
-  "poolLevelPaid": "Also paid models",
-  "poolSharesPlan": "Free + subscription",
-  "poolSharesPaid": "Free + paid",
+  "poolShareHint": "Free models from the connections you pick; with ⋯ you choose for each one whether its subscription or paid models are shared too. Your own requests always come first.",
+  "classificationTitle": "Free or paid",
+  "classificationAuto": "Automatic",
+  "classificationFree": "All free",
+  "classificationPaid": "All paid",
+  "classificationHint": "Automatic uses what NeoRouter worked out for each model. Set it yourself if that is wrong; a choice on a single model still wins.",
+  "classificationFreeWarning": "Only if this connection never charges you: every model is then treated as free, including for keys that may only use free models.",
+  "poolActivityGiven": "What partners used of yours",
+  "poolActivityTaken": "What you used of partners",
+  "poolActivityGivenMetric": "Given",
+  "poolActivityTakenMetric": "Taken",
+  "poolActivityCost": "Cost to you",
+  "poolActivityCostCaption": "from paid models you share",
+  "poolActivityByPartner": "By partner",
+  "poolActivityEmptyTitle": "Nothing shared yet",
+  "poolActivityEmpty": "Once partners use your connections, or you theirs, it shows up here. Only counts are kept, never content.",
+  "poolRankingLine": "{requests} · {tokens} tokens",
+  "@poolRankingLine": {
+    "placeholders": {
+      "requests": {
+        "type": "String"
+      },
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
+  "poolKindsMenu": "Choose what to share",
+  "poolKindsTitle": "What {name} shares",
+  "@poolKindsTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolKindsHint": "Partners use free models first, then subscription, then paid ones.",
+  "poolKindFreeHint": "Never cost you anything.",
+  "poolKindPlanHint": "Use up your subscription’s limits. Many subscriptions do not allow sharing.",
+  "poolKindPaidBilled": "Billed to you per use.",
+  "poolKindPaidBalance": "Spend your prepaid balance.",
+  "poolKindNone": "This connection has none.",
+  "poolKindsApply": "Apply",
   "poolPlanModels": "{count} subscription models",
   "@poolPlanModels": {
     "placeholders": {

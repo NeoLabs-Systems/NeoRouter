@@ -94,6 +94,16 @@ test('manual overrides win', () => {
   assert.equal(classify({ definition: registry.get('openrouter'), billingMode: 'paid', modelId: 'x:free', overrides: { free: false } }).isFree, false);
 });
 
+test('a connection-wide choice sets every model, but a model override and seen billing still win', () => {
+  const definition = registry.get('openai');
+  assert.equal(classify({ definition, billingMode: 'paid', modelId: 'x', accountOverride: 'free' }).reason, 'manual_free');
+  const openrouter = registry.get('openrouter');
+  assert.equal(classify({ definition: openrouter, billingMode: 'paid', modelId: 'x:free', accountOverride: 'paid' }).isFree, false, 'paid beats a free-looking model');
+  assert.equal(classify({ definition, billingMode: 'paid', modelId: 'x', accountOverride: 'paid', overrides: { free: true } }).isFree, true, 'the model override is more specific');
+  assert.equal(classify({ definition, billingMode: 'paid', modelId: 'x', accountOverride: 'free', overrides: { billedAt: Date.now() } }).isFree, false, 'real billing beats a blanket "free"');
+  assert.equal(classify({ definition, billingMode: 'paid', modelId: 'x', accountOverride: 'free', listing: { paidOnly: true } }).isFree, false);
+});
+
 test('pricing parser handles per-token and per-million prices', () => {
   const openrouter = normalizeModel({ id: 'a/b', pricing: { prompt: '0.0000005', completion: '0.0000015' } });
   assert.ok(Math.abs(openrouter.priceIn - 0.5) < 1e-9);

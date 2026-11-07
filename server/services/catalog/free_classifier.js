@@ -53,13 +53,17 @@ function isPrivateUrl(url) {
     || /^169\.254\./.test(host) || /^f[cd][0-9a-f]{2}:/i.test(host);
 }
 
-function classify({ definition, billingMode, billingState = 'unknown', modelId, listing = {}, overrides = {}, baseUrl = null, hasSecret = false }) {
+// accountOverride: the person's call for the whole connection ('free' or 'paid');
+// a model's own manual override still wins, and so does real evidence of billing.
+function classify({ definition, billingMode, billingState = 'unknown', modelId, listing = {}, overrides = {}, accountOverride = null, baseUrl = null, hasSecret = false }) {
   const billing = definition.billing;
   if (overrides.free === true) return { isFree: true, reason: REASONS.MANUAL_FREE };
   if (overrides.free === false) return { isFree: false, reason: REASONS.MANUAL_PAID };
+  if (accountOverride === 'paid') return { isFree: false, reason: REASONS.MANUAL_PAID };
   if (overrides.billedAt) return { isFree: false, reason: REASONS.BILLED_OBSERVED };
   // A model the listing marks as needing paid credit is never free, on any plan.
   if (listing.paidOnly) return { isFree: false, reason: REASONS.PAID };
+  if (accountOverride === 'free') return { isFree: true, reason: REASONS.MANUAL_FREE };
   if (matchesAny(billing.alwaysFree, modelId)) return { isFree: true, reason: REASONS.PROVIDER_FREE_MODEL };
   if (listing.freeHint === true && billing.trustListingFree) return { isFree: true, reason: REASONS.LISTED_ZERO_PRICE };
   if (billingMode === 'free_tier' && hasFreeTier(billing)) {

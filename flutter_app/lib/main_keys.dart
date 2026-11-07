@@ -738,15 +738,15 @@ class KeyAccessFields extends StatelessWidget {
       children: <Widget>[
         Text(t.keyAccessTitle, style: label),
         const SizedBox(height: AppSpacing.xs),
-        _KindCheck(title: t.kindFree, description: t.kindFreeHint, value: free, onChanged: onFree),
-        _KindCheck(title: t.kindPlan, description: t.kindPlanHint, value: plan, onChanged: onPlan),
-        _KindCheck(title: t.kindPaid, description: t.kindPaidHint, value: paid, onChanged: onPaid),
+        KindCheck(title: t.kindFree, description: t.kindFreeHint, value: free, onChanged: onFree),
+        KindCheck(title: t.kindPlan, description: t.kindPlanHint, value: plan, onChanged: onPlan),
+        KindCheck(title: t.kindPaid, description: t.kindPaidHint, value: paid, onChanged: onPaid),
         if (onPool != null)
-          _KindCheck(
+          KindCheck(
             title: t.keyPoolLabel,
             description: t.keyPoolHint,
             value: pool && free,
-            onChanged: free ? onPool! : (_) {},
+            onChanged: free ? onPool : null,
             trailing: IconButton(
               tooltip: t.poolInfoTooltip,
               icon: const Icon(Icons.info_outline_rounded, size: 18),
@@ -827,55 +827,3 @@ class _LimitRow extends StatelessWidget {
   }
 }
 
-/// One kind of model a key may use: a checkbox card.
-class _KindCheck extends StatelessWidget {
-  const _KindCheck({required this.title, required this.description, required this.value, required this.onChanged, this.trailing});
-
-  final String title;
-  final String description;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = neoRouterPaletteOf(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: value ? palette.accentSoft : palette.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          side: BorderSide(color: value ? palette.accent.withValues(alpha: 0.5) : palette.border),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => onChanged(!value),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 10, 14, 10),
-            child: Row(
-              children: <Widget>[
-                Checkbox(value: value, onChanged: (next) => onChanged(next ?? false)),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        title,
-                        style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(description, style: TextStyle(fontSize: 12.5, color: palette.textSoft, height: 1.35)),
-                    ],
-                  ),
-                ),
-                if (trailing != null) trailing!,
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

@@ -8,7 +8,8 @@ const express = require('express');
 const { z } = require('zod');
 const pools = require('../services/pools/pool_service');
 const peerPrivacy = require('../services/pools/peer_privacy');
-const { SHARE_BOUNDS, SHARE_LEVELS } = require('../services/pools/share_policy');
+const { SHARE_BOUNDS, SHARE_KINDS } = require('../services/pools/share_policy');
+const poolActivity = require('../services/pools/pool_activity');
 const { validate } = require('../middleware/validate');
 const { requireOwnSpace } = require('../middleware/space');
 const { asyncRoute } = require('./helpers');
@@ -69,13 +70,19 @@ pool.put('/share', validate(z.object({
   concurrent: bounded('concurrent'),
   reserve: bounded('reserve', false),
   sharedAccountIds: accountIds.optional(),
-  shareLevels: z.record(z.enum(SHARE_LEVELS)).optional(),
+  shareKinds: z.record(z.array(z.enum(SHARE_KINDS)).max(3)).optional(),
 }).strict()), asyncRoute(async (req, res) => res.json(await pools.updateShare(owner(req), poolId(req), req.body))));
 
-// shared: on or off; level: free, plan (also subscription models) or paid. Either or both.
-pool.put('/accounts/:id/share', validate(z.object({ shared: z.boolean().optional(), level: z.enum(SHARE_LEVELS).optional() }).refine((body) => body.shared !== undefined || body.level !== undefined)), asyncRoute(async (req, res) => {
+// shared: on or off; kinds: which of free, plan (subscription) and paid it shares. Either or both.
+pool.put('/accounts/:id/share', validate(z.object({ shared: z.boolean().optional(), kinds: z.array(z.enum(SHARE_KINDS)).max(3).optional() }).refine((body) => body.shared !== undefined || body.kinds !== undefined)), asyncRoute(async (req, res) => {
   res.json(await pools.setAccountShared(owner(req), poolId(req), req.params.id, req.body));
 }));
+
+// What partners used of ours and we of theirs, as counts by connection, model and partner.
+pool.get('/activity', (req, res) => {
+  pools.requirePool(owner(req), poolId(req));
+  res.json(poolActivity.activity(owner(req), poolId(req), { days: req.query.days }));
+});
 
 // The quick switch: this pool on or off for now.
 pool.put('/paused', validate(z.object({ paused: z.boolean() })), asyncRoute(async (req, res) => res.json(await pools.setPoolPaused(owner(req), poolId(req), req.body.paused))));

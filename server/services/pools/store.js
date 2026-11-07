@@ -158,29 +158,37 @@ function activeInviteCount(userId, poolId) {
   return db().prepare('SELECT COUNT(*) count FROM pool_invites WHERE user_id = ? AND pool_id = ? AND used_at IS NULL AND revoked_at IS NULL AND expires_at > ?').get(userId, poolId, Date.now()).count;
 }
 
-// The connections shared in a pool, each at a level: free, plan or paid.
+// The connections shared in a pool, and which kinds of their models each
+// shares: free, plan (subscription), paid. Each kind is chosen on its own.
+const KIND_COLUMNS = Object.freeze({ free: 'share_free', plan: 'share_plan', paid: 'share_paid' });
+const kindsOf = (row) => Object.keys(KIND_COLUMNS).filter((kind) => row[KIND_COLUMNS[kind]] === 1);
+
 function sharedAccountIds(userId, poolId) {
   return db().prepare('SELECT account_id FROM pool_shared_accounts WHERE user_id = ? AND pool_id = ?').all(userId, poolId).map((row) => row.account_id);
 }
 
-function shareLevels(userId, poolId) {
-  return Object.fromEntries(db().prepare('SELECT account_id, share_level FROM pool_shared_accounts WHERE user_id = ? AND pool_id = ?').all(userId, poolId).map((row) => [row.account_id, row.share_level]));
+function shareKinds(userId, poolId) {
+  return Object.fromEntries(db().prepare('SELECT * FROM pool_shared_accounts WHERE user_id = ? AND pool_id = ?').all(userId, poolId).map((row) => [row.account_id, kindsOf(row)]));
 }
 
-// shared: false removes it; true adds it (at `level`, or keeps its level when left out).
-function setShare(userId, poolId, accountId, { shared, level } = {}) {
+// shared: false removes it. Otherwise it is shared with `kinds` (a list), or,
+// when left out, with the kinds it had (free for a new one). No kinds removes it.
+function setShare(userId, poolId, accountId, { shared, kinds } = {}) {
   const where = 'WHERE user_id = ? AND pool_id = ? AND account_id = ?';
-  if (shared === false) {
+  if (shared === false || (Array.isArray(kinds) && !kinds.length)) {
     db().prepare(`DELETE FROM pool_shared_accounts ${where}`).run(userId, poolId, accountId);
     return;
   }
   db().prepare('INSERT OR IGNORE INTO pool_shared_accounts (user_id, pool_id, account_id) VALUES (?, ?, ?)').run(userId, poolId, accountId);
-  if (level) db().prepare(`UPDATE pool_shared_accounts SET share_level = ? ${where}`).run(level, userId, poolId, accountId);
+  if (!Array.isArray(kinds)) return;
+  const set = Object.entries(KIND_COLUMNS).map(([kind, column]) => `${column} = ${kinds.includes(kind) ? 1 : 0}`).join(', ');
+  db().prepare(`UPDATE pool_shared_accounts SET ${set} ${where}`).run(userId, poolId, accountId);
 }
 
-// The level a connection is shared at in a pool, or null.
-function shareLevelOf(poolId, accountId) {
-  return db().prepare('SELECT share_level FROM pool_shared_accounts WHERE pool_id = ? AND account_id = ?').get(poolId, accountId)?.share_level || null;
+// The kinds a connection shares in a pool, or null when it is not shared there.
+function shareKindsOf(poolId, accountId) {
+  const row = db().prepare('SELECT * FROM pool_shared_accounts WHERE pool_id = ? AND account_id = ?').get(poolId, accountId);
+  return row ? kindsOf(row) : null;
 }
 
 function poolMemberships() {
@@ -192,5 +200,5 @@ module.exports = {
   members, member, upsertMember, removeMember,
   links, link, linkById, linkToMember, linkForAccount, insertLink, updateLink, deleteLink,
   invites, insertInvite, inviteByHash, useInvite, revokeInvite, activeInviteCount,
-  sharedAccountIds, shareLevels, setShare, shareLevelOf, poolMemberships,
+  sharedAccountIds, shareKinds, setShare, shareKindsOf, poolMemberships,
 };

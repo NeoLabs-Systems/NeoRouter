@@ -171,6 +171,8 @@ class RouterApi {
   Future<PoolsSummary> setAccountPoolShare(String poolId, String accountId, {bool? shared, bool? paid}) async => PoolsSummary(
     await client.putJson('$_base/pools/$poolId/accounts/$accountId/share', <String, Object>{if (shared != null) 'shared': shared, if (paid != null) 'paid': paid}),
   );
+  /// Counts by connection, model and partner for one pool over [days] (7 or 30).
+  Future<Map<String, dynamic>> poolActivity(String poolId, int days) => client.get('$_base/pools/$poolId/activity?days=$days');
   Future<PoolsSummary> setPoolPaused(String poolId, bool paused) async => PoolsSummary(await client.putJson('$_base/pools/$poolId/paused', <String, Object>{'paused': paused}));
   Future<PoolsSummary> setPartnerPaused(String linkId, bool paused) async =>
       PoolsSummary(await client.putJson('$_base/pools/partners/$linkId/paused', <String, Object>{'paused': paused}));

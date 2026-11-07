@@ -230,7 +230,7 @@ test('what is shared: unshared connections and used-up shares are refused', asyn
   await api('bea', 'put', `/pools/${poolId}/share`, { requestsPerDay: 300 });
 });
 
-test('each connection is shared up to a level; paid models only at "paid", at no cost to the partner', async () => {
+test('each connection shares the kinds ticked for it; paid models only when ticked, at no cost to the partner', async () => {
   mocks.beaPaid = await createMockProvider({ models: ['paid-bea'] });
   const added = await api('bea', 'post', '/providers/accounts', { definitionId: 'custom_openai', slug: 'paidmock', baseUrl: mocks.beaPaid.url, secret: 'good-key', billingMode: 'paid' });
   assert.equal(added.status, 201, JSON.stringify(added.body));
@@ -242,16 +242,16 @@ test('each connection is shared up to a level; paid models only at "paid", at no
     return (await api('alex', 'get', '/models?all=1')).body.models.some((item) => item.providerSlug === 'pool-bea' && item.id.endsWith('/paid-bea'));
   };
   const share = (body) => api('bea', 'put', `/pools/${poolId}/accounts/${paidAccount}/share`, body);
-  // Shared at the default level (free): its paid model stays home, and so at "plan".
+  // Shared with the default (free models only): its paid model stays home, and so with "plan".
   await share({ shared: true });
-  assert.equal((await summary('bea')).shareLevels[paidAccount], 'free');
+  assert.deepEqual((await summary('bea')).shareKinds[paidAccount], ['free']);
   assert.equal(await listsPaid(), false);
-  await share({ level: 'plan' });
+  await share({ kinds: ['free', 'plan'] });
   assert.equal(await listsPaid(), false);
-  // At "paid": Alex sees it as free (Bea pays) and Bea's connection serves it.
-  const on = await share({ level: 'paid' });
+  // Paid ticked: Alex sees it as free (Bea pays) and Bea's connection serves it.
+  const on = await share({ kinds: ['paid'] });
   assert.equal(on.status, 200, JSON.stringify(on.body));
-  assert.equal(on.body.pools[0].shareLevels[paidAccount], 'paid');
+  assert.deepEqual(on.body.pools[0].shareKinds[paidAccount], ['paid']);
   assert.equal(await listsPaid(), true);
   const model = await partnerModel('alex', 'bea', 'paid-bea');
   const entry = (await api('alex', 'get', '/models?all=1')).body.models.find((item) => item.id === model);
@@ -260,14 +260,30 @@ test('each connection is shared up to a level; paid models only at "paid", at no
   const served = await chat('alex', 'pool', model);
   assert.equal(served.status, 200, JSON.stringify(served.body));
   assert.equal(mocks.beaPaid.calls.length, before + 1);
-  // Saving the list keeps each connection's level; leaving it out stops sharing it.
+  // Saving the list keeps each connection's kinds; leaving it out, or no kinds, stops sharing it.
   await api('bea', 'put', `/pools/${poolId}/share`, { sharedAccountIds: [people.bea.account, paidAccount] });
-  assert.equal((await summary('bea')).shareLevels[paidAccount], 'paid');
+  assert.deepEqual((await summary('bea')).shareKinds[paidAccount], ['paid']);
   await api('bea', 'put', `/pools/${poolId}/share`, { sharedAccountIds: [people.bea.account] });
   assert.notEqual((await chat('alex', 'pool', model)).status, 200);
-  assert.equal((await summary('bea')).shareLevels[paidAccount], undefined);
-  assert.equal((await share({})).status, 400, 'a change needs shared or level');
-  assert.equal((await share({ level: 'everything' })).status, 400);
+  assert.equal((await summary('bea')).shareKinds[paidAccount], undefined);
+  await share({ kinds: ['paid'] });
+  await share({ kinds: [] });
+  assert.equal((await summary('bea')).shareKinds[paidAccount], undefined);
+  assert.equal((await share({})).status, 400, 'a change needs shared or kinds');
+  assert.equal((await share({ kinds: ['everything'] })).status, 400);
+});
+
+test('the pool activity counts what partners used of ours and we of theirs', async () => {
+  const bea = (await api('bea', 'get', `/pools/${poolId}/activity?days=30`)).body;
+  assert.equal(bea.days, 30);
+  assert.ok(bea.given.requests > 0, JSON.stringify(bea.given));
+  assert.ok(bea.given.byPartner.some((row) => row.name === 'alex'));
+  assert.ok(bea.given.byConnection.some((row) => row.key === people.bea.account));
+  assert.ok(bea.given.byModel.length > 0);
+  const alex = (await api('alex', 'get', `/pools/${poolId}/activity`)).body;
+  assert.equal(alex.days, 7, 'unknown ranges fall back to a week');
+  assert.ok(alex.taken.byPartner.some((row) => row.name === 'bea'), JSON.stringify(alex.taken));
+  assert.equal((await api('alex', 'get', '/pools/00000000-0000-0000-0000-000000000000/activity')).status, 404);
 });
 
 test('the quick switch pauses giving and using, and turning it on restores everything', async () => {

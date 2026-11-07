@@ -3495,25 +3495,91 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get poolShareHint =>
-      'Gratis-Modelle der Verbindungen, die du auswählst; über ⋯ an einer Verbindung auch ihre Abo- oder bezahlten Modelle. Deine eigenen Anfragen gehen immer vor.';
+      'Gratis-Modelle der Verbindungen, die du auswählst; über ⋯ legst du pro Verbindung fest, ob auch Abo- oder bezahlte Modelle geteilt werden. Deine eigenen Anfragen gehen immer vor.';
 
   @override
-  String get poolLevelMenu => 'Was geteilt wird';
+  String get classificationTitle => 'Gratis oder bezahlt';
 
   @override
-  String get poolLevelFree => 'Nur Gratis-Modelle';
+  String get classificationAuto => 'Automatisch';
 
   @override
-  String get poolLevelPlan => 'Auch Abo-Modelle';
+  String get classificationFree => 'Alles gratis';
 
   @override
-  String get poolLevelPaid => 'Auch bezahlte Modelle';
+  String get classificationPaid => 'Alles bezahlt';
 
   @override
-  String get poolSharesPlan => 'Gratis + Abo';
+  String get classificationHint =>
+      'Automatisch nutzt, was NeoRouter für jedes Modell ermittelt hat. Leg es selbst fest, wenn das nicht stimmt; eine Einstellung an einem einzelnen Modell geht weiter vor.';
 
   @override
-  String get poolSharesPaid => 'Gratis + bezahlt';
+  String get classificationFreeWarning =>
+      'Nur wenn diese Verbindung dich nie etwas kostet: Jedes Modell gilt dann als gratis, auch für Keys, die nur Gratis-Modelle nutzen dürfen.';
+
+  @override
+  String get poolActivityGiven => 'Was Partner von dir genutzt haben';
+
+  @override
+  String get poolActivityTaken => 'Was du von Partnern genutzt hast';
+
+  @override
+  String get poolActivityGivenMetric => 'Gegeben';
+
+  @override
+  String get poolActivityTakenMetric => 'Genommen';
+
+  @override
+  String get poolActivityCost => 'Hat dich gekostet';
+
+  @override
+  String get poolActivityCostCaption => 'durch geteilte Bezahl-Modelle';
+
+  @override
+  String get poolActivityByPartner => 'Nach Partner';
+
+  @override
+  String get poolActivityEmptyTitle => 'Noch nichts geteilt';
+
+  @override
+  String get poolActivityEmpty =>
+      'Sobald Partner deine Verbindungen nutzen oder du ihre, erscheint es hier. Gespeichert werden nur Zahlen, nie Inhalte.';
+
+  @override
+  String poolRankingLine(String requests, String tokens) {
+    return '$requests · $tokens Tokens';
+  }
+
+  @override
+  String get poolKindsMenu => 'Auswählen, was geteilt wird';
+
+  @override
+  String poolKindsTitle(String name) {
+    return 'Was $name teilt';
+  }
+
+  @override
+  String get poolKindsHint =>
+      'Partner nutzen zuerst Gratis-Modelle, dann Abo-, dann bezahlte Modelle.';
+
+  @override
+  String get poolKindFreeHint => 'Kosten dich nie etwas.';
+
+  @override
+  String get poolKindPlanHint =>
+      'Verbrauchen die Limits deines Abos. Viele Abos erlauben kein Teilen.';
+
+  @override
+  String get poolKindPaidBilled => 'Werden dir nach Verbrauch berechnet.';
+
+  @override
+  String get poolKindPaidBalance => 'Verbrauchen dein Guthaben.';
+
+  @override
+  String get poolKindNone => 'Diese Verbindung hat keine.';
+
+  @override
+  String get poolKindsApply => 'Übernehmen';
 
   @override
   String poolPlanModels(String count) {

@@ -81,7 +81,7 @@ async function syncAccount(accountId) {
 // recomputed whenever either changes, not only on sync.
 function reclassifyAccount(accountId) {
   const db = getDatabase();
-  const account = db.prepare('SELECT definition_id, billing_mode, billing_state, base_url, secret_encrypted FROM provider_accounts WHERE id = ?').get(accountId);
+  const account = db.prepare('SELECT definition_id, billing_mode, billing_state, base_url, secret_encrypted, classification FROM provider_accounts WHERE id = ?').get(accountId);
   if (!account) return;
   const definition = registry.get(account.definition_id);
   const rows = db.prepare('SELECT id, model_id, raw_json, overrides_json, price_in, price_out, price_source FROM models WHERE account_id = ?').all(accountId);
@@ -99,6 +99,7 @@ function reclassifyAccount(accountId) {
         modelId: row.model_id,
         listing: { ...listing, priceKnown: listing.priceKnown || row.price_source !== null || overrides.priceIn !== undefined },
         overrides,
+        accountOverride: account.classification,
       });
       update.run(result.isFree ? 1 : 0, result.reason, row.id);
     }

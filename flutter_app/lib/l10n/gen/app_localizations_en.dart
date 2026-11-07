@@ -3474,25 +3474,91 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get poolShareHint =>
-      'Free models from the connections you choose; use ⋯ on a connection to share its subscription or paid models too. Your own requests always come first.';
+      'Free models from the connections you pick; with ⋯ you choose for each one whether its subscription or paid models are shared too. Your own requests always come first.';
 
   @override
-  String get poolLevelMenu => 'What to share';
+  String get classificationTitle => 'Free or paid';
 
   @override
-  String get poolLevelFree => 'Only free models';
+  String get classificationAuto => 'Automatic';
 
   @override
-  String get poolLevelPlan => 'Also subscription models';
+  String get classificationFree => 'All free';
 
   @override
-  String get poolLevelPaid => 'Also paid models';
+  String get classificationPaid => 'All paid';
 
   @override
-  String get poolSharesPlan => 'Free + subscription';
+  String get classificationHint =>
+      'Automatic uses what NeoRouter worked out for each model. Set it yourself if that is wrong; a choice on a single model still wins.';
 
   @override
-  String get poolSharesPaid => 'Free + paid';
+  String get classificationFreeWarning =>
+      'Only if this connection never charges you: every model is then treated as free, including for keys that may only use free models.';
+
+  @override
+  String get poolActivityGiven => 'What partners used of yours';
+
+  @override
+  String get poolActivityTaken => 'What you used of partners';
+
+  @override
+  String get poolActivityGivenMetric => 'Given';
+
+  @override
+  String get poolActivityTakenMetric => 'Taken';
+
+  @override
+  String get poolActivityCost => 'Cost to you';
+
+  @override
+  String get poolActivityCostCaption => 'from paid models you share';
+
+  @override
+  String get poolActivityByPartner => 'By partner';
+
+  @override
+  String get poolActivityEmptyTitle => 'Nothing shared yet';
+
+  @override
+  String get poolActivityEmpty =>
+      'Once partners use your connections, or you theirs, it shows up here. Only counts are kept, never content.';
+
+  @override
+  String poolRankingLine(String requests, String tokens) {
+    return '$requests · $tokens tokens';
+  }
+
+  @override
+  String get poolKindsMenu => 'Choose what to share';
+
+  @override
+  String poolKindsTitle(String name) {
+    return 'What $name shares';
+  }
+
+  @override
+  String get poolKindsHint =>
+      'Partners use free models first, then subscription, then paid ones.';
+
+  @override
+  String get poolKindFreeHint => 'Never cost you anything.';
+
+  @override
+  String get poolKindPlanHint =>
+      'Use up your subscription’s limits. Many subscriptions do not allow sharing.';
+
+  @override
+  String get poolKindPaidBilled => 'Billed to you per use.';
+
+  @override
+  String get poolKindPaidBalance => 'Spend your prepaid balance.';
+
+  @override
+  String get poolKindNone => 'This connection has none.';
+
+  @override
+  String get poolKindsApply => 'Apply';
 
   @override
   String poolPlanModels(String count) {

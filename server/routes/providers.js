@@ -39,6 +39,8 @@ const accountInput = z.object({
   headers: z.record(z.string().max(2048)).optional(),
   // 'plan': a prepaid subscription; 'plan_paid': the plan, then pay per use.
   billingMode: z.enum(['free_tier', 'paid', 'plan', 'plan_paid']).optional(),
+  // Overrides what NeoRouter worked out for all its models.
+  classification: z.enum(['auto', 'free', 'paid']).optional(),
 });
 
 // ChatGPT (Codex) sign-in with a device code: start, then poll until the

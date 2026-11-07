@@ -1121,3 +1121,57 @@ class DialogFrame extends StatelessWidget {
     );
   }
 }
+
+/// A checkbox card for one kind of model (free, plan, paid): which kinds a key
+/// may use, or which kinds of a connection a pool gets. Disabled when [onChanged] is null.
+class KindCheck extends StatelessWidget {
+  const KindCheck({super.key, required this.title, required this.description, required this.value, this.onChanged, this.trailing});
+
+  final String title;
+  final String description;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = neoRouterPaletteOf(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: value ? palette.accentSoft : palette.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          side: BorderSide(color: value ? palette.accent.withValues(alpha: 0.5) : palette.border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onChanged == null ? null : () => onChanged!(!value),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 10, 14, 10),
+            child: Row(
+              children: <Widget>[
+                Checkbox(value: value, onChanged: onChanged == null ? null : (next) => onChanged!(next ?? false)),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        title,
+                        style: TextStyle(fontWeight: FontWeight.w600, color: onChanged == null ? palette.textMuted : palette.text),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(description, style: TextStyle(fontSize: 12.5, color: palette.textSoft, height: 1.35)),
+                    ],
+                  ),
+                ),
+                if (trailing != null) trailing!,
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

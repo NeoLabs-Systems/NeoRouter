@@ -804,6 +804,7 @@ class _ProviderFormState extends State<_ProviderForm> {
     text: ((_savedOptions['headers'] as Map?) ?? const <String, Object>{}).entries.map((entry) => '${entry.key}: ${entry.value}').join('\n'),
   );
   late String _billing = widget.account?.billingMode ?? widget.definition.defaultBillingMode;
+  late String _classification = widget.account?.classification ?? 'auto';
   bool _saving = false;
   bool _probing = false;
   bool _connecting = false;
@@ -964,6 +965,7 @@ class _ProviderFormState extends State<_ProviderForm> {
           'options': options,
           'headers': headers,
           'billingMode': _billing,
+          'classification': _classification,
         });
         if (mounted) Navigator.of(context).pop(t.saved);
         return;
@@ -979,6 +981,7 @@ class _ProviderFormState extends State<_ProviderForm> {
         if (options.isNotEmpty) 'options': options,
         'headers': headers,
         'billingMode': _billing,
+        if (_classification != 'auto') 'classification': _classification,
       });
       final validation = Map<String, dynamic>.from(result['validation'] as Map);
       final sync = result['sync'] as Map?;
@@ -1157,6 +1160,28 @@ class _ProviderFormState extends State<_ProviderForm> {
             const SizedBox(height: AppSpacing.xs),
             Text(t.billingAlwaysFreeNote, style: TextStyle(color: palette.textSoft, fontSize: 12.5, height: 1.45)),
           ],
+          const SizedBox(height: AppSpacing.lg),
+          // Overrides the automatic free/paid result for all its models.
+          Row(
+            children: <Widget>[
+              Expanded(child: Text(t.classificationTitle, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text))),
+              SegmentedButton<String>(
+                showSelectedIcon: false,
+                segments: <ButtonSegment<String>>[
+                  ButtonSegment<String>(value: 'auto', label: Text(t.classificationAuto)),
+                  ButtonSegment<String>(value: 'free', label: Text(t.classificationFree)),
+                  ButtonSegment<String>(value: 'paid', label: Text(t.classificationPaid)),
+                ],
+                selected: <String>{_classification},
+                onSelectionChanged: (value) => setState(() => _classification = value.first),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            _classification == 'free' ? t.classificationFreeWarning : t.classificationHint,
+            style: TextStyle(color: _classification == 'free' ? palette.warning : palette.textSoft, fontSize: 12.5, height: 1.45),
+          ),
           const SizedBox(height: AppSpacing.md),
           Align(
             alignment: Alignment.centerLeft,
