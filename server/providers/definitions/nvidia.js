@@ -14,9 +14,9 @@ module.exports = {
   billing: {
     defaultMode: 'free_tier',
     freeTierAll: true,
-    note: 'Free trial credits (1,000, up to 5,000 on request) with no way to attach a payment method; when they run out requests fail instead of costing money.',
+    note: 'No-cost trial API for prototyping (about 40 requests a minute, not for production per the terms). No payment method can be attached, so it cannot be charged.',
     source: 'https://forums.developer.nvidia.com/t/nvidia-nim-faq/300317',
-    checkedAt: '2026-10-28',
+    checkedAt: '2026-11-07',
   },
   limits: { pool: 'account', account: { rpm: 40 } },
   // Embeddings and FLUX are listed separately: retrieval embedders need

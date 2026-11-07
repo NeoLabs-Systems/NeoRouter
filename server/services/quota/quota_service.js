@@ -3,6 +3,7 @@
 const { getDatabase } = require('../../db/database');
 const registry = require('../../providers/registry');
 const { parseRateLimitHeaders } = require('./header_parser');
+const accountLimits = require('./account_limits');
 
 // Usage is counted in one-minute buckets per scope. A scope is either one
 // model ("m:<ref>") or a pool shared by several models of one account
@@ -73,7 +74,9 @@ function scopesFor(entry) {
   const scopes = [{ key: `m:${entry.ref}`, curated: modelCurated, kind: 'model' }];
   const accountCurated = spec.account || {};
   const poolApplies = matches(spec.poolMatch, entry.modelId);
-  if (poolApplies && (Object.keys(accountCurated).length || spec.pool === 'account')) {
+  const stated = accountLimits.get(entry.accountId);
+  const hasStated = METRICS.some((metric) => stated[metric]);
+  if ((poolApplies && (Object.keys(accountCurated).length || spec.pool === 'account')) || hasStated) {
     scopes.push({ key: `p:${entry.accountId}`, curated: accountCurated, kind: 'pool' });
   }
   return scopes;
@@ -119,7 +122,10 @@ function usageOf(scope, now = Date.now()) {
 function effectiveLimits(scope) {
   load();
   const result = {};
+  // A limit a person stated for the account outranks everything inferred.
+  const stated = scope.kind === 'pool' ? accountLimits.get(scope.key.slice(2)) : {};
   for (const metric of METRICS) {
+    if (stated[metric]) { result[metric] = { value: stated[metric], source: 'manual' }; continue; }
     const stored = limits.get(`${scope.key}|${metric}`);
     if (stored) result[metric] = { value: stored.value, source: stored.source };
     else if (scope.curated[metric]) result[metric] = { value: scope.curated[metric], source: 'curated' };
@@ -196,6 +202,40 @@ function markExhausted(entry, metric, resetAt, now = Date.now()) {
   setState(scope.key, metric, { limit: null, remaining: 0, resetAt }, 'error', now);
 }
 
+// Drops the "used up until later" marks that refusals left on an account and its models.
+function clearObservedExhaustion(accountId, refs = []) {
+  load();
+  const scopes = new Set([`p:${accountId}`, `a:${accountId}`, ...refs.map((ref) => `m:${ref}`)]);
+  const db = getDatabase();
+  for (const [key, state] of [...states]) {
+    const scope = key.split('|')[0];
+    if (state.source !== 'error' || !scopes.has(scope)) continue;
+    states.delete(key);
+    db.prepare('DELETE FROM quota_state WHERE scope_key = ? AND metric = ? AND source = ?').run(scope, key.split('|')[1], 'error');
+  }
+}
+
+// Everything observed about an account's limits (headers, errors), not what a
+// person stated: for when the other side says its limits changed (a pool
+// partner raised its share).
+function forgetObserved(accountId, refs = []) {
+  load();
+  const scopes = new Set([`p:${accountId}`, `a:${accountId}`, ...refs.map((ref) => `m:${ref}`)]);
+  const db = getDatabase();
+  for (const key of [...states.keys()]) {
+    const [scope, metric] = key.split('|');
+    if (!scopes.has(scope)) continue;
+    states.delete(key);
+    db.prepare('DELETE FROM quota_state WHERE scope_key = ? AND metric = ?').run(scope, metric);
+  }
+  for (const [key, record] of [...limits]) {
+    const [scope, metric] = key.split('|');
+    if (!scopes.has(scope) || record.source === 'manual') continue;
+    limits.delete(key);
+    db.prepare('DELETE FROM quota_limits WHERE scope_key = ? AND metric = ?').run(scope, metric);
+  }
+}
+
 function evaluate(entry, estimatedTokens = 0, now = Date.now()) {
   let headroom = 1;
   let blocked = null;
@@ -243,10 +283,11 @@ function resetForTests() {
   dirty.clear();
   limits.clear();
   states.clear();
+  accountLimits.resetForTests();
   loaded = false;
 }
 
-module.exports = {
+module.exports = { forgetObserved,
   scopesFor,
   effectiveLimits,
   usageOf,
@@ -256,6 +297,7 @@ module.exports = {
   observeHeaders,
   learnLimit,
   markExhausted,
+  clearObservedExhaustion,
   setLimit,
   clearLimit,
   setState,

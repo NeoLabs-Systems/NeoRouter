@@ -6,9 +6,9 @@ const invites = require('../services/teams/invites');
 const members = require('../services/teams/members');
 const summary = require('../services/teams/summary');
 const { PERMISSIONS } = require('../services/teams/permissions');
-const { getConfig } = require('../config/env');
 const { validate } = require('../middleware/validate');
 const { slidingWindow } = require('../middleware/rate_limit');
+const { publicOrigin } = require('../utils/public_origin');
 
 const router = express.Router();
 
@@ -33,7 +33,7 @@ router.post('/invites', changeLimit, validate(z.object({
   singleUse: z.boolean().optional(),
 })), (req, res) => {
   const { invite, token } = invites.create(req.auth.userId, req.body);
-  const origin = getConfig().publicUrl || `${req.protocol}://${req.get('host')}`;
+  const origin = publicOrigin(req);
   res.status(201).json({ invite, link: invites.buildLink(origin, token) });
 });
 

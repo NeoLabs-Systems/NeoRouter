@@ -28,7 +28,7 @@ class ProcessingScreen extends StatefulWidget {
 }
 
 class _ProcessingScreenState extends State<ProcessingScreen> {
-  _Tab _tab = _Tab.privacy;
+  late _Tab _tab = widget.controller.savedTab('processing', _Tab.values, _Tab.privacy);
   Map<String, dynamic>? _settings;
   String _saved = '';
   List<String> _categories = <String>[];
@@ -132,7 +132,10 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
             (value: _Tab.compression, label: t.compressionTitle, count: null),
           ],
           selected: _tab,
-          onChanged: (value) => setState(() => _tab = value),
+          onChanged: (value) {
+            widget.controller.rememberChoice('processing', value);
+            setState(() => _tab = value);
+          },
         ),
         AsyncBody(
           loading: _loading,

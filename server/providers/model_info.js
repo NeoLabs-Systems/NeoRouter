@@ -6,7 +6,7 @@
 // exactly zero or the provider labels the model free. Unknown never means free.
 
 const NON_CHAT_PATTERNS = [
-  ['embedding', /embed|bge-|e5-|gte-|nomic-embed|text-similarity/i],
+  ['embedding', /embed|bge-|e5-|gte-|nomic-embed|text-similarity|(^|\/)voyage-/i],
   ['rerank', /rerank/i],
   // Audio is split by direction: speech-to-text and text-to-speech.
   ['transcription', /whisper|transcri|(^|[-_/])asr([-_]|$)|parakeet|canary-/i],
@@ -16,12 +16,13 @@ const NON_CHAT_PATTERNS = [
   ['other', /lyria|music|audio/i],
   // Editing models need an input video, which /v1/videos does not take.
   ['other', /video-(edit|upscale)|(^|\/)aleph|detector/i],
-  ['image', /dall-e|stable-diffusion|sdxl|flux|imagen|image-gen|gpt-image|kolors|seedream|nano-banana|-image(-|$)/i],
+  // "diffusion" alone also names text models such as diffusiongemma.
+  ['image', /dall-e|diffusion(?!gemma)|sdxl|flux|imagen|image-gen|gpt-image|kolors|seedream|nano-banana|-image(-|$)|animerge|lucid-origin|(^|\/)phoenix-\d/i],
   ['video', /\bvideo\b|veo-|sora|wan2|(^|[/-])kling|hailuo/i],
   // Other routers ("openrouter/auto", "kilo-auto/frontier", Jev Router) pick a
   // model themselves at an unpredictable price; NeoRouter does the routing.
   ['router', /(^|\/)auto(-beta)?$|(^|\/)kilo-auto\/|jev-router|(^|\/)openrouter\/free$|(^|\/)router$/i],
-  ['moderation', /moderation|llama-guard|shieldgemma|prompt-guard|safeguard|content-safety|nemoguard|safety-guard|topic-control/i],
+  ['moderation', /moderation|llama-guard|shieldgemma|prompt-guard|safeguard|content-safety|nemoguard|safety-guard|topic-control|qwen[\d.]*guard/i],
   // Agents, tool-only and legacy multimodal endpoints that do not accept plain chat.
   ['other', /deep-research|computer-use|robotics|antigravity|deplot|kosmos|fuyu|calibration|reward|embedqa|parse|translat|\bocr\b|-ocr|retriever/i],
 ];
@@ -63,15 +64,45 @@ function perMillion(value, unitHint) {
   return value !== 0 && value < 0.01 ? value * 1e6 : value;
 }
 
+// Listings in the models.dev / OpenCode style: `cost: { text: { input: { price },
+// output: { price } } }`, always in USD per million tokens (an explicit unit, so
+// a small price is not mistaken for a per-token one). Cache and long-context
+// prices are not read: the base price is the one a typical request pays.
+function parseListedCost(cost) {
+  const text = cost && typeof cost === 'object' ? cost.text : null;
+  if (!text || typeof text !== 'object') return null;
+  const input = toNumber(text.input?.price ?? text.input);
+  const output = toNumber(text.output?.price ?? text.output);
+  if (input === null || output === null || input < 0 || output < 0) return null;
+  return { priceIn: input, priceOut: output, priceKnown: true, freeHint: input === 0 && output === 0 };
+}
+
+// The listing says this model needs paid credit whatever the plan or price
+// (Pollinations' paid_only, usage_based_only, NavyAI's required_plan).
+function isPaidOnly(raw) {
+  return raw.paid_only === true || raw.usage_based_only === true || Boolean(raw.required_plan);
+}
+
 function parsePricing(raw) {
-  // Some listings flag models that need a balance regardless of price fields.
-  if (raw.paid_only === true || raw.usage_based_only === true) {
+  if (isPaidOnly(raw)) {
     return { priceIn: null, priceOut: null, priceKnown: false, freeHint: false };
   }
-  if (raw.price === 'free' || raw.pricing === 'free' || raw.is_free === true || raw.free === true) {
+  // Free markers in a listing: xKiro access_tier, Api.Airforce and KiosAPI
+  // tier, BlockRun billing_mode, Blaze and Iteracompute is_free.
+  if (raw.price === 'free' || raw.pricing === 'free' || raw.is_free === true || raw.free === true
+    || raw.access_tier === 'free' || raw.tier === 'free' || raw.billing_mode === 'free') {
     return { priceIn: 0, priceOut: 0, priceKnown: true, freeHint: true };
   }
-  const pricing = raw.pricing && typeof raw.pricing === 'object' ? raw.pricing : null;
+  // Requesty: input_price / output_price per token at the top level (its
+  // pricing field is a list of context tiers).
+  const topIn = toNumber(raw.input_price);
+  const topOut = toNumber(raw.output_price);
+  if (topIn !== null && topOut !== null && topIn >= 0 && topOut >= 0) {
+    return { priceIn: perMillion(topIn), priceOut: perMillion(topOut), priceKnown: true, freeHint: topIn === 0 && topOut === 0 };
+  }
+  const pricing = raw.pricing && typeof raw.pricing === 'object' && !Array.isArray(raw.pricing) ? raw.pricing : null;
+  const priced = pricing ? null : parseListedCost(raw.cost);
+  if (priced) return priced;
   if (pricing) {
     const values = Object.values(pricing).map(toNumber).filter((value) => value !== null);
     const unit = pricing.unit === 'token' ? 'token' : undefined;
@@ -127,9 +158,9 @@ function normalizeModel(raw, overrides = {}) {
   const params = supportedParameters(raw);
   const inputs = raw.architecture?.input_modalities || raw.input_modalities || raw.modalities?.input;
   const contextWindow = toNumber(raw.context_length ?? raw.context_window ?? raw.max_context_length
-    ?? raw.top_provider?.context_length ?? raw.max_model_len ?? raw.inputTokenLimit);
+    ?? raw.top_provider?.context_length ?? raw.max_model_len ?? raw.inputTokenLimit ?? raw.limit?.context);
   const maxOutput = toNumber(raw.max_output_tokens ?? raw.top_provider?.max_completion_tokens ?? raw.max_completion_tokens
-    ?? raw.outputTokenLimit);
+    ?? raw.outputTokenLimit ?? raw.limit?.output);
   const pricing = parsePricing(raw);
   if (/:free$/.test(id)) {
     pricing.freeHint = true;
@@ -138,6 +169,8 @@ function normalizeModel(raw, overrides = {}) {
     pricing.priceOut = 0;
   }
   const flag = (value) => (value === undefined || value === null ? null : Boolean(value));
+  // A capability can be a plain flag or an object such as { supported: false }.
+  const supports = (value) => (value && typeof value === 'object' && 'supported' in value ? value.supported : value);
   return {
     id,
     name: raw.display_name || raw.displayName || raw.name || id,
@@ -146,12 +179,13 @@ function normalizeModel(raw, overrides = {}) {
     maxOutput: maxOutput && maxOutput > 0 ? Math.round(maxOutput) : null,
     ...pricing,
     ...parseUnitPricing(raw),
-    tools: params ? params.includes('tools') : flag(raw.supports_tools ?? raw.capabilities?.function_calling ?? raw.capabilities?.tools),
-    vision: Array.isArray(inputs) ? inputs.includes('image') : flag(raw.supports_vision ?? raw.capabilities?.vision),
+    tools: params ? params.includes('tools') : flag(raw.supports_tools ?? raw.capabilities?.function_calling ?? supports(raw.capabilities?.tools)),
+    vision: Array.isArray(inputs) ? inputs.some((input) => input === 'image' || /^image\//i.test(String(input))) : flag(raw.supports_vision ?? raw.capabilities?.vision),
     json: params ? params.includes('response_format') || params.includes('structured_outputs') : null,
-    reasoning: params ? params.includes('reasoning') || params.includes('include_reasoning') : flag(raw.capabilities?.reasoning),
+    reasoning: params ? params.includes('reasoning') || params.includes('include_reasoning') : flag(supports(raw.capabilities?.reasoning)),
     // System One decision models (POST /v1/systemone), listed under OpenRouter's decisions modality.
     decision: (raw.architecture?.output_modalities || []).includes('decisions'),
+    paidOnly: isPaidOnly(raw),
     raw,
     ...overrides,
   };

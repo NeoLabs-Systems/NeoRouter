@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,6 +31,11 @@ class NeoRouterController extends ChangeNotifier {
   static const String _themeKey = 'neorouter.theme';
   static const String _localeKey = 'neorouter.locale';
   static const String _spaceKey = 'neorouter.space';
+  // The open page and each screen's tab, so a reload lands where you were.
+  static const String _pageKey = 'neorouter.page';
+  static const String _tabsKey = 'neorouter.tabs';
+  SharedPreferences? _prefs;
+  Map<String, String> _tabs = <String, String>{};
 
   final BackendClient client;
   late final RouterApi api = RouterApi(client);
@@ -49,6 +56,14 @@ class NeoRouterController extends ChangeNotifier {
 
   /// The owner whose space is shown, or null for the user's own space.
   String? spaceOwnerId;
+
+  /// The pool of the space that is shown (other NeoRouters sharing free
+  /// capacity); null until loaded. Pool controls appear only while in one.
+  PoolsSummary? pools;
+
+  /// A pool invite link the app was opened with ("?pool=…"), joined from the
+  /// Team page's pool tab after sign-in.
+  String? pendingPoolInvite;
 
   /// An invite link the app was opened with ("?invite=…"), redeemed on the
   /// Team page after sign-in.
@@ -84,11 +99,38 @@ class NeoRouterController extends ChangeNotifier {
     return needed != null && can(needed);
   }
 
+  bool get inPool => pools?.inPool ?? false;
+
+  /// Pool settings belong to the space owner.
+  bool get canManagePool => !inSharedSpace;
+
+  Future<void> refreshPool() async {
+    try {
+      pools = await api.pools();
+    } catch (_) {
+      pools = null;
+    }
+    notifyListeners();
+  }
+
+  /// The quick switch (home and pool page): pause or resume giving and using in one pool.
+  Future<void> setPoolPaused(String poolId, bool paused) async {
+    pools = await api.setPoolPaused(poolId, paused);
+    notifyListeners();
+  }
+
+  void updatePools(PoolsSummary next) {
+    pools = next;
+    notifyListeners();
+  }
+
   /// "Created by" tags only matter once more than one person works in a space.
   bool get showCreators => inSharedSpace || (team?.members.isNotEmpty ?? false);
 
   Future<void> bootstrap() async {
     final prefs = await SharedPreferences.getInstance();
+    _prefs = prefs;
+    _tabs = _readTabs(prefs.getString(_tabsKey));
     themeMode = ThemeMode.values.firstWhere((mode) => mode.name == prefs.getString(_themeKey), orElse: () => ThemeMode.system);
     final savedLocale = prefs.getString(_localeKey);
     locale = savedLocale == null ? null : Locale(savedLocale);
@@ -97,8 +139,8 @@ class NeoRouterController extends ChangeNotifier {
       client.setToken(token);
       try {
         user = await api.me();
-        await _loadInfo();
-        await _restoreSpace(prefs.getString(_spaceKey));
+        // Independent calls go out together: start-up waits for the slowest, not for all in a row.
+        await Future.wait(<Future<void>>[_loadInfo(), _restoreSpace(prefs.getString(_spaceKey)).then((_) => refreshPool()), refreshRegistration()]);
       } on ApiException {
         client.setToken(null);
         await prefs.remove(_tokenKey);
@@ -106,11 +148,15 @@ class NeoRouterController extends ChangeNotifier {
         // Server unreachable: keep the token, show the sign-in screen.
       }
     }
+    _restorePage(prefs.getString(_pageKey));
     _readOAuthResult();
     _readPageLink();
     _readInviteLink();
+    _readPoolLink();
     _readConnectLink();
-    await refreshRegistration();
+    if (user == null) await refreshRegistration();
+    // A page a link opened is where a reload should land, too.
+    if (user != null) prefs.setString(_pageKey, page.name);
     bootstrapping = false;
     notifyListeners();
   }
@@ -135,6 +181,31 @@ class NeoRouterController extends ChangeNotifier {
     if (invite == null || invite.isEmpty) return;
     pendingInvite = invite;
     if (user != null) _openInvite();
+  }
+
+  // "?join-pool=<invite link>" comes from the host's invite page; "?pool=<token>"
+  // is an invite opened on this NeoRouter's own address (the host's server).
+  void _readPoolLink() {
+    final params = Uri.base.queryParameters;
+    final forwarded = params['join-pool'];
+    final token = params['pool'];
+    if (forwarded != null && forwarded.isNotEmpty) {
+      pendingPoolInvite = forwarded;
+    } else if (token != null && token.isNotEmpty) {
+      pendingPoolInvite = Uri.base.toString();
+    } else {
+      return;
+    }
+    if (user != null) _openPoolInvite();
+  }
+
+  void _openPoolInvite() {
+    if (spaceOwnerId != null) _setSpace(null);
+    page = AppPage.team;
+  }
+
+  void consumePoolInvite() {
+    pendingPoolInvite = null;
   }
 
   void _readConnectLink() {
@@ -190,6 +261,7 @@ class NeoRouterController extends ChangeNotifier {
     await refreshTeam();
     _setSpace(ownerId != null && team?.owner?.id == ownerId ? ownerId : null);
     if (!canOpen(page)) page = _firstOpenPage();
+    await refreshPool();
     notifyListeners();
   }
 
@@ -226,9 +298,9 @@ class NeoRouterController extends ChangeNotifier {
     user = AppUser(Map<String, dynamic>.from(result['user'] as Map));
     page = AppPage.home;
     _setSpace(null);
-    await _loadInfo();
-    await refreshTeam();
+    await Future.wait(<Future<void>>[_loadInfo(), refreshTeam().then((_) => refreshPool())]);
     if (pendingInvite != null) _openInvite();
+    if (pendingPoolInvite != null) _openPoolInvite();
   }
 
   Future<bool> login(String account, String password) => _authAction(() async {
@@ -287,6 +359,7 @@ class NeoRouterController extends ChangeNotifier {
     (await SharedPreferences.getInstance()).remove(_tokenKey);
     user = null;
     team = null;
+    pools = null;
     _setSpace(null);
     await refreshRegistration();
     notifyListeners();
@@ -299,7 +372,40 @@ class NeoRouterController extends ChangeNotifier {
 
   void go(AppPage next) {
     page = canOpen(next) ? next : _firstOpenPage();
+    _prefs?.setString(_pageKey, page.name);
     notifyListeners();
+  }
+
+  void _restorePage(String? name) {
+    final match = AppPage.values.where((item) => item.name == name).firstOrNull;
+    if (match != null && user != null && canOpen(match)) page = match;
+  }
+
+  static Map<String, String> _readTabs(String? raw) {
+    try {
+      final value = raw == null ? null : jsonDecode(raw);
+      if (value is Map) return value.map((key, item) => MapEntry('$key', '$item'));
+    } catch (_) {
+      // A broken value just means no remembered tabs.
+    }
+    return <String, String>{};
+  }
+
+  /// The tab a screen had open last time, or [fallback].
+  T savedTab<T extends Enum>(String screen, List<T> values, T fallback) => values.where((item) => item.name == _tabs[screen]).firstOrNull ?? fallback;
+
+  /// A remembered choice that is not a tab, such as the open pool.
+  String? savedChoice(String screen) => _tabs[screen];
+
+  /// Remembers a screen's tab or other choice (such as the open pool) for the next reload.
+  void rememberChoice(String screen, Object? value) {
+    final name = value is Enum ? value.name : value?.toString();
+    if (name == null) {
+      _tabs.remove(screen);
+    } else {
+      _tabs[screen] = name;
+    }
+    _prefs?.setString(_tabsKey, jsonEncode(_tabs));
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {

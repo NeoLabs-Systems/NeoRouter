@@ -1,0 +1,54 @@
+# Keeps the build context to what the image needs. Runtime data never belongs
+# in an image: it lives in the /data volume.
+.git
+.github
+.gitignore
+.gitattributes
+node_modules
+**/node_modules
+
+# Docs, tests and tooling are not needed at runtime.
+test
+docs
+landing/*.md
+AGENTS.md
+CLAUDE.md
+GUIDELINES.md
+CONTRIBUTING.md
+SECURITY.md
+NOTICE
+
+# Flutter sources are only used by the runtime-from-source target.
+flutter_app/.dart_tool
+flutter_app/build
+flutter_app/.flutter-plugins
+flutter_app/.flutter-plugins-dependencies
+flutter_app/.packages
+flutter_app/.pub
+flutter_app/linux
+flutter_app/macos
+flutter_app/windows
+flutter_app/test
+flutter_app/.idea
+flutter_app/**/ephemeral
+
+# Local state and secrets.
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+*.db
+*.pem
+*.p12
+*.log
+logs
+coverage
+runtime-data
+deployment/data
+.neorouter-dev
+tmp
+.DS_Store
+
+# Container files themselves are cheap; keep them for the entrypoint.
+!docker/**

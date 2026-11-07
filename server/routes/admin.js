@@ -8,6 +8,7 @@ const metadata = require('../services/catalog/metadata_service');
 const privacyModel = require('../services/processing/privacy_model');
 const teamAudit = require('../services/teams/audit');
 const teamMembers = require('../services/teams/members');
+const updates = require('../services/updates/update_service');
 const { requireAdmin } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
 const { asyncRoute } = require('./helpers');
@@ -48,5 +49,10 @@ router.patch('/settings', validate(z.object({
   res.json(adminSettings());
 });
 router.post('/metadata/refresh', asyncRoute(async (_req, res) => res.json({ results: await metadata.refreshSources(), metadata: metadata.status() })));
+
+router.get('/update', (_req, res) => res.json(updates.status()));
+router.post('/update/check', asyncRoute(async (_req, res) => res.json(await updates.check())));
+router.post('/update', (_req, res) => res.status(202).json(updates.start()));
+router.put('/update/channel', validate(z.object({ channel: z.string().max(16) })), asyncRoute(async (req, res) => res.json(await updates.setChannel(req.body.channel))));
 
 module.exports = router;

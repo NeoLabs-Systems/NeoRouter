@@ -15,15 +15,26 @@ function savedUsd(entry) {
   return ((entry.input_tokens || 0) * (price.price_in || 0) + (entry.output_tokens || 0) * (price.price_out || 0)) / 1e6;
 }
 
+// A model or connection removed while the request ran (a pool partner left)
+// is recorded without the link to it, rather than not at all.
 function record(entry) {
+  try {
+    insert(entry);
+  } catch (error) {
+    if (error.code !== 'SQLITE_CONSTRAINT_FOREIGNKEY' || (entry.model_ref == null && entry.account_id == null)) throw error;
+    insert({ ...entry, model_ref: null, account_id: null });
+  }
+}
+
+function insert(entry) {
   getDatabase().prepare(`INSERT INTO requests (id, user_id, router_key_id, created_at, api_format, requested_model, model_ref, model_label,
       account_id, status, http_status, error_code, error_message, input_tokens, output_tokens, cost_usd, is_free, latency_ms, ttft_ms,
-      attempts, stream, trail_json, saved_usd, redacted_count, compression_saved_tokens, capability, units, task, queued_ms)
+      attempts, stream, trail_json, saved_usd, redacted_count, compression_saved_tokens, capability, units, task, queued_ms, kept_private)
     VALUES (@id, @user_id, @router_key_id, @created_at, @api_format, @requested_model, @model_ref, @model_label, @account_id, @status,
       @http_status, @error_code, @error_message, @input_tokens, @output_tokens, @cost_usd, @is_free, @latency_ms, @ttft_ms, @attempts,
-      @stream, @trail_json, @saved_usd, @redacted_count, @compression_saved_tokens, @capability, @units, @task, @queued_ms)`).run({
+      @stream, @trail_json, @saved_usd, @redacted_count, @compression_saved_tokens, @capability, @units, @task, @queued_ms, @kept_private)`).run({
     model_ref: null, model_label: null, account_id: null, error_code: null, error_message: null, ttft_ms: null,
-    redacted_count: 0, compression_saved_tokens: 0, capability: 'chat', units: 0, task: null, queued_ms: 0, ...entry,
+    redacted_count: 0, compression_saved_tokens: 0, capability: 'chat', units: 0, task: null, queued_ms: 0, kept_private: null, ...entry,
     saved_usd: savedUsd(entry),
   });
 }
@@ -32,7 +43,24 @@ function rangeStart(range, now = Date.now()) {
   return now - (RANGES[range] || RANGES['24h']);
 }
 
-function summary(userId, range = '24h', now = Date.now()) {
+function totalsOf(totals) {
+  return {
+    requests: totals.requests || 0,
+    successes: totals.successes || 0,
+    successRate: totals.requests ? (totals.successes || 0) / totals.requests : null,
+    costUsd: totals.cost || 0,
+    savedUsd: totals.saved || 0,
+    inputTokens: totals.input_tokens || 0,
+    outputTokens: totals.output_tokens || 0,
+    freeRequests: totals.free_requests || 0,
+    avgLatencyMs: totals.avg_latency,
+    avgTtftMs: totals.avg_ttft,
+    fallbacks: totals.fallbacks || 0,
+  };
+}
+
+// onlyTotals: just the totals (the home page needs no series or breakdowns).
+function summary(userId, range = '24h', now = Date.now(), { onlyTotals = false } = {}) {
   const db = getDatabase();
   const since = rangeStart(range, now);
   const totals = db.prepare(`SELECT COUNT(*) requests, SUM(status = 'success') successes, SUM(cost_usd) cost, SUM(saved_usd) saved,
@@ -41,6 +69,7 @@ function summary(userId, range = '24h', now = Date.now()) {
       SUM(attempts > 1) fallbacks
     FROM requests WHERE user_id = ? AND created_at >= ?`).get(userId, since);
   const bucketMs = range === '24h' ? 3_600_000 : 86_400_000;
+  if (onlyTotals) return { range, bucketMs, totals: totalsOf(totals) };
   const rows = db.prepare(`SELECT CAST(created_at / ? AS INTEGER) * ? bucket, COUNT(*) requests, SUM(status = 'success') successes,
       SUM(cost_usd) cost, SUM(input_tokens + output_tokens) tokens
     FROM requests WHERE user_id = ? AND created_at >= ? GROUP BY bucket ORDER BY bucket`).all(bucketMs, bucketMs, userId, since);
@@ -62,19 +91,7 @@ function summary(userId, range = '24h', now = Date.now()) {
   return {
     range,
     bucketMs,
-    totals: {
-      requests: totals.requests || 0,
-      successes: totals.successes || 0,
-      successRate: totals.requests ? (totals.successes || 0) / totals.requests : null,
-      costUsd: totals.cost || 0,
-      savedUsd: totals.saved || 0,
-      inputTokens: totals.input_tokens || 0,
-      outputTokens: totals.output_tokens || 0,
-      freeRequests: totals.free_requests || 0,
-      avgLatencyMs: totals.avg_latency,
-      avgTtftMs: totals.avg_ttft,
-      fallbacks: totals.fallbacks || 0,
-    },
+    totals: totalsOf(totals),
     series,
     topModels,
     byKey,
@@ -209,7 +226,7 @@ function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}
 function logs(userId, { limit = 100, before = null, keyId = null, keyIds = [], status = null } = {}) {
   const keys = keyFilter(keyId ? [keyId, ...keyIds] : keyIds);
   return getDatabase().prepare(`SELECT r.*, k.name key_name FROM requests r LEFT JOIN router_keys k ON k.id = r.router_key_id
-    WHERE r.user_id = ? AND (? IS NULL OR r.created_at < ?)${keys.sql} AND (? IS NULL OR r.status = ?)
+    WHERE r.user_id = ? AND k.peer_link_id IS NULL AND (? IS NULL OR r.created_at < ?)${keys.sql} AND (? IS NULL OR r.status = ?)
     ORDER BY r.created_at DESC LIMIT ?`)
     .all(userId, before, before, ...keys.ids, status, status, Math.min(500, limit))
     .map((row) => ({
@@ -237,6 +254,7 @@ function logs(userId, { limit = 100, before = null, keyId = null, keyIds = [], s
       capability: row.capability || 'chat',
       task: row.task || null,
       units: row.units || 0,
+      keptPrivate: row.kept_private || null,
     }));
 }
 

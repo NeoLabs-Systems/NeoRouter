@@ -1,6 +1,7 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const { clientSession } = require('../../providers/session_id');
 const { getConfig } = require('../../config/env');
 const webSearch = require('./web_search');
 const { HttpError } = require('../../middleware/error_handler');
@@ -8,6 +9,9 @@ const { ProviderError, KINDS, fromNetworkError } = require('../../providers/prov
 const accounts = require('../../services/providers/account_service');
 const { RoutingPlan, explainNoModel, maxOutputFor } = require('../../services/routing/router');
 const learning = require('../../services/routing/learning');
+const capacity = require('../../services/routing/capacity');
+const experience = require('../../services/routing/task/experience');
+const retries = require('../../services/routing/task/retries');
 const stats = require('../../services/routing/stats_store');
 const loadTracker = require('../../services/routing/load_tracker');
 const plans = require('../../services/routing/plans');
@@ -18,6 +22,12 @@ const billing = require('../../services/providers/billing_check');
 const requestProcessing = require('../../services/processing/processing_service');
 const { restoreResponse, StreamRestorer } = require('../../services/processing/redaction');
 const routerKeys = require('../../services/router_keys/router_key_service');
+const sharePolicy = require('../../services/pools/share_policy');
+const peerPrivacy = require('../../services/pools/peer_privacy');
+const traffic = require('../../services/pools/traffic');
+const reachability = require('../../services/pools/reachability');
+const { isPeerEntry } = require('../../services/pools/links');
+const sensitivity = require('../../services/processing/sensitivity');
 const { createLogger } = require('../../utils/logger');
 const {
   requirements, estimateInputTokens, normalizeUsage, reportedCost, StreamAccumulator, invalidToolCalls, textOf,
@@ -41,9 +51,12 @@ const QUEUE_MIN_POLL_MS = 200;
 
 const KEY_POLICY_REJECTIONS = new Set(['not_free', 'not_allowed_for_key', 'price_unknown']);
 // Rejections that do not change within the lifetime of one request.
-const PERMANENT_REJECTIONS = new Set(['model_disabled', 'model_unavailable', 'account_unavailable', 'no_tools', 'no_vision', 'not_available', 'no_free_quota', 'incompatible', 'payment_required', 'auth_failed', 'model_excluded', 'provider_excluded', 'provider_not_included', 'below_min_intelligence', 'too_expensive', 'budget_exhausted', 'needs_more_tokens']);
+const PERMANENT_REJECTIONS = new Set(['needs_action', 'model_disabled', 'model_unavailable', 'account_unavailable', 'no_tools', 'no_vision', 'not_available', 'no_free_quota', 'incompatible', 'payment_required', 'auth_failed', 'model_excluded', 'provider_excluded', 'provider_not_included', 'below_min_intelligence', 'too_expensive', 'budget_exhausted', 'needs_more_tokens']);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// A pool partner's request waits only briefly for capacity: the owner's own
+// requests come first, and the partner's router has other places to try.
+const PEER_QUEUE_MS = 2000;
 const MAX_CONSECUTIVE_BAD_REQUESTS = 3;
 
 // No answer at all: a reasoning model that spent max_tokens on thinking is
@@ -87,7 +100,7 @@ function hedgeDelay(entry, stream) {
 }
 
 function trailItem(entry, outcome, extra = {}) {
-  return { model: entry.id, ref: entry.ref, outcome, ...extra };
+  return { model: entry.id, ref: entry.ref, outcome, ...(entry.tryingLuck ? { luck: true } : {}), ...extra };
 }
 
 // Wraps the remaining upstream iterator so idle gaps abort the attempt.
@@ -113,11 +126,11 @@ function toolCallRequired(canonical) {
 
 const missingToolCall = () => new ProviderError(KINDS.INVALID_OUTPUT, 'The model ignored tool_choice and answered without a tool call.');
 
-async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs }) {
+async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs, sessionId }) {
   const startedAt = Date.now();
   const mustCallTool = toolCallRequired(canonical);
   if (!stream) {
-    const { response, headers } = await adapter.chat(canonical, { modelId: entry.modelId, signal, timeoutMs, model: entry });
+    const { response, headers } = await adapter.chat(canonical, { modelId: entry.modelId, signal, timeoutMs, model: entry, sessionId });
     const choice = response?.choices?.[0];
     const message = choice?.message;
     // A reasoning model can spend a small max_tokens entirely on thinking;
@@ -132,7 +145,7 @@ async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs
   const controller = new AbortController();
   const combined = AbortSignal.any([signal, controller.signal]);
   let headers = null;
-  const iterator = adapter.stream(canonical, { modelId: entry.modelId, signal: combined, onHeaders: (value) => { headers = value; }, model: entry })[Symbol.asyncIterator]();
+  const iterator = adapter.stream(canonical, { modelId: entry.modelId, signal: combined, onHeaders: (value) => { headers = value; }, model: entry, sessionId })[Symbol.asyncIterator]();
   const firstTimer = setTimeout(() => controller.abort(new ProviderError(KINDS.TIMEOUT, 'No output before the first-token timeout.')), timeoutMs);
   const accumulator = new StreamAccumulator();
   const buffered = [];
@@ -163,10 +176,46 @@ async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs
  * canonical: an already translated request (web search turns); internal:
  * a turn of a request that already passed the key's rate limit.
  */
-async function execute({ req, res, key, format, body, freeOnly = false, canonical: preset = null, internal = false }) {
+async function execute(options) {
+  const { req, res, key } = options;
+  // X-NeoRouter-Hop marks a request a pool partner passed on. Only a partner's
+  // key may carry it, so nothing travels further than one partner.
+  if (req.get?.('x-neorouter-hop') && !key.peer_link_id) {
+    throw new HttpError(403, 'POOL_HOP_REFUSED', 'Requests passed on by a pool partner are only accepted with a partner key.');
+  }
+  if (!key.peer_link_id) return run(options);
+  // A partner's request: admitted within its share, and announced to the
+  // partner's router as rate-limit headers.
+  const share = sharePolicy.admit(key);
+  try {
+    res.set(share.headers);
+    return await run({ ...options, shareReserve: share.reserve, sharePoolId: share.poolId });
+  } catch (error) {
+    throw peerSafeError(error);
+  } finally {
+    share.release();
+  }
+}
+
+// What a partner learns when its request fails here: a code and a plain
+// message, never which connections or models this instance has.
+function peerSafeError(error) {
+  if (!(error instanceof HttpError)) return new HttpError(502, 'POOL_PARTNER_FAILED', 'The partner could not answer this request.');
+  if (error.status >= 500 || error.code === 'NO_MODEL_AVAILABLE' || error.code === 'ALL_ATTEMPTS_FAILED') {
+    const retryAfterSeconds = error.details?.retryAfterSeconds;
+    return new HttpError(error.status >= 500 ? error.status : 503, error.code || 'POOL_PARTNER_FAILED', 'No shared model can take this request right now.', retryAfterSeconds ? { retryAfterSeconds } : undefined);
+  }
+  return new HttpError(error.status, error.code, error.message, error.details?.retryAfterSeconds ? { retryAfterSeconds: error.details.retryAfterSeconds } : undefined);
+}
+
+async function run({ req, res, key, format, body, freeOnly = false, canonical: preset = null, internal = false, shareReserve = null, sharePoolId = null }) {
   const translator = translators[format];
+  // A partner's request leaves no trace beyond counts: no headers about the
+  // route, no stored error texts, no repeat detection, none of the owner's
+  // request processing (the partner already applied its own).
+  const peer = Boolean(key.peer_link_id);
   // Built-in web search runs the request as several turns (web_search.js).
-  if (!preset) {
+  if (!preset && !peer) {
     const search = webSearch.requested(format, body || {});
     if (search && webSearch.available(key.user_id)) {
       const rpm = routerKeys.consumeRpm(key);
@@ -190,6 +239,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     throw new HttpError(400, 'INVALID_REQUEST', `The request body could not be read: ${error.message}`);
   }
   if (!canonical.messages.length) throw new HttpError(400, 'INVALID_REQUEST', 'The request contains no messages.');
+  const sessionId = clientSession(req);
 
   const rpm = internal ? { allowed: true } : routerKeys.consumeRpm(key);
   if (!rpm.allowed) {
@@ -203,9 +253,19 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     throw new HttpError(402, 'BUDGET_EXHAUSTED', `This router key has used its ${key.budget_period} budget of ${key.budget_usd} USD.`);
   }
 
+  // A key that may use the pool: very sensitive requests stay on own
+  // connections (when the owner wants that), judged on the original text.
+  const poolKey = peerPrivacy.mayUsePool(key);
+  const keptPrivate = poolKey && peerPrivacy.getSettings(key.user_id).keepSensitivePrivate
+    ? sensitivity.assess(canonical) : null;
+  const keepPrivate = keptPrivate?.level === 'high';
+
   // Compression and the privacy shield run before routing, so the router sees
-  // the real request size and providers never see hidden values.
-  const processing = await requestProcessing.apply(key.user_id, canonical, { compressionLevel: req.get?.('x-neorouter-compression') || null });
+  // the real request size and providers never see hidden values. A request
+  // that may reach a pool partner gets at least the pool's shield.
+  const processing = peer
+    ? { canonical, vault: null, stats: { redacted: 0, compression: { level: 'off', savedTokens: 0 } } }
+    : await requestProcessing.apply(key.user_id, canonical, { compressionLevel: req.get?.('x-neorouter-compression') || null, poolMinimum: poolKey });
   canonical = processing.canonical;
   const { vault } = processing;
   const processingStats = processing.stats;
@@ -216,10 +276,17 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   const plan = new RoutingPlan({
     userId: key.user_id, key, request: canonical, requestedModel, needs, inputTokens, freeOnly: freeOnly || budgetExhausted,
     // Apps that know what they ask for can say so (one of the task kinds).
-    taskHint: req.get?.('x-neorouter-task') || null,
+    taskHint: peer ? null : req.get?.('x-neorouter-task') || null,
+    keepPrivate,
+    shareReserve,
+    sharePoolId,
   });
-  if (plan.pacing) res.set('X-NeoRouter-Budget-Pace', plan.pacing.state);
-  if (plan.task) res.set('X-NeoRouter-Task', `${plan.task.primary}; difficulty=${plan.task.difficulty}`);
+  // The same conversation again right after an answer: that answer was no good.
+  const retryId = internal || peer ? null : retries.fingerprint(key.id, canonical.messages);
+  const repeated = retryId && retries.repeatedAnswer(retryId);
+  if (repeated) experience.recordFeedback(repeated.ref, repeated.task, false);
+  if (plan.pacing && !peer) res.set('X-NeoRouter-Budget-Pace', plan.pacing.state);
+  if (plan.task && !peer) res.set('X-NeoRouter-Task', `${plan.task.primary}; difficulty=${plan.task.difficulty}`);
 
   const config = getConfig();
   const clientAbort = new AbortController();
@@ -232,6 +299,14 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
 
   const finish = (fields) => {
     try {
+      traffic.recordFinished({ key, accountId: fields.account_id, success: fields.status === 'success', tokens: (fields.input_tokens || 0) + (fields.output_tokens || 0) });
+    } catch (error) {
+      logger.error('Failed to count pool traffic', { requestId, error });
+    }
+    // A partner's request keeps codes only: provider error texts can carry
+    // account details, and the trail names this instance's connections.
+    if (peer) fields = { ...fields, error_message: null };
+    try {
       usage.record({
         id: requestId,
         user_id: key.user_id,
@@ -241,7 +316,8 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
         requested_model: requestedModel,
         attempts: Math.max(1, trail.length),
         stream: stream ? 1 : 0,
-        trail_json: JSON.stringify(trail),
+        trail_json: JSON.stringify(peer ? trail.map(({ message, ...item }) => item) : trail),
+        kept_private: keepPrivate ? keptPrivate.reasons.join(',') : null,
         queued_ms: Math.round(queuedMs),
         redacted_count: processingStats.redacted,
         compression_saved_tokens: processingStats.compression.savedTokens,
@@ -261,8 +337,11 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   // Commits a successful attempt to the client (JSON or SSE) and records it.
   const commit = async (attempt, result) => {
     const { entry, reservation } = attempt;
-    res.set('X-NeoRouter-Model', entry.id);
-    res.set('X-NeoRouter-Trail', [...trail.map((item) => item.model), entry.id].join(','));
+    if (!peer) {
+      res.set('X-NeoRouter-Model', entry.id);
+      res.set('X-NeoRouter-Trail', [...trail.map((item) => item.model), entry.id].join(','));
+    }
+    if (keepPrivate) res.set('X-NeoRouter-Kept-Private', keptPrivate.reasons.join(','));
     if (processingStats.compression.level !== 'off') res.set('X-NeoRouter-Compression', `${processingStats.compression.level}; saved~=${processingStats.compression.savedTokens}`);
     if (processingStats.redacted) res.set('X-NeoRouter-Redacted', String(processingStats.redacted));
     if (!stream) {
@@ -362,7 +441,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     quota.recordRequest(entry, inputTokens);
     plans.onSent(entry);
     const timeoutMs = Math.min(adapter.timeoutMs, config.routing.totalBudgetMs - (Date.now() - startedAt));
-    attempt.promise = runAttempt({ entry, adapter, canonical, stream, signal: AbortSignal.any([clientAbort.signal, controller.signal]), timeoutMs })
+    attempt.promise = runAttempt({ entry, adapter, canonical, stream, signal: AbortSignal.any([clientAbort.signal, controller.signal]), timeoutMs, sessionId })
       .then((result) => ({ attempt, result }), (error) => ({ attempt, error }));
     running.add(attempt);
     attemptsStarted += 1;
@@ -383,18 +462,28 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   // It only waits when a candidate frees up within the window: a model out
   // for the day is no reason to keep the client hanging.
   const ensureRunning = async () => {
-    const waitUntil = Math.min(Date.now() + config.routing.queueWaitMs, startedAt + config.routing.totalBudgetMs);
-    while (!running.size) {
-      if (startNext()) return true;
-      if (clientAbort.signal.aborted || attemptsStarted >= config.routing.maxAttempts) return false;
-      const now = Date.now();
-      freesUpAt = plan.freesUpAt(now);
-      if (freesUpAt === null || freesUpAt > waitUntil) return false;
-      const pause = Math.min(waitUntil - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random()));
-      await sleep(pause);
-      queuedMs += Date.now() - now;
+    const queueMs = peer ? PEER_QUEUE_MS : capacity.queueWaitMs(key, config.routing.queueWaitMs);
+    const waitUntil = Math.min(Date.now() + queueMs, startedAt + config.routing.totalBudgetMs);
+    try {
+      while (!running.size) {
+        if (startNext()) return true;
+        if (clientAbort.signal.aborted || attemptsStarted >= config.routing.maxAttempts) return false;
+        const now = Date.now();
+        freesUpAt = plan.freesUpAt(now);
+        if (freesUpAt === null || freesUpAt > waitUntil) {
+          // Better to try what may work again than to answer "no model available".
+          if (plan.enableLongShots({ now })) continue;
+          return false;
+        }
+        plan.joinQueue(now);
+        const pause = Math.min(waitUntil - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random()));
+        await sleep(pause);
+        queuedMs += Date.now() - now;
+      }
+      return true;
+    } finally {
+      plan.leaveQueue();
     }
-    return true;
   };
 
   const settle = (attempt) => {
@@ -405,7 +494,10 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   await ensureRunning();
   while (running.size) {
     const newest = [...running].reduce((a, b) => (b.started > a.started ? b : a));
-    const canHedge = config.routing.hedging && running.size < config.routing.maxParallel
+    // Short of capacity: one attempt on the side at most. That still rescues a
+    // stuck request, but does not spend free quota others are queueing for.
+    const parallel = capacity.isShort(key.user_id) ? Math.min(2, config.routing.maxParallel) : config.routing.maxParallel;
+    const canHedge = config.routing.hedging && running.size < parallel
       && attemptsStarted < config.routing.maxAttempts && [...running].every((item) => item.entry.isFree);
     let timer = null;
     const contenders = [...running].map((item) => item.promise);
@@ -429,6 +521,8 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
       lastError = error;
       trail.push(trailItem(attempt.entry, error.kind, { status: error.status, ms: Date.now() - attempt.started, message: String(error.message).slice(0, 200) }));
       const policy = learning.onFailure(attempt.entry, error, { estimatedTokens: inputTokens, maxTokens: canonical.max_tokens });
+      if (isPeerEntry(attempt.entry)) reachability.noteFailure(attempt.entry.accountId, error.kind);
+      plan.noteFailure(attempt.entry, error.kind);
       if (error.kind === KINDS.AUTH) accounts.validateAccount(attempt.entry.accountId).catch(() => {});
       badRequests = error.kind === KINDS.BAD_REQUEST ? badRequests + 1 : 0;
       if (!policy.fallback || badRequests >= MAX_CONSECUTIVE_BAD_REQUESTS) {
@@ -451,6 +545,9 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
       learning.onSlow(other.entry, Date.now() - other.started);
     }
     running.delete(attempt);
+    capacity.record(key.user_id, true);
+    if (isPeerEntry(attempt.entry)) reachability.noteSuccess(attempt.entry.accountId);
+    if (retryId && plan.task) retries.rememberAnswer(retryId, { ref: attempt.entry.ref, task: plan.task.primary });
     try {
       await commit(attempt, outcome.result);
     } finally {
@@ -489,6 +586,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     ? explainNoModel(rejected)
     : `All ${trail.length} attempt(s) failed. Last error: ${lastError?.message || 'unknown'}`;
   finish({ status: 'error', http_status: status, error_code: code, error_message: message });
+  capacity.record(key.user_id, false);
   // When a model frees up later, say when to come back.
   const retryAfterSeconds = freesUpAt ? Math.max(1, Math.ceil((freesUpAt - Date.now()) / 1000)) : null;
   if (retryAfterSeconds && !res.headersSent) res.set('Retry-After', String(retryAfterSeconds));

@@ -19,6 +19,7 @@ const tokens = (suffix, expiresIn = 3600) => ({
 });
 let polls = 0;
 let issueShortLived = true;
+let declineNext = false;
 fake.post('/api/oauth/device/code', (req, res) => {
   if (req.body.client_id !== 'hermes-cli') return res.status(400).json({ error: 'invalid_client', error_description: `Unsupported OAuth client_id: ${req.body.client_id}` });
   return res.json({
@@ -29,6 +30,7 @@ fake.post('/api/oauth/device/code', (req, res) => {
 });
 fake.post('/api/oauth/token', (req, res) => {
   if (req.body.grant_type === 'urn:ietf:params:oauth:grant-type:device_code') {
+    if (declineNext) return res.status(400).json({ error: 'access_denied' });
     if (req.body.client_id !== 'hermes-cli' || req.body.device_code !== 'dc-1') return res.status(400).json({ error: 'invalid_grant', error_description: 'Invalid device code' });
     polls += 1;
     if (polls < 2) return res.status(400).json({ error: 'authorization_pending' });
@@ -157,4 +159,15 @@ test('a pasted Portal API key is sent as it is, without a refresh', async () => 
 test('a login nobody started is refused instead of polled', async () => {
   const unknown = await api('post', '/providers/nous/login/dc-unknown');
   assert.equal(unknown.status, 404);
+});
+
+test('a sign-in declined in the Portal says so instead of an internal error', async () => {
+  declineNext = true;
+  const start = await api('post', '/providers/nous/login');
+  const poll = await api('post', `/providers/nous/login/${start.body.loginId}`);
+  declineNext = false;
+  assert.equal(poll.status, 400, JSON.stringify(poll.body));
+  assert.equal(poll.body.error.code, 'NOUS_SIGN_IN_FAILED');
+  assert.match(poll.body.error.message, /declined/);
+  assert.equal((await api('post', `/providers/nous/login/${start.body.loginId}`)).status, 404, 'a declined sign-in is gone');
 });

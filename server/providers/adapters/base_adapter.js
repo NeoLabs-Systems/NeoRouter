@@ -2,6 +2,8 @@
 
 const { request } = require('../http');
 const { KINDS } = require('../provider_error');
+
+const VALID_BUT_LIMITED = new Set([KINDS.RATE_LIMIT, KINDS.QUOTA_EXHAUSTED, KINDS.PAYMENT]);
 const { getConfig } = require('../../config/env');
 
 // An adapter speaks one upstream dialect. It receives the provider definition
@@ -81,6 +83,10 @@ class BaseAdapter {
       return { status: 'healthy', message: null };
     } catch (error) {
       if (error.kind === KINDS.AUTH) return { status: 'invalid', message: error.message };
+      // The key was accepted; it is only out of allowance or credits for now
+      // (a trial's monthly cap, no balance for paid models). Free models and
+      // the next period still work, so this is no problem with the connection.
+      if (VALID_BUT_LIMITED.has(error.kind)) return { status: 'healthy', message: null };
       return { status: 'unknown', message: error.message };
     }
   }

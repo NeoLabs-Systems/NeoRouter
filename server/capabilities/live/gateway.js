@@ -13,7 +13,7 @@ const { dialectFor, usageOf } = require('./dialects');
 const { ProviderError, KINDS, classifyHttpError, fromNetworkError } = require('../../providers/provider_error');
 const accounts = require('../../services/providers/account_service');
 const { isPrivateDestination } = require('../../providers/net_guard');
-const { RoutingPlan } = require('../../services/routing/router');
+const { RoutingPlan, explainNoModel } = require('../../services/routing/router');
 const learning = require('../../services/routing/learning');
 const loadTracker = require('../../services/routing/load_tracker');
 const quota = require('../../services/quota/quota_service');
@@ -186,9 +186,13 @@ class LiveSession {
         if (!this.failed(entry, error, attemptStarted)) break;
       }
     }
+    // Say what stopped it. Models of other protocols are not counted as rejected.
+    const rejected = this.trail.length ? {} : this.routing.rejectionSummary();
     const message = this.trail.length
       ? `All ${this.trail.length} attempt(s) failed. Last error: ${this.lastError?.message || 'unknown'}`
-      : `No live model in your catalog can serve "${this.requestedModel}" over this protocol right now (filters, quotas, cooldowns or budget).`;
+      : Object.keys(rejected).length
+        ? explainNoModel(rejected, 'live')
+        : `No live model in your catalog can serve "${this.requestedModel}" over this protocol.`;
     return this.fail(message, this.trail.length ? 'all_attempts_failed' : 'no_model_available');
   }
 
@@ -197,6 +201,7 @@ class LiveSession {
     this.lastError = error;
     this.trail.push({ model: entry.id, outcome: error.kind, status: error.status, ms: Date.now() - attemptStarted, message: String(error.message).slice(0, 200) });
     const policy = learning.onFailure(entry, error, { estimatedTokens: 0 });
+    this.routing.noteFailure(entry, error.kind);
     if (error.kind === KINDS.AUTH) accounts.validateAccount(entry.accountId).catch(() => {});
     return policy.fallback;
   }
@@ -309,6 +314,8 @@ function attach(server) {
     if (!dialect) return socket.destroy();
     const key = routerKeys.authenticate(tokenOf(request, url));
     if (!key) return reject(socket, 401, 'A valid NeoRouter key (nrt_…) is required.');
+    // Pool partners reach chat only.
+    if (key.peer_link_id) return reject(socket, 403, 'Pool partners can only use chat models.');
     return wss.handleUpgrade(request, socket, head, (client) => new LiveSession({ client, request, url, dialect, key }).start());
   });
   return wss;

@@ -55,7 +55,7 @@ List<NavGroup> navigationGroups(BuildContext context, NeoRouterController contro
       NavItem(AppPage.routing, t.navRouting, Icons.alt_route_outlined),
       NavItem(AppPage.keys, t.navKeys, Icons.key_outlined),
       NavItem(AppPage.processing, t.navProcessing, Icons.shield_outlined),
-      NavItem(AppPage.team, t.navTeam, Icons.groups_2_outlined),
+      NavItem(AppPage.team, t.navTeam, Icons.hub_outlined),
     ]),
     if (controller.user?.isAdmin == true)
       NavGroup(t.navAdmin, Icons.admin_panel_settings_outlined, <NavItem>[

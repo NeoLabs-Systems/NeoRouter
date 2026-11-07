@@ -52,9 +52,12 @@ function saveSettings(userId, next) {
 }
 
 // Runs the pipeline. `options.compressionLevel` (from a request header) may
-// only lower the configured level.
+// only lower the configured level. `options.poolMinimum`: the request may go
+// to a pool partner, so the shield runs with at least the pool's minimum
+// (services/pools/peer_privacy.js).
 async function apply(userId, canonical, options = {}) {
-  const config = options.settings || getSettings(userId);
+  const own = options.settings || getSettings(userId);
+  const config = options.poolMinimum ? require('../pools/peer_privacy').withPoolMinimum(own) : own;
   // Compression is an optimisation: if it fails, the request goes out as is.
   // The privacy shield is a promise: if it fails, the request fails.
   let compressed;

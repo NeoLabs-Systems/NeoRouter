@@ -7,7 +7,7 @@ const { createLogger } = require('../utils/logger');
 
 const logger = createLogger('migrations');
 
-function migrate(database = getDatabase()) {
+function migrate(database = getDatabase(), { quiet = false } = {}) {
   database.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
     version INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
@@ -31,7 +31,7 @@ function migrate(database = getDatabase()) {
       migration.up(database);
       database.prepare('INSERT INTO schema_migrations (version, name) VALUES (?, ?)').run(version, filename);
     })();
-    logger.info('Applied migration', { version, filename });
+    if (!quiet) logger.info('Applied migration', { version, filename });
   }
 }
 

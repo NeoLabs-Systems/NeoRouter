@@ -153,3 +153,18 @@ test('capacity adds up what the free models could take around the clock', async 
   quota.setLimit(`m:${free.ref}`, 'tpd', 5_000, 'learned');
   assert.equal((await api('get', '/usage/capacity')).body.tokensPerDay, 5_000, 'the tighter token limit wins');
 });
+
+test('a connection can be marked free or paid as a whole, and back to automatic', async () => {
+  const accounts = (await api('get', '/providers/accounts')).body.accounts;
+  const paidAccount = accounts.find((account) => account.slug === 'paid');
+  assert.equal(paidAccount.classification, 'auto');
+  const isFree = async () => (await api('get', '/models')).body.models.find((model) => model.accountId === paidAccount.id).isFree;
+  assert.equal(await isFree(), false);
+  const marked = await api('patch', `/providers/accounts/${paidAccount.id}`).send({ classification: 'free' });
+  assert.equal(marked.status, 200, JSON.stringify(marked.body));
+  assert.equal(marked.body.account.classification, 'free');
+  assert.equal(await isFree(), true);
+  await api('patch', `/providers/accounts/${paidAccount.id}`).send({ classification: 'auto' });
+  assert.equal(await isFree(), false);
+  assert.equal((await api('patch', `/providers/accounts/${paidAccount.id}`).send({ classification: 'maybe' })).status, 400);
+});

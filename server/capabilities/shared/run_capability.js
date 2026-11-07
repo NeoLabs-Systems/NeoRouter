@@ -12,6 +12,7 @@ const { ProviderError, KINDS, fromNetworkError } = require('../../providers/prov
 const accounts = require('../../services/providers/account_service');
 const { RoutingPlan, explainNoModel } = require('../../services/routing/router');
 const learning = require('../../services/routing/learning');
+const capacity = require('../../services/routing/capacity');
 const loadTracker = require('../../services/routing/load_tracker');
 const plans = require('../../services/routing/plans');
 const quota = require('../../services/quota/quota_service');
@@ -26,7 +27,7 @@ const QUEUE_MIN_POLL_MS = 200;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function trailItem(entry, outcome, extra = {}) {
-  return { model: entry.id, outcome, ...extra };
+  return { model: entry.id, outcome, ...(entry.tryingLuck ? { luck: true } : {}), ...extra };
 }
 
 /**
@@ -102,16 +103,25 @@ async function runCapability({ req, res = null, key, capability, method, request
   let badRequests = 0;
   // Like chat: when every candidate is only blocked for a moment, wait for
   // the first one to free up instead of failing.
-  const waitUntil = Math.min(startedAt + config.routing.queueWaitMs, startedAt + config.routing.totalBudgetMs);
+  const waitUntil = Math.min(startedAt + capacity.queueWaitMs(key, config.routing.queueWaitMs), startedAt + config.routing.totalBudgetMs);
   const nextChoice = async () => {
-    for (;;) {
-      const choice = plan.next({ filter: supported });
-      if (choice) return choice;
-      const now = Date.now();
-      freesUpAt = plan.freesUpAt(now, supported);
-      if (freesUpAt === null || freesUpAt > waitUntil) return null;
-      await sleep(Math.min(waitUntil - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random())));
-      queuedMs += Date.now() - now;
+    try {
+      for (;;) {
+        const choice = plan.next({ filter: supported });
+        if (choice) return choice;
+        const now = Date.now();
+        freesUpAt = plan.freesUpAt(now, supported);
+        if (freesUpAt === null || freesUpAt > waitUntil) {
+          // Better to try what may work again than to answer "no model available".
+          if (plan.enableLongShots({ filter: supported, now })) continue;
+          return null;
+        }
+        plan.joinQueue(now, supported);
+        await sleep(Math.min(waitUntil - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random())));
+        queuedMs += Date.now() - now;
+      }
+    } finally {
+      plan.leaveQueue();
     }
   };
   while (trail.length < config.routing.maxAttempts && Date.now() - startedAt < config.routing.totalBudgetMs) {
@@ -152,6 +162,7 @@ async function runCapability({ req, res = null, key, capability, method, request
       lastError = error;
       trail.push(trailItem(entry, error.kind, { status: error.status, ms: Date.now() - attemptStarted, message: String(error.message).slice(0, 200) }));
       const policy = learning.onFailure(entry, error, { estimatedTokens: inputTokens });
+      plan.noteFailure(entry, error.kind);
       if (error.kind === KINDS.AUTH) accounts.validateAccount(entry.accountId).catch(() => {});
       badRequests = error.kind === KINDS.BAD_REQUEST ? badRequests + 1 : 0;
       if (!policy.fallback || badRequests >= MAX_CONSECUTIVE_BAD_REQUESTS) break;

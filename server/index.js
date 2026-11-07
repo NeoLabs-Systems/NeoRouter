@@ -25,6 +25,9 @@ const config = getConfig();
 const app = createApp();
 const server = app.listen(config.port, config.host, () => {
   logger.info('NeoRouter listening', { host: config.host, port: config.port });
+  require('./host_analytics').startHostAnalytics(server);
+  const status = require('./public_status');
+  status.history.start(status.buildPublicStatus, server);
 });
 // Live voice sessions arrive as WebSocket upgrades.
 require('./capabilities/live/gateway').attach(server);

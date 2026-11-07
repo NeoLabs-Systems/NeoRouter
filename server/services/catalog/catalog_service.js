@@ -25,10 +25,10 @@ async function syncAccount(accountId) {
   const seen = new Set();
   const upsert = db.prepare(`INSERT INTO models
     (account_id, model_id, display_name, canonical_id, capability, context_window, max_output, supports_tools, supports_vision,
-     supports_json, supports_reasoning, price_in, price_out, price_source, is_free, free_reason, available, raw_json, price_unit, price_per_unit, last_seen_at)
+     supports_json, supports_reasoning, price_in, price_out, price_source, is_free, free_reason, available, raw_json, price_unit, price_per_unit, enabled, last_seen_at)
     VALUES (@account_id, @model_id, @display_name, @canonical_id, @capability, @context_window, @max_output, @supports_tools,
      @supports_vision, @supports_json, @supports_reasoning, @price_in, @price_out, @price_source, @is_free, @free_reason, 1, @raw_json,
-     @price_unit, @price_per_unit,
+     @price_unit, @price_per_unit, @enabled,
      strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     ON CONFLICT(account_id, model_id) DO UPDATE SET display_name = excluded.display_name, canonical_id = excluded.canonical_id,
       capability = excluded.capability, context_window = excluded.context_window, max_output = excluded.max_output,
@@ -59,9 +59,11 @@ async function syncAccount(accountId) {
         price_source: model.priceKnown ? 'listing' : priceFromFacts ? 'models.dev' : null,
         is_free: 0,
         free_reason: null,
-        raw_json: JSON.stringify({ freeHint: model.freeHint, priceKnown: model.priceKnown, ...(model.decision ? { decision: true } : {}) }),
+        raw_json: JSON.stringify({ freeHint: model.freeHint, priceKnown: model.priceKnown, ...(model.decision ? { decision: true } : {}), ...(model.paidOnly ? { paidOnly: true } : {}) }),
         price_unit: model.priceUnit || null,
         price_per_unit: model.unitPrice ?? null,
+        // Only a new model starts switched off; the ON CONFLICT update leaves a choice alone.
+        enabled: model.optIn ? 0 : 1,
       });
     }
     const existing = db.prepare('SELECT id, model_id FROM models WHERE account_id = ?').all(accountId);
@@ -79,7 +81,7 @@ async function syncAccount(accountId) {
 // recomputed whenever either changes, not only on sync.
 function reclassifyAccount(accountId) {
   const db = getDatabase();
-  const account = db.prepare('SELECT definition_id, billing_mode, billing_state, base_url, secret_encrypted FROM provider_accounts WHERE id = ?').get(accountId);
+  const account = db.prepare('SELECT definition_id, billing_mode, billing_state, base_url, secret_encrypted, classification FROM provider_accounts WHERE id = ?').get(accountId);
   if (!account) return;
   const definition = registry.get(account.definition_id);
   const rows = db.prepare('SELECT id, model_id, raw_json, overrides_json, price_in, price_out, price_source FROM models WHERE account_id = ?').all(accountId);
@@ -97,6 +99,7 @@ function reclassifyAccount(accountId) {
         modelId: row.model_id,
         listing: { ...listing, priceKnown: listing.priceKnown || row.price_source !== null || overrides.priceIn !== undefined },
         overrides,
+        accountOverride: account.classification,
       });
       update.run(result.isFree ? 1 : 0, result.reason, row.id);
     }

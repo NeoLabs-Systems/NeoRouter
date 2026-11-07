@@ -48,12 +48,18 @@ function publicKey(row) {
     // Whether the budget will last the period at the current pace.
     pacing: row.mode === 'free_only' ? null : pick(pacing.pacing(row), ['state', 'forecast']),
     rpmLimit: row.rpm_limit,
+    // Who goes first when models are busy.
+    priority: row.priority || 'normal',
+    // Maximum price per million tokens for paid models (null = no limit).
+    maxPricePerMillion: row.max_price_per_million === null || row.max_price_per_million === undefined ? null : row.max_price_per_million,
     // Tokens on free and subscription models, per period.
     tokenLimit: row.token_limit,
     tokenPeriod: row.token_period || 'monthly',
     tokensUsed: row.token_limit === null || row.token_limit === undefined ? null : budget.tokensUsed(row),
     tokenResetsAt: budget.periodEnd(row.token_period || 'monthly') ? new Date(budget.periodEnd(row.token_period || 'monthly')).toISOString() : null,
     allowedModels: JSON.parse(row.allowed_models_json || '[]'),
+    // 'pool': may also use pool partners' free models; 'own': own connections only.
+    poolAccess: row.pool_access === 'pool' ? 'pool' : 'own',
     profile: row.profile,
     expiresAt: row.expires_at,
     revoked: Boolean(row.revoked_at),
@@ -78,18 +84,20 @@ function create(userId, input, createdBy = userId, app = null) {
   const allowed = kinds(input);
   getDatabase().prepare(`INSERT INTO router_keys
     (id, user_id, name, prefix, key_hash, mode, budget_usd, budget_period, rpm_limit, allowed_models_json, profile, expires_at, created_by_user_id, allow_free, allow_plan,
-      app_name, app_origin, app_scopes_json, token_limit, token_period)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      app_name, app_origin, app_scopes_json, token_limit, token_period, priority, max_price_per_million, pool_access)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run(id, userId, input.name, prefix, sha256(secret), allowed.mode, input.budgetUsd ?? null,
       input.budgetPeriod || 'total', input.rpmLimit ?? null, JSON.stringify(input.allowedModels || []),
       input.profile || 'balanced', input.expiresAt || null, createdBy, allowed.allowFree, allowed.allowPlan,
       app?.name ?? null, app?.origin ?? null, app ? JSON.stringify(app.scopes || []) : null,
-      input.tokenLimit ?? null, input.tokenPeriod || 'monthly');
+      input.tokenLimit ?? null, input.tokenPeriod || 'monthly', input.priority || 'normal',
+      input.maxPricePerMillion ?? null, input.poolAccess === 'pool' ? 'pool' : 'own');
   return { key: get(userId, id), secret };
 }
 
 function getRow(userId, id) {
-  const row = getDatabase().prepare('SELECT * FROM router_keys WHERE id = ? AND user_id = ?').get(id, userId);
+  // Keys pool partners use are managed by the pool, not on the keys page.
+  const row = getDatabase().prepare('SELECT * FROM router_keys WHERE id = ? AND user_id = ? AND peer_link_id IS NULL').get(id, userId);
   if (!row) throw new HttpError(404, 'KEY_NOT_FOUND', 'This router key does not exist.');
   return row;
 }
@@ -99,7 +107,7 @@ function get(userId, id) {
 }
 
 function list(userId) {
-  return getDatabase().prepare('SELECT * FROM router_keys WHERE user_id = ? ORDER BY created_at DESC').all(userId).map(publicKey);
+  return getDatabase().prepare('SELECT * FROM router_keys WHERE user_id = ? AND peer_link_id IS NULL ORDER BY created_at DESC').all(userId).map(publicKey);
 }
 
 function update(userId, id, input) {
@@ -107,7 +115,7 @@ function update(userId, id, input) {
   assertProfile(userId, input.profile);
   const allowed = kinds(input, row);
   getDatabase().prepare(`UPDATE router_keys SET name = ?, mode = ?, budget_usd = ?, budget_period = ?, rpm_limit = ?,
-    allowed_models_json = ?, profile = ?, expires_at = ?, allow_free = ?, allow_plan = ?, token_limit = ?, token_period = ? WHERE id = ?`)
+    allowed_models_json = ?, profile = ?, expires_at = ?, allow_free = ?, allow_plan = ?, token_limit = ?, token_period = ?, priority = ?, max_price_per_million = ?, pool_access = ? WHERE id = ?`)
     .run(
       input.name ?? row.name,
       allowed.mode,
@@ -121,6 +129,9 @@ function update(userId, id, input) {
       allowed.allowPlan,
       input.tokenLimit !== undefined ? input.tokenLimit : row.token_limit,
       input.tokenPeriod ?? row.token_period,
+      input.priority ?? row.priority,
+      input.maxPricePerMillion !== undefined ? input.maxPricePerMillion : row.max_price_per_million,
+      input.poolAccess !== undefined ? (input.poolAccess === 'pool' ? 'pool' : 'own') : row.pool_access,
       id,
     );
   return get(userId, id);

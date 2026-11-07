@@ -7,6 +7,7 @@ import 'main_controller.dart';
 import 'main_model_picker.dart';
 import 'main_routing.dart';
 import 'main_shared.dart';
+import 'main_pool.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
 import 'src/backend_client.dart';
@@ -15,7 +16,7 @@ import 'src/models.dart';
 
 /// "Free · Plans · Paid" for the kinds of models a key may use.
 String keyKindsLabel(AppL10n t, RouterKey key) =>
-    <String>[if (key.allowFree) t.kindFreeShort, if (key.allowPlan) t.kindPlanShort, if (key.allowPaid) t.kindPaidShort].join(' · ');
+    <String>[if (key.allowFree) t.kindFreeShort, if (key.allowPlan) t.kindPlanShort, if (key.allowPaid) t.kindPaidShort, if (key.usesPool) t.keyPoolChip].join(' · ');
 
 class KeysScreen extends StatefulWidget {
   const KeysScreen({super.key, required this.controller});
@@ -122,6 +123,15 @@ class _KeysScreenState extends State<KeysScreen> {
     await _load();
   }
 
+  Future<void> _setPriority(RouterKey key, String priority) async {
+    try {
+      final updated = await widget.controller.api.updateKey(key.id, <String, Object?>{'priority': priority});
+      if (mounted) setState(() => _keys = <RouterKey>[for (final item in _keys) item.id == key.id ? updated : item]);
+    } on ApiException catch (error) {
+      if (mounted) showSnack(context, error.message);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
@@ -142,6 +152,7 @@ class _KeysScreenState extends State<KeysScreen> {
         'revoke' => _revoke(key),
         _ => _delete(key),
       },
+      onPriority: (priority) => _setPriority(key, priority),
     );
     return PageScaffold(
       header: ScreenHeader(
@@ -207,6 +218,7 @@ class _KeyRow extends StatelessWidget {
     required this.routerKey,
     required this.profiles,
     required this.onAction,
+    required this.onPriority,
     this.showCreator = false,
     this.canEdit = true,
     this.canDelete = true,
@@ -215,6 +227,7 @@ class _KeyRow extends StatelessWidget {
   final RouterKey routerKey;
   final List<RoutingProfile> profiles;
   final ValueChanged<String> onAction;
+  final ValueChanged<String> onPriority;
   final bool showCreator;
   final bool canEdit;
   final bool canDelete;
@@ -265,8 +278,11 @@ class _KeyRow extends StatelessWidget {
                         style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: palette.text),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Text('${key.prefix}…', style: GoogleFonts.geistMono(fontSize: 12, color: palette.textMuted)),
+                    // On a phone the name needs the room.
+                    if (MediaQuery.sizeOf(context).width >= 600) ...<Widget>[
+                      const SizedBox(width: 10),
+                      Text('${key.prefix}…', style: GoogleFonts.geistMono(fontSize: 12, color: palette.textMuted)),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 3),
@@ -326,6 +342,7 @@ class _KeyRow extends StatelessWidget {
               ],
             ),
           ),
+          if (!key.revoked) _PriorityPicker(priority: key.priority, onChanged: canEdit ? onPriority : null),
           if (actions.isNotEmpty)
             PopupMenuButton<String>(
               tooltip: t.moreActions,
@@ -334,6 +351,83 @@ class _KeyRow extends StatelessWidget {
               itemBuilder: (_) => actions,
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// A key's priority on its row: a quiet label that opens the three choices.
+class _PriorityPicker extends StatelessWidget {
+  const _PriorityPicker({required this.priority, required this.onChanged});
+
+  final String priority;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final narrow = MediaQuery.sizeOf(context).width < 600;
+    final label = narrow
+        ? switch (priority) { 'high' => t.priorityHigh, 'low' => t.priorityLow, _ => t.priorityNormal }
+        : switch (priority) { 'high' => t.priorityHighLabel, 'low' => t.priorityLowLabel, _ => t.priorityNormalLabel };
+    final text = Text(
+      label,
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: priority == 'high' ? FontWeight.w600 : FontWeight.w400,
+        color: priority == 'high' ? palette.text : palette.textMuted,
+      ),
+    );
+    final padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 10);
+    if (onChanged == null) return Padding(padding: padding, child: text);
+    return PopupMenuButton<String>(
+      tooltip: t.priorityTitle,
+      initialValue: priority,
+      onSelected: (value) {
+        if (value != priority) onChanged!(value);
+      },
+      itemBuilder: (_) => <PopupMenuEntry<String>>[
+        PopupMenuItem<String>(
+          enabled: false,
+          height: 36,
+          child: Text(t.priorityMenuHeading, style: TextStyle(fontSize: 12.5, color: palette.textMuted)),
+        ),
+        for (final (value, title, hint) in <(String, String, String)>[
+          ('high', t.priorityHigh, t.priorityHighHint),
+          ('normal', t.priorityNormal, t.priorityNormalHint),
+          ('low', t.priorityLow, t.priorityLowHint),
+        ])
+          PopupMenuItem<String>(
+            value: value,
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: palette.text)),
+                      Text(hint, style: TextStyle(fontSize: 12.5, color: palette.textMuted)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                SizedBox(width: 18, child: value == priority ? Icon(Icons.check_rounded, size: 18, color: palette.accent) : null),
+              ],
+            ),
+          ),
+      ],
+      child: Padding(
+        padding: padding,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            text,
+            const SizedBox(width: 2),
+            Icon(Icons.expand_more_rounded, size: 16, color: palette.textMuted),
+          ],
+        ),
       ),
     );
   }
@@ -355,6 +449,7 @@ class _KeyFormState extends State<_KeyForm> {
   late final TextEditingController _budget = TextEditingController(text: widget.existing?.budgetUsd?.toString() ?? '');
   late final TextEditingController _rpm = TextEditingController(text: widget.existing?.rpmLimit?.toString() ?? '');
   late final TextEditingController _tokens = TextEditingController(text: widget.existing?.tokenLimit?.toString() ?? '');
+  late final TextEditingController _maxPrice = TextEditingController(text: widget.existing?.maxPricePerMillion?.toString() ?? '');
   late String _tokenPeriod = widget.existing?.tokenPeriod ?? 'monthly';
   // Kinds of model ("kind:speech") have their own chips; the text keeps models and routings.
   late final TextEditingController _allowed = TextEditingController(text: widget.existing?.allowedModels.where((item) => !item.startsWith('kind:')).join('\n') ?? '');
@@ -366,6 +461,7 @@ class _KeyFormState extends State<_KeyForm> {
   late bool _free = widget.existing?.allowFree ?? true;
   late bool _plan = widget.existing?.allowPlan ?? true;
   late bool _paid = widget.existing?.allowPaid ?? false;
+  late bool _pool = widget.existing?.usesPool ?? false;
   late String _period = widget.existing?.budgetPeriod ?? 'monthly';
   late String _profile = widget.existing?.profile ?? 'balanced';
   bool _advanced = false;
@@ -405,6 +501,7 @@ class _KeyFormState extends State<_KeyForm> {
     _budget.dispose();
     _rpm.dispose();
     _tokens.dispose();
+    _maxPrice.dispose();
     _allowed.dispose();
     super.dispose();
   }
@@ -444,10 +541,13 @@ class _KeyFormState extends State<_KeyForm> {
       'budgetUsd': _paid ? double.tryParse(_budget.text.trim().replaceAll(',', '.')) : null,
       'budgetPeriod': _period,
       'rpmLimit': int.tryParse(_rpm.text.trim()),
+      'maxPricePerMillion': _paid ? double.tryParse(_maxPrice.text.trim().replaceAll(',', '.')) : null,
       'tokenLimit': _free || _plan ? int.tryParse(_tokens.text.trim().replaceAll(RegExp(r'[^0-9]'), '')) : null,
       'tokenPeriod': _tokenPeriod,
       'allowedModels': _allowedList(),
       'profile': _profile,
+      // Only sent while in a pool, so a key keeps its choice if the pool is left and rejoined.
+      if (widget.controller.inPool) 'poolAccess': _pool ? 'pool' : 'own',
     };
     try {
       if (widget.existing != null) {
@@ -490,12 +590,15 @@ class _KeyFormState extends State<_KeyForm> {
                 period: _period,
                 rpm: _rpm,
                 tokens: _tokens,
+                maxPrice: _maxPrice,
                 tokenPeriod: _tokenPeriod,
                 onFree: (value) => setState(() => _free = value),
                 onPlan: (value) => setState(() => _plan = value),
                 onPaid: (value) => setState(() => _paid = value),
                 onPeriod: (value) => setState(() => _period = value),
                 onTokenPeriod: (value) => setState(() => _tokenPeriod = value),
+                pool: _pool,
+                onPool: widget.controller.inPool ? (value) => setState(() => _pool = value) : null,
               ),
               if (_available.length > 1) ...<Widget>[
                 const SizedBox(height: AppSpacing.md),
@@ -594,11 +697,14 @@ class KeyAccessFields extends StatelessWidget {
     required this.rpm,
     required this.tokens,
     required this.tokenPeriod,
+    required this.maxPrice,
     required this.onFree,
     required this.onPlan,
     required this.onPaid,
     required this.onPeriod,
     required this.onTokenPeriod,
+    this.pool = false,
+    this.onPool,
   });
 
   final bool free;
@@ -609,11 +715,17 @@ class KeyAccessFields extends StatelessWidget {
   final TextEditingController rpm;
   final TextEditingController tokens;
   final String tokenPeriod;
+  final TextEditingController maxPrice;
   final ValueChanged<bool> onFree;
   final ValueChanged<bool> onPlan;
   final ValueChanged<bool> onPaid;
   final ValueChanged<String> onPeriod;
   final ValueChanged<String> onTokenPeriod;
+
+  /// Whether the key may also use pool partners' free models; the choice is
+  /// shown only while in a pool (onPool set).
+  final bool pool;
+  final ValueChanged<bool>? onPool;
 
   @override
   Widget build(BuildContext context) {
@@ -626,9 +738,21 @@ class KeyAccessFields extends StatelessWidget {
       children: <Widget>[
         Text(t.keyAccessTitle, style: label),
         const SizedBox(height: AppSpacing.xs),
-        _KindCheck(title: t.kindFree, description: t.kindFreeHint, value: free, onChanged: onFree),
-        _KindCheck(title: t.kindPlan, description: t.kindPlanHint, value: plan, onChanged: onPlan),
-        _KindCheck(title: t.kindPaid, description: t.kindPaidHint, value: paid, onChanged: onPaid),
+        KindCheck(title: t.kindFree, description: t.kindFreeHint, value: free, onChanged: onFree),
+        KindCheck(title: t.kindPlan, description: t.kindPlanHint, value: plan, onChanged: onPlan),
+        KindCheck(title: t.kindPaid, description: t.kindPaidHint, value: paid, onChanged: onPaid),
+        if (onPool != null)
+          KindCheck(
+            title: t.keyPoolLabel,
+            description: t.keyPoolHint,
+            value: pool && free,
+            onChanged: free ? onPool : null,
+            trailing: IconButton(
+              tooltip: t.poolInfoTooltip,
+              icon: const Icon(Icons.info_outline_rounded, size: 18),
+              onPressed: () => showPoolTrustInfo(context),
+            ),
+          ),
         const SizedBox(height: AppSpacing.md),
         Text(t.keyLimitsTitle, style: label),
         const SizedBox(height: 2),
@@ -636,10 +760,12 @@ class KeyAccessFields extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         // Every key: how many requests a minute.
         _LimitRow(label: t.keyRateLimit, controller: rpm, unit: t.keyRequestsPerMinute),
-        // Paid models: a spending limit.
+        // Paid models: a spending limit and a maximum price per million tokens.
         if (paid) ...<Widget>[
           const SizedBox(height: AppSpacing.sm),
           _LimitRow(label: t.keyBudgetTitle, controller: budget, prefix: r'$ ', decimal: true, unit: t.spendingLimitPer, period: period, onPeriod: onPeriod),
+          const SizedBox(height: AppSpacing.sm),
+          _LimitRow(label: t.keyMaxPriceTitle, controller: maxPrice, decimal: true, unit: t.keyMaxPricePerMillion),
           const SizedBox(height: 4),
           Text(free || plan ? t.budgetFallsBack : t.budgetStops, style: hint),
         ],
@@ -701,53 +827,3 @@ class _LimitRow extends StatelessWidget {
   }
 }
 
-/// One kind of model a key may use: a checkbox card.
-class _KindCheck extends StatelessWidget {
-  const _KindCheck({required this.title, required this.description, required this.value, required this.onChanged});
-
-  final String title;
-  final String description;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = neoRouterPaletteOf(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: value ? palette.accentSoft : palette.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          side: BorderSide(color: value ? palette.accent.withValues(alpha: 0.5) : palette.border),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => onChanged(!value),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 10, 14, 10),
-            child: Row(
-              children: <Widget>[
-                Checkbox(value: value, onChanged: (next) => onChanged(next ?? false)),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        title,
-                        style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(description, style: TextStyle(fontSize: 12.5, color: palette.textSoft, height: 1.35)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

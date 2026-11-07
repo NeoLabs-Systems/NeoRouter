@@ -22,9 +22,9 @@ module.exports = {
   // A one-time 200 USD trial credit, then pay per use with a card: no free tier.
   billing: {
     defaultMode: 'paid',
-    note: 'New projects get a one-time 200 USD trial credit; after that, usage is billed per minute and per character.',
+    note: 'New projects get a one-time 200 USD credit (no card needed, does not expire); after that, usage is billed per minute and per character.',
     source: 'https://deepgram.com/pricing',
-    checkedAt: '2026-10-29',
+    checkedAt: '2026-11-07',
   },
   limits: { pool: 'account', account: { rpm: 100 } },
 };

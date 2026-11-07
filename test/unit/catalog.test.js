@@ -84,13 +84,24 @@ test('listing price zero counts only when the provider listing is trusted', () =
   const zero = { freeHint: true, priceKnown: true };
   assert.equal(classify({ definition: registry.get('siliconflow'), billingMode: 'paid', modelId: 'x', listing: zero }).isFree, true);
   assert.equal(classify({ definition: registry.get('together'), billingMode: 'paid', modelId: 'x', listing: zero }).isFree, false);
-  assert.equal(classify({ definition: registry.get('together'), billingMode: 'paid', modelId: 'Llama-3.3-70B-Instruct-Turbo-Free', listing: zero }).isFree, true);
+  // Together needs a prepaid purchase before any use, so even "-Free" names are not free.
+  assert.equal(classify({ definition: registry.get('together'), billingMode: 'paid', modelId: 'Llama-3.3-70B-Instruct-Turbo-Free', listing: zero }).isFree, false);
 });
 
 test('manual overrides win', () => {
   const definition = registry.get('openai');
   assert.equal(classify({ definition, billingMode: 'paid', modelId: 'x', overrides: { free: true } }).reason, 'manual_free');
   assert.equal(classify({ definition: registry.get('openrouter'), billingMode: 'paid', modelId: 'x:free', overrides: { free: false } }).isFree, false);
+});
+
+test('a connection-wide choice sets every model, but a model override and seen billing still win', () => {
+  const definition = registry.get('openai');
+  assert.equal(classify({ definition, billingMode: 'paid', modelId: 'x', accountOverride: 'free' }).reason, 'manual_free');
+  const openrouter = registry.get('openrouter');
+  assert.equal(classify({ definition: openrouter, billingMode: 'paid', modelId: 'x:free', accountOverride: 'paid' }).isFree, false, 'paid beats a free-looking model');
+  assert.equal(classify({ definition, billingMode: 'paid', modelId: 'x', accountOverride: 'paid', overrides: { free: true } }).isFree, true, 'the model override is more specific');
+  assert.equal(classify({ definition, billingMode: 'paid', modelId: 'x', accountOverride: 'free', overrides: { billedAt: Date.now() } }).isFree, false, 'real billing beats a blanket "free"');
+  assert.equal(classify({ definition, billingMode: 'paid', modelId: 'x', accountOverride: 'free', listing: { paidOnly: true } }).isFree, false);
 });
 
 test('pricing parser handles per-token and per-million prices', () => {
@@ -261,4 +272,180 @@ test('providers with free models offer "Free", and a free connection skips model
   const ctx = { key: { mode: 'both', allow_free: 1, allow_plan: 1, allowed_models_json: '[]' }, needs: {}, inputTokens: 10, request: { messages: [] }, constraints: {}, freeOnly: false };
   assert.equal(rejection(entry(false, 'free_tier', paid.reason), ctx, Date.now()), 'needs_credits');
   assert.notEqual(rejection(entry(false, 'paid', paid.reason), ctx, Date.now()), 'needs_credits', 'a paid connection still uses it');
+});
+
+test('Google live models are free only once the account is confirmed to have no billing', () => {
+  const { classify } = require('../../server/services/catalog/free_classifier');
+  const definition = registry.get('google');
+  const judge = (modelId, billingState) => classify({ definition, billingMode: 'free_tier', billingState, modelId });
+  for (const modelId of ['gemini-3.8-live', 'gemini-3.1-flash-live-preview', 'gemini-2.5-flash-native-audio-latest', 'gemini-3.5-transcribe-live', 'gemini-3.5-live-translate-preview']) {
+    assert.equal(judge(modelId, 'free').isFree, true, modelId);
+    assert.deepEqual(judge(modelId, 'paid'), { isFree: false, reason: 'billing_active' }, modelId);
+    assert.deepEqual(judge(modelId, 'unknown'), { isFree: false, reason: 'billing_unverified' }, modelId);
+  }
+  assert.equal(judge('gemini-robotics-er-2-streaming-preview', 'free').isFree, false);
+  assert.equal(judge('gemini-3.1-pro-preview', 'free').isFree, false);
+});
+
+test('OpenRouter benchmarks: the newest version and the middle host speak for a model', () => {
+  const { toModels } = require('../../server/services/catalog/metadata/openrouter_benchmarks');
+  const row = (permaslug, provider, accuracy, questions = 200, at = '2026-11-01') => ({ benchmark: 'gpqa_diamond', model_slug: 'lab/model-a', model_name: 'Model A', model_permaslug: permaslug, provider_name: provider, accuracy, total_questions: questions, last_run_timestamp: at });
+  const [model, ...rest] = toModels([
+    row('lab/model-a-old', 'Old', 0.2, 200, '2026-09-01'),
+    row('lab/model-a-new', 'Good', 0.9),
+    row('lab/model-a-new', 'Fine', 0.88),
+    row('lab/model-a-new', 'Broken', 0.01),
+    row('lab/model-a-new', 'Too few', 1, 5),
+    { ...row('lab/model-a-new', 'Zero', 0), benchmark: 'unknown' },
+  ]);
+  assert.equal(rest.length, 0);
+  assert.equal(model.benchmarks.gpqa, 0.88);
+  assert.equal(model.benchmarks.tau, undefined);
+});
+
+test('the OpenRouter snapshot of the day is used, falling back to the one before', async () => {
+  const { fetchSource } = require('../../server/services/catalog/metadata/openrouter_benchmarks');
+  const now = Date.parse('2026-11-04T01:00:00Z');
+  const asked = [];
+  const original = global.fetch;
+  global.fetch = async (url) => {
+    asked.push(url.split('/').pop());
+    if (url.endsWith('2026-11-04.json')) return { ok: false, status: 404 };
+    return { ok: true, json: async () => ({ snapshot_date: '2026-11-03', rows: [{ benchmark: 'gpqa_diamond', model_slug: 'a/b', model_permaslug: 'a/b-1', accuracy: 0.5, total_questions: 100, last_run_timestamp: '2026-11-01' }] }) };
+  };
+  try {
+    const result = await fetchSource({ now });
+    assert.deepEqual(asked, ['2026-11-04.json', '2026-11-03.json']);
+    assert.equal(result.snapshotDate, '2026-11-03');
+    const previous = { snapshotDate: '2026-11-04', models: [] };
+    assert.equal(await fetchSource({ now, previous }), previous, 'a dated file never changes');
+    assert.equal(asked.length, 2);
+  } finally {
+    global.fetch = original;
+  }
+});
+
+test('OpenRouter scores work with no Artificial Analysis key, and a model only it knows counts as measured', () => {
+  metadata.resetForTests({ openrouterBenchmarks: { snapshotDate: '2026-11-04', models: [
+    { slug: 'lab/strong-1', name: 'Strong', benchmarks: { gpqa: 0.95, tau: 0.8 } },
+    { slug: 'lab/weak-1', name: 'Weak', benchmarks: { gpqa: 0.475, tau: 0.4 } },
+  ] } });
+  const strong = metadata.computeCanonical('strong1', ['lab/strong-1'], 'chat');
+  const weak = metadata.computeCanonical('weak1', ['lab/weak-1'], 'chat');
+  assert.equal(strong.intelligence_source, 'openrouter_benchmarks');
+  assert.equal(strong.intelligence, 1);
+  assert.equal(weak.intelligence, 0.5);
+  assert.deepEqual(JSON.parse(weak.skills_json), { reasoning: 0.5, agentic: 0.5 });
+  metadata.resetForTests({});
+});
+
+test('a benchmark that ranks models unlike the fuller index gets no say', () => {
+  const names = Array.from({ length: 12 }, (_, i) => `lab/model-${i}`);
+  metadata.resetForTests({
+    artificialAnalysis: names.map((slug, i) => ({ slug: slug.split('/')[1], name: slug, intelligenceIndex: 10 + i * 5, benchmarks: {} })),
+    openrouterBenchmarks: { snapshotDate: '2026-11-04', models: names.map((slug, i) => ({ slug, name: slug, benchmarks: { gpqa: 0.3 + i * 0.05, tau: 0.5 + ((i * 7) % 12) * 0.01 } })) },
+  });
+  const agreement = metadata.openRouterAgreement();
+  assert.ok(agreement.gpqa > 0.9);
+  const skills = JSON.parse(metadata.computeCanonical('model11', ['lab/model-11'], 'chat').skills_json);
+  assert.ok(skills.reasoning > 0.9);
+  if (agreement.tau !== undefined && agreement.tau < 0.3) assert.equal(skills.agentic, undefined);
+  metadata.resetForTests({});
+});
+
+test('Artificial Analysis: a Free key reads every page of the /free list', async () => {
+  const aa = require('../../server/services/catalog/metadata/artificial_analysis');
+  aa.resetForTests();
+  const asked = [];
+  const original = global.fetch;
+  const pages = { 1: { data: [{ id: 'a', slug: 'one' }], pagination: { page: 1, total_pages: 2, has_more: true } }, 2: { data: [{ id: 'b', slug: 'two' }], pagination: { page: 2, total_pages: 2, has_more: false } } };
+  global.fetch = async (url, options) => {
+    asked.push(url.replace('https://artificialanalysis.ai/api/v2/', ''));
+    assert.equal(options.headers['x-api-key'], 'test-key');
+    if (url.endsWith('/language/models')) return { ok: false, status: 403 };
+    return { ok: true, status: 200, json: async () => pages[new URL(url).searchParams.get('page') || 1] };
+  };
+  try {
+    const items = await aa.fetchList('language/models', { apiKey: 'test-key' });
+    assert.deepEqual(items.map((item) => item.slug), ['one', 'two']);
+    assert.deepEqual(asked, ['language/models', 'language/models/free', 'language/models/free?page=2']);
+    asked.length = 0;
+    await aa.fetchList('media/text-to-image/models', { apiKey: 'test-key' });
+    assert.equal(asked[0], 'media/text-to-image/models/free', 'the tier is remembered, saving a request');
+  } finally {
+    global.fetch = original;
+    aa.resetForTests();
+  }
+});
+
+test('Artificial Analysis: a failed page keeps the list we already have', async () => {
+  const aa = require('../../server/services/catalog/metadata/artificial_analysis');
+  aa.resetForTests();
+  const original = global.fetch;
+  let call = 0;
+  global.fetch = async () => {
+    call += 1;
+    return call === 1 ? { ok: true, status: 200, json: async () => ({ data: [{ slug: 'one' }], pagination: { has_more: true } }) } : { ok: false, status: 429 };
+  };
+  try {
+    await assert.rejects(aa.fetchSource({ apiKey: 'k' }), /page 2 .*429|429/);
+  } finally {
+    global.fetch = original;
+    aa.resetForTests();
+  }
+});
+
+test('Artificial Analysis: records read the current response shape', () => {
+  const { toRecord } = require('../../server/services/catalog/metadata/artificial_analysis');
+  const record = toRecord({
+    id: 'id-1', slug: 'claude-sonnet-5-5-medium', name: 'Claude Sonnet 5.5', release_date: '2026-09-28',
+    evaluations: { artificial_analysis_intelligence_index: 30.8, artificial_analysis_coding_index: null },
+    performance: { median_output_tokens_per_second: 88.82, median_time_to_first_token_seconds: 1.47 },
+  });
+  assert.deepEqual(record, { id: 'id-1', slug: 'claude-sonnet-5-5-medium', name: 'Claude Sonnet 5.5', intelligenceIndex: 30.8, benchmarks: {}, outputTps: 88.82, ttftSeconds: 1.47, releaseDate: '2026-09-28' });
+});
+
+test('Artificial Analysis: the Pro names of benchmarks map onto the ones skills use', () => {
+  const { toRecord } = require('../../server/services/catalog/metadata/artificial_analysis');
+  const record = toRecord({ slug: 'm', name: 'M', evaluations: { gpqa_diamond: 0.917, aa_lcr: 0.797, terminalbench_v4_0: 0.419, hle: 0.423, scicode: null, critpt: 0.191 } });
+  assert.deepEqual(record.benchmarks, { gpqa: 0.917, lcr: 0.797, terminalbench_hard: 0.419, hle: 0.423 });
+});
+
+test('Artificial Analysis: benchmark scores the Free list lacks are kept, old index values are not', () => {
+  const { mergeKnown } = require('../../server/services/catalog/metadata/artificial_analysis');
+  const merged = mergeKnown(
+    [{ id: 'x', slug: 'kept', name: 'Kept', intelligenceIndex: 30, benchmarks: {} }],
+    [
+      { slug: 'kept', name: 'Kept', intelligenceIndex: 70, benchmarks: { gpqa: 0.9 } },
+      { slug: 'dropped', name: 'Dropped', intelligenceIndex: 60, indexDerived: true, benchmarks: { hle: 0.2 } },
+      { slug: 'nothing', name: 'Nothing', intelligenceIndex: 50, benchmarks: {} },
+    ],
+  );
+  assert.deepEqual(merged.map((record) => record.slug), ['kept', 'dropped']);
+  assert.equal(merged[0].intelligenceIndex, 30);
+  assert.deepEqual(merged[0].benchmarks, { gpqa: 0.9 });
+  assert.equal(merged[1].intelligenceIndex, null, 'on the old scale, so it is estimated again');
+  assert.deepEqual(merged[1].benchmarks, { hle: 0.2 });
+});
+
+test('Artificial Analysis media lists use the new paths', async () => {
+  const aa = require('../../server/services/catalog/metadata/artificial_analysis');
+  const media = require('../../server/services/catalog/metadata/artificial_analysis_media');
+  aa.resetForTests();
+  const asked = [];
+  const original = global.fetch;
+  global.fetch = async (url) => {
+    asked.push(url.replace('https://artificialanalysis.ai/api/v2/', ''));
+    if (!url.endsWith('/free')) return { ok: false, status: 403 };
+    return { ok: true, status: 200, json: async () => ({ data: [{ slug: 'm', name: 'M', elo: 1200, model_creator: { name: 'Lab' } }, { slug: 'no-elo', name: 'N', elo: null }] }) };
+  };
+  try {
+    const result = await media.fetchSource({ apiKey: 'k' });
+    assert.deepEqual(asked, ['media/text-to-image/models', 'media/text-to-image/models/free', 'media/text-to-speech/models/free', 'media/text-to-video/models/free']);
+    assert.deepEqual(result.image, [{ slug: 'm', name: 'M', creator: 'Lab', elo: 1200, releaseDate: null }]);
+    assert.ok(!asked.some((path) => path.includes('data/')), 'no legacy path');
+  } finally {
+    global.fetch = original;
+    aa.resetForTests();
+  }
 });

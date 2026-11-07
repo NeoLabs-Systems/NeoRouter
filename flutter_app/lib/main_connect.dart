@@ -31,6 +31,7 @@ class _ConnectAppScreenState extends State<ConnectAppScreen> {
   final TextEditingController _budget = TextEditingController();
   final TextEditingController _rpm = TextEditingController();
   final TextEditingController _tokens = TextEditingController();
+  final TextEditingController _maxPrice = TextEditingController();
   String _tokenPeriod = 'monthly';
   _ConnectStep _step = _ConnectStep.loading;
   ConnectRequest? _request;
@@ -63,6 +64,7 @@ class _ConnectAppScreenState extends State<ConnectAppScreen> {
     _budget.dispose();
     _rpm.dispose();
     _tokens.dispose();
+    _maxPrice.dispose();
     super.dispose();
   }
 
@@ -112,6 +114,7 @@ class _ConnectAppScreenState extends State<ConnectAppScreen> {
                 'rpmLimit': int.tryParse(_rpm.text.trim()),
                 'tokenLimit': _free || _plan ? int.tryParse(_tokens.text.trim().replaceAll(RegExp(r'[^0-9]'), '')) : null,
                 'tokenPeriod': _tokenPeriod,
+                'maxPricePerMillion': _paid ? double.tryParse(_maxPrice.text.trim().replaceAll(',', '.')) : null,
               }
             : null,
       );
@@ -263,6 +266,7 @@ class _ConnectAppScreenState extends State<ConnectAppScreen> {
           rpm: _rpm,
           tokens: _tokens,
           tokenPeriod: _tokenPeriod,
+          maxPrice: _maxPrice,
           onFree: (value) => setState(() => _free = value),
           onPlan: (value) => setState(() => _plan = value),
           onPaid: (value) => setState(() => _paid = value),

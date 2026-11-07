@@ -3,14 +3,13 @@
 const express = require('express');
 const { z } = require('zod');
 const apps = require('../services/oauth/app_authorization');
-const { getConfig } = require('../config/env');
 const { HttpError } = require('../middleware/error_handler');
+const { publicOrigin } = require('../utils/public_origin');
 
 // The public OAuth endpoints apps talk to ("Connect with NeoRouter"). The
 // approval itself happens in the web app (routes/oauth.js, with a session).
 const router = express.Router();
 
-const originOf = (req) => (getConfig().publicUrl || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '');
 
 // Token requests come from apps on any origin and carry no cookies.
 function openCors(req, res, next) {
@@ -28,7 +27,7 @@ function oauthErrors(error, _req, res, next) {
   return next(error);
 }
 
-router.get('/.well-known/oauth-authorization-server', openCors, (req, res) => res.json(apps.metadata(originOf(req))));
+router.get('/.well-known/oauth-authorization-server', openCors, (req, res) => res.json(apps.metadata(publicOrigin(req))));
 
 router.get('/oauth/authorize', (req, res, next) => {
   try {
@@ -43,8 +42,8 @@ router.get('/oauth/authorize', (req, res, next) => {
 
 const body = [express.urlencoded({ extended: false, limit: '16kb' }), express.json({ limit: '16kb' })];
 router.use(['/oauth/token', '/oauth/device/code'], openCors);
-router.post('/oauth/device/code', body, (req, res) => res.json(apps.startDevice(req.body || {}, originOf(req))));
-router.post('/oauth/token', body, (req, res) => res.json(apps.exchange(req.body || {}, originOf(req))));
+router.post('/oauth/device/code', body, (req, res) => res.json(apps.startDevice(req.body || {}, publicOrigin(req))));
+router.post('/oauth/token', body, (req, res) => res.json(apps.exchange(req.body || {}, publicOrigin(req))));
 router.use(oauthErrors);
 
 // Session routes for the approval screen, mounted under /api/v1/oauth/apps.
@@ -58,6 +57,7 @@ const access = z.object({
   rpmLimit: z.number().int().positive().nullable().optional(),
   tokenLimit: z.number().int().positive().nullable().optional(),
   tokenPeriod: z.enum(['total', 'monthly', 'daily']).optional(),
+  maxPricePerMillion: z.number().min(0).nullable().optional(),
 });
 
 approval.get('/requests/:reference', (req, res) => res.json({ request: apps.describe(req.params.reference) }));

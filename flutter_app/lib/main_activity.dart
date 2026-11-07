@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
 import 'main_dashboard.dart';
+import 'main_learning.dart';
 import 'main_routing.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
@@ -17,9 +18,10 @@ import 'src/models.dart';
 double _num(Object? value) => value is num ? value.toDouble() : 0;
 double? _maybe(Object? value) => value is num ? value.toDouble() : null;
 
-enum _ActivityTab { overview, requests }
+enum _ActivityTab { overview, learned, requests }
 
-/// What happened: an overview with a few charts, and the request list.
+/// What happened: an overview with a few charts, what routing learned from
+/// it, and the request list.
 class ActivityScreen extends StatefulWidget {
   const ActivityScreen({super.key, required this.controller});
 
@@ -30,7 +32,7 @@ class ActivityScreen extends StatefulWidget {
 }
 
 class _ActivityScreenState extends State<ActivityScreen> {
-  _ActivityTab _tab = _ActivityTab.overview;
+  late _ActivityTab _tab = widget.controller.savedTab('activity', _ActivityTab.values, _ActivityTab.overview);
   String _range = '7d';
   // Keys the numbers are limited to; empty means all of them.
   Set<String> _keyIds = <String>{};
@@ -68,14 +70,21 @@ class _ActivityScreenState extends State<ActivityScreen> {
         PageTabs<_ActivityTab>(
           tabs: <({_ActivityTab value, String label, int? count})>[
             (value: _ActivityTab.overview, label: t.tabOverview, count: null),
+            (value: _ActivityTab.learned, label: t.tabLearned, count: null),
             (value: _ActivityTab.requests, label: t.tabRequests, count: null),
           ],
           selected: _tab,
-          onChanged: (value) => setState(() => _tab = value),
+          onChanged: (value) {
+            widget.controller.rememberChoice('activity', value);
+            setState(() => _tab = value);
+          },
         ),
-        if (_keys.length > 1) _KeyFilter(keys: _keys, selected: _keyIds, onChanged: (value) => setState(() => _keyIds = value)),
+        // What it learned belongs to the models, not to any one key.
+        if (_keys.length > 1 && _tab != _ActivityTab.learned) _KeyFilter(keys: _keys, selected: _keyIds, onChanged: (value) => setState(() => _keyIds = value)),
         if (_tab == _ActivityTab.overview)
           _Overview(key: ValueKey<String>('$_range|${(_keyIds.toList()..sort()).join(',')}'), controller: widget.controller, range: _range, keyIds: _keyIds.toList())
+        else if (_tab == _ActivityTab.learned)
+          LearnedView(controller: widget.controller)
         else
           _RequestList(controller: widget.controller, keyIds: _keyIds.toList()),
       ],
@@ -174,12 +183,12 @@ class _OverviewState extends State<_Overview> {
         const SizedBox(height: 28),
         LayoutBuilder(
           builder: (context, constraints) {
-            final models = _Ranking(title: t.topModelsTitle, rows: (data['byModel'] as List).cast<Map>(), label: shortModelName);
-            final providers = _Ranking(title: t.byConnection, rows: (data['byProvider'] as List).cast<Map>());
-            final keys = _Ranking(title: t.byKey, rows: (data['byKey'] as List).cast<Map>());
+            final models = ActivityRanking(title: t.topModelsTitle, rows: (data['byModel'] as List).cast<Map>(), label: shortModelName);
+            final providers = ActivityRanking(title: t.byConnection, rows: (data['byProvider'] as List).cast<Map>());
+            final keys = ActivityRanking(title: t.byKey, rows: (data['byKey'] as List).cast<Map>());
             // Shown once more than one kind of model (chat, embeddings, …) was used.
             final kindRows = ((data['byCapability'] as List?) ?? const <Object>[]).cast<Map>();
-            final kinds = kindRows.length > 1 ? _Ranking(title: t.activityKind, rows: kindRows, label: (id) => capabilityInfo(id).label(t)) : null;
+            final kinds = kindRows.length > 1 ? ActivityRanking(title: t.activityKind, rows: kindRows, label: (id) => capabilityInfo(id).label(t)) : null;
             if (constraints.maxWidth < 860) {
               return Column(
                 children: <Widget>[
@@ -214,13 +223,15 @@ class _OverviewState extends State<_Overview> {
   }
 }
 
-/// Top entries with a thin neutral bar for their share.
-class _Ranking extends StatelessWidget {
-  const _Ranking({required this.title, required this.rows, this.label});
+/// Top entries with a thin neutral bar for their share (rows carry key,
+/// name and requests). [detail] says what the right side shows per row.
+class ActivityRanking extends StatelessWidget {
+  const ActivityRanking({super.key, required this.title, required this.rows, this.label, this.detail});
 
   final String title;
   final List<Map> rows;
   final String Function(String)? label;
+  final String Function(Map row)? detail;
 
   @override
   Widget build(BuildContext context) {
@@ -251,7 +262,7 @@ class _Ranking extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          t.rankingLine(formatCount(_num(row['requests'])), formatMs(_maybe(row['latencyP50']))),
+                          detail?.call(row) ?? t.rankingLine(formatCount(_num(row['requests'])), formatMs(_maybe(row['latencyP50']))),
                           style: TextStyle(fontSize: 12.5, color: palette.textMuted),
                         ),
                       ],
@@ -572,6 +583,8 @@ class _RequestDetails extends StatelessWidget {
       if (log.capability != 'chat') (t.activityKind, capabilityInfo(log.capability).label(t)),
       if (log.task != null) (t.detailTask, taskLabel(t, log.task)),
       (t.detailFormat, '${log.apiFormat}${log.stream ? ' · stream' : ''}'),
+      // Very sensitive content: kept off pool partners (what kind, never the value).
+      if (log.keptPrivate != null) (t.keptPrivateTag, log.keptPrivate!.replaceAll('_', ' ').replaceAll(',', ', ')),
       (t.detailTime, formatTime(log.createdAt)),
     ];
     return Container(

@@ -208,3 +208,19 @@ test('routing entries in a key\'s allowed list limit which autos it may ask for'
   assert.ok(allowedByKey({ id: 'openai/gpt' }, key(['auto:fast'])), 'routing entries do not narrow the models routing picks from');
   assert.ok(!allowedByKey({ id: 'openai/gpt' }, key(['auto:fast', 'groq/*'])));
 });
+
+test('a rate limit on a model that never answers backs off further; one that answers does not', () => {
+  const model = entry();
+  const now = Date.now();
+  const durations = [];
+  for (let i = 0; i < 4; i++) {
+    const at = now + i * 100;
+    learning.onFailure(model, new ProviderError(KINDS.RATE_LIMIT, 'slow down'), { now: at });
+    durations.push(stats.snapshot(model.ref, at).cooldown_until - at);
+  }
+  assert.deepEqual(durations, [90_000, 300_000, 1_800_000, 7_200_000]);
+  learning.onSuccess(model, { latencyMs: 100 }, null, now + 1000);
+  learning.onFailure(model, new ProviderError(KINDS.RATE_LIMIT, 'slow down'), { now: now + 2000 });
+  // The earlier, longer cooldown is cleared by nothing here, so check the level did not rise.
+  assert.equal(stats.snapshot(model.ref, now + 2000).cooldown_level, 0);
+});

@@ -42,7 +42,8 @@ function decay(row, now = Date.now()) {
 }
 
 function save(row) {
-  getDatabase().prepare(`INSERT INTO model_stats (model_ref, successes, failures, decayed_at, latency_ms, ttft_ms, tps, samples,
+  try {
+    getDatabase().prepare(`INSERT INTO model_stats (model_ref, successes, failures, decayed_at, latency_ms, ttft_ms, tps, samples,
       penalty, penalty_at, cooldown_until, cooldown_reason, cooldown_level, recent_failures_json, breaker_open_until, last_error,
       last_success_at, last_failure_at, min_output_tokens)
     VALUES (@model_ref, @successes, @failures, @decayed_at, @latency_ms, @ttft_ms, @tps, @samples, @penalty, @penalty_at,
@@ -55,7 +56,12 @@ function save(row) {
       recent_failures_json = excluded.recent_failures_json, breaker_open_until = excluded.breaker_open_until,
       last_error = excluded.last_error, last_success_at = excluded.last_success_at, last_failure_at = excluded.last_failure_at,
       min_output_tokens = excluded.min_output_tokens`)
-    .run(row);
+      .run(row);
+  } catch (error) {
+    // The model was removed while a request to it was still running (its
+    // connection deleted, a pool partner left): nothing left to record.
+    if (error.code !== 'SQLITE_CONSTRAINT_FOREIGNKEY') throw error;
+  }
 }
 
 function ewma(previous, value) {
@@ -143,6 +149,20 @@ function clearCooldown(ref) {
   });
 }
 
+// A clean slate for a model a person says works again: no cooldown, breaker or
+// penalty, and the failures that made it look unreliable are forgotten.
+function forgive(ref) {
+  return update(ref, (row) => {
+    row.cooldown_until = 0;
+    row.cooldown_reason = null;
+    row.cooldown_level = 0;
+    row.breaker_open_until = 0;
+    row.recent_failures_json = '[]';
+    row.penalty = 0;
+    row.failures = 0;
+  });
+}
+
 // A half-open breaker lets exactly one probe through after it expires; the
 // probe's outcome closes it again (success) or reopens it (failure).
 function availability(ref, now = Date.now()) {
@@ -156,4 +176,4 @@ function resetForTests() {
   cache.clear();
 }
 
-module.exports = { snapshot, recordSuccess, recordSlow, recordFailure, raiseMinOutputTokens, clearCooldown, availability, resetForTests, MAX_PENALTY };
+module.exports = { snapshot, recordSuccess, recordSlow, recordFailure, raiseMinOutputTokens, clearCooldown, forgive, availability, resetForTests, MAX_PENALTY };

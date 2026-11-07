@@ -107,6 +107,16 @@ class ProviderDefinition {
   bool get planAvailable => billing['planAvailable'] == true;
   String? get planNote => billing['planNote'] as String?;
   String get billingNote => billing['note'] as String? ?? '';
+  String? get billingSource => billing['source'] as String?;
+  String? get billingCheckedAt => billing['checkedAt'] as String?;
+
+  /// How using it is paid for, in one word: free, free_models, plan or payg.
+  String get costKind {
+    if (category == 'plan') return 'plan';
+    if (freeTierAvailable && !freeTierPartial) return 'free';
+    if (freeTierAvailable || hasAlwaysFreeModels) return 'free_models';
+    return 'payg';
+  }
 }
 
 class ProviderAccount {
@@ -128,6 +138,8 @@ class ProviderAccount {
   String get billingState => raw['billingState'] as String? ?? 'unknown';
   String? get billingMessage => raw['billingMessage'] as String?;
   bool get billingVerifiable => raw['billingVerifiable'] == true;
+  /// The person's call for all its models: auto, free or paid.
+  String get classification => raw['classification'] as String? ?? 'auto';
   bool get enabled => raw['enabled'] == true;
   String get status => raw['status'] as String? ?? 'unknown';
   String? get statusMessage => raw['statusMessage'] as String?;
@@ -135,6 +147,8 @@ class ProviderAccount {
   String? get lastSyncedAt => raw['lastSyncedAt'] as String?;
   int get modelCount => _int(_map(raw['models'])['total']) ?? 0;
   int get freeModelCount => _int(_map(raw['models'])['free']) ?? 0;
+  /// The pools its free models are shared in.
+  List<String> get sharedInPools => _strings(raw['sharedInPools']);
   /// "Free models only" can be chosen (the provider or its listing has free models).
   bool get freeAvailable => raw['freeAvailable'] == true;
   bool get freeTierAll => raw['freeTierAll'] == true;
@@ -160,6 +174,8 @@ class CatalogModel {
   List<String> get liveProtocols => _strings(raw['liveProtocols']);
   String get definitionId => raw['definitionId'] as String;
   String get accountId => raw['accountId'] as String;
+  /// Offered by a pool partner (providerName is the partner).
+  bool get fromPool => definitionId == 'neorouter_peer';
   bool get enabled => raw['enabled'] == true;
   bool get isFree => raw['isFree'] == true;
   bool get isPlan => raw['isPlan'] == true;
@@ -216,7 +232,12 @@ class RouterKey {
   String? get paceState => (raw['pacing'] as Map?)?['state'] as String?;
   double? get paceForecast => _double((raw['pacing'] as Map?)?['forecast']);
   int? get rpmLimit => _int(raw['rpmLimit']);
+  // Who goes first when models are busy: high, normal or low.
+  String get priority => raw['priority'] as String? ?? 'normal';
   int? get tokenLimit => _int(raw['tokenLimit']);
+  double? get maxPricePerMillion => _double(raw['maxPricePerMillion']);
+  /// Whether the key may also use pool partners' free models.
+  bool get usesPool => raw['poolAccess'] == 'pool';
   String get tokenPeriod => raw['tokenPeriod'] as String? ?? 'monthly';
   int? get tokensUsed => _int(raw['tokensUsed']);
   String? get tokenResetsAt => raw['tokenResetsAt'] as String?;
@@ -307,4 +328,98 @@ class RequestLog {
   int get queuedMs => _int(raw['queuedMs']) ?? 0;
   bool get stream => raw['stream'] == true;
   List<Map<String, dynamic>> get trail => (raw['trail'] as List? ?? const <Object>[]).map(_map).toList();
+  /// Why the request stayed off the pool (very sensitive content), or null.
+  String? get keptPrivate => raw['keptPrivate'] as String?;
+}
+
+/// Give and take with one partner (requests and tokens).
+class PoolTraffic {
+  PoolTraffic(this.raw);
+  final Map<String, dynamic> raw;
+
+  int get givenRequests => _int(_map(raw['given'])['requests']) ?? 0;
+  int get takenRequests => _int(_map(raw['taken'])['requests']) ?? 0;
+  int get givenTokens => _int(_map(raw['given'])['tokens']) ?? 0;
+  int get takenTokens => _int(_map(raw['taken'])['tokens']) ?? 0;
+}
+
+class PoolPartner {
+  PoolPartner(this.raw);
+  final Map<String, dynamic> raw;
+
+  String get memberId => raw['memberId'] as String;
+  String get name => raw['name'] as String? ?? '';
+  bool get isHost => raw['isHost'] == true;
+  String? get linkId => raw['linkId'] as String?;
+  /// connecting, online, offline or paused.
+  String get state => raw['state'] as String? ?? 'connecting';
+  String? get problem => raw['problem'] as String?;
+  int get models => _int(raw['models']) ?? 0;
+  /// new, balanced, giving_more or taking_more.
+  String get balance => _map(raw['balance'])['state'] as String? ?? 'new';
+  PoolTraffic get week => PoolTraffic(_map(_map(raw['balance'])['week']));
+  PoolTraffic get today => PoolTraffic(_map(raw['today']));
+}
+
+class ShareableAccount {
+  ShareableAccount(this.raw);
+  final Map<String, dynamic> raw;
+
+  String get id => raw['id'] as String;
+  String get label => raw['label'] as String? ?? '';
+  String get definitionId => raw['definitionId'] as String? ?? '';
+  int get freeModels => _int(raw['freeModels']) ?? 0;
+  /// Subscription and pay-as-you-go models: shared only at a level the owner picks.
+  int get planModels => _int(raw['planModels']) ?? 0;
+  int get paidModels => _int(raw['paidModels']) ?? 0;
+  /// How many kinds (free, subscription, paid) it has models of.
+  int get kinds => <int>[freeModels, planModels, paidModels].where((count) => count > 0).length;
+  /// The provider reports a balance: partner use spends it instead of being billed.
+  bool get hasBalance => raw['hasBalance'] == true;
+}
+
+class PoolShare {
+  PoolShare(this.raw);
+  final Map<String, dynamic> raw;
+
+  int get requestsPerDay => _int(raw['requestsPerDay']) ?? 300;
+  int get tokensPerDay => _int(raw['tokensPerDay']) ?? 600000;
+  int get concurrent => _int(raw['concurrent']) ?? 2;
+  double get reserve => _double(raw['reserve']) ?? 0.3;
+}
+
+/// One pool this person is in.
+class PoolInfo {
+  PoolInfo(this.raw);
+  final Map<String, dynamic> raw;
+
+  String get id => raw['id'] as String;
+  String get name => raw['name'] as String? ?? '';
+  bool get isHost => raw['isHost'] == true;
+  bool get paused => raw['paused'] == true;
+  String get selfName => raw['selfName'] as String? ?? '';
+  List<PoolPartner> get partners => (raw['partners'] as List? ?? const <Object>[]).map((item) => PoolPartner(_map(item))).toList();
+  int get onlinePartners => partners.where((partner) => partner.state == 'online').length;
+  List<String> get sharedAccountIds => _strings(raw['sharedAccountIds']);
+  /// Which kinds of models (free, plan, paid) each shared connection gives this pool.
+  Map<String, Set<String>> get shareKinds => _map(raw['shareKinds']).map((key, value) => MapEntry(key, _strings(value).toSet()));
+  List<Map<String, dynamic>> get invites => (raw['invites'] as List? ?? const <Object>[]).map(_map).toList();
+  PoolShare get share => PoolShare(_map(raw['share']));
+}
+
+/// All pools of a space, with what can be shared and the privacy setting.
+class PoolsSummary {
+  PoolsSummary(this.raw);
+  final Map<String, dynamic> raw;
+
+  List<PoolInfo> get pools => (raw['pools'] as List? ?? const <Object>[]).map((item) => PoolInfo(_map(item))).toList();
+  bool get inPool => pools.isNotEmpty;
+  PoolInfo? pool(String? id) => pools.where((item) => item.id == id).firstOrNull;
+  /// The pool just created or joined, when the server says.
+  String? get createdId => raw['poolId'] as String?;
+  List<ShareableAccount> get shareable => (raw['shareable'] as List? ?? const <Object>[]).map((item) => ShareableAccount(_map(item))).toList();
+  /// Connections with free models: what the ordinary sharing picker offers.
+  List<ShareableAccount> get shareableFree => shareable.where((account) => account.freeModels > 0).toList();
+  bool get keepSensitivePrivate => _map(raw['privacy'])['keepSensitivePrivate'] != false;
+  int get maxPools => _int(raw['maxPools']) ?? 10;
 }

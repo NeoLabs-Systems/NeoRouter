@@ -3,16 +3,15 @@
 // Artificial Analysis also runs blind-vote arenas for media models (ELO per
 // model). NeoRouter uses them as the quality signal for image, speech and
 // video models, the way the intelligence index serves chat models.
+const { fetchList } = require('./artificial_analysis');
+
 const ARENAS = { image: 'text-to-image', speech: 'text-to-speech', video: 'text-to-video' };
-const BASE_URL = 'https://artificialanalysis.ai/api/v2/data/media/';
 
 async function fetchSource({ apiKey, signal } = {}) {
   const result = {};
   for (const [kind, arena] of Object.entries(ARENAS)) {
-    const response = await fetch(`${BASE_URL}${arena}`, { headers: { 'x-api-key': apiKey }, signal: signal || AbortSignal.timeout(60_000) });
-    if (!response.ok) throw new Error(`Artificial Analysis (${arena}) returned HTTP ${response.status}`);
-    const data = await response.json();
-    result[kind] = (data?.data || []).filter((item) => Number.isFinite(Number(item.elo))).map((item) => ({
+    const items = await fetchList(`media/${arena}/models`, { apiKey, signal });
+    result[kind] = items.filter((item) => item.elo !== null && item.elo !== undefined && Number.isFinite(Number(item.elo))).map((item) => ({
       slug: item.slug, name: item.name, creator: item.model_creator?.name || null, elo: Number(item.elo), releaseDate: item.release_date || null,
     }));
   }

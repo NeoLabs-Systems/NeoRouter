@@ -1056,3 +1056,122 @@ class OptionCard extends StatelessWidget {
     );
   }
 }
+
+/// A dialog that fits any screen: a header (optionally with a leading mark
+/// and a line under the title), a scrolling body, and actions that always
+/// stay visible at the bottom.
+class DialogFrame extends StatelessWidget {
+  const DialogFrame({super.key, required this.title, required this.body, this.actions = const <Widget>[], this.maxWidth = 620, this.leading, this.subtitle, this.headerTrailing, this.headerBottom, this.bodyPadding});
+
+  final String title;
+  final Widget body;
+  final List<Widget> actions;
+  final double maxWidth;
+  final Widget? leading;
+  final Widget? subtitle;
+  final Widget? headerTrailing;
+
+  /// Fixed under the header, above the scrolling body (a search field, filters).
+  final Widget? headerBottom;
+  final EdgeInsetsGeometry? bodyPadding;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = neoRouterPaletteOf(context);
+    final size = MediaQuery.sizeOf(context);
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: size.height * 0.88),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 22, 16, 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  if (leading != null) ...<Widget>[leading!, const SizedBox(width: 14)],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(title, style: Theme.of(context).textTheme.titleLarge),
+                        if (subtitle != null) ...<Widget>[const SizedBox(height: 4), subtitle!],
+                      ],
+                    ),
+                  ),
+                  if (headerTrailing != null) headerTrailing!,
+                ],
+              ),
+            ),
+            if (headerBottom != null) Padding(padding: const EdgeInsets.fromLTRB(24, 0, 24, 12), child: headerBottom!),
+            Flexible(child: SingleChildScrollView(padding: bodyPadding ?? const EdgeInsets.fromLTRB(24, 4, 24, 16), child: body)),
+            if (actions.isNotEmpty)
+              Container(
+                decoration: BoxDecoration(border: Border(top: BorderSide(color: palette.border))),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                child: Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 8, children: actions),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A checkbox card for one kind of model (free, plan, paid): which kinds a key
+/// may use, or which kinds of a connection a pool gets. Disabled when [onChanged] is null.
+class KindCheck extends StatelessWidget {
+  const KindCheck({super.key, required this.title, required this.description, required this.value, this.onChanged, this.trailing});
+
+  final String title;
+  final String description;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = neoRouterPaletteOf(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: value ? palette.accentSoft : palette.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          side: BorderSide(color: value ? palette.accent.withValues(alpha: 0.5) : palette.border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onChanged == null ? null : () => onChanged!(!value),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 10, 14, 10),
+            child: Row(
+              children: <Widget>[
+                Checkbox(value: value, onChanged: onChanged == null ? null : (next) => onChanged!(next ?? false)),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        title,
+                        style: TextStyle(fontWeight: FontWeight.w600, color: onChanged == null ? palette.textMuted : palette.text),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(description, style: TextStyle(fontSize: 12.5, color: palette.textSoft, height: 1.35)),
+                    ],
+                  ),
+                ),
+                if (trailing != null) trailing!,
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

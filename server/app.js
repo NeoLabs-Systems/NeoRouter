@@ -54,18 +54,28 @@ function createApp() {
   app.use(compression());
   // "Connect with NeoRouter": the OAuth endpoints apps talk to.
   app.use(require('./routes/connect').router);
+  // Pools: what other NeoRouters call to join and keep a pool in order.
+  app.use('/federation/v1', require('./routes/federation'));
+  // The page a pool invite link opens: it sends the invited person to their own NeoRouter.
+  app.get('/pool/join', require('./routes/pool_join').poolJoinPage);
   // Gateway reference for agents (Markdown).
   app.use(require('./routes/api_docs'));
   // Playground audio uploads arrive as base64 JSON (25 MB of audio).
   app.use('/api/v1/playground/media', express.json({ limit: '36mb' }));
   app.use(express.json({ limit: '2mb' }));
   app.use('/api/v1', require('./routes'));
+  app.get('/api/public/status', (_req, res) => {
+    const status = require('./public_status');
+    res.set('Cache-Control', 'no-store');
+    res.json({ ...status.buildPublicStatus(), history: status.history.history() });
+  });
 
   // Flutter web and landing files keep the same names across releases (the
   // icon font is rebuilt with only the icons in use), so browsers and CDNs
   // must revalidate them; ETags keep that cheap.
   const revalidate = (res) => res.setHeader('Cache-Control', 'private, no-cache');
   const appWebRoot = WEB_CLIENT_DIR;
+  require('./analytics').registerAnalytics(app, { appWebRoot, landingRoot: LANDING_DIR });
   app.use('/app', express.static(appWebRoot, { extensions: ['html'], fallthrough: true, setHeaders: revalidate }));
   app.use('/app', (req, res, next) => {
     // During development the Flutter app runs on its own dev server.
@@ -86,6 +96,14 @@ function createApp() {
   });
 
   app.use('/', express.static(LANDING_DIR, { extensions: ['html'], setHeaders: revalidate }));
+  // A mistyped address in a browser gets a page; API clients keep the JSON error.
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    if (/^\/(api|v1)(\/|$)/.test(req.path) || req.accepts(['json', 'html']) !== 'html') return next();
+    return res.status(404).sendFile(path.join(LANDING_DIR, '404.html'), (error) => {
+      if (error && !res.headersSent) next();
+    });
+  });
   app.use(notFound, errorHandler);
   return app;
 }

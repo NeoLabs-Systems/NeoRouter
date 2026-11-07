@@ -8,6 +8,7 @@ const quota = require('../quota/quota_service');
 const billing = require('../providers/billing_check');
 const { getDatabase } = require('../../db/database');
 const experience = require('./task/experience');
+const accountHealth = require('./account_health');
 
 // Failures that say the model handled this kind of task badly (as opposed to
 // limits, outages or bad requests, which say nothing about the task).
@@ -20,6 +21,13 @@ const DAY = 24 * HOUR;
 const RATE_LIMIT_COOLDOWN_MS = 90 * SECOND;
 const QUOTA_LADDER_MS = [2 * MINUTE, 10 * MINUTE, HOUR, DAY];
 const NOT_FOUND_LADDER_MS = [6 * HOUR, DAY, 7 * DAY];
+// Something only a person can do (a consent, a verification): checked again
+// rarely, and never as a long shot.
+const NEEDS_ACTION_LADDER_MS = [DAY, 3 * DAY, 7 * DAY];
+// A rate limit on a model that recently answered ends soon. One that has not
+// answered in an hour keeps refusing, so it is asked less and less often.
+const RATE_LIMIT_LADDER_MS = [RATE_LIMIT_COOLDOWN_MS, 5 * MINUTE, 30 * MINUTE, 2 * HOUR, 6 * HOUR];
+const STILL_ANSWERING_MS = HOUR;
 const MAX_RETRY_AFTER_MS = DAY;
 
 // How each error kind changes what the router believes about a model.
@@ -32,8 +40,8 @@ function policyFor(error) {
     case KINDS.AUTH: return { weight: 1, penalty: 3, breaker: false, fallback: true };
     case KINDS.NOT_FOUND: return { weight: 1, penalty: 2, breaker: false, fallback: true };
     case KINDS.CONTEXT_LENGTH: return { weight: 0, penalty: 0, breaker: false, fallback: true };
-    case KINDS.TRUNCATED: return { weight: 0.25, penalty: 0.5, breaker: false, fallback: true };
-    case KINDS.BAD_REQUEST: return { weight: 0.5, penalty: 0.5, breaker: false, fallback: true };
+    case KINDS.TRUNCATED: return { weight: 0.25, penalty: 0.5, breaker: false, fallback: true, perAccount: false };
+    case KINDS.BAD_REQUEST: return { weight: 0.5, penalty: 0.5, breaker: false, fallback: true, perAccount: false };
     case KINDS.TIMEOUT: return { weight: 1, penalty: 1.5, breaker: true, fallback: true };
     case KINDS.SERVER:
     case KINDS.NETWORK:
@@ -47,8 +55,11 @@ function policyFor(error) {
 function cooldownFor(error, row, now) {
   const retryAfter = Number.isFinite(error.retryAfterMs) ? Math.min(error.retryAfterMs, MAX_RETRY_AFTER_MS) : null;
   switch (error.kind) {
-    case KINDS.RATE_LIMIT:
-      return { until: now + Math.max(retryAfter || 0, RATE_LIMIT_COOLDOWN_MS), reason: 'rate_limited', escalate: false };
+    case KINDS.RATE_LIMIT: {
+      const answering = row.last_success_at && now - row.last_success_at < STILL_ANSWERING_MS;
+      const step = answering ? RATE_LIMIT_COOLDOWN_MS : RATE_LIMIT_LADDER_MS[Math.min(row.cooldown_level, RATE_LIMIT_LADDER_MS.length - 1)];
+      return { until: now + Math.max(retryAfter || 0, step), reason: 'rate_limited', escalate: !answering };
+    }
     case KINDS.QUOTA_EXHAUSTED: {
       if (error.learned?.value === 0) return { until: now + DAY, reason: 'no_free_quota', escalate: false };
       const step = QUOTA_LADDER_MS[Math.min(row.cooldown_level, QUOTA_LADDER_MS.length - 1)];
@@ -57,11 +68,17 @@ function cooldownFor(error, row, now) {
     case KINDS.PAYMENT: return { until: now + DAY, reason: 'payment_required', escalate: false };
     case KINDS.AUTH: return { until: now + 30 * MINUTE, reason: 'auth_failed', escalate: false };
     case KINDS.NOT_FOUND: {
+      if (error.needsAction) {
+        const wait = NEEDS_ACTION_LADDER_MS[Math.min(row.cooldown_level, NEEDS_ACTION_LADDER_MS.length - 1)];
+        return { until: now + wait, reason: 'needs_action', escalate: true };
+      }
       // Listed but not deployed (e.g. NVIDIA "Function not found"): back off
       // further each time it is still missing.
       const step = NOT_FOUND_LADDER_MS[Math.min(row.cooldown_level, NOT_FOUND_LADDER_MS.length - 1)];
       return { until: now + step, reason: 'not_available', escalate: true };
     }
+    // A planned outage that said when it ends ("back at 12:00 UTC").
+    case KINDS.SERVER: return retryAfter ? { until: now + retryAfter, reason: 'scheduled_downtime', escalate: false } : null;
     case KINDS.BAD_REQUEST: {
       // One 400 may be the client's fault; the same model rejecting again
       // within a short window means it does not support this kind of request.
@@ -97,14 +114,18 @@ function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, now = 
   // "Too many concurrent requests" says nothing about the per-minute rate:
   // the account is busy, not used up, so no cooldown and no exhausted rpm.
   const busy = error.kind === KINDS.RATE_LIMIT && concurrency.onRateLimited(entry, error, { now });
+  // A connection a person marked as fixed gets a few failures forgiven: they
+  // leave no cooldown, rest or penalty, so it is really tried again.
+  const forgiven = !busy && policy.perAccount !== false && accountHealth.takeChance(entry.accountId);
+  if (!busy && !forgiven && policy.perAccount !== false) accountHealth.onFailure(entry.accountId, now);
   const current = stats.snapshot(entry.ref, now);
-  const cooldown = busy ? null : cooldownFor(error, current, now);
+  const cooldown = busy || forgiven ? null : cooldownFor(error, current, now);
   stats.recordFailure(entry.ref, {
     // Busy is not unreliable: it neither costs reliability nor earns a penalty.
-    weight: busy ? 0 : policy.weight,
-    penalty: busy ? 0 : policy.penalty,
+    weight: busy || forgiven ? 0 : policy.weight,
+    penalty: busy || forgiven ? 0 : policy.penalty,
     message: `${error.kind}: ${error.message}`,
-    countsForBreaker: policy.breaker,
+    countsForBreaker: policy.breaker && !forgiven,
     cooldownUntil: cooldown?.until || 0,
     cooldownReason: cooldown?.reason || null,
     escalate: cooldown?.escalate || false,
@@ -116,7 +137,7 @@ function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, now = 
   }
   if (error.learned?.value) quota.learnLimit(entry, error.learned);
   if (error.kind === KINDS.QUOTA_EXHAUSTED) billing.observeFailure(entry, error);
-  if (error.kind === KINDS.QUOTA_EXHAUSTED || (error.kind === KINDS.RATE_LIMIT && !busy)) {
+  if (!forgiven && (error.kind === KINDS.QUOTA_EXHAUSTED || (error.kind === KINDS.RATE_LIMIT && !busy))) {
     quota.markExhausted(entry, error.kind === KINDS.QUOTA_EXHAUSTED ? 'rpd' : 'rpm', cooldown?.until || null, now);
   }
   return policy;
@@ -131,6 +152,7 @@ function onSlow(entry, elapsedMs, now = Date.now()) {
 
 function onSuccess(entry, measurement, headers, now = Date.now()) {
   stats.recordSuccess(entry.ref, measurement, now);
+  accountHealth.onSuccess(entry.accountId);
   experience.recordOutcome(entry.ref, entry.task, true, now);
   concurrency.onSuccess(entry, { now });
   if (headers) {
@@ -140,4 +162,4 @@ function onSuccess(entry, measurement, headers, now = Date.now()) {
   }
 }
 
-module.exports = { onFailure, onSuccess, onSlow, policyFor, QUOTA_LADDER_MS };
+module.exports = { onFailure, onSuccess, onSlow, policyFor, cooldownFor, QUOTA_LADDER_MS };

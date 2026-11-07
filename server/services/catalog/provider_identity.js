@@ -7,6 +7,8 @@ const registry = require('../../providers/registry');
 // endpoints are one provider per address.
 function providerIdentity({ definitionId, slug, label, baseUrl }) {
   const definition = registry.get(definitionId);
+  // A pool partner is named after the partner, one provider entry each.
+  if (definition?.category === 'pool') return { providerKey: `${definitionId}:${slug}`, providerName: label || slug };
   const custom = !definition || /^custom|^local/.test(definitionId);
   return {
     providerKey: custom ? `${definitionId}:${baseUrl || slug}` : definitionId,

@@ -28,16 +28,29 @@
 
 | Error kind | Effect |
 |---|---|
-| rate_limit (429) | penalty +2, cooldown max(Retry-After, 90 s), limit learned from message |
+| rate_limit (429) | penalty +2, cooldown max(Retry-After, 90 s), limit learned from message; with no answer in the last hour the cooldown climbs 90 s → 5 min → 30 min → 2 h → 6 h |
 | quota_exhausted | cooldown ladder 2 min → 10 min → 1 h → 24 h |
 | payment (402) | cooldown 24 h |
 | auth (401/403) | cooldown 30 min, background key re-check, account disabled after 3 confirmed rejections |
-| not_found | cooldown 6 h |
+| not_found, or 401/403 about the model or plan (not on this plan, consent, phone verification) | cooldown 6 h → 24 h → 7 d |
 | context_length | no penalty, context window learned |
 | server / timeout / network / empty / invalid tool JSON | failure + penalty, counts for circuit breaker (3 in 15 min → 10 min pause, then half-open probe) |
 | slow (> 2.5 × own EWMA) | soft failure, small penalty |
 
 Outcome counts decay with a 24 h half-life, penalties with a 5 min half-life.
+
+One connection may cost a single request two failed attempts, then the others
+get a turn. After 30 failures in a row without a success, a whole connection
+rests for 5 minutes, doubling up to an hour (`account_health.js`). While at least
+30 % of a user's recent requests go unanswered (`capacity.js`), requests wait
+5 seconds instead of 45 for a model to free up (high-priority keys still wait in
+full) and at most one hedge runs per request. A client sending the same conversation again within
+3 minutes of an answer counts as a bad rating of that answer; only a hash of the
+conversation is kept, in memory.
+
+Benchmark scores with a confidence below 0.5 are pulled towards 0.25, so a model
+nobody measured cannot outrank measured ones, and a model far below what the task
+needs (under 0.08 to 0.12) keeps 60 % of its score.
 
 Streams are committed to the client only after the first real output arrives,
 so silent or failing providers are replaced transparently.
@@ -45,8 +58,17 @@ so silent or failing providers are replaced transparently.
 ## Intelligence
 
 `server/services/catalog/metadata_service.js` combines models.dev and
-OpenRouter (prices, context, capabilities, release dates) and, if an admin
-configured a key, Artificial Analysis (benchmark index, measured speed).
+OpenRouter (prices, context, capabilities, release dates), OpenRouter's daily
+benchmark leaderboard (GPQA Diamond and tau2-bench airline, the newest 90 days;
+CC BY 4.0) and, if an admin configured a key, Artificial Analysis (benchmark
+index, measured speed). Where both benchmark sources know a model, its overall
+score is 60 % Artificial Analysis and 40 % OpenRouter. An OpenRouter benchmark
+that ranks models very differently from the fuller index gets no say.
+
+Artificial Analysis refreshes every 6 hours: a Free key allows 100 requests a day.
+Free lists carry the index and speed but no per-benchmark scores, so the scores
+already known are kept (a Pro key keeps them current); models without an index
+get one estimated from them.
 Without a benchmark the score is a heuristic of market price, parameter count,
 recency and reasoning support. Users can override it per model.
 
@@ -96,6 +118,16 @@ learned (`concurrency.js`): a 429 while several requests run on an account sets
 its limit below that count, steady success at the limit probes one higher, and
 learned limits fade after an hour. An account at its limit is skipped
 (`account_busy`) and chat requests wait briefly if every copy is busy.
+
+## Key priority
+
+Each key or connected app is `high`, `normal` (default) or `low`. Priority only
+counts when capacity runs short: a request that has to wait for a model or
+account announces it (`routing/priority.js`), and requests of a lower priority
+leave those alone (`held_for_priority`) until it has been served. It never
+changes which model a key may use or how models are scored, and it does not
+stop requests already running. A held request waits at most the normal queue
+window (`NEOROUTER_ROUTING_QUEUE_WAIT_MS`).
 
 ## Budget pacing
 

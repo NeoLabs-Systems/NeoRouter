@@ -62,24 +62,7 @@
   "range24h": "24 h",
   "range7d": "7 days",
   "range30d": "30 days",
-  "statRequests": "Requests",
-  "statSuccessRate": "Success rate",
-  "statCost": "Spent",
-  "statTokens": "Tokens",
-  "statFreeShare": "Served free",
-  "statLatency": "Avg. latency",
-  "statFallbacks": "With fallback",
-  "statInOut": "{input} in · {output} out",
-  "@statInOut": {
-    "placeholders": {
-      "input": {
-        "type": "String"
-      },
-      "output": {
-        "type": "String"
-      }
-    }
-  },
+  "statRequests": "Requests today",
   "topModels": "Top models",
   "requestsShort": "{count} req.",
   "@requestsShort": {
@@ -161,7 +144,6 @@
   "categoryPaid": "Paid APIs",
   "categoryLocal": "Local",
   "categoryCustom": "Custom",
-  "categoryCommunity": "Community",
   "categorySearch": "Web search",
   "categoryPlan": "Subscriptions",
   "kindFree": "Free models",
@@ -257,6 +239,16 @@
   "revalidate": "Check key",
   "syncModels": "Refresh models",
   "probeQuota": "Check balance",
+  "markFixed": "Mark as fixed",
+  "markFixedDone": "Fresh start: NeoRouter forgot the cooldowns and will try this connection again.",
+  "markFixedStillFailing": "Fresh start, but the key check says: {message}",
+  "@markFixedStillFailing": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "removeProvider": "Remove connection",
   "removeProviderConfirm": "Remove {name}? Its models are no longer used. You can add it again at any time.",
   "@removeProviderConfirm": {
@@ -442,10 +434,6 @@
   "paceOver": "Used up until the reset",
   "rpmLimit": "Requests per minute (empty = no limit)",
   "allowedModels": "Allowed models and routings – one per line, * as wildcard (empty = all)",
-  "keyKindsTitle": "Kinds of models",
-  "keyKindsHint": "Switch off what this key should never use, e.g. text models for a voice app.",
-  "keyKindsNone": "Pick at least one kind.",
-  "pickModelAllKinds": "All kinds",
   "defaultProfile": "Routing style for \"auto\"",
   "keySecretTitle": "Copy your new key",
   "keySecretBody": "For your security it is shown only once. Paste it into your app where it asks for an API key.",
@@ -853,6 +841,73 @@
       }
     }
   },
+  "updatesTitle": "Updates",
+  "updatesHint": "NeoRouter updates itself from GitHub. Your settings, keys and usage are kept.",
+  "updateChannel": "Channel",
+  "updateChannelHint": "Stable follows main. Beta gets new features first.",
+  "channelStable": "Stable",
+  "channelBeta": "Beta",
+  "updateCheckNow": "Check now",
+  "updateNeverChecked": "Not checked yet",
+  "updateUpToDate": "You have the latest version",
+  "updateCheckFailed": "Couldn't reach GitHub. Showing the last result.",
+  "updateContainerTitle": "Runs from a container image",
+  "updateContainerHint": "Update the image instead of the code inside it. Data on the volume is kept.",
+  "updateNotGitTitle": "Can't update itself",
+  "updateNotGitHint": "This install did not come from Git. Run neorouter update in a terminal.",
+  "updateDetails": "Details of the last update",
+  "updateReadyTitle": "Version {version} is ready",
+  "@updateReadyTitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateReadySubtitle": "You have {current} · {channel} channel",
+  "@updateReadySubtitle": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "updateNow": "Update now",
+  "updateWhatsNew": "What's new",
+  "updateConfirmTitle": "Update to {version}?",
+  "@updateConfirmTitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateConfirmMessage": "NeoRouter saves a backup, installs the new version and restarts. This takes a few minutes. If anything fails, it goes back to the current version.",
+  "updatingTitle": "Updating NeoRouter",
+  "updatingToTitle": "Updating to {version}",
+  "@updatingToTitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateReconnecting": "Restarting NeoRouter…",
+  "updateHandsOff": "Nothing to do here. This page reconnects by itself when NeoRouter is back.",
+  "updateDoneTitle": "Updated to {version}",
+  "@updateDoneTitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateDoneReloading": "Reloading the app to load the new version…",
+  "updateReload": "Reload",
+  "updateFailedTitle": "The update did not finish",
   "serverInfoHint": "What this NeoRouter instance runs and where apps reach it.",
   "versionLabel": "Version",
   "capabilitiesLabel": "Capabilities",
@@ -939,35 +994,7 @@
   },
   "homeStatusEmpty": "Connect an AI provider to get started.",
   "homeLast7Days": "Last 7 days",
-  "liveNow": "Live",
-  "liveReplay": "Replaying recent requests",
-  "liveWaiting": "Waiting for the first request",
-  "liveWaitingChip": "waiting for a free model",
-  "liveQueued": "{count} waiting for a free model",
-  "@liveQueued": {"placeholders": {"count": {"type": "String"}}},
-  "liveLoading": "Loading…",
-  "liveLoadingTraffic": "loading your traffic…",
-  "liveOther": "Others",
-  "liveYourApp": "Your app",
-  "liveAddProvider": "Add a connection",
-  "liveListening": "listening",
-  "liveRouting": "routing",
-  "liveScoring": "scoring {count}",
-  "@liveScoring": {"placeholders": {"count": {"type": "String"}}},
-  "liveInFlight": "{count} in flight",
-  "@liveInFlight": {"placeholders": {"count": {"type": "String"}}},
-  "liveRequests": "{count} requests",
-  "@liveRequests": {"placeholders": {"count": {"type": "String"}}},
-  "liveSummary": "Last {count}: {free}% free · {caught} rescued · {ms} ms avg",
-  "@liveSummary": {"placeholders": {"count": {"type": "String"}, "free": {"type": "String"}, "caught": {"type": "String"}, "ms": {"type": "String"}}},
-  "liveLegendRequest": "request",
-  "liveLegendAnswer": "answer",
-  "liveLegendFailure": "failed attempt",
-  "liveMore": "Details",
   "metricRequests": "Requests",
-  "homeTokens": "Tokens",
-  "homeTokensCaption": "{count} requests",
-  "@homeTokensCaption": {"placeholders": {"count": {"type": "String"}}},
   "metricAnswered": "Answered",
   "metricSpent": "Spent",
   "metricFreeShare": "{percent} % free",
@@ -1024,6 +1051,37 @@
       }
     }
   },
+  "problemFailingTitle": "{name} is not answering",
+  "@problemFailingTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "problemFailing": "{successes} of {attempts} attempts worked in the last day.",
+  "@problemFailing": {
+    "placeholders": {
+      "successes": {
+        "type": "String"
+      },
+      "attempts": {
+        "type": "String"
+      }
+    }
+  },
+  "problemCapacityTitle": "Many requests go unanswered",
+  "problemCapacity": "{failed} of {requests} failed in the last day. Your connections cannot keep up: connect more, or send less.",
+  "@problemCapacity": {
+    "placeholders": {
+      "failed": {
+        "type": "String"
+      },
+      "requests": {
+        "type": "String"
+      }
+    }
+  },
   "problemKeyRejected": "The provider rejected the key. Update it to use this connection again.",
   "requestFailed": "Failed: {reason}",
   "@requestFailed": {
@@ -1051,12 +1109,226 @@
     }
   },
   "activityDescription": "What your apps asked for and how NeoRouter answered. Only metadata is kept – never your messages.",
-  "activityAllKeys": "All API keys",
-  "activityKeysCount": "{count} keys",
-  "@activityKeysCount": {"placeholders": {"count": {"type": "String"}}},
-  "activityRevoked": "revoked",
   "tabOverview": "Overview",
   "tabRequests": "Requests",
+  "keyMaxPriceTitle": "Max price per million tokens",
+  "keyMaxPricePerMillion": "per million tokens",
+  "tabLearned": "Learned",
+  "learnedEmptyTitle": "Nothing learned yet",
+  "learnedEmptyMessage": "NeoRouter learns from every answer. Send a few requests and watch this fill up.",
+  "learnedExperience": "Experience",
+  "learnedExperienceCaption": "recent answers",
+  "learnedKnowHow": "Kinds of work",
+  "learnedKnowHowCaption": "{count} models compared",
+  "@learnedKnowHowCaption": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedRescued": "Rescued",
+  "learnedRescuedCaption": "by a backup, 30 days",
+  "learnedFirstTry": "First choice answered",
+  "learnedFirstTryCaption": "when a model was free",
+  "learnedUpFrom": "up from {value}",
+  "@learnedUpFrom": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedWas": "was {value}",
+  "@learnedWas": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCurveTitle": "How often its first choice answers",
+  "learnedNoCapacity": "{count} requests found no model free in 30 days",
+  "@learnedNoCapacity": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedMapTitle": "What works for what",
+  "learnedMapHelp": "Every model you can use right now, scored out of 100 for each kind of work: benchmarks first, then your ratings, measured speed and how reliably it answered. Move the slider to weigh them differently. Price is not part of it.",
+  "learnedSources": "Benchmarks: Artificial Analysis; OpenRouter (openrouter.ai), CC BY 4.0.",
+  "learnedNotTried": "Not tried yet: benchmarks only",
+  "learnedBestLineNew": "{score} of 100 · not tried yet, benchmarks only",
+  "@learnedBestLineNew": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedTuneTitle": "Best for what you need",
+  "learnedTuneFast": "Speed",
+  "learnedTuneBalanced": "Balanced",
+  "learnedTuneSmart": "Quality",
+  "learnedTuneFree": "Free only",
+  "learnedTuneNoFree": "No free model has answered yet.",
+  "learnedLegendWorse": "Lower",
+  "learnedLegendBetter": "Higher",
+  "learnedLegendBest": "Best",
+  "learnedLegendEstimated": "~ partly estimated, no benchmark",
+  "learnedLegendFails": "Often fails for you",
+  "learnedCellScore": "Score: {value} of 100",
+  "@learnedCellScore": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCellBenchmark": "Benchmarks and ratings: {value}",
+  "@learnedCellBenchmark": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCellEstimate": "Estimated quality: {value}, no benchmark yet",
+  "@learnedCellEstimate": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCellSpeed": "Speed: {value}",
+  "@learnedCellSpeed": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedBestLine": "{score} of 100 · {rate} worked · {answers} answers",
+  "@learnedBestLine": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      },
+      "answers": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCellLine": "{rate} worked · {answers} answers",
+  "@learnedCellLine": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "answers": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCellVotes": "Rated {liked} up, {disliked} down",
+  "@learnedCellVotes": {
+    "placeholders": {
+      "liked": {
+        "type": "String"
+      },
+      "disliked": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedBestTitle": "Best for each kind of work",
+  "learnedFastestTitle": "Fastest it has measured",
+  "learnedWorked": "{rate} worked",
+  "@learnedWorked": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedFoundTitle": "Found out on its own",
+  "learnedLimitRpm": "{name} allows {value} requests a minute",
+  "@learnedLimitRpm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedLimitRpd": "{name} allows {value} requests a day",
+  "@learnedLimitRpd": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedLimitTpm": "{name} allows {value} tokens a minute",
+  "@learnedLimitTpm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedLimitTpd": "{name} allows {value} tokens a day",
+  "@learnedLimitTpd": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedRoom": "{name} needs room for {value} tokens to finish",
+  "@learnedRoom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedResting": "{name} is resting until {time}",
+  "@learnedResting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedReasonLimit": "It reached its limit",
+  "learnedReasonAccount": "The account needs attention",
+  "learnedReasonMissing": "It isn't available right now",
+  "learnedReasonIncompatible": "It can't handle these requests",
+  "learnedReasonFailing": "It kept failing",
   "metricTokens": "{count} tokens",
   "@metricTokens": {
     "placeholders": {
@@ -1143,7 +1415,6 @@
   "accountNotVerified": "Free plan, not verified yet",
   "moreActions": "More actions",
   "chooseProviderHint": "Pick the service you have a key for. Providers marked \"Free models\" can be used without paying.",
-  "providerFreeTag": "Free models",
   "getKeyAt": "Get a key at {name}",
   "@getKeyAt": {
     "placeholders": {
@@ -1179,7 +1450,7 @@
       }
     }
   },
-  "limitsDescription": "What is left of each provider's allowance today. Per-minute limits reset on their own and NeoRouter routes around them, so only daily allowances and models running low are shown.",
+  "limitsDescription": "Each provider's limits and what is left of today's allowance. Limits come from the provider's documentation and answers; NeoRouter routes around them on its own.",
   "limitResets": "resets {time}",
   "@limitResets": {
     "placeholders": {
@@ -1205,15 +1476,80 @@
       }
     }
   },
+  "limitsSectionTitle": "Limits",
+  "limitsEdit": "Set limits",
+  "limitsEditTitle": "Limits for {name}",
+  "@limitsEditTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "limitsEditHint": "A number you enter always wins over what NeoRouter reads or learns, and never fades. Leave a field empty and NeoRouter works it out itself.",
+  "limitsInvalid": "Enter a whole number, 1 or more.",
+  "limitAutomatic": "automatic",
+  "limitSharedValue": "{value} for all models",
+  "@limitSharedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "limitPerModelValue": "{value} per model",
+  "@limitPerModelValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "limitSourceCurated": "documented",
+  "limitSourceHeader": "reported by the provider",
+  "limitSourceLearned": "learned from its answers",
+  "limitSourceManual": "set by you",
+  "limitsPerModelTitle": "Limits per model ({count})",
+  "@limitsPerModelTitle": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "limitShortRpm": "{value}/min",
+  "@limitShortRpm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "limitShortRpd": "{value}/day",
+  "@limitShortRpd": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "limitShortTpm": "{value} tokens/min",
+  "@limitShortTpm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "limitShortTpd": "{value} tokens/day",
+  "@limitShortTpd": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "addAnotherAccount": "Add another account",
-  "providerAccountsCount": "{count} accounts",
-  "@providerAccountsCount": {"placeholders": {"count": {"type": "String"}}},
-  "providerAccountsWorking": "{count} working",
-  "@providerAccountsWorking": {"placeholders": {"count": {"type": "String"}}},
-  "providerAccountsProblems": "{count} need attention",
-  "@providerAccountsProblems": {"placeholders": {"count": {"type": "String"}}},
-  "providerShowAccounts": "Show accounts",
-  "providerHideAccounts": "Hide accounts",
   "limitsModelsRoom": "{room} of {total} models have room today",
   "@limitsModelsRoom": {
     "placeholders": {
@@ -1290,24 +1626,9 @@
   "suggestion2": "Write a friendly reminder for a team meeting",
   "suggestion3": "Give me three dinner ideas with chickpeas",
   "newChat": "New chat",
-  "pgMode": "Mode",
-  "pgGroupText": "Text",
-  "pgGroupCreate": "Create",
-  "pgGroupListen": "Listen",
-  "pgGroupLookup": "Look up",
-  "pgGroupOther": "More",
   "modelPicker": "Model",
   "modelSpecific": "Specific model…",
   "modelSpecificHint": "e.g. groq/openai/gpt-oss-120b",
-  "pickModel": "Choose a model",
-  "pickModels": "Choose models",
-  "pickModelNone": "No model matches.",
-  "pickModelsCount": "{count} chosen",
-  "pickModelContext": "{tokens} context",
-  "pickModelReasoning": "Thinks before answering",
-  "done": "Done",
-  "@pickModelsCount": {"placeholders": {"count": {"type": "String"}}},
-  "@pickModelContext": {"placeholders": {"tokens": {"type": "String"}}},
   "systemPromptTitle": "Instructions",
   "systemPromptHint": "Optional: how the assistant should behave, e.g. \"Answer briefly and in German.\"",
   "thinking": "Thinking…",
@@ -1410,17 +1731,6 @@
   "privacyAiHint": "Everything above is found on your server in about a millisecond, without AI. OpenAI's privacy filter, also running on this server, can read each new message to find names, addresses and what the rules miss.",
   "privacyAiEnable": "Also look with AI",
   "privacyAiEnableHint": "Runs on this server, so no provider sees the text. Adds a fraction of a second to new messages; the first one after a quiet while waits for the model to load.",
-  "privacyModelTitle": "AI privacy filter",
-  "privacyModelHint": "OpenAI's open privacy filter runs on this server and finds names, addresses, account numbers and more that rules miss. No provider sees the text. Turning it on downloads about 1 GB once; it loads when used and frees its memory (about 2 GB) after 15 minutes without requests.",
-  "privacyModelEnable": "Let users turn on the AI privacy filter",
-  "privacyModelOff": "Off. Users can't use AI detection.",
-  "privacyModelDownloading": "Downloading … {percent} %",
-  "privacyModelLoading": "Loading …",
-  "privacyModelReady": "Ready and loaded.",
-  "privacyModelIdle": "Ready. Loads when the next message needs it.",
-  "privacyModelError": "Couldn't load: {error}",
-  "@privacyModelDownloading": {"placeholders": {"percent": {"type": "String"}}},
-  "@privacyModelError": {"placeholders": {"error": {"type": "String"}}},
   "privacyTryHint": "Paste a text to see exactly what a provider would receive. Nothing is sent to a model (except AI detection, if it is on).",
   "privacyTrySample": "Hi, I am Anna Schmidt, born 14.07.1988, living at Lindenstraße 12, 50674 Köln. Please send the invoice to anna.schmidt@example.de and call me at +49 170 1234567. My IBAN is DE89 3704 0044 0532 0130 00, my tax ID 86 095 742 719, the server password: hunter2pw.",
   "privacyTryResult": "{count} values hidden",
@@ -1523,25 +1833,6 @@
   "pgSpeechRun": "Read aloud",
   "pgVoice": "Voice",
   "pgVoiceDefault": "Default voice",
-  "pgVoiceLoading": "Loading voices…",
-  "pgSetUp": "Set up",
-  "pgNotSetUpTitle": "{kind} isn't set up yet",
-  "pgConnectOpenMeteo": "Connect Open-Meteo",
-  "pgConnectOpenMeteoHint": "Free and no key needed. It takes a second.",
-  "pgOtherProviders": "Other weather services",
-  "pgNoFreeModels": "You have no free model for this, so Free only finds nothing here.",
-  "pgNoFreeModelsLocked": "You have no free model for this, and this key only allows free models.",
-  "pgAllowPaid": "Allow paid models",
-  "pgUseAuto": "Use auto",
-  "pgProblemNoFreeTitle": "No free model could take this",
-  "pgProblemNoFreeBody": "Your free models for this are busy, past their limits or missing. Allow paid models, or try again in a minute.",
-  "pgProblemNoFreeBodyLocked": "This key only allows free models, and none could take this right now. Connect a free provider for it, or use a key that may use paid models.",
-  "pgProblemNoModelTitle": "No model can take this right now",
-  "pgProblemFailedTitle": "Every model that tried failed",
-  "pgProblemNotAllowedTitle": "This key can't use that model",
-  "pgProblemLimitTitle": "This key reached a limit",
-  "pgProblemTitle": "That didn't work",
-  "@pgNotSetUpTitle": {"placeholders": {"kind": {"type": "String"}}},
   "pgPlay": "Play",
   "pgStop": "Stop",
   "pgDownload": "Download",
@@ -1555,18 +1846,6 @@
   "pgSafe": "Looks safe",
   "pgCheckSafety": "Harmful content",
   "pgCheckInjection": "Prompt attacks",
-  "pgCheckTopic": "Off-topic",
-  "pgTopicPolicy": "Allowed topics",
-  "pgTopicPolicyHint": "e.g. Only questions about our product and orders.",
-  "pgDecide": "Decide",
-  "pgDecideHint": "Describe a situation, ask a question and list the options. A System One model picks one in a split second and says how sure it is.",
-  "pgDecideRun": "Decide",
-  "pgYes": "Yes",
-  "pgNo": "No",
-  "pgDecideQuestion": "Question",
-  "pgDecideQuestionHint": "e.g. What does the customer want?",
-  "pgDecideOptions": "Options, one per line",
-  "pgDecideOptionsHint": "Leave empty for a yes-or-no question.",
   "pgFlagged": "Flagged",
   "pgVideoHint": "Describe a short scene. Videos take a few minutes and are never free.",
   "pgVideoRun": "Create video",
@@ -1596,17 +1875,6 @@
   "unitSearch": "per search",
   "pgSearchHint": "Search the web through your search engines. Chat models use the same engines when a request turns web search on.",
   "pgSearchRun": "Search",
-  "categoryWeather": "Weather",
-  "capWeather": "Weather",
-  "capWeatherHint": "Current weather and forecasts for any place, from the weather services you connect.",
-  "unitCall": "per call",
-  "pgWeatherHint": "Look up the weather for a place name or coordinates such as 52.52, 13.41. The answer has the same shape whichever service replies.",
-  "pgWeatherRun": "Get weather",
-  "pgWeatherMetric": "°C, km/h",
-  "pgWeatherImperial": "°F, mph",
-  "pgWeatherHourly": "Next hours",
-  "pgWeatherNow": "Feels like {feels} · humidity {humidity}% · wind {wind}",
-  "@pgWeatherNow": {"placeholders": {"feels": {"type": "String"}, "humidity": {"type": "String"}, "wind": {"type": "String"}}},
   "pgNoResults": "No results.",
   "activityKind": "Kind",
   "unitPriceLabel": "{price} {unit}",
@@ -1621,8 +1889,8 @@
     }
   },
   "unitKind": "Billed",
-  "navTeam": "Team",
-  "teamTitle": "Team",
+  "navTeam": "Network",
+  "teamTitle": "Network",
   "teamDescription": "Let other people help manage your NeoRouter. You decide per person what they may see and change. Everything they create stays yours.",
   "inviteSomeone": "Invite someone",
   "teamMembersTitle": "People in your team",
@@ -1776,6 +2044,446 @@
   "teamActivityTitle": "Team activity",
   "teamActivityHint": "Invites, joins and changed rights across the server.",
   "teamActivityEmpty": "Nothing has happened yet.",
+  "teamTabPeople": "Team",
+  "teamTabPool": "Pools",
+  "poolDescription": "Share free capacity with friends who run their own NeoRouter. Nobody hands out keys: each request runs on the server of whoever shares it.",
+  "poolEmptyTitle": "Not in a pool yet",
+  "poolEmptyMessage": "Start one and invite others, or join with a link someone sent you.",
+  "poolCreate": "Start a pool",
+  "poolJoin": "Join with a link",
+  "poolTrustNotice": "Requests through the pool run on a partner's server. NeoRouter keeps no content there and hides secrets first, but whoever runs that server could technically see what is sent. Only share with people you trust.",
+  "poolTosNotice": "Some providers do not allow sharing free access with others. Check their terms before you share a connection.",
+  "poolInvite": "Invite",
+  "poolInviteTitle": "Pool invite link",
+  "poolInviteBody": "Send this link, or the ready-made text below, to someone with their own NeoRouter. The link opens a page that takes them to their own NeoRouter to join. It works once and expires in 7 days.",
+  "poolStateOnline": "Online",
+  "poolStateOffline": "Not reachable",
+  "poolStateConnecting": "Connecting",
+  "poolStatePaused": "Paused",
+  "poolBalanceNew": "New",
+  "poolBalanceBalanced": "Balanced",
+  "poolBalanceGiving": "You give more",
+  "poolBalanceTaking": "You take more",
+  "poolPausePartner": "Pause this partner",
+  "poolResumePartner": "Resume this partner",
+  "poolRemoveMember": "Remove from pool",
+  "poolRemoveConfirm": "{name} loses access to the pool right away.",
+  "@poolRemoveConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolShareTitle": "What you share",
+  "poolShareHint": "Free models from the connections you pick; with ⋯ you choose for each one whether its subscription or paid models are shared too. Your own requests always come first.",
+  "classificationTitle": "Free or paid",
+  "classificationAuto": "Automatic",
+  "classificationFree": "All free",
+  "classificationPaid": "All paid",
+  "classificationHint": "Automatic uses what NeoRouter worked out for each model. Set it yourself if that is wrong; a choice on a single model still wins.",
+  "classificationFreeWarning": "Only if this connection never charges you: every model is then treated as free, including for keys that may only use free models.",
+  "poolActivityGiven": "What partners used of yours",
+  "poolActivityTaken": "What you used of partners",
+  "poolActivityGivenMetric": "Given",
+  "poolActivityTakenMetric": "Taken",
+  "poolActivityCost": "Cost to you",
+  "poolActivityCostCaption": "from paid models you share",
+  "poolActivityByPartner": "By partner",
+  "poolActivityEmptyTitle": "Nothing shared yet",
+  "poolActivityEmpty": "Once partners use your connections, or you theirs, it shows up here. Only counts are kept, never content.",
+  "poolRankingLine": "{requests} · {tokens} tokens",
+  "@poolRankingLine": {
+    "placeholders": {
+      "requests": {
+        "type": "String"
+      },
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
+  "poolKindsMenu": "Choose what to share",
+  "poolKindsTitle": "What {name} shares",
+  "@poolKindsTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolKindsHint": "Partners use free models first, then subscription, then paid ones.",
+  "poolKindFreeHint": "Never cost you anything.",
+  "poolKindPlanHint": "Use up your subscription’s limits. Many subscriptions do not allow sharing.",
+  "poolKindPaidBilled": "Billed to you per use.",
+  "poolKindPaidBalance": "Spend your prepaid balance.",
+  "poolKindNone": "This connection has none.",
+  "poolKindsApply": "Apply",
+  "poolPlanModels": "{count} subscription models",
+  "@poolPlanModels": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidModels": "{count} paid models",
+  "@poolPaidModels": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPlanConfirmTitle": "Share the subscription of {name}?",
+  "@poolPlanConfirmTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPlanConfirmBody": "Partners in {pool} can then also use this subscription when no free model can serve them. That uses up your plan’s limits, and many subscriptions do not allow sharing. Your daily limits for partners still apply.",
+  "@poolPlanConfirmBody": {
+    "placeholders": {
+      "pool": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPlanConfirm": "Share subscription",
+  "filterPool": "Pool",
+  "modelsPoolHint": "What your pool partners share with you. Only keys with pool access use these, and it costs you nothing.",
+  "poolViaPartner": "via {name}",
+  "@poolViaPartner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidConfirmTitle": "Share paid models of {name}?",
+  "@poolPaidConfirmTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidConfirmBilled": "Partners in {pool} can then use this connection’s paid models. That costs you real money, billed by the provider. Your daily limits for partners still apply.",
+  "@poolPaidConfirmBilled": {
+    "placeholders": {
+      "pool": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidConfirmPrepaid": "Partners in {pool} can then use this connection’s paid models. That spends your prepaid balance. Your daily limits for partners still apply.",
+  "@poolPaidConfirmPrepaid": {
+    "placeholders": {
+      "pool": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidConfirm": "Share paid models",
+  "poolShareNone": "None of your connections has free models yet.",
+  "poolFreeModels": "{count} free models",
+  "@poolFreeModels": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "poolLimitsLabel": "Per partner and day",
+  "poolLimitsValue": "{requests} requests · {tokens} tokens · {concurrent} at once · {reserve}% kept for you",
+  "@poolLimitsValue": {
+    "placeholders": {
+      "requests": {
+        "type": "String"
+      },
+      "tokens": {
+        "type": "String"
+      },
+      "concurrent": {
+        "type": "String"
+      },
+      "reserve": {
+        "type": "String"
+      }
+    }
+  },
+  "poolLimitsChange": "Change",
+  "poolLimitsTitle": "Share per partner",
+  "poolLimitRequests": "Requests per day",
+  "poolLimitTokens": "Tokens per day",
+  "poolLimitConcurrent": "Requests at once",
+  "poolLimitReserve": "Kept for you (%)",
+  "poolLimitReserveHint": "The part of each connection's allowance partners never use.",
+  "poolLimitsBalanceHint": "Partners who take far more than they give get a little less over time.",
+  "poolLeave": "Leave pool",
+  "poolClose": "Close pool",
+  "poolLeaveConfirm": "Leave {name}? Partners lose access to your connections at once, and you to theirs.",
+  "@poolLeaveConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolCloseConfirm": "Close {name}? As its host, leaving ends the pool for everyone.",
+  "@poolCloseConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolCreateTitle": "Start a pool",
+  "poolNameLabel": "Pool name",
+  "poolSelfNameLabel": "Your name in the pool",
+  "poolSelfNameHint": "Partners see this name.",
+  "poolJoinTitle": "Join a pool",
+  "poolLinkLabel": "Invite link",
+  "poolCheckLink": "Check link",
+  "poolJoinPreview": "Join {name}?",
+  "@poolJoinPreview": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolJoinMembers": "Hosted by {host} · {count} members",
+  "@poolJoinMembers": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "poolInfoTooltip": "About the pool",
+  "keyPoolLabel": "Use the pool",
+  "keyPoolHint": "Also uses partners' free models, mostly when yours are busy.",
+  "keyPoolChip": "Pool",
+  "settingsPoolTitle": "Pool",
+  "settingsKeepSensitive": "Keep very sensitive requests off the pool",
+  "settingsKeepSensitiveHint": "Requests with passwords, keys, card or ID numbers, or many people's personal data stay on your own connections. Clear cases are caught, not every secret.",
+  "homePoolPaused": "Paused for now: you neither use nor give.",
+  "keptPrivateTag": "Kept private",
+  "poolHostYou": "you host it",
+  "poolPartnersCount": "{count} partners · {online} online",
+  "@poolPartnersCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "online": {
+        "type": "String"
+      }
+    }
+  },
+  "poolNoPartnersShort": "No partners yet",
+  "poolTabSharing": "Sharing",
+  "poolTabSettings": "Settings",
+  "pickerSelected": "{selected} of {total} selected",
+  "@pickerSelected": {
+    "placeholders": {
+      "selected": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "pickerAll": "All",
+  "pickerNone": "None",
+  "pickerSearch": "Find a connection",
+  "poolDiscard": "Discard",
+  "poolAgreeCreate": "Understood, start pool",
+  "poolAgreeJoin": "Understood, join",
+  "poolShareDialogTitle": "Share {name} in",
+  "@poolShareDialogTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolShareInPools": "Share in pools…",
+  "homePoolsTitle": "Pools",
+  "poolInviteText": "Hi! {host} is inviting you to the NeoRouter pool \"{pool}\", where our NeoRouters share AI capacity. Open this link and enter the address of your own NeoRouter: {link}\n(It works once and expires in 7 days.)",
+  "@poolInviteText": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "pool": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "poolInviteCopyText": "Copy invite text",
+  "poolInviteTextLanguage": "Language of the text",
+  "galleryFilterAll": "All",
+  "galleryFilterFree": "Free",
+  "galleryFilterPlans": "Subscriptions",
+  "galleryFilterPayg": "Pay as you go",
+  "galleryFilterTools": "Search & weather",
+  "galleryFilterOwn": "Local & custom",
+  "galleryCount": "{count} providers",
+  "@galleryCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "galleryNoMatch": "No provider matches. A custom OpenAI-compatible endpoint works with almost any service.",
+  "costTagFree": "Free",
+  "costTagFreeModels": "Free models",
+  "costTagPlan": "Subscription",
+  "costTagPayg": "Pay as you go",
+  "costTagConnected": "Connected",
+  "costSummaryFree": "Free tier without a card",
+  "costSummaryFreeModels": "Some models are free",
+  "costSummaryPlan": "A subscription you already pay for",
+  "costSummaryPayg": "You pay for what you use",
+  "costChecked": "Checked {date}",
+  "@costChecked": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "costSource": "Source",
+  "providerWebsite": "Website",
+  "providerGetKey": "Get a key",
+  "statSuccessRate": "Success rate",
+  "statCost": "Spent",
+  "statTokens": "Tokens",
+  "statFreeShare": "Served free",
+  "statLatency": "Avg. latency",
+  "statFallbacks": "With fallback",
+  "statInOut": "{input} in · {output} out",
+  "@statInOut": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      }
+    }
+  },
+  "poolAlreadyMember": "You are already in this pool.",
+  "poolLoadFailed": "Pools could not be loaded.",
+  "networkDescription": "Share free capacity with other NeoRouters, and let people help you manage this one.",
+  "statBalance": "Your balance",
+  "statModels": "Shared free models",
+  "statOnlineValue": "{online} of {total}",
+  "@statOnlineValue": {
+    "placeholders": {
+      "online": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "statOnline": "Members online",
+  "balanceTheyTake": "Takes more",
+  "balanceTheyGive": "Gives more",
+  "panelEditSharing": "Change what you share",
+  "panelBalance": "Balance this week",
+  "panelRequests": "{count} requests",
+  "@panelRequests": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "panelTook": "Took today",
+  "panelGave": "Gave today",
+  "panelSharesPartner": "Shares {models} free models with you, {percent} % of the models in this pool.",
+  "@panelSharesPartner": {
+    "placeholders": {
+      "models": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "panelSharesYou": "You share {connections} connections with {models} free models, {percent} % of the models in this pool.",
+  "@panelSharesYou": {
+    "placeholders": {
+      "connections": {
+        "type": "String"
+      },
+      "models": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "memberCaptionPartner": "{models} models",
+  "@memberCaptionPartner": {
+    "placeholders": {
+      "models": {
+        "type": "String"
+      }
+    }
+  },
+  "memberCaptionYou": "{connections} conn. · {models} models",
+  "@memberCaptionYou": {
+    "placeholders": {
+      "connections": {
+        "type": "String"
+      },
+      "models": {
+        "type": "String"
+      }
+    }
+  },
+  "poolMemberYou": "{name} (you)",
+  "@poolMemberYou": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "legendRing": "ring: share of the shared models",
+  "legendOffline": "not reachable",
+  "legendTakes": "takes from the pool",
+  "legendGives": "gives to the pool",
+  "graphRequestsToday": "{count} requests today",
+  "@graphRequestsToday": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "graphFreeToday": "FREE TODAY",
+  "poolTabOverview": "Overview",
+  "poolLeaveHint": "Partners lose access to your connections at once, and you to theirs.",
+  "poolCloseHint": "Ends the pool for every partner.",
   "teamEventInviteCreate": "{actor} created an invite link",
   "@teamEventInviteCreate": {
     "placeholders": {
@@ -2043,5 +2751,239 @@
       }
     }
   },
-  "connectedApp": "Connected app"
+  "connectedApp": "Connected app",
+  "keyKindsTitle": "Kinds of models",
+  "keyKindsHint": "Switch off what this key should never use, e.g. text models for a voice app.",
+  "keyKindsNone": "Pick at least one kind.",
+  "pickModelAllKinds": "All kinds",
+  "liveNow": "Live",
+  "liveReplay": "Replaying recent requests",
+  "liveWaiting": "Waiting for the first request",
+  "liveWaitingChip": "waiting for a free model",
+  "liveQueued": "{count} waiting for a free model",
+  "@liveQueued": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "liveLoading": "Loading…",
+  "liveLoadingTraffic": "loading your traffic…",
+  "liveOther": "Others",
+  "liveYourApp": "Your app",
+  "liveAddProvider": "Add a connection",
+  "liveListening": "listening",
+  "liveRouting": "routing",
+  "liveScoring": "scoring {count}",
+  "@liveScoring": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "liveInFlight": "{count} in flight",
+  "@liveInFlight": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "liveRequests": "{count} requests",
+  "@liveRequests": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "liveSummary": "Last {count}: {free}% free · {caught} rescued · {ms} ms avg",
+  "@liveSummary": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "free": {
+        "type": "String"
+      },
+      "caught": {
+        "type": "String"
+      },
+      "ms": {
+        "type": "String"
+      }
+    }
+  },
+  "liveLegendRequest": "request",
+  "liveLegendAnswer": "answer",
+  "liveLegendFailure": "failed attempt",
+  "liveMore": "Details",
+  "homeTokens": "Tokens",
+  "homeTokensCaption": "{count} requests",
+  "@homeTokensCaption": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "activityAllKeys": "All API keys",
+  "activityKeysCount": "{count} keys",
+  "@activityKeysCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "activityRevoked": "revoked",
+  "providerAccountsCount": "{count} accounts",
+  "@providerAccountsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "providerAccountsWorking": "{count} working",
+  "@providerAccountsWorking": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "providerAccountsProblems": "{count} need attention",
+  "@providerAccountsProblems": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "providerShowAccounts": "Show accounts",
+  "providerHideAccounts": "Hide accounts",
+  "pgMode": "Mode",
+  "pgGroupText": "Text",
+  "pgGroupCreate": "Create",
+  "pgGroupListen": "Listen",
+  "pgGroupLookup": "Look up",
+  "pgGroupOther": "More",
+  "pickModel": "Choose a model",
+  "pickModels": "Choose models",
+  "pickModelNone": "No model matches.",
+  "pickModelsCount": "{count} chosen",
+  "@pickModelsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "pickModelContext": "{tokens} context",
+  "@pickModelContext": {
+    "placeholders": {
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
+  "pickModelReasoning": "Thinks before answering",
+  "done": "Done",
+  "privacyModelTitle": "AI privacy filter",
+  "privacyModelHint": "OpenAI's open privacy filter runs on this server and finds names, addresses, account numbers and more that rules miss. No provider sees the text. Turning it on downloads about 1 GB once; it loads when used and frees its memory (about 2 GB) after 15 minutes without requests.",
+  "privacyModelEnable": "Let users turn on the AI privacy filter",
+  "privacyModelOff": "Off. Users can't use AI detection.",
+  "privacyModelDownloading": "Downloading … {percent} %",
+  "@privacyModelDownloading": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "privacyModelLoading": "Loading …",
+  "privacyModelReady": "Ready and loaded.",
+  "privacyModelIdle": "Ready. Loads when the next message needs it.",
+  "privacyModelError": "Couldn't load: {error}",
+  "@privacyModelError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pgVoiceLoading": "Loading voices…",
+  "pgSetUp": "Set up",
+  "pgNotSetUpTitle": "{kind} isn't set up yet",
+  "@pgNotSetUpTitle": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "pgConnectOpenMeteo": "Connect Open-Meteo",
+  "pgConnectOpenMeteoHint": "Free and no key needed. It takes a second.",
+  "pgOtherProviders": "Other weather services",
+  "pgNoFreeModels": "You have no free model for this, so Free only finds nothing here.",
+  "pgNoFreeModelsLocked": "You have no free model for this, and this key only allows free models.",
+  "pgAllowPaid": "Allow paid models",
+  "pgUseAuto": "Use auto",
+  "pgProblemNoFreeTitle": "No free model could take this",
+  "pgProblemNoFreeBody": "Your free models for this are busy, past their limits or missing. Allow paid models, or try again in a minute.",
+  "pgProblemNoFreeBodyLocked": "This key only allows free models, and none could take this right now. Connect a free provider for it, or use a key that may use paid models.",
+  "pgProblemNoModelTitle": "No model can take this right now",
+  "pgProblemFailedTitle": "Every model that tried failed",
+  "pgProblemNotAllowedTitle": "This key can't use that model",
+  "pgProblemLimitTitle": "This key reached a limit",
+  "pgProblemTitle": "That didn't work",
+  "pgCheckTopic": "Off-topic",
+  "pgTopicPolicy": "Allowed topics",
+  "pgTopicPolicyHint": "e.g. Only questions about our product and orders.",
+  "pgDecide": "Decide",
+  "pgDecideHint": "Describe a situation, ask a question and list the options. A System One model picks one in a split second and says how sure it is.",
+  "pgDecideRun": "Decide",
+  "pgYes": "Yes",
+  "pgNo": "No",
+  "pgDecideQuestion": "Question",
+  "pgDecideQuestionHint": "e.g. What does the customer want?",
+  "pgDecideOptions": "Options, one per line",
+  "pgDecideOptionsHint": "Leave empty for a yes-or-no question.",
+  "categoryWeather": "Weather",
+  "capWeather": "Weather",
+  "capWeatherHint": "Current weather and forecasts for any place, from the weather services you connect.",
+  "unitCall": "per call",
+  "pgWeatherHint": "Look up the weather for a place name or coordinates such as 52.52, 13.41. The answer has the same shape whichever service replies.",
+  "pgWeatherRun": "Get weather",
+  "pgWeatherMetric": "°C, km/h",
+  "pgWeatherImperial": "°F, mph",
+  "pgWeatherHourly": "Next hours",
+  "pgWeatherNow": "Feels like {feels} · humidity {humidity}% · wind {wind}",
+  "@pgWeatherNow": {
+    "placeholders": {
+      "feels": {
+        "type": "String"
+      },
+      "humidity": {
+        "type": "String"
+      },
+      "wind": {
+        "type": "String"
+      }
+    }
+  },
+  "priorityTitle": "Priority",
+  "priorityMenuHeading": "When your models are busy",
+  "priorityHigh": "High",
+  "priorityNormal": "Normal",
+  "priorityLow": "Low",
+  "priorityHighHint": "Goes first.",
+  "priorityNormalHint": "Takes its turn. The default.",
+  "priorityLowHint": "Lets the others go first.",
+  "priorityHighLabel": "High priority",
+  "priorityNormalLabel": "Normal priority",
+  "priorityLowLabel": "Low priority"
 }

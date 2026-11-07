@@ -50,8 +50,12 @@ class RouterApi {
   Future<Map<String, dynamic>> createAccount(Map<String, Object?> body) => client.post('$_base/providers/accounts', _clean(body));
   Future<ProviderAccount> updateAccount(String id, Map<String, Object?> body) async =>
       ProviderAccount(Map<String, dynamic>.from((await client.patch('$_base/providers/accounts/$id', _clean(body)))['account'] as Map));
+  /// A number sets a limit the person states for the account, null clears it, absent keeps it.
+  Future<void> setAccountLimits(String id, Map<String, int?> limits) => client.put('$_base/providers/accounts/$id/limits', limits);
   Future<void> deleteAccount(String id) => client.delete('$_base/providers/accounts/$id');
   Future<Map<String, dynamic>> validateAccount(String id) => client.post('$_base/providers/accounts/$id/validate');
+  /// The person fixed what was wrong: the router forgets what it held against the connection and tries it again.
+  Future<Map<String, dynamic>> markAccountFixed(String id) => client.post('$_base/providers/accounts/$id/mark-fixed');
   Future<Map<String, dynamic>> syncAccount(String id) => client.post('$_base/providers/accounts/$id/sync');
   Future<Map<String, dynamic>> probeQuota(String id) => client.post('$_base/providers/accounts/$id/quota');
 
@@ -133,7 +137,9 @@ class RouterApi {
   // ---- usage ------------------------------------------------------------------
   Future<Map<String, dynamic>> analytics(String range, {List<String> keyIds = const <String>[]}) =>
       client.get('$_base/usage/analytics?range=$range${keyIds.isEmpty ? '' : '&keyIds=${keyIds.map(Uri.encodeQueryComponent).join(',')}'}');
-  Future<Map<String, dynamic>> summary(String range) => client.get('$_base/usage/summary?range=$range');
+  Future<Map<String, dynamic>> usageHealth() => client.get('$_base/usage/health');
+  Future<Map<String, dynamic>> learning() => client.get('$_base/usage/learning');
+  Future<Map<String, dynamic>> summary(String range, {bool onlyTotals = false}) => client.get('$_base/usage/summary?range=$range${onlyTotals ? '&only=totals' : ''}');
   Future<List<RequestLog>> logs({int limit = 100, String? status, List<String> keyIds = const <String>[]}) async => _list(
     await client.get('$_base/usage/logs?limit=$limit${status == null ? '' : '&status=$status'}${keyIds.isEmpty ? '' : '&keyIds=${keyIds.map(Uri.encodeQueryComponent).join(',')}'}'),
     'logs',
@@ -155,6 +161,29 @@ class RouterApi {
 
   // ---- teams --------------------------------------------------------------------
   Future<TeamSummary> team() async => TeamSummary(await client.get('$_base/teams'));
+
+  // Pools (other NeoRouters sharing free capacity)
+  Future<PoolsSummary> pools() async => PoolsSummary(await client.get('$_base/pools'));
+  Future<PoolsSummary> createPool(String name, String selfName, List<String> sharedAccountIds) async =>
+      PoolsSummary(await client.post('$_base/pools', <String, Object>{'name': name, 'selfName': selfName, 'sharedAccountIds': sharedAccountIds}));
+  Future<Map<String, dynamic>> previewPool(String link) => client.post('$_base/pools/preview', <String, Object>{'link': link});
+  Future<PoolsSummary> joinPool(String link, String selfName, List<String> sharedAccountIds) async =>
+      PoolsSummary(await client.post('$_base/pools/join', <String, Object>{'link': link, 'selfName': selfName, 'sharedAccountIds': sharedAccountIds}));
+  Future<String> createPoolInvite(String poolId) async => (await client.post('$_base/pools/$poolId/invites'))['link'] as String;
+  Future<void> revokePoolInvite(String poolId, String id) => client.delete('$_base/pools/$poolId/invites/$id');
+  Future<PoolsSummary> updatePoolShare(String poolId, Map<String, Object?> body) async => PoolsSummary(await client.putJson('$_base/pools/$poolId/share', _clean(body)));
+  /// [shared]: the connection's free models; [paid]: its paid ones. One left out stays as it was.
+  Future<PoolsSummary> setAccountPoolShare(String poolId, String accountId, {bool? shared, bool? paid}) async => PoolsSummary(
+    await client.putJson('$_base/pools/$poolId/accounts/$accountId/share', <String, Object>{if (shared != null) 'shared': shared, if (paid != null) 'paid': paid}),
+  );
+  /// Counts by connection, model and partner for one pool over [days] (7 or 30).
+  Future<Map<String, dynamic>> poolActivity(String poolId, int days) => client.get('$_base/pools/$poolId/activity?days=$days');
+  Future<PoolsSummary> setPoolPaused(String poolId, bool paused) async => PoolsSummary(await client.putJson('$_base/pools/$poolId/paused', <String, Object>{'paused': paused}));
+  Future<PoolsSummary> setPartnerPaused(String linkId, bool paused) async =>
+      PoolsSummary(await client.putJson('$_base/pools/partners/$linkId/paused', <String, Object>{'paused': paused}));
+  Future<PoolsSummary> removePoolMember(String poolId, String memberId) async => PoolsSummary(await client.deleteJson('$_base/pools/$poolId/members/$memberId'));
+  Future<PoolsSummary> leavePool(String poolId) async => PoolsSummary(await client.post('$_base/pools/$poolId/leave'));
+  Future<void> setPoolPrivacy(bool keepSensitivePrivate) => client.put('$_base/pools/privacy', <String, Object>{'keepSensitivePrivate': keepSensitivePrivate});
   Future<Map<String, dynamic>> previewInvite(String link) => client.post('$_base/teams/invites/preview', <String, Object>{'link': link});
   Future<TeamSummary> redeemInvite(String link) async => TeamSummary(await client.post('$_base/teams/invites/redeem', <String, Object>{'link': link}));
   Future<String> createInvite({required String label, required List<String> permissions, int? expiresInHours, required bool singleUse}) async =>
@@ -181,6 +210,12 @@ class RouterApi {
   Future<Map<String, dynamic>> adminSettings() => client.get('$_base/admin/settings');
   Future<Map<String, dynamic>> updateAdminSettings(Map<String, Object?> body) => client.patch('$_base/admin/settings', body);
   Future<Map<String, dynamic>> refreshMetadata() => client.post('$_base/admin/metadata/refresh');
+
+  // ---- updates --------------------------------------------------------------
+  Future<Map<String, dynamic>> updateStatus() => client.get('$_base/admin/update');
+  Future<Map<String, dynamic>> checkForUpdate() => client.post('$_base/admin/update/check');
+  Future<Map<String, dynamic>> startUpdate() => client.post('$_base/admin/update');
+  Future<Map<String, dynamic>> setUpdateChannel(String channel) => client.putJson('$_base/admin/update/channel', <String, Object>{'channel': channel});
 
   static List<T> _list<T>(Map<String, dynamic> payload, String key, T Function(Map<String, dynamic>) build) =>
       (payload[key] as List? ?? const <Object>[]).map((item) => build(Map<String, dynamic>.from(item as Map))).toList();

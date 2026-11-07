@@ -107,6 +107,8 @@ function publicAccount(row) {
     billingCheckedAt: row.billing_checked_at,
     billingNote: definition?.billing.note || null,
     billingVerifiable: Boolean(definition?.billing.verify),
+    // The person's call for all its models: auto, free or paid.
+    classification: row.classification || 'auto',
     enabled: Boolean(row.enabled),
     status: row.status,
     statusMessage: row.status_message,
@@ -119,6 +121,11 @@ function publicAccount(row) {
     freeAvailable: Boolean(definition && (declaresFreeModels(definition.billing) || counts.free > 0)),
     // On "Free": every model is in the free tier, or only some are.
     freeTierAll: Boolean(definition?.billing.freeTierAll),
+    // What the person stated, and the in-flight limit in force with its source (manual, learned or documented).
+    limits: require('../quota/account_limits').get(row.id),
+    concurrency: require('../routing/concurrency').limitFor({ accountId: row.id, definitionId: row.definition_id }),
+    // The pools its free models are shared in.
+    sharedInPools: getDatabase().prepare('SELECT pool_id FROM pool_shared_accounts WHERE account_id = ?').all(row.id).map((item) => item.pool_id),
   };
 }
 
@@ -219,6 +226,7 @@ async function create(userId, input, createdBy = userId, actor = null) {
     .run(id, userId, definition.id, slug, label, baseUrl,
       input.secret ? encryptString(input.secret) : null, JSON.stringify(options), billingMode,
       result.status === 'healthy' ? 'healthy' : 'error', result.message || null, createdBy, prepaid);
+  if (input.classification && input.classification !== 'auto') getDatabase().prepare('UPDATE provider_accounts SET classification = ? WHERE id = ?').run(input.classification, id);
   return { account: publicAccount(getRow(userId, id)), validation: result };
 }
 
@@ -275,6 +283,7 @@ async function update(userId, accountId, input, actor = null) {
       accountId,
     );
   if (input.billingMode !== undefined) db.prepare('UPDATE provider_accounts SET prepaid = ? WHERE id = ?').run(storedBilling(input.billingMode).prepaid, accountId);
+  if (input.classification !== undefined) db.prepare('UPDATE provider_accounts SET classification = ? WHERE id = ?').run(input.classification === 'auto' ? null : input.classification, accountId);
   return publicAccount(getRow(userId, accountId));
 }
 
@@ -305,8 +314,9 @@ function remove(userId, accountId) {
   getDatabase().prepare('DELETE FROM provider_accounts WHERE id = ?').run(accountId);
 }
 
+// Pool partners (services/pools) are managed on the pool page, not listed as connections.
 function list(userId) {
-  return getDatabase().prepare('SELECT * FROM provider_accounts WHERE user_id = ? ORDER BY created_at').all(userId).map(publicAccount);
+  return getDatabase().prepare("SELECT * FROM provider_accounts WHERE user_id = ? AND definition_id != 'neorouter_peer' ORDER BY created_at").all(userId).map(publicAccount);
 }
 
 function get(userId, accountId) {
@@ -346,4 +356,5 @@ module.exports = {
   prepaidIds,
   probeQuota,
   AUTH_FAILURES_BEFORE_DISABLE,
+  publicOnly,
 };

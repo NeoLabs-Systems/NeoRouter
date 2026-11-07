@@ -3,7 +3,10 @@
 const { BaseAdapter } = require('./base_adapter');
 const { readSse, assertNoEmbeddedError } = require('../http');
 const { normalizeModel } = require('../model_info');
+const { derivedSession } = require('../session_id');
 const { ProviderError, KINDS } = require('../provider_error');
+
+const VALID_BUT_LIMITED = new Set([KINDS.RATE_LIMIT, KINDS.QUOTA_EXHAUSTED, KINDS.PAYMENT]);
 
 function stripSchemaKeys(value, keys) {
   if (Array.isArray(value)) return value.map((item) => stripSchemaKeys(item, keys));
@@ -48,12 +51,21 @@ class OpenAICompatibleAdapter extends BaseAdapter {
   async validate() {
     if (!this.definition.validate?.chatProbe) return super.validate();
     try {
-      const model = (await this.listModels()).find((entry) => entry.kind === 'chat');
+      const chat = (await this.listModels()).filter((entry) => entry.kind === 'chat');
+      // The cheap models named by the definition, then any that is not free.
+      const preferred = (this.definition.validate.probeModels || []).map((id) => chat.find((entry) => entry.id === id)).find(Boolean);
+      const model = preferred || chat.find((entry) => !entry.freeHint) || chat[0];
       if (!model) return { status: 'unknown', message: 'No chat model available to probe the key.' };
       await this.chat({ messages: [{ role: 'user', content: 'ping' }], max_tokens: 1 }, { modelId: model.id, timeoutMs: 30_000 });
       return { status: 'healthy', message: null };
     } catch (error) {
       if (error.kind === KINDS.AUTH) return { status: 'invalid', message: error.message };
+      // The key was accepted; it is only out of allowance or credits for now
+      // (a trial's monthly cap, no balance for paid models). Free models and
+      // the next period still work, so this is no problem with the connection.
+      if (VALID_BUT_LIMITED.has(error.kind)) return { status: 'healthy', message: null };
+      // The key was accepted; this one model is just not open to the account.
+      if (error.kind === KINDS.NOT_FOUND) return { status: 'healthy', message: null };
       return { status: 'unknown', message: error.message };
     }
   }
@@ -82,13 +94,24 @@ class OpenAICompatibleAdapter extends BaseAdapter {
       }
     }
     listed.push(...(this.definition.extraModels || []).map((entry) => normalizeModel(entry)));
+    const optIn = (spec.optIn || []).map((pattern) => new RegExp(pattern, 'i'));
+    listed = listed
+      .filter((model) => !(spec.excludeFree && model.priceKnown && model.freeHint))
+      .map((model) => (optIn.some((pattern) => pattern.test(model.id)) ? { ...model, optIn: true } : model));
     const known = new Set();
     return [...listed, ...manual].filter((model) => !known.has(model.id) && known.add(model.id));
   }
 
-  async chat(canonical, { modelId, signal, timeoutMs }) {
+  // The conversation id for hosts that route by it: the client's own, else one derived from the conversation.
+  sessionHeaders(canonical, sessionId) {
+    const name = this.definition.sessionHeader;
+    return name ? { [name]: sessionId || derivedSession(canonical, this.account.id || '') } : {};
+  }
+
+  async chat(canonical, { modelId, signal, timeoutMs, sessionId }) {
     const { data, headers } = await this.http(this.chatPath(), {
       method: 'POST',
+      headers: this.sessionHeaders(canonical, sessionId),
       body: this.buildBody(canonical, modelId, false),
       signal,
       timeoutMs: timeoutMs || this.timeoutMs,
@@ -100,10 +123,10 @@ class OpenAICompatibleAdapter extends BaseAdapter {
     return { response: data, headers };
   }
 
-  async *stream(canonical, { modelId, signal, onHeaders }) {
+  async *stream(canonical, { modelId, signal, onHeaders, sessionId }) {
     const response = await this.request(this.url(this.chatPath()), {
       method: 'POST',
-      headers: this.headers({ Accept: 'text/event-stream' }),
+      headers: this.headers({ Accept: 'text/event-stream', ...this.sessionHeaders(canonical, sessionId) }),
       body: this.buildBody(canonical, modelId, true),
       signal,
       raw: true,

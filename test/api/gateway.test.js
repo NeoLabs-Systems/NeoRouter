@@ -283,7 +283,11 @@ test('routing preview ranks candidates without calling providers', async () => {
 
 test('web files are served for revalidation so new releases are picked up', async () => {
   const response = await request(app).get('/');
-  if (response.status === 200) assert.equal(response.headers['cache-control'], 'private, no-cache');
+  if (response.status !== 200) return;
+  assert.equal(response.headers['cache-control'], 'private, no-cache');
+  // An unchanged page costs a 304, not a download.
+  const again = await request(app).get('/').set('If-None-Match', response.headers.etag);
+  assert.equal(again.status, 304);
 });
 
 test('several accounts of one provider count as one provider', async () => {

@@ -3,8 +3,8 @@
 const express = require('express');
 const { requireSession } = require('../middleware/auth');
 const { resolveSpace, requireOwnSpace } = require('../middleware/space');
-const { getConfig } = require('../config/env');
 const capabilities = require('../core/capability_registry');
+const { publicOrigin } = require('../utils/public_origin');
 
 const router = express.Router();
 
@@ -13,16 +13,16 @@ router.use('/oauth', require('./oauth'));
 router.use(requireSession);
 router.use(resolveSpace);
 router.get('/info', (req, res) => {
-  const config = getConfig();
-  const origin = config.publicUrl || `${req.protocol}://${req.get('host')}`;
+  const origin = publicOrigin(req);
   res.json({
     version: require('../../package.json').version,
-    endpoint: `${origin.replace(/\/+$/, '')}/v1`,
+    endpoint: `${origin}/v1`,
     capabilities: capabilities.list(),
   });
 });
 router.use('/admin', requireOwnSpace, require('./admin'));
 router.use('/teams', requireOwnSpace, require('./teams'));
+router.use('/pools', require('./pools'));
 router.use('/providers', require('./providers'));
 router.use('/models', require('./models'));
 router.use('/keys', require('./keys'));

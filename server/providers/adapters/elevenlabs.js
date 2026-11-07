@@ -59,15 +59,16 @@ class ElevenLabsAdapter extends BaseAdapter {
     if (!value) return DEFAULT_VOICE;
     if (OPENAI_VOICES[value.toLowerCase()]) return OPENAI_VOICES[value.toLowerCase()];
     if (/^[A-Za-z0-9]{20}$/.test(value)) return value;
-    if (!this.voices || this.voices.at < Date.now() - VOICE_CACHE_MS) {
+    // Not named `voices`: that is the method listing them below.
+    if (!this.voiceCache || this.voiceCache.at < Date.now() - VOICE_CACHE_MS) {
       try {
         const { data } = await this.http('/voices', { timeoutMs: 15_000 });
-        this.voices = { at: Date.now(), list: data?.voices || [] };
+        this.voiceCache = { at: Date.now(), list: data?.voices || [] };
       } catch {
-        this.voices = { at: Date.now(), list: [] };
+        this.voiceCache = { at: Date.now(), list: [] };
       }
     }
-    return this.voices.list.find((item) => String(item.name).toLowerCase() === value.toLowerCase())?.voice_id || DEFAULT_VOICE;
+    return this.voiceCache.list.find((item) => String(item.name).toLowerCase() === value.toLowerCase())?.voice_id || DEFAULT_VOICE;
   }
 
   // The account's voices, premade and its own, with what they sound like.

@@ -9,13 +9,14 @@ import 'package:url_launcher/url_launcher.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
 import 'main_dashboard.dart';
+import 'main_pool.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
 import 'src/backend_client.dart';
 import 'src/models.dart';
 
-const List<String> _categoryOrder = <String>['free', 'plan', 'aggregator', 'paid', 'search', 'weather', 'local', 'custom', 'community'];
+const List<String> _categoryOrder = <String>['free', 'plan', 'aggregator', 'paid', 'search', 'weather', 'local', 'custom'];
 
 String categoryLabel(AppL10n t, String category) => switch (category) {
   'free' => t.categoryFree,
@@ -26,7 +27,7 @@ String categoryLabel(AppL10n t, String category) => switch (category) {
   'search' => t.categorySearch,
   'weather' => t.categoryWeather,
   'plan' => t.categoryPlan,
-  _ => t.categoryCommunity,
+  _ => t.categoryCustom,
 };
 
 enum _ProvidersTab { connected, limits }
@@ -47,7 +48,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
   final Set<String> _busy = <String>{};
   bool _loading = true;
   String? _error;
-  _ProvidersTab _tab = _ProvidersTab.connected;
+  late _ProvidersTab _tab = widget.controller.savedTab('providers', _ProvidersTab.values, _ProvidersTab.connected);
 
   @override
   void initState() {
@@ -108,6 +109,8 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
     showCreator: widget.controller.showCreators,
     canManage: canManage,
     canDelete: widget.controller.can('providers.delete'),
+    // "Share in pool" only while in a pool, for the owner, on connections with free models.
+    canPoolShare: widget.controller.inPool && widget.controller.canManagePool && account.freeModelCount > 0,
     onToggle: (enabled) => _run(account.id, () async {
       await widget.controller.api.updateAccount(account.id, <String, Object?>{'enabled': enabled});
       return null;
@@ -118,7 +121,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
   Future<void> _add() async {
     final definition = await showDialog<ProviderDefinition>(
       context: context,
-      builder: (_) => _ProviderGallery(definitions: _definitions),
+      builder: (_) => _ProviderGallery(definitions: _definitions, connected: <String>{for (final account in _accounts) account.definitionId}),
     );
     if (definition == null || !mounted) return;
     final added = await showDialog<String>(
@@ -180,18 +183,22 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
           if (items.isEmpty) return t.quotaProbeEmpty;
           return items.map((item) => t.quotaProbeResult(metricLabel(t, '${item['metric']}'), '${item['remaining']}')).join(' · ');
         });
+      case _AccountAction.fixed:
+        await _run(account.id, () async {
+          final result = await api.markAccountFixed(account.id);
+          final validation = result['validation'] as Map?;
+          final failing = validation != null && validation['status'] == 'invalid';
+          return failing ? t.markFixedStillFailing('${validation['message'] ?? ''}') : t.markFixedDone;
+        });
+      case _AccountAction.poolShare:
+        await showSharePoolsDialog(context, widget.controller, account.id, account.label);
+        await _load();
       case _AccountAction.edit:
         await _edit(account);
       case _AccountAction.another:
         await _addAnother(account);
       case _AccountAction.remove:
-        final confirmed = await confirmAction(
-          context,
-          title: t.removeProvider,
-          message: t.removeProviderConfirm(account.label),
-          confirmLabel: t.removeProvider,
-          cancelLabel: t.cancel,
-        );
+        final confirmed = await confirmAction(context, title: t.removeProvider, message: t.removeProviderConfirm(account.label), confirmLabel: t.removeProvider, cancelLabel: t.cancel);
         if (confirmed) {
           await _run(account.id, () async {
             await api.deleteAccount(account.id);
@@ -212,9 +219,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
       header: ScreenHeader(
         title: t.providersTitle,
         description: t.providersDescription,
-        trailing: canManage
-            ? FilledButton.icon(onPressed: _definitions.isEmpty ? null : _add, icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.addProvider))
-            : null,
+        trailing: canManage ? FilledButton.icon(onPressed: _definitions.isEmpty ? null : _add, icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.addProvider)) : null,
       ),
       children: <Widget>[
         if (_accounts.isNotEmpty && showLimits)
@@ -224,7 +229,10 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
               (value: _ProvidersTab.limits, label: t.tabLimits, count: null),
             ],
             selected: _tab,
-            onChanged: (value) => setState(() => _tab = value),
+            onChanged: (value) {
+              widget.controller.rememberChoice('providers', value);
+              setState(() => _tab = value);
+            },
           ),
         if (_tab == _ProvidersTab.limits && _accounts.isNotEmpty && showLimits)
           _LimitsView(controller: widget.controller)
@@ -239,13 +247,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
                       icon: Icons.link_rounded,
                       title: t.noProvidersTitle,
                       message: t.noProvidersMessage,
-                      action: canManage
-                          ? FilledButton.icon(
-                              onPressed: _definitions.isEmpty ? null : _add,
-                              icon: const Icon(Icons.add_rounded, size: 18),
-                              label: Text(t.addProvider),
-                            )
-                          : null,
+                      action: canManage ? FilledButton.icon(onPressed: _definitions.isEmpty ? null : _add, icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.addProvider)) : null,
                     ),
                   )
                 : SettingsCardList(
@@ -280,7 +282,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
   }
 }
 
-enum _AccountAction { check, sync, balance, edit, another, remove }
+enum _AccountAction { check, sync, balance, fixed, edit, another, poolShare, remove }
 
 /// A provider connected with several accounts: one row for the provider, its
 /// accounts in a dropdown under it.
@@ -398,6 +400,7 @@ class _AccountRow extends StatelessWidget {
     this.showCreator = false,
     this.canManage = true,
     this.canDelete = true,
+    this.canPoolShare = false,
   });
 
   final ProviderAccount account;
@@ -405,6 +408,7 @@ class _AccountRow extends StatelessWidget {
   final bool showCreator;
   final bool canManage;
   final bool canDelete;
+  final bool canPoolShare;
   final ValueChanged<bool> onToggle;
   final ValueChanged<_AccountAction> onAction;
 
@@ -491,9 +495,12 @@ class _AccountRow extends StatelessWidget {
                     _menuItem(_AccountAction.check, Icons.verified_user_outlined, t.revalidate),
                     _menuItem(_AccountAction.sync, Icons.sync_rounded, t.syncModels),
                     _menuItem(_AccountAction.balance, Icons.account_balance_wallet_outlined, t.probeQuota),
+                    _menuItem(_AccountAction.fixed, Icons.build_circle_outlined, t.markFixed),
                     _menuItem(_AccountAction.edit, Icons.edit_outlined, t.editProvider),
                     _menuItem(_AccountAction.another, Icons.add_rounded, t.addAnotherAccount),
                   ],
+                  if (canPoolShare)
+                    _menuItem(_AccountAction.poolShare, Icons.hub_outlined, account.sharedInPools.isEmpty ? t.poolShareInPools : '${t.poolShareInPools} (${account.sharedInPools.length})'),
                   if (canManage && canDelete) const PopupMenuDivider(),
                   if (canDelete) _menuItem(_AccountAction.remove, Icons.delete_outline_rounded, t.removeProvider, destructive: palette.error),
                 ],
@@ -517,10 +524,23 @@ class _AccountRow extends StatelessWidget {
   );
 }
 
+/// The cost tag of a provider, the same in the gallery and the form.
+(String, PillTone, IconData) providerCostTag(AppL10n t, ProviderDefinition definition) => switch (definition.costKind) {
+  'free' => (t.costTagFree, PillTone.success, Icons.savings_outlined),
+  'free_models' => (t.costTagFreeModels, PillTone.accent, Icons.savings_outlined),
+  'plan' => (t.costTagPlan, PillTone.info, Icons.workspace_premium_outlined),
+  _ => (t.costTagPayg, PillTone.neutral, Icons.payments_outlined),
+};
+
+enum _GalleryFilter { all, free, plans, payg, tools, own }
+
+/// Picking a provider: a search, a few filters and tiles that say at a glance
+/// what each one costs and whether it is connected already.
 class _ProviderGallery extends StatefulWidget {
-  const _ProviderGallery({required this.definitions});
+  const _ProviderGallery({required this.definitions, required this.connected});
 
   final List<ProviderDefinition> definitions;
+  final Set<String> connected;
 
   @override
   State<_ProviderGallery> createState() => _ProviderGalleryState();
@@ -528,68 +548,229 @@ class _ProviderGallery extends StatefulWidget {
 
 class _ProviderGalleryState extends State<_ProviderGallery> {
   String _query = '';
+  _GalleryFilter _filter = _GalleryFilter.all;
+
+  bool _passes(ProviderDefinition item) => switch (_filter) {
+    _GalleryFilter.all => true,
+    _GalleryFilter.free => item.costKind == 'free' || item.costKind == 'free_models',
+    _GalleryFilter.plans => item.category == 'plan',
+    _GalleryFilter.payg => item.costKind == 'payg' && const <String>['paid', 'aggregator', 'free'].contains(item.category),
+    _GalleryFilter.tools => item.category == 'search' || item.category == 'weather',
+    _GalleryFilter.own => item.category == 'local' || item.category == 'custom',
+  };
+
+  String _label(AppL10n t, _GalleryFilter filter) => switch (filter) {
+    _GalleryFilter.all => t.galleryFilterAll,
+    _GalleryFilter.free => t.galleryFilterFree,
+    _GalleryFilter.plans => t.galleryFilterPlans,
+    _GalleryFilter.payg => t.galleryFilterPayg,
+    _GalleryFilter.tools => t.galleryFilterTools,
+    _GalleryFilter.own => t.galleryFilterOwn,
+  };
 
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final query = _query.toLowerCase();
-    final matches = widget.definitions.where(
-      (item) => query.isEmpty || item.label.toLowerCase().contains(query) || item.id.contains(query) || item.description.toLowerCase().contains(query),
+    final matches = widget.definitions
+        .where((item) => query.isEmpty || item.label.toLowerCase().contains(query) || item.id.contains(query) || item.description.toLowerCase().contains(query))
+        .where(_passes)
+        .toList();
+    final order = <String, int>{for (var i = 0; i < _categoryOrder.length; i++) _categoryOrder[i]: i};
+    matches.sort(
+      (a, b) =>
+          (order[a.category] ?? 99).compareTo(order[b.category] ?? 99) != 0 ? (order[a.category] ?? 99).compareTo(order[b.category] ?? 99) : a.label.toLowerCase().compareTo(b.label.toLowerCase()),
     );
-    return Dialog(
-      insetPadding: const EdgeInsets.all(16),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 560, maxHeight: 640),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 22, 12, 0),
-              child: Row(
-                children: <Widget>[
-                  Expanded(child: Text(t.chooseProvider, style: displayTitleStyle(palette, size: 18))),
-                  IconButton(onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close_rounded, size: 20)),
+    return DialogFrame(
+      title: t.chooseProvider,
+      maxWidth: 820,
+      subtitle: Text(t.chooseProviderHint, style: TextStyle(color: palette.textSoft, fontSize: 13.5)),
+      headerTrailing: IconButton(tooltip: t.close, onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close_rounded, size: 20)),
+      headerBottom: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          TextField(
+            autofocus: true,
+            decoration: InputDecoration(prefixIcon: const Icon(Icons.search_rounded, size: 20), hintText: t.searchProviders, isDense: true),
+            onChanged: (value) => setState(() => _query = value),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: <Widget>[
+                for (final filter in _GalleryFilter.values) ...<Widget>[
+                  ChoiceChip(label: Text(_label(t, filter)), selected: _filter == filter, onSelected: (_) => setState(() => _filter = filter)),
+                  const SizedBox(width: 6),
                 ],
-              ),
+              ],
             ),
+          ),
+        ],
+      ),
+      bodyPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(t.galleryCount('${matches.length}'), style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+          const SizedBox(height: AppSpacing.sm),
+          if (matches.isEmpty)
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 4, 24, 0),
-              child: Text(t.chooseProviderHint, style: TextStyle(color: palette.textSoft, fontSize: 13.5)),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-              child: TextField(
-                autofocus: true,
-                decoration: InputDecoration(prefixIcon: const Icon(Icons.search_rounded, size: 20), hintText: t.searchProviders),
-                onChanged: (value) => setState(() => _query = value),
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-                children: <Widget>[
-                  for (final category in _categoryOrder)
-                    if (matches.any((item) => item.category == category)) ...<Widget>[
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
-                        child: Text(categoryLabel(t, category).toUpperCase(), style: sectionEyebrowStyle(palette)),
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: InlineHint(message: t.galleryNoMatch),
+            )
+          else
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = constraints.maxWidth >= 560 ? 2 : 1;
+                final width = (constraints.maxWidth - (columns - 1) * 10) / columns;
+                return Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: <Widget>[
+                    for (final definition in matches)
+                      SizedBox(
+                        width: width,
+                        child: _ProviderTile(definition: definition, connected: widget.connected.contains(definition.id), onTap: () => Navigator.of(context).pop(definition)),
                       ),
-                      for (final definition in matches.where((item) => item.category == category))
-                        ListRow(
-                          onTap: () => Navigator.of(context).pop(definition),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          leading: ProviderAvatar(label: definition.label, size: 32),
-                          title: definition.label,
-                          subtitle: definition.description,
-                          trailing: definition.freeTierAvailable || definition.hasAlwaysFreeModels ? MetaPill(label: t.providerFreeTag) : null,
+                  ],
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProviderTile extends StatelessWidget {
+  const _ProviderTile({required this.definition, required this.connected, required this.onTap});
+
+  final ProviderDefinition definition;
+  final bool connected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final (costLabel, costTone, costIcon) = providerCostTag(t, definition);
+    return Material(
+      color: palette.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        side: BorderSide(color: palette.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              ProviderAvatar(label: definition.label, size: 36),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      definition.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: palette.text),
+                    ),
+                    const SizedBox(height: 3),
+                    SizedBox(
+                      height: 34,
+                      child: Text(
+                        definition.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 12.5, color: palette.textSoft, height: 1.35),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: <Widget>[
+                        MetaPill(label: costLabel, tone: costTone, icon: costIcon),
+                        MetaPill(label: categoryLabel(t, definition.category)),
+                        if (connected) MetaPill(label: t.costTagConnected, icon: Icons.check_rounded),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// What a provider costs, in a sentence, with where and when that was checked.
+class _CostSummary extends StatelessWidget {
+  const _CostSummary({required this.definition});
+
+  final ProviderDefinition definition;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final (_, _, icon) = providerCostTag(t, definition);
+    final summary = switch (definition.costKind) {
+      'free' => t.costSummaryFree,
+      'free_models' => t.costSummaryFreeModels,
+      'plan' => t.costSummaryPlan,
+      _ => t.costSummaryPayg,
+    };
+    final checked = definition.billingCheckedAt;
+    final source = definition.billingSource;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: palette.surfaceRaised, borderRadius: BorderRadius.circular(AppRadius.card)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Icon(icon, size: 20, color: definition.costKind == 'payg' ? palette.textSoft : palette.accent),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  summary,
+                  style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
+                ),
+                if (definition.billingNote.isNotEmpty) ...<Widget>[const SizedBox(height: 4), Text(definition.billingNote, style: TextStyle(fontSize: 12.5, color: palette.textSoft, height: 1.45))],
+                if (checked != null || source != null) ...<Widget>[
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 10,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: <Widget>[
+                      if (checked != null) Text(t.costChecked(checked), style: TextStyle(fontSize: 12, color: palette.textMuted)),
+                      if (source != null)
+                        InkWell(
+                          onTap: () => launchUrl(Uri.parse(source)),
+                          child: Text(
+                            t.costSource,
+                            style: TextStyle(fontSize: 12, color: palette.accent, decoration: TextDecoration.underline, decorationColor: palette.accent),
+                          ),
                         ),
                     ],
+                  ),
                 ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -623,6 +804,7 @@ class _ProviderFormState extends State<_ProviderForm> {
     text: ((_savedOptions['headers'] as Map?) ?? const <String, Object>{}).entries.map((entry) => '${entry.key}: ${entry.value}').join('\n'),
   );
   late String _billing = widget.account?.billingMode ?? widget.definition.defaultBillingMode;
+  late String _classification = widget.account?.classification ?? 'auto';
   bool _saving = false;
   bool _probing = false;
   bool _connecting = false;
@@ -688,7 +870,12 @@ class _ProviderFormState extends State<_ProviderForm> {
       if (!mounted) return;
       if (result['status'] == 'done') {
         _devicePoll?.cancel();
-        Navigator.of(context).pop(_editing ? t.saved : (_nous ? t.nousConnected : t.chatgptConnected));
+        final email = result['email'] as String?;
+        Navigator.of(context).pop(_editing ? t.saved : (_nous ? (email == null ? t.nousConnected : t.nousSignedInAs(email)) : t.chatgptConnected));
+      } else if (result['interval'] is num) {
+        // The provider asked to poll less often ("slow_down").
+        _devicePoll?.cancel();
+        _devicePoll = Timer.periodic(Duration(seconds: (result['interval'] as num).toInt().clamp(2, 60)), (_) => _pollSignIn());
       } else if (result['status'] == 'expired') {
         _devicePoll?.cancel();
         setState(() {
@@ -790,6 +977,7 @@ class _ProviderFormState extends State<_ProviderForm> {
           'options': options,
           'headers': headers,
           'billingMode': _billing,
+          'classification': _classification,
         });
         if (mounted) Navigator.of(context).pop(t.saved);
         return;
@@ -805,6 +993,7 @@ class _ProviderFormState extends State<_ProviderForm> {
         if (options.isNotEmpty) 'options': options,
         'headers': headers,
         'billingMode': _billing,
+        if (_classification != 'auto') 'classification': _classification,
       });
       final validation = Map<String, dynamic>.from(result['validation'] as Map);
       final sync = result['sync'] as Map?;
@@ -827,234 +1016,254 @@ class _ProviderFormState extends State<_ProviderForm> {
     final palette = neoRouterPaletteOf(context);
     final definition = widget.definition;
     const gap = SizedBox(height: AppSpacing.sm);
-    return AlertDialog(
-      title: Row(
+    final (costLabel, costTone, costIcon) = providerCostTag(t, definition);
+    return DialogFrame(
+      maxWidth: 560,
+      leading: ProviderAvatar(label: definition.label, size: 40),
+      title: _editing ? widget.account!.label : definition.label,
+      subtitle: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: <Widget>[
-          ProviderAvatar(label: definition.label, size: 32),
-          const SizedBox(width: 12),
-          Expanded(child: Text(_editing ? widget.account!.label : definition.label)),
+          MetaPill(label: costLabel, tone: costTone, icon: costIcon),
+          MetaPill(label: categoryLabel(t, definition.category)),
+          if (definition.website != null)
+            TextButton.icon(
+              style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 6)),
+              onPressed: () => launchUrl(Uri.parse(definition.website!)),
+              icon: const Icon(Icons.open_in_new_rounded, size: 14),
+              label: Text(t.providerWebsite),
+            ),
         ],
       ),
-      content: SizedBox(
-        width: 460,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              if (definition.description.isNotEmpty) Text(definition.description, style: TextStyle(color: palette.textSoft, height: 1.45)),
-              if (definition.id == 'openrouter' && !_editing) ...<Widget>[
-                const SizedBox(height: AppSpacing.md),
-                FilledButton.icon(
-                  onPressed: _connecting ? null : _connectOpenRouter,
-                  icon: _connecting
-                      ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.login_rounded, size: 18),
-                  label: Text(t.connectOpenRouter),
+      body: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          if (definition.description.isNotEmpty) Text(definition.description, style: TextStyle(color: palette.textSoft, height: 1.45)),
+          if (definition.category != 'custom' && definition.category != 'local') ...<Widget>[const SizedBox(height: AppSpacing.md), _CostSummary(definition: definition)],
+          if (definition.id == 'openrouter' && !_editing) ...<Widget>[
+            const SizedBox(height: AppSpacing.md),
+            FilledButton.icon(
+              onPressed: _connecting ? null : _connectOpenRouter,
+              icon: _connecting ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.login_rounded, size: 18),
+              label: Text(t.connectOpenRouter),
+            ),
+            const SizedBox(height: 6),
+            Text(t.connectOpenRouterHint, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: <Widget>[
+                Expanded(child: Divider(color: palette.border)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Text(t.orManualKey, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
                 ),
-                const SizedBox(height: 6),
-                Text(t.connectOpenRouterHint, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: <Widget>[
-                    Expanded(child: Divider(color: palette.border)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Text(t.orManualKey, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
-                    ),
-                    Expanded(child: Divider(color: palette.border)),
-                  ],
-                ),
+                Expanded(child: Divider(color: palette.border)),
               ],
-              if (_signInOnly) ...<Widget>[
-                const SizedBox(height: AppSpacing.md),
-                if (_deviceLogin == null) ...<Widget>[
-                  FilledButton.icon(
-                    onPressed: _connecting ? null : _startSignIn,
-                    icon: _connecting
-                        ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.login_rounded, size: 18),
-                    label: Text(_editing
-                        ? (_nous ? t.nousSignInAgain : t.chatgptSignInAgain)
-                        : (_nous ? t.nousSignIn : t.chatgptSignIn)),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(_nous ? t.nousSignInHint : t.chatgptSignInHint, style: TextStyle(color: palette.textMuted, fontSize: 12.5, height: 1.4)),
-                ] else
-                  AppCard(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+          ],
+          if (_signInOnly) ...<Widget>[
+            const SizedBox(height: AppSpacing.md),
+            if (_deviceLogin == null) ...<Widget>[
+              FilledButton.icon(
+                onPressed: _connecting ? null : _startSignIn,
+                icon: _connecting ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.login_rounded, size: 18),
+                label: Text(_editing ? (_nous ? t.nousSignInAgain : t.chatgptSignInAgain) : (_nous ? t.nousSignIn : t.chatgptSignIn)),
+              ),
+              const SizedBox(height: 6),
+              Text(_nous ? t.nousSignInHint : t.chatgptSignInHint, style: TextStyle(color: palette.textMuted, fontSize: 12.5, height: 1.4)),
+            ] else
+              AppCard(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(_nous ? t.nousEnterCode : t.chatgptEnterCode, style: TextStyle(color: palette.textSoft, fontSize: 13)),
+                    const SizedBox(height: 6),
+                    Row(
                       children: <Widget>[
-                        Text(_nous ? t.nousEnterCode : t.chatgptEnterCode, style: TextStyle(color: palette.textSoft, fontSize: 13)),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: <Widget>[
-                            SelectableText(
-                              '${_deviceLogin!['userCode']}',
-                              style: GoogleFonts.geistMono(fontSize: 24, fontWeight: FontWeight.w600, letterSpacing: 2),
-                            ),
-                            IconButton(
-                              tooltip: t.copy,
-                              onPressed: () => Clipboard.setData(ClipboardData(text: '${_deviceLogin!['userCode']}')),
-                              icon: const Icon(Icons.copy_rounded, size: 18),
-                            ),
-                          ],
-                        ),
-                        TextButton.icon(
-                          onPressed: () => launchUrl(Uri.parse('${_deviceLogin!['verificationUrl']}')),
-                          icon: const Icon(Icons.open_in_new_rounded, size: 15),
-                          label: Text(_nous ? t.nousOpenPage : t.chatgptOpenPage),
-                        ),
-                        Row(
-                          children: <Widget>[
-                            const SizedBox.square(dimension: 14, child: CircularProgressIndicator(strokeWidth: 2)),
-                            const SizedBox(width: 10),
-                            Text(_nous ? t.nousWaiting : t.chatgptWaiting, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
-                          ],
+                        SelectableText('${_deviceLogin!['userCode']}', style: GoogleFonts.geistMono(fontSize: 24, fontWeight: FontWeight.w600, letterSpacing: 2)),
+                        IconButton(
+                          tooltip: t.copy,
+                          onPressed: () => Clipboard.setData(ClipboardData(text: '${_deviceLogin!['userCode']}')),
+                          icon: const Icon(Icons.copy_rounded, size: 18),
                         ),
                       ],
                     ),
-                  ),
-              ],
-              if (!_signInOnly || _nous) ...<Widget>[
-                const SizedBox(height: AppSpacing.md),
-                TextField(
-                  controller: _secret,
-                  obscureText: true,
-                  autofocus: !_editing && definition.id != 'openrouter' && !_nous,
-                  decoration: InputDecoration(
-                    labelText: _editing
-                        ? t.apiKeyKeep
-                        : definition.keyOptional
-                        ? t.apiKeyOptional
-                        : t.apiKey,
-                  ),
-                ),
-                if (definition.keyUrl != null)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () => launchUrl(Uri.parse(definition.keyUrl!)),
+                    TextButton.icon(
+                      onPressed: () => launchUrl(Uri.parse('${_deviceLogin!['verificationUrl']}')),
                       icon: const Icon(Icons.open_in_new_rounded, size: 15),
-                      label: Text(t.getKeyAt(definition.label)),
+                      label: Text(_nous ? t.nousOpenPage : t.chatgptOpenPage),
+                    ),
+                    Row(
+                      children: <Widget>[
+                        const SizedBox.square(dimension: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                        const SizedBox(width: 10),
+                        Text(_nous ? t.nousWaiting : t.chatgptWaiting, style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+          ],
+          // Nous: signing in is the main way; a pasted API key works too.
+          if (!_signInOnly || _nous) ...<Widget>[
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    controller: _secret,
+                    obscureText: true,
+                    autofocus: !_editing && definition.id != 'openrouter' && !_nous,
+                    decoration: InputDecoration(
+                      labelText: _editing
+                          ? t.apiKeyKeep
+                          : definition.keyOptional
+                          ? t.apiKeyOptional
+                          : t.apiKey,
                     ),
                   ),
-              ],
-              for (final field in definition.fields) ...<Widget>[
-                gap,
-                TextField(
-                  controller: _fields[field.key],
-                  decoration: InputDecoration(labelText: field.label, hintText: field.placeholder),
                 ),
-              ],
-              if (_custom) ...<Widget>[
-                gap,
-                TextField(
-                  controller: _baseUrl,
-                  decoration: InputDecoration(labelText: t.baseUrl, hintText: 'https://…/v1'),
-                ),
-              ],
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                t.billingMode,
-                style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              for (final (mode, title, hint) in <(String, String, String)>[
-                // A full free tier, or just free models (declared or found in the listing).
-                if (definition.freeTierAvailable && !definition.freeTierPartial) ('free_tier', t.billingOptionFree, t.billingOptionFreeHint)
-                else if (definition.freeTierAvailable || (widget.account?.freeAvailable ?? false)) ('free_tier', t.billingOptionFreeModels, t.billingOptionFreeModelsHint),
-                if (definition.planAvailable) ('plan', t.billingOptionPlan, definition.planNote ?? t.billingOptionPlanHint),
-                if (definition.planAvailable) ('plan_paid', t.billingOptionPlanPaid, t.billingOptionPlanPaidHint),
-                ('paid', t.billingOptionPaid, t.billingOptionPaidHint),
-              ])
-                OptionCard(title: title, description: hint, selected: _billing == mode, onTap: () => setState(() => _billing = mode)),
-              if (_billing == 'free_tier' && definition.freeTierAvailable && !definition.freeTierPartial) ...<Widget>[
-                const SizedBox(height: AppSpacing.xs),
-                Text(t.billingFreeWarning, style: TextStyle(color: palette.textSoft, fontSize: 12.5, height: 1.45)),
-              ] else if (definition.hasAlwaysFreeModels) ...<Widget>[
-                const SizedBox(height: AppSpacing.xs),
-                Text(t.billingAlwaysFreeNote, style: TextStyle(color: palette.textSoft, fontSize: 12.5, height: 1.45)),
-              ],
-              if (definition.billingNote.isNotEmpty) ...<Widget>[
-                const SizedBox(height: 6),
-                Text(definition.billingNote, style: TextStyle(color: palette.textMuted, fontSize: 12.5, height: 1.45)),
-              ],
-              const SizedBox(height: AppSpacing.md),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => setState(() => _advanced = !_advanced),
-                  icon: Icon(_advanced ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
-                  label: Text(t.advancedOptions),
-                ),
-              ),
-              if (_advanced) ...<Widget>[
-                TextField(
-                  controller: _label,
-                  decoration: InputDecoration(labelText: t.displayNameLabel),
-                ),
-                gap,
-                TextField(
-                  controller: _slug,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(labelText: t.slugLabel, helperText: t.slugHint(_slug.text.isEmpty ? '…' : _slug.text)),
-                ),
-                if (_custom) ...<Widget>[
-                  gap,
-                  TextField(
-                    controller: _authHeader,
-                    decoration: InputDecoration(labelText: t.authHeaderLabel, hintText: 'x-api-key'),
-                  ),
-                  gap,
-                  TextField(
-                    controller: _headers,
-                    minLines: 1,
-                    maxLines: 4,
-                    decoration: InputDecoration(labelText: t.customHeaders, hintText: 'X-Org: my-team'),
-                  ),
-                  gap,
-                  TextField(
-                    controller: _modelsPath,
-                    decoration: InputDecoration(labelText: t.modelsPathLabel, hintText: '/models'),
-                  ),
-                  gap,
-                  TextField(
-                    controller: _manualModels,
-                    minLines: 2,
-                    maxLines: 6,
-                    decoration: InputDecoration(labelText: t.manualModels, helperText: t.manualModelsHint, helperMaxLines: 2),
-                  ),
+                if (definition.keyUrl != null) ...<Widget>[
+                  const SizedBox(width: 10),
+                  OutlinedButton.icon(onPressed: () => launchUrl(Uri.parse(definition.keyUrl!)), icon: const Icon(Icons.key_rounded, size: 16), label: Text(t.providerGetKey)),
                 ],
               ],
-              if (_custom) ...<Widget>[
-                const SizedBox(height: AppSpacing.sm),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: OutlinedButton.icon(
-                    onPressed: _probing ? null : _runProbe,
-                    icon: _probing
-                        ? const SizedBox.square(dimension: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.wifi_tethering_rounded, size: 16),
-                    label: Text(t.testConnection),
-                  ),
-                ),
-                if (_probe != null) _ProbeResult(result: _probe!),
-              ],
-              if (_error != null) ...<Widget>[const SizedBox(height: AppSpacing.md), InlineError(message: _error!)],
+            ),
+          ],
+          for (final field in definition.fields) ...<Widget>[
+            gap,
+            TextField(
+              controller: _fields[field.key],
+              decoration: InputDecoration(labelText: field.label, hintText: field.placeholder),
+            ),
+          ],
+          if (_custom) ...<Widget>[
+            gap,
+            TextField(
+              controller: _baseUrl,
+              decoration: InputDecoration(labelText: t.baseUrl, hintText: 'https://…/v1'),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            t.billingMode,
+            style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          for (final (mode, title, hint) in <(String, String, String)>[
+            // A full free tier, or just free models (declared or found in the listing).
+            if (definition.freeTierAvailable && !definition.freeTierPartial)
+              ('free_tier', t.billingOptionFree, t.billingOptionFreeHint)
+            else if (definition.freeTierAvailable || (widget.account?.freeAvailable ?? false))
+              ('free_tier', t.billingOptionFreeModels, t.billingOptionFreeModelsHint),
+            if (definition.planAvailable) ('plan', t.billingOptionPlan, definition.planNote ?? t.billingOptionPlanHint),
+            if (definition.planAvailable) ('plan_paid', t.billingOptionPlanPaid, t.billingOptionPlanPaidHint),
+            ('paid', t.billingOptionPaid, t.billingOptionPaidHint),
+          ])
+            OptionCard(title: title, description: hint, selected: _billing == mode, onTap: () => setState(() => _billing = mode)),
+          if (_billing == 'free_tier' && definition.freeTierAvailable && !definition.freeTierPartial) ...<Widget>[
+            const SizedBox(height: AppSpacing.xs),
+            Text(t.billingFreeWarning, style: TextStyle(color: palette.textSoft, fontSize: 12.5, height: 1.45)),
+          ] else if (definition.hasAlwaysFreeModels) ...<Widget>[
+            const SizedBox(height: AppSpacing.xs),
+            Text(t.billingAlwaysFreeNote, style: TextStyle(color: palette.textSoft, fontSize: 12.5, height: 1.45)),
+          ],
+          const SizedBox(height: AppSpacing.lg),
+          // Overrides the automatic free/paid result for all its models.
+          Row(
+            children: <Widget>[
+              Expanded(child: Text(t.classificationTitle, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text))),
+              SegmentedButton<String>(
+                showSelectedIcon: false,
+                segments: <ButtonSegment<String>>[
+                  ButtonSegment<String>(value: 'auto', label: Text(t.classificationAuto)),
+                  ButtonSegment<String>(value: 'free', label: Text(t.classificationFree)),
+                  ButtonSegment<String>(value: 'paid', label: Text(t.classificationPaid)),
+                ],
+                selected: <String>{_classification},
+                onSelectionChanged: (value) => setState(() => _classification = value.first),
+              ),
             ],
           ),
-        ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            _classification == 'free' ? t.classificationFreeWarning : t.classificationHint,
+            style: TextStyle(color: _classification == 'free' ? palette.warning : palette.textSoft, fontSize: 12.5, height: 1.45),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => setState(() => _advanced = !_advanced),
+              icon: Icon(_advanced ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
+              label: Text(t.advancedOptions),
+            ),
+          ),
+          if (_advanced) ...<Widget>[
+            TextField(
+              controller: _label,
+              decoration: InputDecoration(labelText: t.displayNameLabel),
+            ),
+            gap,
+            TextField(
+              controller: _slug,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(labelText: t.slugLabel, helperText: t.slugHint(_slug.text.isEmpty ? '…' : _slug.text)),
+            ),
+            if (_custom) ...<Widget>[
+              gap,
+              TextField(
+                controller: _authHeader,
+                decoration: InputDecoration(labelText: t.authHeaderLabel, hintText: 'x-api-key'),
+              ),
+              gap,
+              TextField(
+                controller: _headers,
+                minLines: 1,
+                maxLines: 4,
+                decoration: InputDecoration(labelText: t.customHeaders, hintText: 'X-Org: my-team'),
+              ),
+              gap,
+              TextField(
+                controller: _modelsPath,
+                decoration: InputDecoration(labelText: t.modelsPathLabel, hintText: '/models'),
+              ),
+              gap,
+              TextField(
+                controller: _manualModels,
+                minLines: 2,
+                maxLines: 6,
+                decoration: InputDecoration(labelText: t.manualModels, helperText: t.manualModelsHint, helperMaxLines: 2),
+              ),
+            ],
+          ],
+          if (_custom) ...<Widget>[
+            const SizedBox(height: AppSpacing.sm),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: _probing ? null : _runProbe,
+                icon: _probing ? const SizedBox.square(dimension: 14, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.wifi_tethering_rounded, size: 16),
+                label: Text(t.testConnection),
+              ),
+            ),
+            if (_probe != null) _ProbeResult(result: _probe!),
+          ],
+          if (_error != null) ...<Widget>[const SizedBox(height: AppSpacing.md), InlineError(message: _error!)],
+        ],
       ),
       actions: <Widget>[
         TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(), child: Text(t.cancel)),
-        if (!_signInOnly || _editing)
+        // Nous also takes a pasted key, which needs this button.
+        if (!_signInOnly || _nous || _editing)
           FilledButton(
             onPressed: _saving ? null : _submit,
-            child: _saving
-                ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                : Text(_editing ? t.save : t.checkAndAdd),
+            child: _saving ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)) : Text(_editing ? t.save : t.checkAndAdd),
           ),
       ],
     );
@@ -1149,6 +1358,14 @@ class _LimitsViewState extends State<_LimitsView> {
     }
   }
 
+  Future<void> _edit(Map<String, dynamic> group) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => _LimitsDialog(controller: widget.controller, account: Map<String, dynamic>.from(group['account'] as Map)),
+    );
+    if (saved == true) await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
@@ -1161,7 +1378,10 @@ class _LimitsViewState extends State<_LimitsView> {
         children: <Widget>[
           Text(t.limitsDescription, style: TextStyle(color: neoRouterPaletteOf(context).textSoft, fontSize: 13.5, height: 1.45)),
           const SizedBox(height: AppSpacing.lg),
-          for (final group in _accounts) ...<Widget>[_AccountLimits(group: group), const SizedBox(height: 28)],
+          for (final group in _accounts) ...<Widget>[
+            _AccountLimits(group: group, canEdit: widget.controller.can('providers.manage'), onEdit: () => _edit(group)),
+            const SizedBox(height: 28),
+          ],
         ],
       ),
     );
@@ -1185,9 +1405,11 @@ double _usedFraction(Map window) {
 bool _worthShowing(Map window) => _dailyMetrics.contains('${window['metric']}') || _usedFraction(window) >= 1;
 
 class _AccountLimits extends StatelessWidget {
-  const _AccountLimits({required this.group});
+  const _AccountLimits({required this.group, required this.canEdit, required this.onEdit});
 
   final Map<String, dynamic> group;
+  final bool canEdit;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -1207,7 +1429,9 @@ class _AccountLimits extends StatelessWidget {
       if (fraction >= _lowFraction) low.add((model: model, window: windows.first, fraction: fraction));
     }
     low.sort((a, b) => b.fraction.compareTo(a.fraction));
+    final limits = (group['limits'] as List? ?? const <dynamic>[]).cast<Map>();
     final rows = <Widget>[
+      for (final limit in limits) _LimitRow(limit: limit),
       // Plan windows get a usage bar; other probes (balances) stay plain values.
       for (final probe in probes.where((item) => '${item['metric']}'.startsWith('plan_') && item['limit'] != null))
         _WindowRow(title: metricLabel(t, '${probe['metric']}'), window: probe),
@@ -1234,17 +1458,242 @@ class _AccountLimits extends StatelessWidget {
         ),
       for (final item in low.take(6))
         _WindowRow(title: '${shortModelName('${item.model['id']}')} · ${metricLabel(t, '${item.window['metric']}')}', window: item.window),
+      _ModelLimits(models: models),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        SettingsHeading(title: '${account['label']}'),
+        SettingsHeading(
+          title: '${account['label']}',
+          trailing: canEdit ? TextButton.icon(onPressed: onEdit, icon: const Icon(Icons.tune_rounded, size: 17), label: Text(t.limitsEdit)) : null,
+        ),
         if (rows.isEmpty)
           AppCard(
             child: Text(t.noQuotaData, style: TextStyle(color: palette.textSoft)),
           )
         else
           SettingsCardList(children: rows),
+      ],
+    );
+  }
+}
+
+String _limitSource(AppL10n t, String source) => switch (source) {
+  'manual' => t.limitSourceManual,
+  'header' => t.limitSourceHeader,
+  'learned' => t.limitSourceLearned,
+  _ => t.limitSourceCurated,
+};
+
+String _limitRange(Map perModel) {
+  final low = (perModel['min'] as num).toInt();
+  final high = (perModel['max'] as num).toInt();
+  return low == high ? formatCount(low) : '${formatCount(low)}–${formatCount(high)}';
+}
+
+/// One kind of limit of an account: what all its models share and what each
+/// model gets, with where the number comes from.
+class _LimitRow extends StatelessWidget {
+  const _LimitRow({required this.limit});
+
+  final Map limit;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final shared = limit['shared'] as Map?;
+    final perModel = limit['perModel'] as Map?;
+    final sources = <String>{
+      if (shared != null) '${shared['source']}',
+      if (perModel != null) ...(perModel['sources'] as List).map((item) => '$item'),
+    };
+    final values = <String>[
+      if (shared != null) t.limitSharedValue(formatCount((shared['limit'] as num).toInt())),
+      if (perModel != null) t.limitPerModelValue(_limitRange(perModel)),
+    ];
+    return SettingsRow(
+      label: metricLabel(t, '${limit['metric']}'),
+      description: sources.map((source) => _limitSource(t, source)).join(' · '),
+      control: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
+          for (final value in values) Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: palette.text)),
+        ],
+      ),
+    );
+  }
+}
+
+String _modelLimitSummary(AppL10n t, Map model) {
+  final byMetric = <String, num>{};
+  for (final window in (model['windows'] as List).cast<Map>()) {
+    final value = window['limit'];
+    if (value is num && value > 0 && window['source'] != 'error') byMetric['${window['metric']}'] = value;
+  }
+  String part(String metric, String Function(String) label) => byMetric.containsKey(metric) ? label(formatCount(byMetric[metric]!.toInt())) : '';
+  return <String>[
+    part('rpm', t.limitShortRpm),
+    part('rpd', t.limitShortRpd),
+    part('tpm', t.limitShortTpm),
+    part('tpd', t.limitShortTpd),
+  ].where((item) => item.isNotEmpty).join(' · ');
+}
+
+/// Every model's own limits, folded away until someone wants them.
+class _ModelLimits extends StatelessWidget {
+  const _ModelLimits({required this.models});
+
+  final List<Map> models;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final rows = <({String name, String summary})>[
+      for (final model in models)
+        if (_modelLimitSummary(t, model).isNotEmpty) (name: shortModelName('${model['id']}'), summary: _modelLimitSummary(t, model)),
+    ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    if (rows.isEmpty) return const SizedBox.shrink();
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 20),
+        childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+        title: Text(t.limitsPerModelTitle('${rows.length}'), style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: palette.text)),
+        children: <Widget>[
+          for (final row in rows)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Expanded(flex: 5, child: Text(row.name, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, color: palette.text))),
+                  const SizedBox(width: 12),
+                  Expanded(flex: 6, child: Text(row.summary, textAlign: TextAlign.end, style: TextStyle(fontSize: 12.5, color: palette.textSoft))),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+const List<String> _statedMetrics = <String>['rpm', 'rpd', 'tpm', 'tpd', 'concurrent'];
+
+/// States what an account can take. A number wins over everything NeoRouter
+/// reads or learns; an empty field gives the decision back to NeoRouter.
+class _LimitsDialog extends StatefulWidget {
+  const _LimitsDialog({required this.controller, required this.account});
+
+  final NeoRouterController controller;
+  final Map<String, dynamic> account;
+
+  @override
+  State<_LimitsDialog> createState() => _LimitsDialogState();
+}
+
+class _LimitsDialogState extends State<_LimitsDialog> {
+  late final Map<String, TextEditingController> _fields;
+  late final Map<String, num> _before;
+  String? _error;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _before = <String, num>{
+      for (final entry in ((widget.account['limits'] as Map?) ?? const <String, Object?>{}).entries) '${entry.key}': entry.value as num,
+    };
+    _fields = <String, TextEditingController>{
+      for (final metric in _statedMetrics) metric: TextEditingController(text: _before[metric]?.toInt().toString() ?? ''),
+    };
+  }
+
+  @override
+  void dispose() {
+    for (final field in _fields.values) {
+      field.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final t = AppL10n.of(context);
+    final body = <String, int?>{};
+    for (final metric in _statedMetrics) {
+      final text = _fields[metric]!.text.trim().replaceAll(RegExp(r'[ _,.]'), '');
+      if (text.isEmpty) {
+        if (_before.containsKey(metric)) body[metric] = null;
+        continue;
+      }
+      final value = int.tryParse(text);
+      if (value == null || value < 1) {
+        setState(() => _error = t.limitsInvalid);
+        return;
+      }
+      if (_before[metric]?.toInt() != value) body[metric] = value;
+    }
+    if (body.isEmpty) {
+      Navigator.of(context).pop(false);
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.controller.api.setAccountLimits('${widget.account['id']}', body);
+      if (mounted) Navigator.of(context).pop(true);
+    } on ApiException catch (error) {
+      setState(() => _error = error.message);
+    } catch (_) {
+      setState(() => _error = t.serverUnreachable);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final labels = <String, String>{
+      'rpm': t.metricRpm,
+      'rpd': t.metricRpd,
+      'tpm': t.metricTpm,
+      'tpd': t.metricTpd,
+      'concurrent': t.limitConcurrent,
+    };
+    return AlertDialog(
+      title: Text(t.limitsEditTitle('${widget.account['label']}')),
+      content: SizedBox(
+        width: 420,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(t.limitsEditHint, style: TextStyle(color: palette.textSoft, fontSize: 13, height: 1.45)),
+              const SizedBox(height: AppSpacing.md),
+              for (final metric in _statedMetrics) ...<Widget>[
+                TextField(
+                  controller: _fields[metric],
+                  keyboardType: TextInputType.number,
+                  inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.allow(RegExp(r'[0-9 _,.]'))],
+                  decoration: InputDecoration(labelText: labels[metric], hintText: t.limitAutomatic),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+              if (_error != null) Text(_error!, style: TextStyle(color: palette.error, fontSize: 13)),
+            ],
+          ),
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(false), child: Text(t.cancel)),
+        FilledButton(onPressed: _saving ? null : _save, child: Text(t.save)),
       ],
     );
   }

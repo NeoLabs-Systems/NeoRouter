@@ -5,8 +5,12 @@ const { z } = require('zod');
 const registry = require('../providers/registry');
 const billing = require('../services/providers/billing_check');
 const accounts = require('../services/providers/account_service');
+const { markAccountFixed } = require('../services/routing/fixed');
+const accountLimits = require('../services/quota/account_limits');
 const codexOAuth = require('../services/providers/codex_oauth');
 const nousOAuth = require('../services/providers/nous_oauth');
+const { ProviderError, KINDS } = require('../providers/provider_error');
+const { HttpError } = require('../middleware/error_handler');
 const catalog = require('../services/catalog/catalog_service');
 const { validate } = require('../middleware/validate');
 const { requirePermission } = require('../middleware/space');
@@ -19,7 +23,8 @@ const router = express.Router();
 // Who is changing an account, for the checks on where its key may be sent.
 const actorOf = (req) => ({ role: req.user.role, isOwner: req.space.isOwner });
 
-router.get('/definitions', (_req, res) => res.json({ definitions: registry.list().map(registry.publicDefinition) }));
+// Pool partners are added by joining a pool, not by hand.
+router.get('/definitions', (_req, res) => res.json({ definitions: registry.list().filter((definition) => definition.category !== 'pool').map(registry.publicDefinition) }));
 
 router.get('/accounts', requirePermission('providers.view'), (req, res) => res.json({ accounts: accounts.list(req.space.ownerId) }));
 
@@ -37,6 +42,8 @@ const accountInput = z.object({
   headers: z.record(z.string().max(2048)).optional(),
   // 'plan': a prepaid subscription; 'plan_paid': the plan, then pay per use.
   billingMode: z.enum(['free_tier', 'paid', 'plan', 'plan_paid']).optional(),
+  // Overrides what NeoRouter worked out for all its models.
+  classification: z.enum(['auto', 'free', 'paid']).optional(),
 });
 
 // ChatGPT (Codex) sign-in with a device code: start, then poll until the
@@ -80,8 +87,14 @@ router.post('/chatgpt/login/:loginId', requirePermission('providers.manage'), as
 const nousLogins = new Map();
 const nousPolls = new Map();
 
+// A refused or failed Nous sign-in is told to the person as it is, not as an internal error.
+function nousSignInError(error) {
+  if (!(error instanceof ProviderError)) return error;
+  return new HttpError(error.kind === KINDS.AUTH ? 400 : 502, 'NOUS_SIGN_IN_FAILED', error.message);
+}
+
 router.post('/nous/login', requirePermission('providers.manage'), asyncRoute(async (req, res) => {
-  const login = await nousOAuth.startDeviceLogin();
+  const login = await nousOAuth.startDeviceLogin().catch((error) => { throw nousSignInError(error); });
   nousLogins.set(login.loginId, { ownerId: req.space.ownerId, actorId: req.space.actorId, accountId: req.body?.accountId || null });
   nousPolls.delete(login.loginId);
   res.json(login);
@@ -90,7 +103,10 @@ router.post('/nous/login', requirePermission('providers.manage'), asyncRoute(asy
 router.post('/nous/login/:loginId', requirePermission('providers.manage'), asyncRoute(async (req, res) => {
   const pending = nousLogins.get(req.params.loginId);
   if (!pending || pending.ownerId !== req.space.ownerId) return res.status(404).json({ error: { code: 'LOGIN_NOT_FOUND', message: 'This sign-in expired. Start again.' } });
-  const result = await nousOAuth.pollDeviceLogin(req.params.loginId);
+  const result = await nousOAuth.pollDeviceLogin(req.params.loginId).catch((error) => {
+    nousLogins.delete(req.params.loginId);
+    throw nousSignInError(error);
+  });
   if (result.status !== 'done') {
     if (result.status === 'expired') nousLogins.delete(req.params.loginId);
     // slow_down: the Portal asked for a longer interval, so the app must wait.
@@ -135,6 +151,26 @@ router.patch('/accounts/:id', requirePermission('providers.manage'), validate(ac
   catalog.reclassifyAccount(req.params.id);
   if (req.body.billingMode !== undefined || req.body.secret !== undefined) await billing.verifyAccount(req.params.id);
   res.json({ account: accounts.get(req.space.ownerId, account.id) });
+}));
+
+// States what this account can take; a number wins over everything the router
+// infers, null clears it. Absent fields stay as they are.
+const limitValue = z.number().int().min(1).max(10_000_000_000).nullable().optional();
+const accountLimitsInput = z.object({ rpm: limitValue, rpd: limitValue, tpm: limitValue, tpd: limitValue, concurrent: limitValue }).strict();
+
+router.put('/accounts/:id/limits', requirePermission('providers.manage'), validate(accountLimitsInput), (req, res) => {
+  accounts.getRow(req.space.ownerId, req.params.id);
+  accountLimits.set(req.params.id, req.body);
+  res.json({ account: accounts.get(req.space.ownerId, req.params.id) });
+});
+
+// The person fixed what was wrong: forget the cooldowns, rests and failures held
+// against this connection, check the key again and give it fresh chances.
+router.post('/accounts/:id/mark-fixed', requirePermission('providers.manage'), asyncRoute(async (req, res) => {
+  accounts.getRow(req.space.ownerId, req.params.id);
+  const fixed = markAccountFixed(req.params.id);
+  const validation = await accounts.validateAccount(req.params.id).catch((error) => ({ status: 'unknown', message: error.message }));
+  res.json({ fixed, validation, account: accounts.get(req.space.ownerId, req.params.id) });
 }));
 
 router.delete('/accounts/:id', requirePermission('providers.delete'), (req, res) => { accounts.remove(req.space.ownerId, req.params.id); res.status(204).end(); });

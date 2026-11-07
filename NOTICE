@@ -34,3 +34,8 @@ Common words (shield/data/common_words.txt)
 
 BIP-39 English wordlist (shield/data/bip39_english.txt)
   https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt, MIT.
+
+Model benchmark results are fetched at runtime from OpenRouter's public
+benchmark leaderboard. Source: OpenRouter (openrouter.ai), licensed under
+CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Scores are combined
+with other sources and rescaled.
