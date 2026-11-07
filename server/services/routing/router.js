@@ -144,14 +144,14 @@ function rejection(entry, ctx, now) {
   if (!entry.accountEnabled || entry.accountStatus === 'disabled' || entry.accountStatus === 'invalid') return 'account_unavailable';
   if (!allowedByKey(entry, key)) return 'not_allowed_for_key';
   if ((ctx.accountFailures?.get(entry.accountId) || 0) >= MAX_FAILURES_PER_ACCOUNT && !ctx.primaryRefs.has(entry.ref)) return 'account_failing';
-  if (!ctx.longShot && accountHealth.restingUntil(entry.accountId, now) && !ctx.primaryRefs.has(entry.ref)) return 'account_resting';
+  if ((!ctx.longShot || !longShotDue(entry.ref, now)) && accountHealth.restingUntil(entry.accountId, now) && !ctx.primaryRefs.has(entry.ref)) return 'account_resting';
   const kind = kindAllowed(entry, key, freeOnly);
   if (kind) return kind;
   // Pools: a partner's request only reaches what is shared with them, and is
   // never passed on; an own request reaches partners only with a pool key,
   // and not when it holds very sensitive data.
   if (key.peer_link_id) {
-    const shared = sharePolicy.rejection(entry, { inputTokens, reserve: ctx.shareReserve ?? undefined }, now);
+    const shared = sharePolicy.rejection(entry, { inputTokens, reserve: ctx.shareReserve ?? undefined, poolId: ctx.sharePoolId }, now);
     if (shared) return shared;
   } else if (isPeerEntry(entry)) {
     if (key.pool_access !== 'pool') return 'not_in_pool';
@@ -186,7 +186,7 @@ function rejection(entry, ctx, now) {
   const minOutput = stats.snapshot(entry.ref, now).min_output_tokens;
   if (request.max_tokens && minOutput && request.max_tokens < minOutput && !ctx.primaryRefs.has(entry.ref)) return 'needs_more_tokens';
   const available = stats.availability(entry.ref, now);
-  if (!available.available && !(ctx.longShot && LONG_SHOT_REASONS.has(available.reason))) return available.reason;
+  if (!available.available && !(ctx.longShot && LONG_SHOT_REASONS.has(available.reason) && longShotDue(entry.ref, now))) return available.reason;
   const planReason = plans.rejection(entry, now);
   if (planReason) return planReason;
   // An account at its (learned or documented) concurrency limit takes no more work right now.
@@ -306,7 +306,8 @@ function needsCredits(entry) {
 const REJECTION_GROUPS = [
   ['tokens', ['token_limit'], "are past this key's token limit until it resets"],
   ['credits', ['needs_credits'], 'need credits, and their connection is set to free'],
-  ['busy', ['account_failing', 'account_resting', 'quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'held_for_priority', 'plan_used_up', 'not_available', 'kept_for_owner'], 'are used up, rate-limited or cooling down for now'],
+  ['action', ['needs_action'], 'need something only you can do at the provider (a consent, a verification or a plan)'],
+  ['busy', ['scheduled_downtime', 'account_failing', 'account_resting', 'quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'held_for_priority', 'plan_used_up', 'not_available', 'kept_for_owner'], 'are used up, rate-limited or cooling down for now'],
   ['fit', ['no_tools', 'no_vision', 'context_too_small', 'context_unknown', 'needs_more_tokens', 'incompatible'], 'cannot handle this request (tools, images or its size)'],
   ['profile', ['below_min_intelligence', 'too_expensive', 'too_slow', 'provider_not_included', 'provider_excluded', 'model_excluded', 'kind_not_in_style'], "are left out by the routing style"],
   ['key', ['not_free', 'not_allowed_for_key', 'other_kind', 'price_unknown', 'budget_exhausted', 'key_too_expensive', 'not_in_pool', 'not_shared', 'peer_no_forward'], 'are not allowed for this key'],
@@ -335,16 +336,26 @@ const BUSY_RECHECK_MS = 1000;
 // (payment, key, a model that rejects this kind of request).
 const LONG_SHOT_REASONS = new Set(['rate_limited', 'quota_exhausted', 'not_available', 'circuit_open', 'cooldown', 'account_resting']);
 const MAX_LONG_SHOTS = 3;
+// Each held-back model is a long shot at most this often, across all
+// requests: a busy server must not send every request to models it already
+// knows are refusing (once, that was most of all attempts).
+const LONG_SHOT_GAP_MS = 10 * 60_000;
+const lastLongShot = new Map();
+const longShotDue = (ref, now = Date.now()) => now - (lastLongShot.get(ref) || 0) >= LONG_SHOT_GAP_MS;
+function resetLongShotsForTests() {
+  lastLongShot.clear();
+}
 const MINUTE_MS = 60_000;
 
 class RoutingPlan {
   // taskHint: a task kind the client named (X-NeoRouter-Task).
   // keepPrivate: very sensitive content, kept off pool partners.
   // shareReserve: for a partner's request, the share of capacity kept for the owner.
-  constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null, taskHint = null, keepPrivate = false, shareReserve = null }) {
+  constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null, taskHint = null, keepPrivate = false, shareReserve = null, sharePoolId = null }) {
     this.capability = capability;
     this.keepPrivate = keepPrivate;
     this.shareReserve = shareReserve;
+    this.sharePoolId = sharePoolId;
     // Non-chat kinds price per image, second or character; they pass their own estimate.
     this.estimateCost = estimateCost;
     this.key = key;
@@ -409,7 +420,7 @@ class RoutingPlan {
   }
 
   context() {
-    return { keepPrivate: this.keepPrivate, shareReserve: this.shareReserve, longShot: this.longShot, accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost };
+    return { keepPrivate: this.keepPrivate, shareReserve: this.shareReserve, sharePoolId: this.sharePoolId, longShot: this.longShot, accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost };
   }
 
   rank({ includeRejected = false, sample = true, now = Date.now() } = {}) {
@@ -523,6 +534,8 @@ class RoutingPlan {
     this.tried.add(choice.entry.ref);
     if (this.longShot && this.heldBack(choice.entry, now)) {
       choice.entry.tryingLuck = true;
+      if (lastLongShot.size > 5000) lastLongShot.clear();
+      lastLongShot.set(choice.entry.ref, now);
       this.longShotsLeft -= 1;
       if (this.longShotsLeft <= 0) this.longShot = false;
     }
@@ -540,7 +553,7 @@ class RoutingPlan {
     if (this.longShot || this.longShotsLeft <= 0) return false;
     const ctx = { ...this.context(), longShot: true };
     const possible = this.entries.some((entry) => !this.tried.has(entry.ref) && (!filter || filter(entry))
-      && this.heldBack(entry, now) && !rejection(entry, ctx, now));
+      && this.heldBack(entry, now) && longShotDue(entry.ref, now) && !rejection(entry, ctx, now));
     this.longShot = possible;
     return possible;
   }
@@ -629,4 +642,4 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
   };
 }
 
-module.exports = { LONG_SHOT_REASONS, MAX_LONG_SHOTS, needsCredits, RoutingPlan, explainNoModel, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, routeAllowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor };
+module.exports = { LONG_SHOT_REASONS, MAX_LONG_SHOTS, LONG_SHOT_GAP_MS, resetLongShotsForTests, needsCredits, RoutingPlan, explainNoModel, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, routeAllowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor };

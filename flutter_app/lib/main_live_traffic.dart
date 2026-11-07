@@ -35,6 +35,9 @@ class LiveTrafficHero extends StatefulWidget {
 // How long each leg of a request's trip takes on screen, in ms.
 const double _inMs = 950, _thinkMs = 750, _outMs = 620, _bounceMs = 520, _rethinkMs = 420, _backMs = 600, _homeMs = 820;
 const int _historySize = 40;
+// On opening, requests from this far back play in their real rhythm, so the
+// view starts in the middle of what is happening rather than from nothing.
+const Duration _backfill = Duration(seconds: 15);
 
 class _Attempt {
   const _Attempt(this.provider, this.ok);
@@ -455,11 +458,35 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   }
 
   // Starts mid-traffic, so the very first frame already has requests moving.
+  // What arrived in the last seconds plays as live, each request where it
+  // would be by now; with nothing that recent, recent history is replayed.
   void _warmUp() {
     _warmed = true;
-    for (var i = 0; i < 300; i++) {
-      _step(16);
+    final now = DateTime.now();
+    final start = now.subtract(_backfill);
+    final recent = _history.where((log) => log.createdAt.isAfter(start)).toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    if (recent.isEmpty) {
+      for (var i = 0; i < 300; i++) {
+        _step(16);
+      }
+      return;
     }
+    const frame = 16.0;
+    var clock = 0.0;
+    for (final log in recent) {
+      final at = log.createdAt.difference(start).inMilliseconds.toDouble();
+      while (clock < at) {
+        _scene.advance(frame);
+        clock += frame;
+      }
+      _spawn(log, live: true);
+    }
+    final end = _backfill.inMilliseconds.toDouble();
+    while (clock < end) {
+      _scene.advance(frame);
+      clock += frame;
+    }
+    _sinceSpawn = 0;
   }
 
   double get _speed => MediaQuery.maybeDisableAnimationsOf(context) == true ? 0.5 : 1;

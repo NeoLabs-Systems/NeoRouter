@@ -55,10 +55,11 @@ class TeamScreen extends StatefulWidget {
 
 /// People who help manage this NeoRouter, and the pool of other NeoRouters
 /// sharing free capacity: both about who works with you, on one page.
-enum _TeamTab { people, pool }
+enum _TeamTab { pool, people }
 
 class _TeamScreenState extends State<TeamScreen> {
-  late _TeamTab _tab = widget.controller.pendingPoolInvite != null || widget.controller.inPool ? _TeamTab.pool : _TeamTab.people;
+  // Pools come first; the team tab opens for an invite to someone's team.
+  late _TeamTab _tab = widget.controller.pendingInvite != null ? _TeamTab.people : _TeamTab.pool;
   TeamSummary? _team;
   bool _loading = true;
   String? _error;
@@ -185,15 +186,15 @@ class _TeamScreenState extends State<TeamScreen> {
     final team = _team;
     final tabs = PageTabs<_TeamTab>(
       tabs: <({_TeamTab value, String label, int? count})>[
+        (value: _TeamTab.pool, label: t.teamTabPool, count: controller.inPool ? controller.pools!.pools.length : null),
         (value: _TeamTab.people, label: t.teamTabPeople, count: team == null || team.members.isEmpty ? null : team.members.length),
-        (value: _TeamTab.pool, label: t.teamTabPool, count: controller.inPool ? controller.pool!.partners.length : null),
       ],
       selected: _tab,
       onChanged: (tab) => setState(() => _tab = tab),
     );
     if (_tab == _TeamTab.pool) {
       return PageScaffold(
-        header: ScreenHeader(title: t.teamTitle, description: t.poolDescription),
+        header: ScreenHeader(title: t.teamTitle, description: t.networkDescription),
         children: <Widget>[tabs, const SizedBox(height: AppSpacing.lg), PoolTab(controller: controller)],
       );
     }

@@ -11,7 +11,7 @@ const crypto = require('node:crypto');
 const identity = require('./identity');
 const { HttpError } = require('../../middleware/error_handler');
 
-const VERSION = 1;
+const VERSION = 2;
 const MAX_SKEW_MS = 5 * 60_000;
 const seenNonces = new Map();
 

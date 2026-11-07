@@ -43,7 +43,24 @@ function rangeStart(range, now = Date.now()) {
   return now - (RANGES[range] || RANGES['24h']);
 }
 
-function summary(userId, range = '24h', now = Date.now()) {
+function totalsOf(totals) {
+  return {
+    requests: totals.requests || 0,
+    successes: totals.successes || 0,
+    successRate: totals.requests ? (totals.successes || 0) / totals.requests : null,
+    costUsd: totals.cost || 0,
+    savedUsd: totals.saved || 0,
+    inputTokens: totals.input_tokens || 0,
+    outputTokens: totals.output_tokens || 0,
+    freeRequests: totals.free_requests || 0,
+    avgLatencyMs: totals.avg_latency,
+    avgTtftMs: totals.avg_ttft,
+    fallbacks: totals.fallbacks || 0,
+  };
+}
+
+// onlyTotals: just the totals (the home page needs no series or breakdowns).
+function summary(userId, range = '24h', now = Date.now(), { onlyTotals = false } = {}) {
   const db = getDatabase();
   const since = rangeStart(range, now);
   const totals = db.prepare(`SELECT COUNT(*) requests, SUM(status = 'success') successes, SUM(cost_usd) cost, SUM(saved_usd) saved,
@@ -52,6 +69,7 @@ function summary(userId, range = '24h', now = Date.now()) {
       SUM(attempts > 1) fallbacks
     FROM requests WHERE user_id = ? AND created_at >= ?`).get(userId, since);
   const bucketMs = range === '24h' ? 3_600_000 : 86_400_000;
+  if (onlyTotals) return { range, bucketMs, totals: totalsOf(totals) };
   const rows = db.prepare(`SELECT CAST(created_at / ? AS INTEGER) * ? bucket, COUNT(*) requests, SUM(status = 'success') successes,
       SUM(cost_usd) cost, SUM(input_tokens + output_tokens) tokens
     FROM requests WHERE user_id = ? AND created_at >= ? GROUP BY bucket ORDER BY bucket`).all(bucketMs, bucketMs, userId, since);
@@ -73,19 +91,7 @@ function summary(userId, range = '24h', now = Date.now()) {
   return {
     range,
     bucketMs,
-    totals: {
-      requests: totals.requests || 0,
-      successes: totals.successes || 0,
-      successRate: totals.requests ? (totals.successes || 0) / totals.requests : null,
-      costUsd: totals.cost || 0,
-      savedUsd: totals.saved || 0,
-      inputTokens: totals.input_tokens || 0,
-      outputTokens: totals.output_tokens || 0,
-      freeRequests: totals.free_requests || 0,
-      avgLatencyMs: totals.avg_latency,
-      avgTtftMs: totals.avg_ttft,
-      fallbacks: totals.fallbacks || 0,
-    },
+    totals: totalsOf(totals),
     series,
     topModels,
     byKey,

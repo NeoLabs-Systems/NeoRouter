@@ -200,30 +200,7 @@ class AppL10nDe extends AppL10n {
   String get range30d => '30 Tage';
 
   @override
-  String get statRequests => 'Requests';
-
-  @override
-  String get statSuccessRate => 'Erfolgsquote';
-
-  @override
-  String get statCost => 'Ausgegeben';
-
-  @override
-  String get statTokens => 'Tokens';
-
-  @override
-  String get statFreeShare => 'Gratis bedient';
-
-  @override
-  String get statLatency => 'Ø Latenz';
-
-  @override
-  String get statFallbacks => 'Mit Fallback';
-
-  @override
-  String statInOut(String input, String output) {
-    return '$input rein · $output raus';
-  }
+  String get statRequests => 'Anfragen heute';
 
   @override
   String get topModels => 'Top-Modelle';
@@ -3194,10 +3171,10 @@ class AppL10nDe extends AppL10n {
   String get unitKind => 'Abrechnung';
 
   @override
-  String get navTeam => 'Team';
+  String get navTeam => 'Netzwerk';
 
   @override
-  String get teamTitle => 'Team';
+  String get teamTitle => 'Netzwerk';
 
   @override
   String get teamDescription =>
@@ -3441,10 +3418,10 @@ class AppL10nDe extends AppL10n {
   String get teamActivityEmpty => 'Bisher ist nichts passiert.';
 
   @override
-  String get teamTabPeople => 'Personen';
+  String get teamTabPeople => 'Team';
 
   @override
-  String get teamTabPool => 'Pool';
+  String get teamTabPool => 'Pools';
 
   @override
   String get poolDescription =>
@@ -3472,27 +3449,6 @@ class AppL10nDe extends AppL10n {
       'Manche Anbieter erlauben nicht, Gratis-Zugang mit anderen zu teilen. Prüfe ihre Bedingungen, bevor du eine Verbindung teilst.';
 
   @override
-  String get poolTrustConfirm => 'Verstanden';
-
-  @override
-  String get poolSwitchLabel => 'Pool an';
-
-  @override
-  String get poolSwitchHint =>
-      'Aus pausiert Geben und Nutzen vorübergehend. Sonst ändert sich nichts.';
-
-  @override
-  String get poolPartnersTitle => 'Partner';
-
-  @override
-  String get poolPartnersHint =>
-      'Ihre NeoRouter und deiner teilen Gratis-Modelle miteinander.';
-
-  @override
-  String get poolNoPartners =>
-      'Noch keine Partner. Lade jemanden mit einem Link ein.';
-
-  @override
   String get poolInvite => 'Einladen';
 
   @override
@@ -3513,19 +3469,6 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get poolStatePaused => 'Pausiert';
-
-  @override
-  String get poolHost => 'Gastgeber';
-
-  @override
-  String poolPartnerModels(String count) {
-    return '$count Modelle';
-  }
-
-  @override
-  String poolToday(String given, String taken) {
-    return 'Heute: $given gegeben, $taken genommen';
-  }
 
   @override
   String get poolBalanceNew => 'Neu';
@@ -3637,9 +3580,6 @@ class AppL10nDe extends AppL10n {
   String get poolSelfNameHint => 'Partner sehen diesen Namen.';
 
   @override
-  String get poolChooseShared => 'Diese Verbindungen teilen';
-
-  @override
   String get poolJoinTitle => 'Einem Pool beitreten';
 
   @override
@@ -3657,9 +3597,6 @@ class AppL10nDe extends AppL10n {
   String poolJoinMembers(String host, String count) {
     return 'Gastgeber $host · $count Mitglieder';
   }
-
-  @override
-  String get poolJoinAction => 'Pool beitreten';
 
   @override
   String get poolInfoTooltip => 'Über den Pool';
@@ -3685,21 +3622,186 @@ class AppL10nDe extends AppL10n {
       'Anfragen mit Passwörtern, Schlüsseln, Karten- oder Ausweisnummern oder den Daten vieler Personen bleiben auf deinen eigenen Verbindungen. Eindeutige Fälle werden erkannt, nicht jedes Geheimnis.';
 
   @override
-  String homePoolOn(String count) {
-    return '$count Partner teilen Gratis-Kapazität mit dir';
-  }
-
-  @override
   String get homePoolPaused => 'Gerade pausiert: du nutzt und gibst nichts.';
 
   @override
-  String get poolShareConnection => 'Im Pool teilen';
-
-  @override
-  String get poolUnshareConnection => 'Nicht mehr im Pool teilen';
-
-  @override
   String get keptPrivateTag => 'Privat gehalten';
+
+  @override
+  String get poolHostYou => 'du bist Gastgeber';
+
+  @override
+  String poolPartnersCount(String count, String online) {
+    return '$count Partner · $online online';
+  }
+
+  @override
+  String get poolNoPartnersShort => 'Noch keine Partner';
+
+  @override
+  String get poolTabSharing => 'Teilen';
+
+  @override
+  String get poolTabSettings => 'Einstellungen';
+
+  @override
+  String pickerSelected(String selected, String total) {
+    return '$selected von $total ausgewählt';
+  }
+
+  @override
+  String get pickerAll => 'Alle';
+
+  @override
+  String get pickerNone => 'Keine';
+
+  @override
+  String get pickerSearch => 'Verbindung suchen';
+
+  @override
+  String get poolDiscard => 'Verwerfen';
+
+  @override
+  String get poolAgreeCreate => 'Verstanden, Pool starten';
+
+  @override
+  String get poolAgreeJoin => 'Verstanden, beitreten';
+
+  @override
+  String poolShareDialogTitle(String name) {
+    return '$name teilen in';
+  }
+
+  @override
+  String get poolShareInPools => 'In Pools teilen …';
+
+  @override
+  String get homePoolsTitle => 'Pools';
+
+  @override
+  String get statSuccessRate => 'Erfolgsquote';
+
+  @override
+  String get statCost => 'Ausgegeben';
+
+  @override
+  String get statTokens => 'Tokens';
+
+  @override
+  String get statFreeShare => 'Gratis bedient';
+
+  @override
+  String get statLatency => 'Ø Latenz';
+
+  @override
+  String get statFallbacks => 'Mit Fallback';
+
+  @override
+  String statInOut(String input, String output) {
+    return '$input rein · $output raus';
+  }
+
+  @override
+  String get poolAlreadyMember => 'Du bist schon in diesem Pool.';
+
+  @override
+  String get poolLoadFailed => 'Pools konnten nicht geladen werden.';
+
+  @override
+  String get networkDescription =>
+      'Teile Gratis-Kapazität mit anderen NeoRouter-Instanzen und lass Personen beim Verwalten helfen.';
+
+  @override
+  String get statBalance => 'Deine Bilanz';
+
+  @override
+  String get statModels => 'Geteilte Gratis-Modelle';
+
+  @override
+  String statOnlineValue(String online, String total) {
+    return '$online von $total';
+  }
+
+  @override
+  String get statOnline => 'Mitglieder online';
+
+  @override
+  String get balanceTheyTake => 'Nimmt mehr';
+
+  @override
+  String get balanceTheyGive => 'Gibt mehr';
+
+  @override
+  String get panelEditSharing => 'Was du teilst ändern';
+
+  @override
+  String get panelBalance => 'Bilanz diese Woche';
+
+  @override
+  String panelRequests(String count) {
+    return '$count Anfragen';
+  }
+
+  @override
+  String get panelTook => 'Heute genommen';
+
+  @override
+  String get panelGave => 'Heute gegeben';
+
+  @override
+  String panelSharesPartner(String models, String percent) {
+    return 'Teilt $models Gratis-Modelle mit dir, $percent % der Modelle in diesem Pool.';
+  }
+
+  @override
+  String panelSharesYou(String connections, String models, String percent) {
+    return 'Du teilst $connections Verbindungen mit $models Gratis-Modellen, $percent % der Modelle in diesem Pool.';
+  }
+
+  @override
+  String memberCaptionPartner(String models) {
+    return '$models Modelle';
+  }
+
+  @override
+  String memberCaptionYou(String connections, String models) {
+    return '$connections Verb. · $models Modelle';
+  }
+
+  @override
+  String poolMemberYou(String name) {
+    return '$name (du)';
+  }
+
+  @override
+  String get legendRing => 'Ring: Anteil an den geteilten Modellen';
+
+  @override
+  String get legendOffline => 'nicht erreichbar';
+
+  @override
+  String get legendTakes => 'nimmt aus dem Pool';
+
+  @override
+  String get legendGives => 'gibt in den Pool';
+
+  @override
+  String graphRequestsToday(String count) {
+    return '$count Anfragen heute';
+  }
+
+  @override
+  String get graphFreeToday => 'HEUTE FREI';
+
+  @override
+  String get poolTabOverview => 'Übersicht';
+
+  @override
+  String get poolLeaveHint =>
+      'Partner verlieren sofort den Zugang zu deinen Verbindungen und du zu ihren.';
+
+  @override
+  String get poolCloseHint => 'Beendet den Pool für alle Partner.';
 
   @override
   String teamEventInviteCreate(String actor) {

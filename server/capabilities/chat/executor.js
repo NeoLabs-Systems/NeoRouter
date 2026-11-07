@@ -51,7 +51,7 @@ const QUEUE_MIN_POLL_MS = 200;
 
 const KEY_POLICY_REJECTIONS = new Set(['not_free', 'not_allowed_for_key', 'price_unknown']);
 // Rejections that do not change within the lifetime of one request.
-const PERMANENT_REJECTIONS = new Set(['model_disabled', 'model_unavailable', 'account_unavailable', 'no_tools', 'no_vision', 'not_available', 'no_free_quota', 'incompatible', 'payment_required', 'auth_failed', 'model_excluded', 'provider_excluded', 'provider_not_included', 'below_min_intelligence', 'too_expensive', 'budget_exhausted', 'needs_more_tokens']);
+const PERMANENT_REJECTIONS = new Set(['needs_action', 'model_disabled', 'model_unavailable', 'account_unavailable', 'no_tools', 'no_vision', 'not_available', 'no_free_quota', 'incompatible', 'payment_required', 'auth_failed', 'model_excluded', 'provider_excluded', 'provider_not_included', 'below_min_intelligence', 'too_expensive', 'budget_exhausted', 'needs_more_tokens']);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // A pool partner's request waits only briefly for capacity: the owner's own
@@ -189,7 +189,7 @@ async function execute(options) {
   const share = sharePolicy.admit(key);
   try {
     res.set(share.headers);
-    return await run({ ...options, shareReserve: share.reserve });
+    return await run({ ...options, shareReserve: share.reserve, sharePoolId: share.poolId });
   } catch (error) {
     throw peerSafeError(error);
   } finally {
@@ -208,7 +208,7 @@ function peerSafeError(error) {
   return new HttpError(error.status, error.code, error.message, error.details?.retryAfterSeconds ? { retryAfterSeconds: error.details.retryAfterSeconds } : undefined);
 }
 
-async function run({ req, res, key, format, body, freeOnly = false, canonical: preset = null, internal = false, shareReserve = null }) {
+async function run({ req, res, key, format, body, freeOnly = false, canonical: preset = null, internal = false, shareReserve = null, sharePoolId = null }) {
   const translator = translators[format];
   // A partner's request leaves no trace beyond counts: no headers about the
   // route, no stored error texts, no repeat detection, none of the owner's
@@ -279,6 +279,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
     taskHint: peer ? null : req.get?.('x-neorouter-task') || null,
     keepPrivate,
     shareReserve,
+    sharePoolId,
   });
   // The same conversation again right after an answer: that answer was no good.
   const retryId = internal || peer ? null : retries.fingerprint(key.id, canonical.messages);

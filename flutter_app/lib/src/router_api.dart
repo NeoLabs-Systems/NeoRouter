@@ -134,7 +134,7 @@ class RouterApi {
       client.get('$_base/usage/analytics?range=$range${keyIds.isEmpty ? '' : '&keyIds=${keyIds.map(Uri.encodeQueryComponent).join(',')}'}');
   Future<Map<String, dynamic>> usageHealth() => client.get('$_base/usage/health');
   Future<Map<String, dynamic>> learning() => client.get('$_base/usage/learning');
-  Future<Map<String, dynamic>> summary(String range) => client.get('$_base/usage/summary?range=$range');
+  Future<Map<String, dynamic>> summary(String range, {bool onlyTotals = false}) => client.get('$_base/usage/summary?range=$range${onlyTotals ? '&only=totals' : ''}');
   Future<List<RequestLog>> logs({int limit = 100, String? status, List<String> keyIds = const <String>[]}) async => _list(
     await client.get('$_base/usage/logs?limit=$limit${status == null ? '' : '&status=$status'}${keyIds.isEmpty ? '' : '&keyIds=${keyIds.map(Uri.encodeQueryComponent).join(',')}'}'),
     'logs',
@@ -158,22 +158,22 @@ class RouterApi {
   Future<TeamSummary> team() async => TeamSummary(await client.get('$_base/teams'));
 
   // Pools (other NeoRouters sharing free capacity)
-  Future<PoolSummary> pool() async => PoolSummary(await client.get('$_base/pools'));
-  Future<PoolSummary> createPool(String name, String selfName, List<String> sharedAccountIds) async =>
-      PoolSummary(await client.post('$_base/pools', <String, Object>{'name': name, 'selfName': selfName, 'sharedAccountIds': sharedAccountIds}));
+  Future<PoolsSummary> pools() async => PoolsSummary(await client.get('$_base/pools'));
+  Future<PoolsSummary> createPool(String name, String selfName, List<String> sharedAccountIds) async =>
+      PoolsSummary(await client.post('$_base/pools', <String, Object>{'name': name, 'selfName': selfName, 'sharedAccountIds': sharedAccountIds}));
   Future<Map<String, dynamic>> previewPool(String link) => client.post('$_base/pools/preview', <String, Object>{'link': link});
-  Future<PoolSummary> joinPool(String link, String selfName, List<String> sharedAccountIds) async =>
-      PoolSummary(await client.post('$_base/pools/join', <String, Object>{'link': link, 'selfName': selfName, 'sharedAccountIds': sharedAccountIds}));
-  Future<String> createPoolInvite() async => (await client.post('$_base/pools/invites'))['link'] as String;
-  Future<void> revokePoolInvite(String id) => client.delete('$_base/pools/invites/$id');
-  Future<PoolSummary> updatePoolShare(Map<String, Object?> body) async => PoolSummary(await client.putJson('$_base/pools/share', _clean(body)));
-  Future<PoolSummary> setAccountPoolShare(String accountId, bool shared) async =>
-      PoolSummary(await client.putJson('$_base/pools/accounts/$accountId/share', <String, Object>{'shared': shared}));
-  Future<PoolSummary> setPoolPaused(bool paused) async => PoolSummary(await client.putJson('$_base/pools/paused', <String, Object>{'paused': paused}));
-  Future<PoolSummary> setPartnerPaused(String linkId, bool paused) async =>
-      PoolSummary(await client.putJson('$_base/pools/partners/$linkId/paused', <String, Object>{'paused': paused}));
-  Future<PoolSummary> removePoolMember(String memberId) async => PoolSummary(await client.deleteJson('$_base/pools/members/$memberId'));
-  Future<PoolSummary> leavePool() async => PoolSummary(await client.post('$_base/pools/leave'));
+  Future<PoolsSummary> joinPool(String link, String selfName, List<String> sharedAccountIds) async =>
+      PoolsSummary(await client.post('$_base/pools/join', <String, Object>{'link': link, 'selfName': selfName, 'sharedAccountIds': sharedAccountIds}));
+  Future<String> createPoolInvite(String poolId) async => (await client.post('$_base/pools/$poolId/invites'))['link'] as String;
+  Future<void> revokePoolInvite(String poolId, String id) => client.delete('$_base/pools/$poolId/invites/$id');
+  Future<PoolsSummary> updatePoolShare(String poolId, Map<String, Object?> body) async => PoolsSummary(await client.putJson('$_base/pools/$poolId/share', _clean(body)));
+  Future<PoolsSummary> setAccountPoolShare(String poolId, String accountId, bool shared) async =>
+      PoolsSummary(await client.putJson('$_base/pools/$poolId/accounts/$accountId/share', <String, Object>{'shared': shared}));
+  Future<PoolsSummary> setPoolPaused(String poolId, bool paused) async => PoolsSummary(await client.putJson('$_base/pools/$poolId/paused', <String, Object>{'paused': paused}));
+  Future<PoolsSummary> setPartnerPaused(String linkId, bool paused) async =>
+      PoolsSummary(await client.putJson('$_base/pools/partners/$linkId/paused', <String, Object>{'paused': paused}));
+  Future<PoolsSummary> removePoolMember(String poolId, String memberId) async => PoolsSummary(await client.deleteJson('$_base/pools/$poolId/members/$memberId'));
+  Future<PoolsSummary> leavePool(String poolId) async => PoolsSummary(await client.post('$_base/pools/$poolId/leave'));
   Future<void> setPoolPrivacy(bool keepSensitivePrivate) => client.put('$_base/pools/privacy', <String, Object>{'keepSensitivePrivate': keepSensitivePrivate});
   Future<Map<String, dynamic>> previewInvite(String link) => client.post('$_base/teams/invites/preview', <String, Object>{'link': link});
   Future<TeamSummary> redeemInvite(String link) async => TeamSummary(await client.post('$_base/teams/invites/redeem', <String, Object>{'link': link}));

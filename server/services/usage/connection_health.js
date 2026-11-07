@@ -14,6 +14,8 @@ const FAILING_BELOW = 0.05;
 const MIN_REQUESTS = 50;
 const FAILED_SHARE_ALERT = 0.3;
 
+const NOT_THE_CONNECTION = new Set(['hedge_lost', 'rate_limit', 'quota_exhausted', 'context_length', 'bad_request', 'truncated', 'aborted', 'stream_aborted']);
+
 const cache = new Map();
 
 function compute(userId, now) {
@@ -31,7 +33,11 @@ function compute(userId, now) {
       if (/no_model_available/i.test(row.error_code || '')) noCapacity += 1;
     }
     for (const step of JSON.parse(row.trail_json || '[]')) {
-      if (step.outcome === 'hedge_lost') continue;
+      // Only what says the connection itself is broken counts. A long shot
+      // was expected to fail; limits, a request the model cannot take (too
+      // long, an unsupported option, too few output tokens) or a lost race
+      // say nothing about the connection.
+      if (step.luck || NOT_THE_CONNECTION.has(step.outcome)) continue;
       const item = bySlug.get(String(step.model).split('/')[0]);
       if (!item) continue;
       item.attempts += 1;

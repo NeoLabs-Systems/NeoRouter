@@ -80,7 +80,7 @@ test('signed envelopes: tampering, wrong keys, old messages and replays are refu
 
 test('balance: a partner who takes far more than it gives gets gradually lower caps', () => {
   const db = getDatabase();
-  db.prepare("INSERT INTO peer_links (id, user_id, member_id, name, url, public_key) VALUES ('l1', 'u1', 'm', 'P', 'https://p.example', 'k')").run();
+  db.prepare("INSERT INTO peer_links (id, user_id, pool_id, member_id, name, url, public_key) VALUES ('l1', 'u1', 'p1', 'm', 'P', 'https://p.example', 'k')").run();
   assert.equal(sharePolicy.balance('l1').state, 'new');
   traffic.add('l1', 'given', 90, 0);
   traffic.add('l1', 'taken', 30, 0);

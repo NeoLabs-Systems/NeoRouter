@@ -45,7 +45,7 @@ function withPoolMinimum(config) {
 
 // Whether a request with this key may reach a pool partner at all.
 function mayUsePool(key) {
-  return key?.pool_access === 'pool' && !key.peer_link_id && Boolean(store.poolOf(key.user_id));
+  return key?.pool_access === 'pool' && !key.peer_link_id && store.pools(key.user_id).length > 0;
 }
 
 module.exports = { DEFAULT_SETTINGS, ALWAYS_HIDDEN, AT_LEAST_PLACEHOLDER, getSettings, saveSettings, withPoolMinimum, mayUsePool };

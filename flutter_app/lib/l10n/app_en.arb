@@ -62,24 +62,7 @@
   "range24h": "24 h",
   "range7d": "7 days",
   "range30d": "30 days",
-  "statRequests": "Requests",
-  "statSuccessRate": "Success rate",
-  "statCost": "Spent",
-  "statTokens": "Tokens",
-  "statFreeShare": "Served free",
-  "statLatency": "Avg. latency",
-  "statFallbacks": "With fallback",
-  "statInOut": "{input} in · {output} out",
-  "@statInOut": {
-    "placeholders": {
-      "input": {
-        "type": "String"
-      },
-      "output": {
-        "type": "String"
-      }
-    }
-  },
+  "statRequests": "Requests today",
   "topModels": "Top models",
   "requestsShort": "{count} req.",
   "@requestsShort": {
@@ -1892,8 +1875,8 @@
     }
   },
   "unitKind": "Billed",
-  "navTeam": "Team",
-  "teamTitle": "Team",
+  "navTeam": "Network",
+  "teamTitle": "Network",
   "teamDescription": "Let other people help manage your NeoRouter. You decide per person what they may see and change. Everything they create stays yours.",
   "inviteSomeone": "Invite someone",
   "teamMembersTitle": "People in your team",
@@ -2047,8 +2030,8 @@
   "teamActivityTitle": "Team activity",
   "teamActivityHint": "Invites, joins and changed rights across the server.",
   "teamActivityEmpty": "Nothing has happened yet.",
-  "teamTabPeople": "People",
-  "teamTabPool": "Pool",
+  "teamTabPeople": "Team",
+  "teamTabPool": "Pools",
   "poolDescription": "Share free capacity with friends who run their own NeoRouter. Nobody hands out keys: each request runs on the server of whoever shares it.",
   "poolEmptyTitle": "Not in a pool yet",
   "poolEmptyMessage": "Start one and invite others, or join with a link someone sent you.",
@@ -2056,12 +2039,6 @@
   "poolJoin": "Join with a link",
   "poolTrustNotice": "Requests through the pool run on a partner's server. NeoRouter keeps no content there and hides secrets first, but whoever runs that server could technically see what is sent. Only share with people you trust.",
   "poolTosNotice": "Some providers do not allow sharing free access with others. Check their terms before you share a connection.",
-  "poolTrustConfirm": "I understand",
-  "poolSwitchLabel": "Pool on",
-  "poolSwitchHint": "Off pauses giving and using for now. Nothing else changes.",
-  "poolPartnersTitle": "Partners",
-  "poolPartnersHint": "Their NeoRouters and yours share free models with each other.",
-  "poolNoPartners": "No partners yet. Invite someone with a link.",
   "poolInvite": "Invite",
   "poolInviteTitle": "Pool invite link",
   "poolInviteBody": "Send this link to someone with their own NeoRouter. They paste it on their Team page under Pool. It works once and expires in 7 days.",
@@ -2069,26 +2046,6 @@
   "poolStateOffline": "Not reachable",
   "poolStateConnecting": "Connecting",
   "poolStatePaused": "Paused",
-  "poolHost": "host",
-  "poolPartnerModels": "{count} models",
-  "@poolPartnerModels": {
-    "placeholders": {
-      "count": {
-        "type": "String"
-      }
-    }
-  },
-  "poolToday": "Today: gave {given}, took {taken}",
-  "@poolToday": {
-    "placeholders": {
-      "given": {
-        "type": "String"
-      },
-      "taken": {
-        "type": "String"
-      }
-    }
-  },
   "poolBalanceNew": "New",
   "poolBalanceBalanced": "Balanced",
   "poolBalanceGiving": "You give more",
@@ -2163,7 +2120,6 @@
   "poolNameLabel": "Pool name",
   "poolSelfNameLabel": "Your name in the pool",
   "poolSelfNameHint": "Partners see this name.",
-  "poolChooseShared": "Share these connections",
   "poolJoinTitle": "Join a pool",
   "poolLinkLabel": "Invite link",
   "poolCheckLink": "Check link",
@@ -2186,7 +2142,6 @@
       }
     }
   },
-  "poolJoinAction": "Join pool",
   "poolInfoTooltip": "About the pool",
   "keyPoolLabel": "Use the pool",
   "keyPoolHint": "Also uses partners' free models, mostly when yours are busy.",
@@ -2194,18 +2149,166 @@
   "settingsPoolTitle": "Pool",
   "settingsKeepSensitive": "Keep very sensitive requests off the pool",
   "settingsKeepSensitiveHint": "Requests with passwords, keys, card or ID numbers, or many people's personal data stay on your own connections. Clear cases are caught, not every secret.",
-  "homePoolOn": "{count} partners share free capacity with you",
-  "@homePoolOn": {
+  "homePoolPaused": "Paused for now: you neither use nor give.",
+  "keptPrivateTag": "Kept private",
+  "poolHostYou": "you host it",
+  "poolPartnersCount": "{count} partners · {online} online",
+  "@poolPartnersCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "online": {
+        "type": "String"
+      }
+    }
+  },
+  "poolNoPartnersShort": "No partners yet",
+  "poolTabSharing": "Sharing",
+  "poolTabSettings": "Settings",
+  "pickerSelected": "{selected} of {total} selected",
+  "@pickerSelected": {
+    "placeholders": {
+      "selected": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "pickerAll": "All",
+  "pickerNone": "None",
+  "pickerSearch": "Find a connection",
+  "poolDiscard": "Discard",
+  "poolAgreeCreate": "Understood, start pool",
+  "poolAgreeJoin": "Understood, join",
+  "poolShareDialogTitle": "Share {name} in",
+  "@poolShareDialogTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolShareInPools": "Share in pools…",
+  "homePoolsTitle": "Pools",
+  "statSuccessRate": "Success rate",
+  "statCost": "Spent",
+  "statTokens": "Tokens",
+  "statFreeShare": "Served free",
+  "statLatency": "Avg. latency",
+  "statFallbacks": "With fallback",
+  "statInOut": "{input} in · {output} out",
+  "@statInOut": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      }
+    }
+  },
+  "poolAlreadyMember": "You are already in this pool.",
+  "poolLoadFailed": "Pools could not be loaded.",
+  "networkDescription": "Share free capacity with other NeoRouters, and let people help you manage this one.",
+  "statBalance": "Your balance",
+  "statModels": "Shared free models",
+  "statOnlineValue": "{online} of {total}",
+  "@statOnlineValue": {
+    "placeholders": {
+      "online": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "statOnline": "Members online",
+  "balanceTheyTake": "Takes more",
+  "balanceTheyGive": "Gives more",
+  "panelEditSharing": "Change what you share",
+  "panelBalance": "Balance this week",
+  "panelRequests": "{count} requests",
+  "@panelRequests": {
     "placeholders": {
       "count": {
         "type": "String"
       }
     }
   },
-  "homePoolPaused": "Paused for now: you neither use nor give.",
-  "poolShareConnection": "Share in pool",
-  "poolUnshareConnection": "Stop sharing in pool",
-  "keptPrivateTag": "Kept private",
+  "panelTook": "Took today",
+  "panelGave": "Gave today",
+  "panelSharesPartner": "Shares {models} free models with you, {percent} % of the models in this pool.",
+  "@panelSharesPartner": {
+    "placeholders": {
+      "models": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "panelSharesYou": "You share {connections} connections with {models} free models, {percent} % of the models in this pool.",
+  "@panelSharesYou": {
+    "placeholders": {
+      "connections": {
+        "type": "String"
+      },
+      "models": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "memberCaptionPartner": "{models} models",
+  "@memberCaptionPartner": {
+    "placeholders": {
+      "models": {
+        "type": "String"
+      }
+    }
+  },
+  "memberCaptionYou": "{connections} conn. · {models} models",
+  "@memberCaptionYou": {
+    "placeholders": {
+      "connections": {
+        "type": "String"
+      },
+      "models": {
+        "type": "String"
+      }
+    }
+  },
+  "poolMemberYou": "{name} (you)",
+  "@poolMemberYou": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "legendRing": "ring: share of the shared models",
+  "legendOffline": "not reachable",
+  "legendTakes": "takes from the pool",
+  "legendGives": "gives to the pool",
+  "graphRequestsToday": "{count} requests today",
+  "@graphRequestsToday": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "graphFreeToday": "FREE TODAY",
+  "poolTabOverview": "Overview",
+  "poolLeaveHint": "Partners lose access to your connections at once, and you to theirs.",
+  "poolCloseHint": "Ends the pool for every partner.",
   "teamEventInviteCreate": "{actor} created an invite link",
   "@teamEventInviteCreate": {
     "placeholders": {

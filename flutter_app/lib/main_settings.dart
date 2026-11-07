@@ -596,7 +596,7 @@ class _PoolPrivacySettingState extends State<_PoolPrivacySetting> {
         SettingsRow(
           label: t.settingsKeepSensitive,
           description: t.settingsKeepSensitiveHint,
-          control: Switch(value: widget.controller.pool?.keepSensitivePrivate ?? true, onChanged: _busy ? null : _set),
+          control: Switch(value: widget.controller.pools?.keepSensitivePrivate ?? true, onChanged: _busy ? null : _set),
         ),
       ],
     );

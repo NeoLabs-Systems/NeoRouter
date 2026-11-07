@@ -46,9 +46,10 @@ const KINDS = new Set(require('../../core/capability_registry').list().map((item
 // never another partner's (sharePolicy decides per request what is in reach).
 function modelsVisibleTo(key, capability = 'chat') {
   if (key.peer_link_id && !sharePolicy.sharingWith(key)) return [];
+  const poolId = sharePolicy.poolOfKey(key);
   return catalog.listForUser(key.user_id, { capability })
     .filter((entry) => entry.enabled && entry.accountEnabled && allowedByKey(entry, key) && !kindAllowed(entry, key))
-    .filter((entry) => !key.peer_link_id || (!isPeerEntry(entry) && entry.isFree && sharePolicy.accountShared(entry.accountId)));
+    .filter((entry) => !key.peer_link_id || (!isPeerEntry(entry) && entry.isFree && sharePolicy.accountShared(poolId, entry.accountId)));
 }
 
 // Models of this kind the key's free/plan/paid choice leaves out, so an app

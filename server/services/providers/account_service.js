@@ -122,8 +122,8 @@ function publicAccount(row) {
     // What the person stated, and the in-flight limit in force with its source (manual, learned or documented).
     limits: require('../quota/account_limits').get(row.id),
     concurrency: require('../routing/concurrency').limitFor({ accountId: row.id, definitionId: row.definition_id }),
-    // Whether its free models are shared with pool partners.
-    poolShare: row.pool_share === 1,
+    // The pools its free models are shared in.
+    sharedInPools: getDatabase().prepare('SELECT pool_id FROM pool_shared_accounts WHERE account_id = ?').all(row.id).map((item) => item.pool_id),
   };
 }
 

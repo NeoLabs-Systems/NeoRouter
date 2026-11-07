@@ -1,77 +1,83 @@
 'use strict';
 
-// Database access for pools, members, invites and partner links. No logic
-// beyond reading and writing rows lives here.
+// Database access for pools, members, invites, shared connections and partner
+// links. A person may be in several pools; everything is keyed by (person,
+// pool). No logic beyond reading and writing rows lives here.
 const crypto = require('node:crypto');
 const { getDatabase } = require('../../db/database');
 
 const db = () => getDatabase();
 
-function poolOf(userId) {
-  const row = db().prepare('SELECT * FROM pools WHERE user_id = ?').get(userId);
-  if (!row) return null;
-  return {
-    userId: row.user_id,
-    poolId: row.pool_id,
-    name: row.name,
-    isHost: row.is_host === 1,
-    hostMemberId: row.host_member_id,
-    hostPublicKey: row.host_public_key,
-    hostUrl: row.host_url,
-    selfUrl: row.self_url,
-    selfName: row.self_name,
-    share: JSON.parse(row.share_json || '{}'),
-    paused: row.paused === 1,
-    joinedAt: row.joined_at,
-    lastSyncAt: row.last_sync_at,
-  };
+const poolRow = (row) => (row ? {
+  userId: row.user_id,
+  poolId: row.pool_id,
+  name: row.name,
+  isHost: row.is_host === 1,
+  hostMemberId: row.host_member_id,
+  hostPublicKey: row.host_public_key,
+  hostUrl: row.host_url,
+  selfUrl: row.self_url,
+  selfName: row.self_name,
+  share: JSON.parse(row.share_json || '{}'),
+  paused: row.paused === 1,
+  joinedAt: row.joined_at,
+  lastSyncAt: row.last_sync_at,
+} : null);
+
+function pool(userId, poolId) {
+  return poolRow(db().prepare('SELECT * FROM pools WHERE user_id = ? AND pool_id = ?').get(userId, String(poolId || '')));
 }
 
-function insertPool(pool) {
+function pools(userId) {
+  return db().prepare('SELECT * FROM pools WHERE user_id = ? ORDER BY joined_at, rowid').all(userId).map(poolRow);
+}
+
+function insertPool(value) {
   db().prepare(`INSERT INTO pools (user_id, pool_id, name, is_host, host_member_id, host_public_key, host_url, self_url, self_name, share_json)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .run(pool.userId, pool.poolId, pool.name, pool.isHost ? 1 : 0, pool.hostMemberId, pool.hostPublicKey, pool.hostUrl, pool.selfUrl, pool.selfName, JSON.stringify(pool.share || {}));
+    .run(value.userId, value.poolId, value.name, value.isHost ? 1 : 0, value.hostMemberId, value.hostPublicKey, value.hostUrl, value.selfUrl, value.selfName, JSON.stringify(value.share || {}));
 }
 
-function updatePool(userId, fields) {
+function updatePool(userId, poolId, fields) {
   const columns = { name: 'name', selfName: 'self_name', selfUrl: 'self_url', share: 'share_json', lastSyncAt: 'last_sync_at', paused: 'paused' };
   for (const [field, column] of Object.entries(columns)) {
     if (fields[field] === undefined) continue;
     const value = field === 'share' ? JSON.stringify(fields[field]) : field === 'paused' ? (fields[field] ? 1 : 0) : fields[field];
-    db().prepare(`UPDATE pools SET ${column} = ? WHERE user_id = ?`).run(value, userId);
+    db().prepare(`UPDATE pools SET ${column} = ? WHERE user_id = ? AND pool_id = ?`).run(value, userId, poolId);
   }
 }
 
-function deletePool(userId) {
-  db().prepare('DELETE FROM pools WHERE user_id = ?').run(userId);
-  db().prepare('DELETE FROM pool_members WHERE user_id = ?').run(userId);
-  db().prepare('DELETE FROM pool_invites WHERE user_id = ?').run(userId);
+function deletePool(userId, poolId) {
+  for (const table of ['pools', 'pool_members', 'pool_invites', 'pool_shared_accounts']) {
+    db().prepare(`DELETE FROM ${table} WHERE user_id = ? AND pool_id = ?`).run(userId, poolId);
+  }
 }
 
 const memberRow = (row) => ({ memberId: row.member_id, name: row.name, url: row.url, publicKey: row.public_key, joinedAt: row.joined_at });
 
-function members(userId) {
-  return db().prepare('SELECT * FROM pool_members WHERE user_id = ? ORDER BY joined_at').all(userId).map(memberRow);
+function members(userId, poolId) {
+  return db().prepare('SELECT * FROM pool_members WHERE user_id = ? AND pool_id = ? ORDER BY joined_at, rowid').all(userId, poolId).map(memberRow);
 }
 
-function member(userId, memberId) {
-  const row = db().prepare('SELECT * FROM pool_members WHERE user_id = ? AND member_id = ?').get(userId, memberId);
+function member(userId, poolId, memberId) {
+  const row = db().prepare('SELECT * FROM pool_members WHERE user_id = ? AND pool_id = ? AND member_id = ?').get(userId, poolId, memberId);
   return row ? memberRow(row) : null;
 }
 
-function upsertMember(userId, { memberId, name, url, publicKey }) {
-  db().prepare(`INSERT INTO pool_members (user_id, member_id, name, url, public_key) VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT (user_id, member_id) DO UPDATE SET name = excluded.name, url = excluded.url`)
-    .run(userId, memberId, name, url, publicKey);
+function upsertMember(userId, poolId, { memberId, name, url, publicKey }) {
+  db().prepare(`INSERT INTO pool_members (user_id, pool_id, member_id, name, url, public_key) VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT (user_id, pool_id, member_id) DO UPDATE SET name = excluded.name, url = excluded.url`)
+    .run(userId, poolId, memberId, name, url, publicKey);
 }
 
-function removeMember(userId, memberId) {
-  db().prepare('DELETE FROM pool_members WHERE user_id = ? AND member_id = ?').run(userId, memberId);
+function removeMember(userId, poolId, memberId) {
+  db().prepare('DELETE FROM pool_members WHERE user_id = ? AND pool_id = ? AND member_id = ?').run(userId, poolId, memberId);
 }
 
 const linkRow = (row) => (row ? {
   id: row.id,
   userId: row.user_id,
+  poolId: row.pool_id,
   memberId: row.member_id,
   name: row.name,
   url: row.url,
@@ -83,8 +89,8 @@ const linkRow = (row) => (row ? {
   createdAt: row.created_at,
 } : null);
 
-function links(userId) {
-  return db().prepare('SELECT * FROM peer_links WHERE user_id = ? ORDER BY created_at').all(userId).map(linkRow);
+function links(userId, poolId) {
+  return db().prepare('SELECT * FROM peer_links WHERE user_id = ? AND pool_id = ? ORDER BY created_at').all(userId, poolId).map(linkRow);
 }
 
 function link(userId, linkId) {
@@ -95,18 +101,18 @@ function linkById(linkId) {
   return linkRow(db().prepare('SELECT * FROM peer_links WHERE id = ?').get(linkId));
 }
 
-function linkToMember(userId, memberId) {
-  return linkRow(db().prepare('SELECT * FROM peer_links WHERE user_id = ? AND member_id = ?').get(userId, memberId));
+function linkToMember(userId, poolId, memberId) {
+  return linkRow(db().prepare('SELECT * FROM peer_links WHERE user_id = ? AND pool_id = ? AND member_id = ?').get(userId, poolId, memberId));
 }
 
 function linkForAccount(accountId) {
   return linkRow(db().prepare('SELECT * FROM peer_links WHERE account_id = ?').get(accountId));
 }
 
-function insertLink(userId, { memberId, name, url, publicKey }) {
+function insertLink(userId, poolId, { memberId, name, url, publicKey }) {
   const id = crypto.randomUUID();
-  db().prepare('INSERT INTO peer_links (id, user_id, member_id, name, url, public_key) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(id, userId, memberId, name, url, publicKey);
+  db().prepare('INSERT INTO peer_links (id, user_id, pool_id, member_id, name, url, public_key) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(id, userId, poolId, memberId, name, url, publicKey);
   return link(userId, id);
 }
 
@@ -121,15 +127,15 @@ function deleteLink(linkId) {
   db().prepare('DELETE FROM peer_links WHERE id = ?').run(linkId);
 }
 
-function invites(userId) {
-  return db().prepare('SELECT * FROM pool_invites WHERE user_id = ? AND used_at IS NULL AND revoked_at IS NULL AND expires_at > ? ORDER BY created_at DESC')
-    .all(userId, Date.now())
+function invites(userId, poolId) {
+  return db().prepare('SELECT * FROM pool_invites WHERE user_id = ? AND pool_id = ? AND used_at IS NULL AND revoked_at IS NULL AND expires_at > ? ORDER BY created_at DESC')
+    .all(userId, poolId, Date.now())
     .map((row) => ({ id: row.id, expiresAt: new Date(row.expires_at).toISOString(), createdAt: row.created_at }));
 }
 
-function insertInvite(userId, tokenHash, expiresAt) {
+function insertInvite(userId, poolId, tokenHash, expiresAt) {
   const id = crypto.randomUUID();
-  db().prepare('INSERT INTO pool_invites (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)').run(id, userId, tokenHash, expiresAt);
+  db().prepare('INSERT INTO pool_invites (id, user_id, pool_id, token_hash, expires_at) VALUES (?, ?, ?, ?, ?)').run(id, userId, poolId, tokenHash, expiresAt);
   return id;
 }
 
@@ -143,23 +149,36 @@ function useInvite(inviteId, memberId) {
     .run(memberId, inviteId).changes === 1;
 }
 
-function revokeInvite(userId, inviteId) {
-  return db().prepare("UPDATE pool_invites SET revoked_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ? AND user_id = ? AND revoked_at IS NULL")
-    .run(inviteId, userId).changes === 1;
+function revokeInvite(userId, poolId, inviteId) {
+  return db().prepare("UPDATE pool_invites SET revoked_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ? AND user_id = ? AND pool_id = ? AND revoked_at IS NULL")
+    .run(inviteId, userId, poolId).changes === 1;
 }
 
-function activeInviteCount(userId) {
-  return db().prepare('SELECT COUNT(*) count FROM pool_invites WHERE user_id = ? AND used_at IS NULL AND revoked_at IS NULL AND expires_at > ?').get(userId, Date.now()).count;
+function activeInviteCount(userId, poolId) {
+  return db().prepare('SELECT COUNT(*) count FROM pool_invites WHERE user_id = ? AND pool_id = ? AND used_at IS NULL AND revoked_at IS NULL AND expires_at > ?').get(userId, poolId, Date.now()).count;
 }
 
-function usersInPools() {
-  return db().prepare('SELECT user_id FROM pools').all().map((row) => row.user_id);
+function sharedAccountIds(userId, poolId) {
+  return db().prepare('SELECT account_id FROM pool_shared_accounts WHERE user_id = ? AND pool_id = ?').all(userId, poolId).map((row) => row.account_id);
+}
+
+function setShared(userId, poolId, accountId, shared) {
+  if (shared) db().prepare('INSERT OR IGNORE INTO pool_shared_accounts (user_id, pool_id, account_id) VALUES (?, ?, ?)').run(userId, poolId, accountId);
+  else db().prepare('DELETE FROM pool_shared_accounts WHERE user_id = ? AND pool_id = ? AND account_id = ?').run(userId, poolId, accountId);
+}
+
+function isShared(poolId, accountId) {
+  return Boolean(db().prepare('SELECT 1 FROM pool_shared_accounts WHERE pool_id = ? AND account_id = ?').get(poolId, accountId));
+}
+
+function poolMemberships() {
+  return db().prepare('SELECT user_id, pool_id FROM pools').all().map((row) => ({ userId: row.user_id, poolId: row.pool_id }));
 }
 
 module.exports = {
-  poolOf, insertPool, updatePool, deletePool,
+  pool, pools, insertPool, updatePool, deletePool,
   members, member, upsertMember, removeMember,
   links, link, linkById, linkToMember, linkForAccount, insertLink, updateLink, deleteLink,
   invites, insertInvite, inviteByHash, useInvite, revokeInvite, activeInviteCount,
-  usersInPools,
+  sharedAccountIds, setShared, isShared, poolMemberships,
 };

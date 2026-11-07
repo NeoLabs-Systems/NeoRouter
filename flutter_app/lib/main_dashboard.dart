@@ -53,24 +53,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _load();
   }
 
+  // The essentials (connections, keys, latest requests) show the page; the
+  // week's totals, capacity and health fill in as they arrive, so a slow one
+  // never holds the rest back.
   Future<void> _load() async {
     setState(() => _error = null);
+    final api = widget.controller.api;
+    void later<T>(Future<T> request, void Function(T value) apply) {
+      request.then((value) {
+        if (mounted) setState(() => apply(value));
+      }).catchError((Object _) {});
+    }
+
+    later(api.summary('7d', onlyTotals: true), (value) => _totals = Map<String, dynamic>.from(value['totals'] as Map? ?? const <String, dynamic>{}));
+    later(api.capacity(), (value) => _capacity = value);
+    later(api.usageHealth(), (value) => _health = value);
     try {
-      final api = widget.controller.api;
-      final results = await Future.wait(<Future<Object>>[api.accounts(), api.keys(), api.logs(limit: 5), api.summary('7d'), api.capacity()]);
-      // Worth showing, not worth failing the whole home screen for.
-      final health = await api.usageHealth().then<Map<String, dynamic>?>((value) => value).catchError((Object _) => null);
+      final results = await Future.wait(<Future<Object>>[api.accounts(), api.keys(), api.logs(limit: 5)]);
       if (!mounted) return;
       setState(() {
-        _health = health;
         _accounts = results[0] as List<ProviderAccount>;
         _keys = (results[1] as List<RouterKey>).where((key) => !key.revoked).toList();
         _logs = results[2] as List<RequestLog>;
-        _totals = Map<String, dynamic>.from((results[3] as Map<String, dynamic>)['totals'] as Map? ?? const <String, dynamic>{});
-        _capacity = results[4] as Map<String, dynamic>;
       });
     } catch (error) {
-      setState(() => _error = '$error');
+      if (mounted) setState(() => _error = '$error');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -151,18 +158,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     if (!setupDone) ...<Widget>[_SetupChecklist(controller: controller, providers: _accounts.length, keys: _keys.length, requests: _logs.length), const SizedBox(height: 28)],
                     if (_logs.isNotEmpty) ...<Widget>[SettingsHeading(title: t.homeLast7Days), _WeekStrip(totals: _totals), const SizedBox(height: 28)],
                     if (active.isNotEmpty && _capacity != null) ...<Widget>[_CapacityCard(capacity: _capacity!), const SizedBox(height: 28)],
-                    // The pool's quick switch, only while in a pool.
+                    // Each pool's quick switch, only while in a pool.
                     ListenableBuilder(
                       listenable: controller,
                       builder: (context, _) {
-                        final pool = controller.pool;
-                        if (pool == null || !pool.inPool) return const SizedBox.shrink();
-                        final online = pool.partners.where((partner) => partner.state == 'online').length;
+                        final pools = controller.pools?.pools ?? const <PoolInfo>[];
+                        if (pools.isEmpty) return const SizedBox.shrink();
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 28),
                           child: SettingsGroup(
-                            title: pool.name,
-                            children: <Widget>[PoolSwitchRow(controller: controller, description: pool.paused ? t.homePoolPaused : t.homePoolOn('$online'))],
+                            title: t.homePoolsTitle,
+                            children: <Widget>[
+                              for (final pool in pools)
+                                ListRow(
+                                  onTap: () => controller.go(AppPage.team),
+                                  leading: Icon(Icons.hub_outlined, size: 18, color: pool.paused ? neoRouterPaletteOf(context).textMuted : neoRouterPaletteOf(context).accent),
+                                  title: pool.name,
+                                  subtitle: poolSubtitle(t, pool),
+                                  trailing: PoolSwitch(controller: controller, pool: pool),
+                                ),
+                            ],
                           ),
                         );
                       },

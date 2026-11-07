@@ -38,7 +38,7 @@ test.after(async () => provider.close());
 const holdBack = (reason, hours = 5) => {
   for (const model of models) stats.recordFailure(model.ref, { cooldownUntil: Date.now() + hours * HOURS, cooldownReason: reason });
 };
-const release = () => { for (const model of models) stats.clearCooldown(model.ref); accountHealth.resetForTests(); };
+const release = () => { for (const model of models) stats.clearCooldown(model.ref); accountHealth.resetForTests(); require('../../server/services/routing/router').resetLongShotsForTests(); };
 
 test('with every model cooling down for hours, a request still tries one instead of giving up', async () => {
   holdBack('rate_limited');
@@ -55,6 +55,29 @@ test('only a few such tries are made per request', async () => {
   const response = await chat('ok-one');
   assert.equal(response.status, 200);
   assert.ok(provider.calls.length <= 3);
+  release();
+});
+
+test('a held-back model is a long shot at most once per gap, across requests', async () => {
+  holdBack('rate_limited');
+  provider.calls.length = 0;
+  // Each answer clears that model's cooldown, so hold everything back again
+  // before the next request: only models not yet tried may be long shots.
+  const statuses = [];
+  for (let index = 0; index <= models.length; index += 1) {
+    statuses.push((await chat()).status);
+    holdBack('rate_limited');
+  }
+  assert.ok(provider.calls.length <= models.length, `each model at most once: ${provider.calls.length} calls for ${models.length} models`);
+  assert.equal(statuses.at(-1), 503, 'once every model had its try, the next request is told "no model"');
+  release();
+});
+
+test('what needs a person (a consent, a verification) is never a long shot', async () => {
+  holdBack('needs_action', 20);
+  const response = await chat();
+  assert.equal(response.status, 503);
+  assert.match(response.body.error.message, /only you can do/);
   release();
 });
 

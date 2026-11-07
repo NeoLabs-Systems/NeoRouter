@@ -63,7 +63,7 @@ function teardown(userId, link) {
 // whole pool is paused.
 function applyEnabled(userId, link) {
   if (!link.accountId) return;
-  const usable = link.status === 'active' && !store.poolOf(userId)?.paused;
+  const usable = link.status === 'active' && !store.pool(userId, link.poolId)?.paused;
   getDatabase().prepare('UPDATE provider_accounts SET enabled = ? WHERE id = ? AND user_id = ?').run(usable ? 1 : 0, link.accountId, userId);
 }
 

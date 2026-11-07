@@ -20,7 +20,9 @@ const KINDS = Object.freeze({
 });
 
 class ProviderError extends Error {
-  constructor(kind, message, { status = null, retryAfterMs = null, body = null, headers = null, learned = null } = {}) {
+  // needsAction: only a person can fix this (a consent, a verification, a
+  // plan); trying again by itself cannot help.
+  constructor(kind, message, { status = null, retryAfterMs = null, body = null, headers = null, learned = null, needsAction = false } = {}) {
     super(message);
     this.name = 'ProviderError';
     this.kind = kind;
@@ -29,11 +31,12 @@ class ProviderError extends Error {
     this.body = body;
     this.headers = headers;
     this.learned = learned;
+    this.needsAction = needsAction;
   }
 }
 
 const QUOTA_PATTERNS = [
-  /per.?day/i, /daily/i, /quota/i, /exhaust/i, /\brpd\b/i, /\btpd\b/i, /monthly/i, /insufficient.?(credit|balance|quota)/i,
+  /per.?day/i, /daily/i, /quota/i, /exhaust/i, /\brpd\b/i, /\btpd\b/i, /monthly/i, /(per|\/) ?month\b/i, /insufficient.?(credit|balance|quota)/i,
 ];
 const CONTEXT_PATTERNS = [
   /context.?(length|window)/i, /maximum.?context/i, /too many tokens/i, /prompt is too long/i,
@@ -57,7 +60,8 @@ function parseRetryAfter(headers) {
 function extractMessage(body) {
   if (!body) return '';
   if (typeof body === 'string') return body.slice(0, 2000);
-  const candidate = body.error?.message || body.error?.msg || body.message || body.detail || body.error;
+  // Cloudflare: { errors: [{ message }] }; ElevenLabs: { detail: { message } }.
+  const candidate = body.error?.message || body.error?.msg || body.message || body.detail?.message || body.detail || body.errors?.[0]?.message || body.error;
   if (typeof candidate === 'string') return candidate.slice(0, 2000);
   return JSON.stringify(body).slice(0, 2000);
 }
@@ -79,7 +83,20 @@ function learnFromMessage(message) {
   return metric ? { metric, value } : null;
 }
 
-const ACCESS_REFUSED = /not available on the .{0,30}plan|model agreement|not allowed to access|needs your consent|phone verification|verify your (phone|account)|upgrade your plan|requires? global regions?/i;
+const ACCESS_REFUSED = /not available on the .{0,30}plan|model agreement|not allowed to access|needs your consent|phone verification|verify your (phone|account)|upgrade your plan|requires? global regions?|objected to passing your inputs|data (policy|retention) settings?/i;
+
+// "back at 12:00 UTC", "back in about 11 min": a planned outage that says when it ends.
+function announcedReturn(message, now = Date.now()) {
+  const text = String(message || '');
+  const minutes = text.match(/back in (?:about |around |~)?(\d{1,3}) ?min/i);
+  if (minutes) return Number(minutes[1]) * 60_000;
+  const clock = text.match(/back (?:at|by|from) (\d{1,2}):(\d{2}) ?UTC/i);
+  if (!clock) return null;
+  const at = new Date(now);
+  at.setUTCHours(Number(clock[1]), Number(clock[2]), 0, 0);
+  if (at.getTime() <= now) at.setUTCDate(at.getUTCDate() + 1);
+  return at.getTime() - now;
+}
 // The account cannot pay: no balance, or no subscription behind the key. The
 // status is not reliable here (OpenCode Go says 403 for it).
 const NEEDS_PAYMENT = /(active|valid).{0,40}subscription is required|insufficient (account )?(funds|balance|credits?)/i;
@@ -94,20 +111,20 @@ function classifyHttpError(status, body, headers) {
   // A model this account may not use yet (Groq: "requires terms acceptance")
   // will keep failing the same way: treat it as unavailable, not as a bad request.
   if ((status === 400 || status === 403) && /terms acceptance|accept the terms|requires? (you to )?accept/i.test(message)) {
-    return new ProviderError(KINDS.NOT_FOUND, message, options);
+    return new ProviderError(KINDS.NOT_FOUND, message, { ...options, needsAction: true });
   }
   if ((status === 400 || status === 401 || status === 403) && NEEDS_PAYMENT.test(message)) {
     return new ProviderError(KINDS.PAYMENT, message, options);
   }
   // A setting only a person can change (a workspace's region): this model, not the key.
-  if (status === 400 && ACCESS_REFUSED.test(message)) return new ProviderError(KINDS.NOT_FOUND, message, options);
+  if (status === 400 && ACCESS_REFUSED.test(message)) return new ProviderError(KINDS.NOT_FOUND, message, { ...options, needsAction: true });
   if (status === 401 || status === 403) {
     if (status === 403 && /region|country|location|not available in your|not (yet )?available to you|being rolled out|no access to (this )?model/i.test(message)) {
       return new ProviderError(KINDS.NOT_FOUND, message, options);
     }
     // The key is fine; this model or plan wants something only a person can
     // do. Retrying soon or re-checking the key cannot help.
-    if (ACCESS_REFUSED.test(message)) return new ProviderError(KINDS.NOT_FOUND, message, options);
+    if (ACCESS_REFUSED.test(message)) return new ProviderError(KINDS.NOT_FOUND, message, { ...options, needsAction: true });
     return new ProviderError(KINDS.AUTH, message, options);
   }
   if (status === 402) return new ProviderError(KINDS.PAYMENT, message, options);
@@ -117,7 +134,7 @@ function classifyHttpError(status, body, headers) {
     const kind = QUOTA_PATTERNS.some((pattern) => pattern.test(message)) ? KINDS.QUOTA_EXHAUSTED : KINDS.RATE_LIMIT;
     return new ProviderError(kind, message, { ...options, learned: learnFromMessage(message) });
   }
-  if (status >= 500) return new ProviderError(KINDS.SERVER, message, options);
+  if (status >= 500) return new ProviderError(KINDS.SERVER, message, { ...options, retryAfterMs: retryAfterMs ?? announcedReturn(message) });
   return new ProviderError(KINDS.BAD_REQUEST, message, options);
 }
 
@@ -129,4 +146,4 @@ function fromNetworkError(error) {
   return new ProviderError(KINDS.NETWORK, `Network error${cause ? ` (${cause})` : ''}: ${error?.message || error}`);
 }
 
-module.exports = { KINDS, ProviderError, classifyHttpError, fromNetworkError, parseRetryAfter, extractMessage, learnFromMessage };
+module.exports = { KINDS, ProviderError, classifyHttpError, fromNetworkError, parseRetryAfter, extractMessage, learnFromMessage, announcedReturn };

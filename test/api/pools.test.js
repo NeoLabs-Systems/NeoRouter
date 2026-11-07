@@ -46,7 +46,9 @@ async function partnerModel(who, partner, model) {
   return entry.id;
 }
 
-const summary = async (who) => (await api(who, 'get', '/pools')).body;
+// The first pool of each person (these tests use one, plus a second at the end).
+const summary = async (who) => (await api(who, 'get', '/pools')).body.pools[0] || null;
+let poolId = null;
 
 test.before(async () => {
   const app = createApp();
@@ -75,7 +77,7 @@ test.after(async () => {
 });
 
 async function invite() {
-  const response = await api('alex', 'post', '/pools/invites');
+  const response = await api('alex', 'post', `/pools/${poolId}/invites`);
   assert.equal(response.status, 201, JSON.stringify(response.body));
   return response.body.link;
 }
@@ -83,15 +85,17 @@ async function invite() {
 async function join(who, link) {
   const response = await api(who, 'post', '/pools/join', { link, selfName: who, sharedAccountIds: [people[who].account] });
   assert.equal(response.status, 200, JSON.stringify(response.body));
-  return response.body;
+  return response.body.pools.find((pool) => pool.id === response.body.poolId);
 }
 
 test('creating a pool and inviting: the link is single-use and only its hash is stored', async () => {
   const created = await api('alex', 'post', '/pools', { name: 'Friends', selfName: 'alex', sharedAccountIds: [people.alex.account] });
   assert.equal(created.status, 201, JSON.stringify(created.body));
-  assert.equal(created.body.pool.isHost, true);
-  assert.deepEqual(created.body.partners, []);
-  assert.deepEqual(created.body.shareable.map((account) => account.shared), [true]);
+  poolId = created.body.poolId;
+  const mine = created.body.pools[0];
+  assert.equal(mine.isHost, true);
+  assert.deepEqual(mine.partners, []);
+  assert.deepEqual(mine.sharedAccountIds, [people.alex.account]);
   const link = await invite();
   assert.match(link, /\/app\/\?pool=[A-Za-z0-9_-]{32}$/);
   const token = new URL(link).searchParams.get('pool');
@@ -101,7 +105,7 @@ test('creating a pool and inviting: the link is single-use and only its hash is 
   assert.equal(preview.body.pool.name, 'Friends');
   assert.equal(preview.body.host.name, 'alex');
   const joined = await join('bea', link);
-  assert.equal(joined.pool.name, 'Friends');
+  assert.equal(joined.name, 'Friends');
   assert.equal(joined.partners.length, 1);
   assert.equal(joined.partners[0].name, 'alex');
   assert.equal(joined.partners[0].state, 'online', JSON.stringify(joined.partners[0]));
@@ -204,28 +208,28 @@ test('a partner request is never passed on, and the hop header is refused on ord
 
 test('what is shared: unshared connections and used-up shares are refused', async () => {
   const model = await partnerModel('alex', 'bea', 'ok-bea');
-  await api('bea', 'put', `/pools/accounts/${people.bea.account}/share`, { shared: false });
+  await api('bea', 'put', `/pools/${poolId}/accounts/${people.bea.account}/share`, { shared: false });
   const unshared = await chat('alex', 'pool', model);
   assert.notEqual(unshared.status, 200);
-  await api('bea', 'put', `/pools/accounts/${people.bea.account}/share`, { shared: true });
+  await api('bea', 'put', `/pools/${poolId}/accounts/${people.bea.account}/share`, { shared: true });
   const used = (await summary('bea')).partners.find((partner) => partner.name === 'alex').today.given.requests;
-  const capped = await api('bea', 'put', '/pools/share', { requestsPerDay: used + 1 });
+  const capped = await api('bea', 'put', `/pools/${poolId}/share`, { requestsPerDay: used + 1 });
   assert.equal(capped.status, 200, JSON.stringify(capped.body));
   assert.equal((await chat('alex', 'pool', model)).status, 200);
   const over = await chat('alex', 'pool', model);
   assert.notEqual(over.status, 200, 'the day’s share is used up');
-  await api('bea', 'put', '/pools/share', { requestsPerDay: 300 });
+  await api('bea', 'put', `/pools/${poolId}/share`, { requestsPerDay: 300 });
 });
 
 test('the quick switch pauses giving and using, and turning it on restores everything', async () => {
   const toBea = await partnerModel('alex', 'bea', 'ok-bea');
   await addKey('bea', 'pool', { poolAccess: 'pool' });
   const toAlex = await partnerModel('bea', 'alex', 'ok-alex');
-  const paused = await api('alex', 'put', '/pools/paused', { paused: true });
-  assert.equal(paused.body.pool.paused, true);
+  const paused = await api('alex', 'put', `/pools/${poolId}/paused`, { paused: true });
+  assert.equal(paused.body.pools[0].paused, true);
   assert.notEqual((await chat('alex', 'pool', toBea)).status, 200, 'Alex uses no partner while paused');
   assert.notEqual((await chat('bea', 'pool', toAlex)).status, 200, 'and gives nothing');
-  await api('alex', 'put', '/pools/paused', { paused: false });
+  await api('alex', 'put', `/pools/${poolId}/paused`, { paused: false });
   const again = await chat('alex', 'pool', toBea);
   assert.equal(again.status, 200, JSON.stringify(again.body));
   const back = await chat('bea', 'pool', toAlex);
@@ -233,30 +237,58 @@ test('the quick switch pauses giving and using, and turning it on restores every
 });
 
 test('messages with a wrong signature are refused', async () => {
-  const forged = await request(base).post('/federation/v1/leave').send({ body: { v: 1, type: 'leave', from: '00000000-0000-0000-0000-000000000000', to: 'x', ts: Date.now(), nonce: 'n1', data: {} }, signature: 'AAAA' });
+  const forged = await request(base).post('/federation/v1/leave').send({ body: { v: 2, type: 'leave', from: '00000000-0000-0000-0000-000000000000', to: 'x', ts: Date.now(), nonce: 'n1', data: {} }, signature: 'AAAA' });
   assert.equal(forged.status, 404);
   const alexMember = getDatabase().prepare('SELECT member_id FROM pool_identities WHERE user_id = ?').get(people.alex.id).member_id;
   const beaMember = getDatabase().prepare('SELECT member_id FROM pool_identities WHERE user_id = ?').get(people.bea.id).member_id;
-  const wrong = await request(base).post('/federation/v1/leave').send({ body: { v: 1, type: 'leave', from: beaMember, to: alexMember, ts: Date.now(), nonce: 'n2', data: {} }, signature: Buffer.alloc(64).toString('base64') });
+  const wrong = await request(base).post('/federation/v1/leave').send({ body: { v: 2, type: 'leave', from: beaMember, to: alexMember, ts: Date.now(), nonce: 'n2', data: { pool: poolId } }, signature: Buffer.alloc(64).toString('base64') });
   assert.equal(wrong.status, 401);
   assert.equal((await summary('alex')).partners.length, 2, 'nothing changed');
 });
 
 test('leaving removes both directions at once; the host can remove and close', async () => {
-  const left = await api('cem', 'post', '/pools/leave');
+  const left = await api('cem', 'post', `/pools/${poolId}/leave`);
   assert.equal(left.status, 200, JSON.stringify(left.body));
-  assert.equal(left.body.pool, null);
+  assert.deepEqual(left.body.pools, []);
   assert.equal(getDatabase().prepare('SELECT COUNT(*) n FROM peer_links WHERE user_id = ?').get(people.cem.id).n, 0);
   for (const who of ['alex', 'bea']) assert.deepEqual((await summary(who)).partners.map((partner) => partner.name).sort(), [who === 'alex' ? 'bea' : 'alex']);
   const beaMember = getDatabase().prepare('SELECT member_id FROM pool_identities WHERE user_id = ?').get(people.bea.id).member_id;
-  const removed = await api('alex', 'delete', `/pools/members/${beaMember}`);
+  const removed = await api('alex', 'delete', `/pools/${poolId}/members/${beaMember}`);
   assert.equal(removed.status, 200, JSON.stringify(removed.body));
-  assert.equal(removed.body.partners.length, 0);
-  assert.equal((await summary('bea')).pool, null, 'Bea was told and left the pool');
+  assert.equal(removed.body.pools[0].partners.length, 0);
+  assert.equal(await summary('bea'), null, 'Bea was told and left the pool');
   const afterwards = await chat('bea', 'pool', 'auto');
   assert.equal(afterwards.status, 200, `a pool key keeps working on own models after the pool is gone: ${JSON.stringify(afterwards.body)}`);
   assert.equal(getDatabase().prepare("SELECT COUNT(*) n FROM router_keys WHERE peer_link_id IS NOT NULL").get().n, 0, 'no partner key is left anywhere');
   assert.equal(getDatabase().prepare("SELECT COUNT(*) n FROM provider_accounts WHERE definition_id = 'neorouter_peer'").get().n, 0);
-  await api('alex', 'post', '/pools/leave');
-  assert.equal((await summary('alex')).pool, null);
+  await api('alex', 'post', `/pools/${poolId}/leave`);
+  assert.equal(await summary('alex'), null);
+});
+
+test('one person can be in several pools, each with its own sharing and switch', async () => {
+  const first = await api('alex', 'post', '/pools', { name: 'Work', selfName: 'alex', sharedAccountIds: [people.alex.account] });
+  const second = await api('alex', 'post', '/pools', { name: 'Family', selfName: 'alex', sharedAccountIds: [] });
+  assert.equal(second.status, 201, JSON.stringify(second.body));
+  assert.deepEqual(second.body.pools.map((pool) => pool.name), ['Work', 'Family']);
+  const work = first.body.poolId;
+  const family = second.body.poolId;
+  const workInvite = (await api('alex', 'post', `/pools/${work}/invites`)).body.link;
+  const familyInvite = (await api('alex', 'post', `/pools/${family}/invites`)).body.link;
+  const inWork = await api('bea', 'post', '/pools/join', { link: workInvite, selfName: 'bea', sharedAccountIds: [people.bea.account] });
+  const inFamily = await api('bea', 'post', '/pools/join', { link: familyInvite, selfName: 'bea', sharedAccountIds: [] });
+  assert.equal(inWork.status, 200, JSON.stringify(inWork.body));
+  assert.equal(inFamily.status, 200, JSON.stringify(inFamily.body));
+  const twice = await api('bea', 'post', '/pools/preview', { link: (await api('alex', 'post', `/pools/${work}/invites`)).body.link });
+  assert.equal(twice.body.alreadyMember, true, 'the preview says Bea is already in that pool');
+  // Bea shares her connection in Work only: Alex reaches it through Work, not Family.
+  const view = (await api('alex', 'get', '/pools')).body.pools;
+  assert.deepEqual(view.map((pool) => pool.partners.map((partner) => partner.state)), [['online'], ['online']]);
+  const models = (await api('alex', 'get', '/models?all=1')).body.models.filter((model) => model.providerSlug.startsWith('pool-'));
+  assert.equal(models.filter((model) => model.id.endsWith('/ok-bea')).length, 1, `only the Work link lists Bea's model: ${models.map((model) => model.id)}`);
+  // Pausing Family leaves Work running.
+  await api('alex', 'put', `/pools/${family}/paused`, { paused: true });
+  const workModel = models.find((model) => model.id.endsWith('/ok-bea')).id;
+  assert.equal((await chat('alex', 'pool', workModel)).status, 200);
+  for (const id of [work, family]) await api('alex', 'post', `/pools/${id}/leave`);
+  assert.deepEqual((await api('bea', 'get', '/pools')).body.pools, [], 'closing both pools reached Bea');
 });

@@ -135,8 +135,8 @@ class ProviderAccount {
   String? get lastSyncedAt => raw['lastSyncedAt'] as String?;
   int get modelCount => _int(_map(raw['models'])['total']) ?? 0;
   int get freeModelCount => _int(_map(raw['models'])['free']) ?? 0;
-  /// Whether its free models are shared with pool partners.
-  bool get poolShare => raw['poolShare'] == true;
+  /// The pools its free models are shared in.
+  List<String> get sharedInPools => _strings(raw['sharedInPools']);
   /// "Free models only" can be chosen (the provider or its listing has free models).
   bool get freeAvailable => raw['freeAvailable'] == true;
   bool get freeTierAll => raw['freeTierAll'] == true;
@@ -353,7 +353,7 @@ class ShareableAccount {
 
   String get id => raw['id'] as String;
   String get label => raw['label'] as String? ?? '';
-  bool get shared => raw['shared'] == true;
+  String get definitionId => raw['definitionId'] as String? ?? '';
   int get freeModels => _int(raw['freeModels']) ?? 0;
 }
 
@@ -367,19 +367,34 @@ class PoolShare {
   double get reserve => _double(raw['reserve']) ?? 0.3;
 }
 
-class PoolSummary {
-  PoolSummary(this.raw);
+/// One pool this person is in.
+class PoolInfo {
+  PoolInfo(this.raw);
   final Map<String, dynamic> raw;
 
-  Map<String, dynamic>? get _pool => raw['pool'] is Map ? _map(raw['pool']) : null;
-  bool get inPool => _pool != null;
-  String get name => _pool?['name'] as String? ?? '';
-  bool get isHost => _pool?['isHost'] == true;
-  bool get paused => _pool?['paused'] == true;
-  String get selfName => _pool?['selfName'] as String? ?? '';
+  String get id => raw['id'] as String;
+  String get name => raw['name'] as String? ?? '';
+  bool get isHost => raw['isHost'] == true;
+  bool get paused => raw['paused'] == true;
+  String get selfName => raw['selfName'] as String? ?? '';
   List<PoolPartner> get partners => (raw['partners'] as List? ?? const <Object>[]).map((item) => PoolPartner(_map(item))).toList();
-  List<ShareableAccount> get shareable => (raw['shareable'] as List? ?? const <Object>[]).map((item) => ShareableAccount(_map(item))).toList();
+  int get onlinePartners => partners.where((partner) => partner.state == 'online').length;
+  List<String> get sharedAccountIds => _strings(raw['sharedAccountIds']);
   List<Map<String, dynamic>> get invites => (raw['invites'] as List? ?? const <Object>[]).map(_map).toList();
   PoolShare get share => PoolShare(_map(raw['share']));
+}
+
+/// All pools of a space, with what can be shared and the privacy setting.
+class PoolsSummary {
+  PoolsSummary(this.raw);
+  final Map<String, dynamic> raw;
+
+  List<PoolInfo> get pools => (raw['pools'] as List? ?? const <Object>[]).map((item) => PoolInfo(_map(item))).toList();
+  bool get inPool => pools.isNotEmpty;
+  PoolInfo? pool(String? id) => pools.where((item) => item.id == id).firstOrNull;
+  /// The pool just created or joined, when the server says.
+  String? get createdId => raw['poolId'] as String?;
+  List<ShareableAccount> get shareable => (raw['shareable'] as List? ?? const <Object>[]).map((item) => ShareableAccount(_map(item))).toList();
   bool get keepSensitivePrivate => _map(raw['privacy'])['keepSensitivePrivate'] != false;
+  int get maxPools => _int(raw['maxPools']) ?? 10;
 }

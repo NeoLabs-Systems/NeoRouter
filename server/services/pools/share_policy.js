@@ -67,7 +67,7 @@ const inflight = new Map();
  */
 function admit(key, now = Date.now()) {
   const link = store.linkById(key.peer_link_id);
-  const pool = store.poolOf(key.user_id);
+  const pool = link ? store.pool(key.user_id, link.poolId) : null;
   if (!link || !pool) throw new HttpError(403, 'POOL_NOT_SHARING', 'This partner is not sharing with you.');
   // Paused for now: temporary, so the partner's router retries later rather than giving up.
   if (pool.paused || link.status !== 'active') throw new HttpError(503, 'POOL_PAUSED', 'This partner paused sharing for now.', { retryAfterSeconds: 300 });
@@ -87,6 +87,7 @@ function admit(key, now = Date.now()) {
   let released = false;
   return {
     reserve: settings.reserve,
+    poolId: link.poolId,
     headers: {
       'x-ratelimit-limit-requests-day': String(caps.requests),
       'x-ratelimit-remaining-requests-day': String(Math.max(0, caps.requests - used.requests - 1)),
@@ -106,22 +107,29 @@ function admit(key, now = Date.now()) {
 const sharedCache = new Map();
 const SHARED_TTL_MS = 5000;
 
-function accountShared(accountId, now = Date.now()) {
-  const hit = sharedCache.get(accountId);
+// Whether this connection is shared in this pool (each pool has its own list).
+function accountShared(poolId, accountId, now = Date.now()) {
+  const id = `${poolId}|${accountId}`;
+  const hit = sharedCache.get(id);
   if (hit && now - hit.at < SHARED_TTL_MS) return hit.value;
-  const value = getDatabase().prepare('SELECT pool_share FROM provider_accounts WHERE id = ?').get(accountId)?.pool_share === 1;
-  if (sharedCache.size > 2000) sharedCache.clear();
-  sharedCache.set(accountId, { at: now, value });
+  const value = store.isShared(poolId, accountId);
+  if (sharedCache.size > 5000) sharedCache.clear();
+  sharedCache.set(id, { at: now, value });
   return value;
+}
+
+// The pool a partner key belongs to (null when its link is gone).
+function poolOfKey(key) {
+  return key?.peer_link_id ? store.linkById(key.peer_link_id)?.poolId || null : null;
 }
 
 /**
  * For requests that come in through a partner's key: why this model may not
  * serve it (or null). Partner work never goes on to another partner.
  */
-function rejection(entry, { inputTokens = 0, reserve = DEFAULT_SHARE.reserve } = {}, now = Date.now()) {
+function rejection(entry, { inputTokens = 0, reserve = DEFAULT_SHARE.reserve, poolId = null } = {}, now = Date.now()) {
   if (isPeerEntry(entry)) return 'peer_no_forward';
-  if (!entry.isFree || !accountShared(entry.accountId, now)) return 'not_shared';
+  if (!entry.isFree || !poolId || !accountShared(poolId, entry.accountId, now)) return 'not_shared';
   if (quota.evaluate(entry, inputTokens, now).headroom < reserve) return 'kept_for_owner';
   const parallel = concurrency.limitFor(entry, now);
   if (parallel) {
@@ -134,15 +142,16 @@ function rejection(entry, { inputTokens = 0, reserve = DEFAULT_SHARE.reserve } =
 // Whether this partner key gets anything right now (pool and link not paused).
 function sharingWith(key) {
   const link = store.linkById(key.peer_link_id);
-  const pool = link ? store.poolOf(key.user_id) : null;
+  const pool = link ? store.pool(key.user_id, link.poolId) : null;
   return Boolean(link && pool && !pool.paused && link.status === 'active');
 }
 
-function setAccountShared(userId, accountId, shared) {
-  const changed = getDatabase().prepare("UPDATE provider_accounts SET pool_share = ? WHERE id = ? AND user_id = ? AND definition_id != 'neorouter_peer'")
-    .run(shared ? 1 : 0, accountId, userId).changes;
-  sharedCache.delete(accountId);
-  return changed === 1;
+function setAccountShared(userId, poolId, accountId, shared) {
+  const own = getDatabase().prepare("SELECT 1 FROM provider_accounts WHERE id = ? AND user_id = ? AND definition_id != 'neorouter_peer'").get(accountId, userId);
+  if (!own) return false;
+  store.setShared(userId, poolId, accountId, shared);
+  sharedCache.delete(`${poolId}|${accountId}`);
+  return true;
 }
 
 function forget(linkId) {
@@ -154,4 +163,4 @@ function resetForTests() {
   sharedCache.clear();
 }
 
-module.exports = { DEFAULT_SHARE, SHARE_BOUNDS, BALANCE, shareSettings, balance, capsFor, admit, rejection, accountShared, sharingWith, setAccountShared, forget, resetForTests };
+module.exports = { DEFAULT_SHARE, SHARE_BOUNDS, BALANCE, shareSettings, balance, capsFor, admit, rejection, accountShared, poolOfKey, sharingWith, setAccountShared, forget, resetForTests };

@@ -104,9 +104,11 @@ test('a 1-token request checks the key where /models is public, on a cheap model
   const ok = await run(null);
   assert.deepEqual(ok.result, { status: 'healthy', message: null });
   assert.deepEqual(ok.asked, ['glm-5.3-flash'], 'the cheap model the definition names, not the first one listed');
+  // No balance for paid models: the key works and free models still answer.
   const broke = await run(new ProviderError(KINDS.PAYMENT, 'Upstream request failed: Insufficient account funds'));
-  assert.equal(broke.result.status, 'unknown');
-  assert.match(broke.result.message, /Insufficient account funds/);
+  assert.equal(broke.result.status, 'healthy');
+  assert.equal((await run(new ProviderError(KINDS.QUOTA_EXHAUSTED, 'You are using a Trial key, which is limited to 1000 API calls / month.'))).result.status, 'healthy', 'a used-up trial is no broken key');
+  assert.equal((await run(new ProviderError(KINDS.SERVER, 'upstream exploded'))).result.status, 'unknown');
   assert.equal((await run(new ProviderError(KINDS.AUTH, 'Missing API key.'))).result.status, 'invalid');
   assert.equal((await run(new ProviderError(KINDS.NOT_FOUND, 'This Go model requires Global regions.'))).result.status, 'healthy', 'the key works; that model is not open to it');
 });

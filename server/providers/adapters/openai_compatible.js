@@ -6,6 +6,8 @@ const { normalizeModel } = require('../model_info');
 const { derivedSession } = require('../session_id');
 const { ProviderError, KINDS } = require('../provider_error');
 
+const VALID_BUT_LIMITED = new Set([KINDS.RATE_LIMIT, KINDS.QUOTA_EXHAUSTED, KINDS.PAYMENT]);
+
 function stripSchemaKeys(value, keys) {
   if (Array.isArray(value)) return value.map((item) => stripSchemaKeys(item, keys));
   if (!value || typeof value !== 'object') return value;
@@ -58,6 +60,10 @@ class OpenAICompatibleAdapter extends BaseAdapter {
       return { status: 'healthy', message: null };
     } catch (error) {
       if (error.kind === KINDS.AUTH) return { status: 'invalid', message: error.message };
+      // The key was accepted; it is only out of allowance or credits for now
+      // (a trial's monthly cap, no balance for paid models). Free models and
+      // the next period still work, so this is no problem with the connection.
+      if (VALID_BUT_LIMITED.has(error.kind)) return { status: 'healthy', message: null };
       // The key was accepted; this one model is just not open to the account.
       if (error.kind === KINDS.NOT_FOUND) return { status: 'healthy', message: null };
       return { status: 'unknown', message: error.message };

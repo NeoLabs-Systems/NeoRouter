@@ -21,6 +21,9 @@ const DAY = 24 * HOUR;
 const RATE_LIMIT_COOLDOWN_MS = 90 * SECOND;
 const QUOTA_LADDER_MS = [2 * MINUTE, 10 * MINUTE, HOUR, DAY];
 const NOT_FOUND_LADDER_MS = [6 * HOUR, DAY, 7 * DAY];
+// Something only a person can do (a consent, a verification): checked again
+// rarely, and never as a long shot.
+const NEEDS_ACTION_LADDER_MS = [DAY, 3 * DAY, 7 * DAY];
 // A rate limit on a model that recently answered ends soon. One that has not
 // answered in an hour keeps refusing, so it is asked less and less often.
 const RATE_LIMIT_LADDER_MS = [RATE_LIMIT_COOLDOWN_MS, 5 * MINUTE, 30 * MINUTE, 2 * HOUR, 6 * HOUR];
@@ -65,11 +68,17 @@ function cooldownFor(error, row, now) {
     case KINDS.PAYMENT: return { until: now + DAY, reason: 'payment_required', escalate: false };
     case KINDS.AUTH: return { until: now + 30 * MINUTE, reason: 'auth_failed', escalate: false };
     case KINDS.NOT_FOUND: {
+      if (error.needsAction) {
+        const wait = NEEDS_ACTION_LADDER_MS[Math.min(row.cooldown_level, NEEDS_ACTION_LADDER_MS.length - 1)];
+        return { until: now + wait, reason: 'needs_action', escalate: true };
+      }
       // Listed but not deployed (e.g. NVIDIA "Function not found"): back off
       // further each time it is still missing.
       const step = NOT_FOUND_LADDER_MS[Math.min(row.cooldown_level, NOT_FOUND_LADDER_MS.length - 1)];
       return { until: now + step, reason: 'not_available', escalate: true };
     }
+    // A planned outage that said when it ends ("back at 12:00 UTC").
+    case KINDS.SERVER: return retryAfter ? { until: now + retryAfter, reason: 'scheduled_downtime', escalate: false } : null;
     case KINDS.BAD_REQUEST: {
       // One 400 may be the client's fault; the same model rejecting again
       // within a short window means it does not support this kind of request.
@@ -153,4 +162,4 @@ function onSuccess(entry, measurement, headers, now = Date.now()) {
   }
 }
 
-module.exports = { onFailure, onSuccess, onSlow, policyFor, QUOTA_LADDER_MS };
+module.exports = { onFailure, onSuccess, onSlow, policyFor, cooldownFor, QUOTA_LADDER_MS };

@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
 import 'main_dashboard.dart';
+import 'main_pool.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
@@ -190,10 +191,8 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
           return failing ? t.markFixedStillFailing('${validation['message'] ?? ''}') : t.markFixedDone;
         });
       case _AccountAction.poolShare:
-        await _run(account.id, () async {
-          widget.controller.updatePool(await api.setAccountPoolShare(account.id, !account.poolShare));
-          return null;
-        });
+        await showSharePoolsDialog(context, widget.controller, account.id, account.label);
+        await _load();
       case _AccountAction.edit:
         await _edit(account);
       case _AccountAction.another:
@@ -512,7 +511,7 @@ class _AccountRow extends StatelessWidget {
                     _menuItem(_AccountAction.another, Icons.add_rounded, t.addAnotherAccount),
                   ],
                   if (canPoolShare)
-                    _menuItem(_AccountAction.poolShare, Icons.hub_outlined, account.poolShare ? t.poolUnshareConnection : t.poolShareConnection),
+                    _menuItem(_AccountAction.poolShare, Icons.hub_outlined, account.sharedInPools.isEmpty ? t.poolShareInPools : '${t.poolShareInPools} (${account.sharedInPools.length})'),
                   if (canManage && canDelete) const PopupMenuDivider(),
                   if (canDelete) _menuItem(_AccountAction.remove, Icons.delete_outline_rounded, t.removeProvider, destructive: palette.error),
                 ],

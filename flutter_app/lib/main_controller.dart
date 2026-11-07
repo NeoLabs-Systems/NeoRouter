@@ -52,7 +52,7 @@ class NeoRouterController extends ChangeNotifier {
 
   /// The pool of the space that is shown (other NeoRouters sharing free
   /// capacity); null until loaded. Pool controls appear only while in one.
-  PoolSummary? pool;
+  PoolsSummary? pools;
 
   /// A pool invite link the app was opened with ("?pool=…"), joined from the
   /// Team page's pool tab after sign-in.
@@ -92,28 +92,28 @@ class NeoRouterController extends ChangeNotifier {
     return needed != null && can(needed);
   }
 
-  bool get inPool => pool?.inPool ?? false;
+  bool get inPool => pools?.inPool ?? false;
 
   /// Pool settings belong to the space owner.
   bool get canManagePool => !inSharedSpace;
 
   Future<void> refreshPool() async {
     try {
-      pool = await api.pool();
+      pools = await api.pools();
     } catch (_) {
-      pool = null;
+      pools = null;
     }
     notifyListeners();
   }
 
-  /// The quick switch (home and pool page): pause or resume giving and using.
-  Future<void> setPoolPaused(bool paused) async {
-    pool = await api.setPoolPaused(paused);
+  /// The quick switch (home and pool page): pause or resume giving and using in one pool.
+  Future<void> setPoolPaused(String poolId, bool paused) async {
+    pools = await api.setPoolPaused(poolId, paused);
     notifyListeners();
   }
 
-  void updatePool(PoolSummary next) {
-    pool = next;
+  void updatePools(PoolsSummary next) {
+    pools = next;
     notifyListeners();
   }
 
@@ -130,8 +130,8 @@ class NeoRouterController extends ChangeNotifier {
       client.setToken(token);
       try {
         user = await api.me();
-        await _loadInfo();
-        await _restoreSpace(prefs.getString(_spaceKey));
+        // Independent calls go out together: start-up waits for the slowest, not for all in a row.
+        await Future.wait(<Future<void>>[_loadInfo(), _restoreSpace(prefs.getString(_spaceKey)).then((_) => refreshPool()), refreshRegistration()]);
       } on ApiException {
         client.setToken(null);
         await prefs.remove(_tokenKey);
@@ -144,8 +144,7 @@ class NeoRouterController extends ChangeNotifier {
     _readInviteLink();
     _readPoolLink();
     _readConnectLink();
-    if (user != null) await refreshPool();
-    await refreshRegistration();
+    if (user == null) await refreshRegistration();
     bootstrapping = false;
     notifyListeners();
   }
@@ -279,9 +278,7 @@ class NeoRouterController extends ChangeNotifier {
     user = AppUser(Map<String, dynamic>.from(result['user'] as Map));
     page = AppPage.home;
     _setSpace(null);
-    await _loadInfo();
-    await refreshTeam();
-    await refreshPool();
+    await Future.wait(<Future<void>>[_loadInfo(), refreshTeam().then((_) => refreshPool())]);
     if (pendingInvite != null) _openInvite();
     if (pendingPoolInvite != null) _openPoolInvite();
   }
@@ -342,7 +339,7 @@ class NeoRouterController extends ChangeNotifier {
     (await SharedPreferences.getInstance()).remove(_tokenKey);
     user = null;
     team = null;
-    pool = null;
+    pools = null;
     _setSpace(null);
     await refreshRegistration();
     notifyListeners();
