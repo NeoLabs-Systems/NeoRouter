@@ -72,8 +72,8 @@ pool.put('/share', validate(z.object({
   sharedAccountIds: accountIds.optional(),
 }).strict()), asyncRoute(async (req, res) => res.json(await pools.updateShare(owner(req), poolId(req), req.body))));
 
-pool.put('/accounts/:id/share', validate(z.object({ shared: z.boolean() })), asyncRoute(async (req, res) => {
-  res.json(await pools.setAccountShared(owner(req), poolId(req), req.params.id, req.body.shared));
+pool.put('/accounts/:id/share', validate(z.object({ shared: z.boolean(), paid: z.boolean().optional() })), asyncRoute(async (req, res) => {
+  res.json(await pools.setAccountShared(owner(req), poolId(req), req.params.id, req.body.shared, req.body.paid));
 }));
 
 // The quick switch: this pool on or off for now.

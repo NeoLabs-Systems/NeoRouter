@@ -217,45 +217,6 @@ class _ConnectionTile extends StatelessWidget {
   }
 }
 
-/// A dialog that fits any screen: title on top, a scrolling body, and the
-/// actions always visible at the bottom.
-class PoolDialogFrame extends StatelessWidget {
-  const PoolDialogFrame({super.key, required this.title, required this.body, required this.actions, this.maxWidth = 620});
-
-  final String title;
-  final Widget body;
-  final List<Widget> actions;
-  final double maxWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = neoRouterPaletteOf(context);
-    final size = MediaQuery.sizeOf(context);
-    return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: size.height * 0.88),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 22, 24, 12),
-              child: Text(title, style: Theme.of(context).textTheme.titleLarge),
-            ),
-            Flexible(child: SingleChildScrollView(padding: const EdgeInsets.fromLTRB(24, 4, 24, 16), child: body)),
-            Container(
-              decoration: BoxDecoration(border: Border(top: BorderSide(color: palette.border))),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-              child: Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 8, children: actions),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// The Pools tab of the Network page: pick a pool with its chip, then its
 /// overview (the animated basin), what it shares, and its settings.
 class PoolTab extends StatefulWidget {
@@ -270,9 +231,14 @@ class PoolTab extends StatefulWidget {
 class _PoolTabState extends State<PoolTab> {
   bool _loading = true;
   String? _error;
-  String? _poolId;
+  late String? _poolId = widget.controller.savedChoice('pool.open');
 
   NeoRouterController get controller => widget.controller;
+
+  void _openPool(String? id) {
+    controller.rememberTab('pool.open', id);
+    setState(() => _poolId = id);
+  }
 
   @override
   void initState() {
@@ -308,17 +274,23 @@ class _PoolTabState extends State<PoolTab> {
   }
 
   Future<void> _create() async {
-    final created = await showDialog<PoolsSummary>(context: context, builder: (_) => _PoolFormDialog(controller: controller));
+    final created = await showDialog<PoolsSummary>(
+      context: context,
+      builder: (_) => _PoolFormDialog(controller: controller),
+    );
     if (created == null) return;
     controller.updatePools(created);
-    setState(() => _poolId = created.createdId);
+    _openPool(created.createdId);
   }
 
   Future<void> _join([String? link]) async {
-    final joined = await showDialog<PoolsSummary>(context: context, builder: (_) => _PoolFormDialog(controller: controller, joinLink: link ?? ''));
+    final joined = await showDialog<PoolsSummary>(
+      context: context,
+      builder: (_) => _PoolFormDialog(controller: controller, joinLink: link ?? ''),
+    );
     if (joined == null) return;
     controller.updatePools(joined);
-    setState(() => _poolId = joined.createdId);
+    _openPool(joined.createdId);
   }
 
   @override
@@ -335,31 +307,28 @@ class _PoolTabState extends State<PoolTab> {
       child: summary == null
           ? const SizedBox()
           : open == null
-              ? EmptyState(
-                  icon: Icons.hub_outlined,
-                  title: t.poolEmptyTitle,
-                  message: t.poolEmptyMessage,
-                  action: controller.canManagePool ? _StartOrJoin(onCreate: _create, onJoin: _join, centered: true) : null,
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+          ? EmptyState(
+              icon: Icons.hub_outlined,
+              title: t.poolEmptyTitle,
+              message: t.poolEmptyMessage,
+              action: controller.canManagePool ? _StartOrJoin(onCreate: _create, onJoin: _join, centered: true) : null,
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: <Widget>[
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: <Widget>[
-                        for (final pool in pools) _PoolChip(pool: pool, selected: pool.id == open.id, onTap: () => setState(() => _poolId = pool.id)),
-                        if (controller.canManagePool && roomForMore) ...<Widget>[
-                          const SizedBox(width: 8),
-                          _StartOrJoin(onCreate: _create, onJoin: _join),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    _PoolPage(key: ValueKey<String>(open.id), controller: controller, pool: open, onLeft: () => setState(() => _poolId = null)),
+                    for (final pool in pools) _PoolChip(pool: pool, selected: pool.id == open.id, onTap: () => _openPool(pool.id)),
+                    if (controller.canManagePool && roomForMore) ...<Widget>[const SizedBox(width: 8), _StartOrJoin(onCreate: _create, onJoin: _join)],
                   ],
                 ),
+                const SizedBox(height: AppSpacing.lg),
+                _PoolPage(key: ValueKey<String>(open.id), controller: controller, pool: open, onLeft: () => _openPool(null)),
+              ],
+            ),
     );
   }
 }
@@ -438,7 +407,12 @@ class _PoolPage extends StatefulWidget {
 }
 
 class _PoolPageState extends State<_PoolPage> {
-  _PoolSection _section = _PoolSection.overview;
+  late _PoolSection _section = widget.controller.savedTab('pool', _PoolSection.values, _PoolSection.overview);
+
+  void _openSection(_PoolSection section) {
+    widget.controller.rememberTab('pool', section);
+    setState(() => _section = section);
+  }
 
   Future<void> _invite() async {
     final t = AppL10n.of(context);
@@ -448,10 +422,10 @@ class _PoolPageState extends State<_PoolPage> {
       if (!mounted) return;
       await showDialog<void>(
         context: context,
-        builder: (dialogContext) => PoolDialogFrame(
+        builder: (dialogContext) => DialogFrame(
           title: t.poolInviteTitle,
           maxWidth: 520,
-          body: _CopyableLink(intro: t.poolInviteBody, link: link),
+          body: _InviteShare(intro: t.poolInviteBody, link: link, pool: widget.pool.name, host: widget.pool.selfName),
           actions: <Widget>[FilledButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(t.keySecretDone))],
         ),
       );
@@ -475,7 +449,12 @@ class _PoolPageState extends State<_PoolPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(pool.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: palette.text)),
+                  Text(
+                    pool.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: palette.text),
+                  ),
                   const SizedBox(height: 2),
                   Text(<String>[if (pool.isHost) t.poolHostYou, poolSubtitle(t, pool)].join(' · '), style: TextStyle(fontSize: 12.5, color: palette.textMuted)),
                 ],
@@ -496,11 +475,11 @@ class _PoolPageState extends State<_PoolPage> {
             if (manage) (value: _PoolSection.settings, label: t.poolTabSettings, count: null),
           ],
           selected: _section,
-          onChanged: (section) => setState(() => _section = section),
+          onChanged: _openSection,
         ),
         const SizedBox(height: AppSpacing.lg),
         switch (_section) {
-          _PoolSection.overview => _PoolOverview(controller: widget.controller, pool: pool, onEditSharing: () => setState(() => _section = _PoolSection.sharing)),
+          _PoolSection.overview => _PoolOverview(controller: widget.controller, pool: pool, onEditSharing: () => _openSection(_PoolSection.sharing)),
           _PoolSection.sharing => _SharingSection(key: ValueKey<String>('share-${pool.id}'), controller: widget.controller, pool: pool),
           _PoolSection.settings => _PoolSettingsSection(controller: widget.controller, pool: pool, onLeft: widget.onLeft),
         },
@@ -915,7 +894,10 @@ class _SharingSectionState extends State<_SharingSection> {
 
   Future<void> _save() async {
     setState(() => _saving = true);
-    await _apply(context, widget.controller, () => widget.controller.api.updatePoolShare(widget.pool.id, <String, Object?>{'sharedAccountIds': _selected.toList()}));
+    // Connections shared only for their paid models are not in this picker; they stay shared.
+    final free = (widget.controller.pools?.shareableFree ?? const <ShareableAccount>[]).map((account) => account.id).toSet();
+    final paidOnly = widget.pool.sharedAccountIds.where((id) => !free.contains(id));
+    await _apply(context, widget.controller, () => widget.controller.api.updatePoolShare(widget.pool.id, <String, Object?>{'sharedAccountIds': <String>{..._selected, ...paidOnly}.toList()}));
     if (mounted) setState(() => _saving = false);
   }
 
@@ -928,7 +910,7 @@ class _SharingSectionState extends State<_SharingSection> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final share = widget.pool.share;
-    final accounts = widget.controller.pools?.shareable ?? const <ShareableAccount>[];
+    final accounts = widget.controller.pools?.shareableFree ?? const <ShareableAccount>[];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -948,6 +930,7 @@ class _SharingSectionState extends State<_SharingSection> {
             ),
           ],
         ),
+        _PaidSharingGroup(controller: widget.controller, pool: widget.pool),
         SettingsGroup(
           title: t.poolLimitsTitle,
           description: t.poolLimitsBalanceHint,
@@ -960,6 +943,63 @@ class _SharingSectionState extends State<_SharingSection> {
           ],
         ),
         InlineHint(message: t.poolTosNotice),
+      ],
+    );
+  }
+}
+
+/// Paid models, per connection and only after an explicit yes: partners
+/// then use them when no free model can serve, and the owner pays.
+class _PaidSharingGroup extends StatefulWidget {
+  const _PaidSharingGroup({required this.controller, required this.pool});
+
+  final NeoRouterController controller;
+  final PoolInfo pool;
+
+  @override
+  State<_PaidSharingGroup> createState() => _PaidSharingGroupState();
+}
+
+class _PaidSharingGroupState extends State<_PaidSharingGroup> {
+  final Set<String> _busy = <String>{};
+
+  Future<void> _set(ShareableAccount account, bool paid) async {
+    final t = AppL10n.of(context);
+    if (paid) {
+      final confirmed = await confirmAction(
+        context,
+        title: t.poolPaidConfirmTitle(account.label),
+        message: account.prepaid ? t.poolPaidConfirmPrepaid(widget.pool.name) : t.poolPaidConfirmBilled(widget.pool.name),
+        confirmLabel: t.poolPaidConfirm,
+        cancelLabel: t.cancel,
+      );
+      if (!confirmed || !mounted) return;
+    }
+    // Turning paid off keeps the connection's free models shared if they were.
+    final shared = paid || (account.freeModels > 0 && widget.pool.sharedAccountIds.contains(account.id));
+    setState(() => _busy.add(account.id));
+    await _apply(context, widget.controller, () => widget.controller.api.setAccountPoolShare(widget.pool.id, account.id, shared, paid: paid));
+    if (mounted) setState(() => _busy.remove(account.id));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final accounts = widget.controller.pools?.shareablePaid ?? const <ShareableAccount>[];
+    if (accounts.isEmpty) return const SizedBox.shrink();
+    return SettingsGroup(
+      title: t.poolPaidTitle,
+      description: t.poolPaidHint,
+      children: <Widget>[
+        for (final account in accounts)
+          SettingsRow(
+            label: account.label,
+            description: account.prepaid ? t.poolPaidPrepaid('${account.paidModels}') : t.poolPaidBilled('${account.paidModels}'),
+            control: Switch(
+              value: widget.pool.paidAccountIds.contains(account.id),
+              onChanged: _busy.contains(account.id) ? null : (on) => _set(account, on),
+            ),
+          ),
       ],
     );
   }
@@ -1003,6 +1043,78 @@ class _PoolSettingsSection extends StatelessWidget {
             onPressed: () => _leave(context),
             style: OutlinedButton.styleFrom(foregroundColor: palette.error),
             child: Text(closing ? t.poolClose : t.poolLeave),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The invite: the link to copy, and a ready-made message to send with it,
+/// in the language the invited person reads (not necessarily the app's).
+class _InviteShare extends StatefulWidget {
+  const _InviteShare({required this.intro, required this.link, required this.pool, required this.host});
+
+  final String intro;
+  final String link;
+  final String pool;
+  final String host;
+
+  @override
+  State<_InviteShare> createState() => _InviteShareState();
+}
+
+class _InviteShareState extends State<_InviteShare> {
+  late String _lang = Localizations.localeOf(context).languageCode == 'de' ? 'de' : 'en';
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    // The page the link opens speaks the same language as the text.
+    final link = '${widget.link}&lang=$_lang';
+    final text = lookupAppL10n(Locale(_lang)).poolInviteText(widget.host, widget.pool, link);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _CopyableLink(intro: widget.intro, link: link),
+        const SizedBox(height: AppSpacing.lg),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                t.poolInviteTextLanguage,
+                style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
+              ),
+            ),
+            SegmentedButton<String>(
+              showSelectedIcon: false,
+              segments: const <ButtonSegment<String>>[
+                ButtonSegment<String>(value: 'de', label: Text('Deutsch')),
+                ButtonSegment<String>(value: 'en', label: Text('English')),
+              ],
+              selected: <String>{_lang},
+              onSelectionChanged: (value) => setState(() => _lang = value.first),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: palette.surfaceRaised, borderRadius: BorderRadius.circular(AppRadius.control)),
+          child: SelectableText(text, style: TextStyle(color: palette.textSoft, fontSize: 13, height: 1.5)),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton.tonalIcon(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: text));
+              showSnack(context, t.copied);
+            },
+            icon: const Icon(Icons.content_copy_rounded, size: 17),
+            label: Text(t.poolInviteCopyText),
           ),
         ),
       ],
@@ -1071,7 +1183,7 @@ class _PoolFormDialogState extends State<_PoolFormDialog> {
   String? _error;
 
   bool get _joining => widget.joinLink != null;
-  List<ShareableAccount> get _accounts => widget.controller.pools?.shareable ?? const <ShareableAccount>[];
+  List<ShareableAccount> get _accounts => widget.controller.pools?.shareableFree ?? const <ShareableAccount>[];
 
   @override
   void initState() {
@@ -1102,20 +1214,20 @@ class _PoolFormDialogState extends State<_PoolFormDialog> {
   }
 
   Future<void> _check() => _run(() async {
-        final preview = await widget.controller.api.previewPool(_link.text.trim());
-        if (!mounted) return;
-        setState(() {
-          _preview = preview;
-          if (preview['alreadyMember'] == true) _error = AppL10n.of(context).poolAlreadyMember;
-        });
-      });
+    final preview = await widget.controller.api.previewPool(_link.text.trim());
+    if (!mounted) return;
+    setState(() {
+      _preview = preview;
+      if (preview['alreadyMember'] == true) _error = AppL10n.of(context).poolAlreadyMember;
+    });
+  });
 
   Future<void> _submit() => _run(() async {
-        final result = _joining
-            ? await widget.controller.api.joinPool(_link.text.trim(), _selfName.text.trim(), _shared.toList())
-            : await widget.controller.api.createPool(_name.text.trim(), _selfName.text.trim(), _shared.toList());
-        if (mounted) Navigator.of(context).pop(result);
-      });
+    final result = _joining
+        ? await widget.controller.api.joinPool(_link.text.trim(), _selfName.text.trim(), _shared.toList())
+        : await widget.controller.api.createPool(_name.text.trim(), _selfName.text.trim(), _shared.toList());
+    if (mounted) Navigator.of(context).pop(result);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1125,7 +1237,7 @@ class _PoolFormDialogState extends State<_PoolFormDialog> {
     final needsLink = _joining && preview == null;
     final previewName = (preview?['pool'] as Map?)?['name'] as String? ?? '';
     final ready = !_busy && _selfName.text.trim().isNotEmpty && (_joining ? preview != null && preview['alreadyMember'] != true : _name.text.trim().isNotEmpty);
-    return PoolDialogFrame(
+    return DialogFrame(
       title: _joining ? (preview == null ? t.poolJoinTitle : t.poolJoinPreview(previewName)) : t.poolCreateTitle,
       body: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1140,27 +1252,49 @@ class _PoolFormDialogState extends State<_PoolFormDialog> {
               onSubmitted: (_) => _check(),
             )
           else ...<Widget>[
-            if (preview != null) ...<Widget>[
-              _PreviewCard(preview: preview),
-              const SizedBox(height: AppSpacing.lg),
-            ],
+            if (preview != null) ...<Widget>[_PreviewCard(preview: preview), const SizedBox(height: AppSpacing.lg)],
             LayoutBuilder(
               builder: (context, constraints) {
                 final fields = <Widget>[
-                  if (!_joining) TextField(controller: _name, autofocus: true, decoration: InputDecoration(labelText: t.poolNameLabel), onChanged: (_) => setState(() {})),
-                  TextField(controller: _selfName, decoration: InputDecoration(labelText: t.poolSelfNameLabel, helperText: t.poolSelfNameHint), onChanged: (_) => setState(() {})),
+                  if (!_joining)
+                    TextField(
+                      controller: _name,
+                      autofocus: true,
+                      decoration: InputDecoration(labelText: t.poolNameLabel),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  TextField(
+                    controller: _selfName,
+                    decoration: InputDecoration(labelText: t.poolSelfNameLabel, helperText: t.poolSelfNameHint),
+                    onChanged: (_) => setState(() {}),
+                  ),
                 ];
                 if (constraints.maxWidth < 480 || fields.length == 1) {
-                  return Column(children: <Widget>[for (final field in fields) Padding(padding: const EdgeInsets.only(bottom: AppSpacing.sm), child: field)]);
+                  return Column(
+                    children: <Widget>[
+                      for (final field in fields)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: field,
+                        ),
+                    ],
+                  );
                 }
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[Expanded(child: fields[0]), const SizedBox(width: AppSpacing.sm), Expanded(child: fields[1])],
+                  children: <Widget>[
+                    Expanded(child: fields[0]),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(child: fields[1]),
+                  ],
                 );
               },
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text(t.poolShareTitle, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
+            Text(
+              t.poolShareTitle,
+              style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
+            ),
             const SizedBox(height: 2),
             Text(t.poolShareHint, style: TextStyle(fontSize: 12.5, color: palette.textSoft, height: 1.4)),
             const SizedBox(height: AppSpacing.sm),
@@ -1249,7 +1383,7 @@ class _SharePoolsDialogState extends State<_SharePoolsDialog> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final pools = widget.controller.pools?.pools ?? const <PoolInfo>[];
-    return PoolDialogFrame(
+    return DialogFrame(
       title: t.poolShareDialogTitle(widget.accountLabel),
       maxWidth: 480,
       body: SettingsCardList(
@@ -1305,16 +1439,16 @@ class _LimitsDialogState extends State<_LimitsDialog> {
     final reserve = _value(_reserve, 0, 90);
     final valid = requests != null && tokens != null && concurrent != null && reserve != null;
     Widget field(TextEditingController controller, String label, {String? helper}) => Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.md),
-          child: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(labelText: label, helperText: helper, helperMaxLines: 2),
-            onChanged: (_) => setState(() {}),
-          ),
-        );
-    return PoolDialogFrame(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: TextField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+        decoration: InputDecoration(labelText: label, helperText: helper, helperMaxLines: 2),
+        onChanged: (_) => setState(() {}),
+      ),
+    );
+    return DialogFrame(
       title: t.poolLimitsTitle,
       maxWidth: 440,
       body: Column(
@@ -1331,9 +1465,7 @@ class _LimitsDialogState extends State<_LimitsDialog> {
       actions: <Widget>[
         TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.cancel)),
         FilledButton(
-          onPressed: valid
-              ? () => Navigator.of(context).pop(<String, Object?>{'requestsPerDay': requests, 'tokensPerDay': tokens, 'concurrent': concurrent, 'reserve': reserve / 100})
-              : null,
+          onPressed: valid ? () => Navigator.of(context).pop(<String, Object?>{'requestsPerDay': requests, 'tokensPerDay': tokens, 'concurrent': concurrent, 'reserve': reserve / 100}) : null,
           child: Text(t.save),
         ),
       ],

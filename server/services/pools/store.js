@@ -162,13 +162,27 @@ function sharedAccountIds(userId, poolId) {
   return db().prepare('SELECT account_id FROM pool_shared_accounts WHERE user_id = ? AND pool_id = ?').all(userId, poolId).map((row) => row.account_id);
 }
 
-function setShared(userId, poolId, accountId, shared) {
-  if (shared) db().prepare('INSERT OR IGNORE INTO pool_shared_accounts (user_id, pool_id, account_id) VALUES (?, ?, ?)').run(userId, poolId, accountId);
-  else db().prepare('DELETE FROM pool_shared_accounts WHERE user_id = ? AND pool_id = ? AND account_id = ?').run(userId, poolId, accountId);
+// Connections whose paid models are shared too (a subset of the shared ones).
+function paidAccountIds(userId, poolId) {
+  return db().prepare('SELECT account_id FROM pool_shared_accounts WHERE user_id = ? AND pool_id = ? AND share_paid = 1').all(userId, poolId).map((row) => row.account_id);
 }
 
-function isShared(poolId, accountId) {
-  return Boolean(db().prepare('SELECT 1 FROM pool_shared_accounts WHERE pool_id = ? AND account_id = ?').get(poolId, accountId));
+// paid: true or false sets whether paid models are shared too; left out, it stays as it was.
+function setShared(userId, poolId, accountId, shared, paid) {
+  if (!shared) {
+    db().prepare('DELETE FROM pool_shared_accounts WHERE user_id = ? AND pool_id = ? AND account_id = ?').run(userId, poolId, accountId);
+    return;
+  }
+  db().prepare('INSERT OR IGNORE INTO pool_shared_accounts (user_id, pool_id, account_id) VALUES (?, ?, ?)').run(userId, poolId, accountId);
+  if (typeof paid === 'boolean') {
+    db().prepare('UPDATE pool_shared_accounts SET share_paid = ? WHERE user_id = ? AND pool_id = ? AND account_id = ?').run(paid ? 1 : 0, userId, poolId, accountId);
+  }
+}
+
+// How a connection is shared in a pool: null (not at all) or { paid }.
+function shareOf(poolId, accountId) {
+  const row = db().prepare('SELECT share_paid FROM pool_shared_accounts WHERE pool_id = ? AND account_id = ?').get(poolId, accountId);
+  return row ? { paid: row.share_paid === 1 } : null;
 }
 
 function poolMemberships() {
@@ -180,5 +194,5 @@ module.exports = {
   members, member, upsertMember, removeMember,
   links, link, linkById, linkToMember, linkForAccount, insertLink, updateLink, deleteLink,
   invites, insertInvite, inviteByHash, useInvite, revokeInvite, activeInviteCount,
-  sharedAccountIds, setShared, isShared, poolMemberships,
+  sharedAccountIds, paidAccountIds, setShared, shareOf, poolMemberships,
 };

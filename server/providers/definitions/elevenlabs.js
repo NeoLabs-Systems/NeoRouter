@@ -17,9 +17,9 @@ module.exports = {
   billing: {
     defaultMode: 'free_tier',
     freeTierAll: true,
-    note: 'The Free plan has 10,000 credits a month without a card (about 10 minutes of speech) and requests fail beyond it; it is for non-commercial use with attribution. Paid plans bill overage: choose paid for such keys.',
+    note: 'Free plan: 10,000 credits a month, non-commercial with attribution, default voices only (library voices need a paid plan). Requests fail beyond it unless a pay-as-you-go balance was topped up, which is then spent: choose paid for paid-plan keys or accounts with a top-up balance.',
     source: 'https://elevenlabs.io/pricing',
-    checkedAt: '2026-10-29',
+    checkedAt: '2026-11-07',
   },
-  limits: { pool: 'account', account: { rpm: 60 } },
+  limits: { pool: 'account', account: { concurrent: 2 } },
 };

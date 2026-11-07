@@ -99,13 +99,18 @@ function setShared(userId, poolId, accountIds = []) {
   for (const row of rows) sharePolicy.setAccountShared(userId, poolId, row.id, wanted.has(row.id));
 }
 
-// Own connections with free chat models: what can be shared.
+// Own connections with chat models that could be shared: free ones, or paid
+// ones (only ever shared after an explicit opt-in). prepaid: the provider
+// reports a balance, so partner use spends it; otherwise it is billed.
 function shareableAccounts(userId) {
   return getDatabase().prepare(`SELECT a.id, a.label, a.definition_id, a.enabled,
-      (SELECT COUNT(*) FROM models m WHERE m.account_id = a.id AND m.is_free = 1 AND m.available = 1 AND m.capability = 'chat') free_models
+      (SELECT COUNT(*) FROM models m WHERE m.account_id = a.id AND m.is_free = 1 AND m.available = 1 AND m.capability = 'chat') free_models,
+      -- Plan (subscription) connections never count: their models are not shared.
+      CASE WHEN a.prepaid THEN 0 ELSE (SELECT COUNT(*) FROM models m WHERE m.account_id = a.id AND m.is_free = 0 AND m.available = 1 AND m.capability = 'chat') END paid_models,
+      EXISTS (SELECT 1 FROM quota_state q WHERE q.scope_key = 'a:' || a.id AND q.metric = 'balance') prepaid
     FROM provider_accounts a WHERE a.user_id = ? AND a.definition_id != 'neorouter_peer' ORDER BY a.label COLLATE NOCASE`).all(userId)
-    .filter((row) => row.free_models > 0)
-    .map((row) => ({ id: row.id, label: row.label, definitionId: row.definition_id, enabled: row.enabled === 1, freeModels: row.free_models }));
+    .filter((row) => row.free_models > 0 || row.paid_models > 0)
+    .map((row) => ({ id: row.id, label: row.label, definitionId: row.definition_id, enabled: row.enabled === 1, freeModels: row.free_models, paidModels: row.paid_models, prepaid: row.prepaid === 1 }));
 }
 
 // ---------------------------------------------------------------- creating
@@ -132,7 +137,8 @@ function createInvite(userId, poolId) {
   const token = randomToken(24);
   const expiresAt = Date.now() + INVITE_TTL_MS;
   const id = store.insertInvite(userId, poolId, sha256(token), expiresAt);
-  return { id, link: `${pool.selfUrl}/app/?pool=${token}`, expiresAt: new Date(expiresAt).toISOString() };
+  // Opens a page on this server that sends the invited person to their own NeoRouter.
+  return { id, link: `${pool.selfUrl}/pool/join?pool=${token}`, expiresAt: new Date(expiresAt).toISOString() };
 }
 
 function revokeInvite(userId, poolId, inviteId) {
@@ -487,9 +493,10 @@ async function updateShare(userId, poolId, input) {
   return summary(userId);
 }
 
-async function setAccountShared(userId, poolId, accountId, shared) {
+// paid (optional): whether this connection's paid models are shared too.
+async function setAccountShared(userId, poolId, accountId, shared, paid) {
   requirePool(userId, poolId);
-  if (!sharePolicy.setAccountShared(userId, poolId, accountId, shared)) throw fail(404, 'ACCOUNT_NOT_FOUND', 'This connection does not exist.');
+  if (!sharePolicy.setAccountShared(userId, poolId, accountId, shared, paid)) throw fail(404, 'ACCOUNT_NOT_FOUND', 'This connection does not exist.');
   await announceShared(userId, poolId);
   return summary(userId);
 }
@@ -556,6 +563,7 @@ function poolView(userId, pool, { canManage }) {
     partners: store.members(userId, pool.poolId).filter((member) => member.memberId !== me).map((member) => partnerView(userId, pool, member)),
     share: sharePolicy.shareSettings(pool),
     sharedAccountIds: store.sharedAccountIds(userId, pool.poolId),
+    paidAccountIds: store.paidAccountIds(userId, pool.poolId),
     invites: pool.isHost && canManage ? store.invites(userId, pool.poolId) : [],
   };
 }

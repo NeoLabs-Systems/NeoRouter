@@ -56,6 +56,8 @@ function createApp() {
   app.use(require('./routes/connect').router);
   // Pools: what other NeoRouters call to join and keep a pool in order.
   app.use('/federation/v1', require('./routes/federation'));
+  // The page a pool invite link opens: it sends the invited person to their own NeoRouter.
+  app.get('/pool/join', require('./routes/pool_join').poolJoinPage);
   // Gateway reference for agents (Markdown).
   app.use(require('./routes/api_docs'));
   // Playground audio uploads arrive as base64 JSON (25 MB of audio).

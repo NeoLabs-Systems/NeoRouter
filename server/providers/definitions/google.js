@@ -32,8 +32,8 @@ module.exports = {
     ],
     note: 'Free only while the Google Cloud project behind the key has no billing account; with billing enabled every request is charged. NeoRouter verifies this automatically and only treats models with a free tier as free.',
     verify: { type: 'paid_model_probe', paidOnlyModels: ['^gemini-\\d+(\\.\\d+)?-pro-preview$', '^gemini-4-argon$', '^gemini-pro-latest$'] },
-    source: 'https://ai.google.dev/gemini-api/docs/pricing',
-    checkedAt: '2026-10-28',
+    source: 'https://aistudio.google.com/docs/pricing',
+    checkedAt: '2026-11-07',
   },
   limits: {
     pool: 'model',

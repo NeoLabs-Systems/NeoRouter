@@ -70,7 +70,7 @@ class AdminScreen extends StatefulWidget {
 class _AdminScreenState extends State<AdminScreen> {
   final TextEditingController _search = TextEditingController();
   final TextEditingController _aaKey = TextEditingController();
-  _AdminTab _tab = _AdminTab.users;
+  late _AdminTab _tab = widget.controller.savedTab('admin', _AdminTab.values, _AdminTab.users);
   List<AppUser> _users = <AppUser>[];
   Map<String, dynamic>? _settings;
   Map<String, dynamic>? _info;
@@ -166,6 +166,7 @@ class _AdminScreenState extends State<AdminScreen> {
       ];
 
   void _open(_AdminTab tab) => setState(() {
+        widget.controller.rememberTab('admin', tab);
         _tab = tab;
         _search.clear();
       });

@@ -9,9 +9,10 @@ module.exports = [
     category: 'free',
     website: 'https://kilo.ai',
     adapter: 'openai_compatible',
-    baseUrl: 'https://api.kilo.ai/api/gateway/v1',
+    baseUrl: 'https://ai-gateway.kilo.ai/api/v1',
     keyOptional: true,
-    billing: { defaultMode: 'paid', alwaysFree: [':free$', '^kilo-auto/free$', '^openrouter/free$', '^reflection/beam-free$'], note: 'Models priced at 0 or ending in :free are free; dynamic prices (-1) count as paid.' },
+    // Some paid models (Lyria songs and clips) are listed at token price 0, so the listing is not trusted.
+    billing: { defaultMode: 'paid', alwaysFree: [':free$', '^kilo-auto/free$', '^openrouter/free$', '^reflection/beam-free$'], trustListingFree: false, note: 'Only :free models (and kilo-auto/free) are free; everything else, including some models listed at price 0, is paid from credits. Without a key: 200 requests an hour per IP.', source: 'https://kilo.ai/docs/gateway/authentication', checkedAt: '2026-11-07' },
   },
   {
     id: 'llm7',
@@ -24,7 +25,7 @@ module.exports = [
     baseUrl: 'https://api.llm7.io/v1',
     keyOptional: true,
     // Most models are usage-based ("pro"); only the turbo tier is free.
-    billing: { defaultMode: 'free_tier', freeTierModels: ['^codestral-latest$', '^gpt-oss:20b$', '^minimax-m2\\.7$', '^mistral-nemo-instruct-2407$', '^nemotron-3-nano:30b$'], note: 'Only the turbo-tier models are free; the rest are usage-based.', checkedAt: '2026-10-28' },
+    billing: { defaultMode: 'free_tier', freeTierModels: ['^codestral-latest$', '^gpt-oss:20b$', '^mistral-nemo-instruct-2407$', '^nemotron-3-nano:30b$'], note: 'Only the turbo-tier models are free; the rest are usage-based.', source: 'https://api.llm7.io/v1/models', checkedAt: '2026-11-07' },
   },
   {
     id: 'ovh',
@@ -35,7 +36,8 @@ module.exports = [
     adapter: 'openai_compatible',
     baseUrl: 'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1',
     keyOptional: true,
-    billing: { defaultMode: 'free_tier', freeTierAll: true, keylessOnly: true, note: 'Free only without a key (anonymous, 2 requests a minute). With an API key usage is billed to your Public Cloud project.' },
+    // Whisper and speech models are listed at 0 but billed per second with a key.
+    billing: { defaultMode: 'free_tier', freeTierAll: true, keylessOnly: true, trustListingFree: false, note: 'Free only without a key (anonymous, 2 requests a minute per model). With an API key usage is billed in EUR to your Public Cloud project, including Whisper per second of audio.', source: 'https://docs.ovhcloud.com/en/guides/public-cloud/ai-machine-learning/ai-endpoints-capabilities', checkedAt: '2026-11-07' },
     limits: { pool: 'model', defaults: { rpm: 2 } },
   },
   {
@@ -49,7 +51,7 @@ module.exports = [
     baseUrl: 'https://gen.pollinations.ai/v1',
     keyOptional: true,
     validate: { path: 'https://gen.pollinations.ai/account/key' },
-    billing: { defaultMode: 'free_tier', freeTierAll: true, note: 'Free while the prepaid balance has no paid pollen; paid_only models never are.' },
+    billing: { defaultMode: 'free_tier', freeTierAll: true, note: 'Free models spend free Quest Pollen; models marked paid_only need purchased pollen and are never free. Choose paid if the account holds paid pollen.', source: 'https://github.com/pollinations/pollinations/blob/main/APIDOCS.md', checkedAt: '2026-11-07' },
   },
   {
     id: 'aihorde',
@@ -62,7 +64,7 @@ module.exports = [
     baseUrl: 'https://oai.aihorde.net/v1',
     auth: { type: 'bearer', anonymousKey: '0000000000' },
     keyOptional: true,
-    billing: { defaultMode: 'free_tier', freeTierAll: true, note: 'Volunteer capacity; expect queueing.' },
+    billing: { defaultMode: 'free_tier', freeTierAll: true, note: 'Volunteer capacity; expect queueing. Anonymous use works; a free key gives priority from kudos.', source: 'https://aihorde.net/faq', checkedAt: '2026-11-07' },
     quirks: { noTools: true, minMaxTokens: 16, timeoutMs: 600000, streamUsage: false },
   },
 ];

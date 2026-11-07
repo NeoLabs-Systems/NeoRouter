@@ -6,7 +6,7 @@ module.exports = {
   description: 'Aggregator for hundreds of models. Models ending in :free cost nothing.',
   category: 'aggregator',
   website: 'https://openrouter.ai',
-  keyUrl: 'https://openrouter.ai/keys',
+  keyUrl: 'https://openrouter.ai/settings/keys',
   adapter: 'openai_compatible',
   baseUrl: 'https://openrouter.ai/api/v1',
   headers: { 'HTTP-Referer': 'https://github.com/NeoLabs-Systems/NeoRouter', 'X-Title': 'NeoRouter' },
@@ -17,9 +17,10 @@ module.exports = {
   media: { embed: '/embeddings', generateImage: '/images', speech: '/audio/speech', transcribe: '/audio/transcriptions', createVideo: '/videos', decide: '/systemone' },
   quirks: { transcriptionJson: true, noImageResponseFormat: true },
   billing: {
+    checkedAt: '2026-11-07',
     defaultMode: 'paid',
     alwaysFree: [':free$', '^openrouter/free$'],
-    note: 'Paid models draw from your credits. :free models share a daily request allowance (higher once 10 USD of credits were bought).',
+    note: 'Paid models draw from your credits. :free models allow 20 requests a minute and 50 a day (1,000 a day once 10 USD of credits were bought); a negative balance blocks them too.',
   },
   limits: {
     pool: 'model',

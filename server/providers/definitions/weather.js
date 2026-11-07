@@ -28,9 +28,9 @@ module.exports = [
     billing: {
       defaultMode: 'free_tier',
       freeTierAll: true,
-      note: 'Free without a key for non-commercial use: 600 calls a minute, 5,000 an hour, 10,000 a day. Commercial use needs a paid plan (a key and customer-api.open-meteo.com as the base URL). Data is CC BY 4.0: credit Open-Meteo.',
+      note: 'Free without a key for non-commercial use: 600 calls a minute, 5,000 an hour, 10,000 a day, 300,000 a month. Commercial use needs a paid plan (a key and customer-api.open-meteo.com as the base URL). Data is CC BY 4.0: credit Open-Meteo.',
       source: 'https://open-meteo.com/en/pricing',
-      checkedAt: '2026-10-30',
+      checkedAt: '2026-11-07',
     },
   },
   {
@@ -76,13 +76,13 @@ module.exports = [
     baseUrl: 'https://api.tomorrow.io/v4',
     auth: { type: 'none' },
     // Current weather plus a forecast is two calls.
-    ...weather('tomorrow', { id: 'tomorrow-forecast', name: 'Tomorrow.io Forecast' }, { rpm: 25, rpd: 500 }),
+    ...weather('tomorrow', { id: 'tomorrow-forecast', name: 'Tomorrow.io Forecast' }, { rpd: 500 }),
     billing: {
       defaultMode: 'free_tier',
       freeTierAll: true,
       note: 'Free plan: 500 calls a day, 25 an hour, 3 a second. Asking for current weather and a forecast uses two calls. Requests fail beyond the limits.',
       source: 'https://support.tomorrow.io/hc/en-us/articles/20273728362644-Free-API-Plan-Rate-Limits',
-      checkedAt: '2026-10-30',
+      checkedAt: '2026-11-07',
     },
   },
   {
@@ -97,9 +97,9 @@ module.exports = [
     billing: {
       defaultMode: 'free_tier',
       freeTierAll: true,
-      note: '1,000 records a day free (one forecast for one place is one record). Without a card on file it stops there; with a card, records beyond are billed at 0.0001 USD each: choose paid for such keys.',
+      note: 'Free plan: about 1,000 records a day (30,000 a month), commercial use allowed; one forecast for one place is one record. Paid use is the separate Metered plan: choose paid for such keys.',
       source: 'https://www.visualcrossing.com/weather-data-editions',
-      checkedAt: '2026-10-30',
+      checkedAt: '2026-11-07',
     },
   },
 ];

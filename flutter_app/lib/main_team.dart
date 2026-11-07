@@ -59,7 +59,7 @@ enum _TeamTab { pool, people }
 
 class _TeamScreenState extends State<TeamScreen> {
   // Pools come first; the team tab opens for an invite to someone's team.
-  late _TeamTab _tab = widget.controller.pendingInvite != null ? _TeamTab.people : _TeamTab.pool;
+  late _TeamTab _tab = widget.controller.pendingInvite != null ? _TeamTab.people : widget.controller.savedTab('network', _TeamTab.values, _TeamTab.pool);
   TeamSummary? _team;
   bool _loading = true;
   String? _error;
@@ -190,7 +190,10 @@ class _TeamScreenState extends State<TeamScreen> {
         (value: _TeamTab.people, label: t.teamTabPeople, count: team == null || team.members.isEmpty ? null : team.members.length),
       ],
       selected: _tab,
-      onChanged: (tab) => setState(() => _tab = tab),
+      onChanged: (tab) {
+        widget.controller.rememberTab('network', tab);
+        setState(() => _tab = tab);
+      },
     );
     if (_tab == _TeamTab.pool) {
       return PageScaffold(

@@ -12,7 +12,8 @@ import 'src/backend_client.dart';
 import 'src/capabilities.dart';
 import 'src/models.dart';
 
-enum _Filter { all, free, issues }
+// Pool models (from partners) have their own filter and stay out of the others.
+enum _Filter { all, free, pool, issues }
 
 const int _pageSize = 60;
 
@@ -141,11 +142,13 @@ class _ModelsScreenState extends State<ModelsScreen> {
   Iterable<CatalogModel> get _visible {
     final query = _query.toLowerCase();
     return _models.where((model) {
+      if ((_filter == _Filter.pool) != model.fromPool) return false;
       if (_provider != null && model.providerKey != _provider) return false;
       if (query.isNotEmpty && !model.id.toLowerCase().contains(query) && !model.name.toLowerCase().contains(query)) return false;
       return switch (_filter) {
         _Filter.all => true,
         _Filter.free => model.isFree,
+        _Filter.pool => true,
         _Filter.issues => !model.available || model.penalty >= 1,
       };
     });
@@ -191,7 +194,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    final providerNames = <String, String>{for (final model in _models) model.providerKey: model.providerName};
+    final pooled = _filter == _Filter.pool;
+    final hasPool = _models.any((model) => model.fromPool);
+    final providerNames = <String, String>{for (final model in _models.where((model) => model.fromPool == pooled)) model.providerKey: model.providerName};
     final providers = providerNames.keys.toList()..sort((a, b) => providerNames[a]!.toLowerCase().compareTo(providerNames[b]!.toLowerCase()));
     final visible = _rows(_visible.toList());
     final current = _capabilities.where((item) => item.id == _capability).firstOrNull;
@@ -273,18 +278,24 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 ),
               ),
               for (final filter in _Filter.values)
-                ChoiceChip(
-                  label: Text(switch (filter) {
-                    _Filter.all => t.filterAll,
-                    _Filter.free => t.filterFree,
-                    _Filter.issues => t.filterIssues,
-                  }),
-                  selected: _filter == filter,
-                  onSelected: (_) => setState(() {
-                    _filter = filter;
-                    _shown = _pageSize;
-                  }),
-                ),
+                if (filter != _Filter.pool || hasPool)
+                  ChoiceChip(
+                    avatar: filter == _Filter.pool ? Icon(Icons.hub_outlined, size: 16, color: palette.pool) : null,
+                    label: Text(switch (filter) {
+                      _Filter.all => t.filterAll,
+                      _Filter.free => t.filterFree,
+                      _Filter.pool => t.filterPool,
+                      _Filter.issues => t.filterIssues,
+                    }),
+                    selected: _filter == filter,
+                    selectedColor: filter == _Filter.pool ? palette.pool.withValues(alpha: 0.16) : null,
+                    side: filter == _Filter.pool ? BorderSide(color: palette.pool.withValues(alpha: _filter == filter ? 0.6 : 0.35)) : null,
+                    onSelected: (_) => setState(() {
+                      _filter = filter;
+                      _provider = null;
+                      _shown = _pageSize;
+                    }),
+                  ),
             ],
           ),
           AsyncBody(
@@ -298,6 +309,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
+                      if (pooled) ...<Widget>[InlineHint(message: t.modelsPoolHint), const SizedBox(height: AppSpacing.md)],
                       Padding(
                         padding: const EdgeInsets.fromLTRB(2, 0, 0, 10),
                         child: Text(t.modelsShown('${visible.length}'), style: TextStyle(color: palette.textMuted, fontSize: 12.5)),
@@ -445,12 +457,14 @@ class _ModelRow extends StatelessWidget {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final wide = MediaQuery.sizeOf(context).width >= AppBreakpoints.tablet;
+    final source = model.fromPool ? providers.map((name) => t.poolViaPartner(name)).join(', ') : null;
     final details = <String>[
-      providers.length > 1
-          ? providers.join(', ')
-          : accounts > 1
-          ? '${model.providerName} · ${t.providerAccountsCount('$accounts')}'
-          : model.providerName,
+      source ??
+          (providers.length > 1
+              ? providers.join(', ')
+              : accounts > 1
+              ? '${model.providerName} · ${t.providerAccountsCount('$accounts')}'
+              : model.providerName),
       if (model.contextWindow != null) t.contextWindow(formatCount(model.contextWindow!)),
       modelPriceLabel(t, model),
     ].join(' · ');
@@ -461,8 +475,10 @@ class _ModelRow extends StatelessWidget {
         : null;
     return InkWell(
       onTap: onOpen,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 13, 12, 13),
+      child: Container(
+        // Pool models: a thin edge in the pool colour sets them apart.
+        decoration: model.fromPool ? BoxDecoration(border: Border(left: BorderSide(color: palette.pool, width: 3))) : null,
+        padding: EdgeInsets.fromLTRB(model.fromPool ? 17 : 20, 13, 12, 13),
         child: Row(
           children: <Widget>[
             Expanded(

@@ -59,7 +59,7 @@ async function syncAccount(accountId) {
         price_source: model.priceKnown ? 'listing' : priceFromFacts ? 'models.dev' : null,
         is_free: 0,
         free_reason: null,
-        raw_json: JSON.stringify({ freeHint: model.freeHint, priceKnown: model.priceKnown, ...(model.decision ? { decision: true } : {}) }),
+        raw_json: JSON.stringify({ freeHint: model.freeHint, priceKnown: model.priceKnown, ...(model.decision ? { decision: true } : {}), ...(model.paidOnly ? { paidOnly: true } : {}) }),
         price_unit: model.priceUnit || null,
         price_per_unit: model.unitPrice ?? null,
         // Only a new model starts switched off; the ON CONFLICT update leaves a choice alone.

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,6 +31,11 @@ class NeoRouterController extends ChangeNotifier {
   static const String _themeKey = 'neorouter.theme';
   static const String _localeKey = 'neorouter.locale';
   static const String _spaceKey = 'neorouter.space';
+  // The open page and each screen's tab, so a reload lands where you were.
+  static const String _pageKey = 'neorouter.page';
+  static const String _tabsKey = 'neorouter.tabs';
+  SharedPreferences? _prefs;
+  Map<String, String> _tabs = <String, String>{};
 
   final BackendClient client;
   late final RouterApi api = RouterApi(client);
@@ -122,6 +129,8 @@ class NeoRouterController extends ChangeNotifier {
 
   Future<void> bootstrap() async {
     final prefs = await SharedPreferences.getInstance();
+    _prefs = prefs;
+    _tabs = _readTabs(prefs.getString(_tabsKey));
     themeMode = ThemeMode.values.firstWhere((mode) => mode.name == prefs.getString(_themeKey), orElse: () => ThemeMode.system);
     final savedLocale = prefs.getString(_localeKey);
     locale = savedLocale == null ? null : Locale(savedLocale);
@@ -139,6 +148,7 @@ class NeoRouterController extends ChangeNotifier {
         // Server unreachable: keep the token, show the sign-in screen.
       }
     }
+    _restorePage(prefs.getString(_pageKey));
     _readOAuthResult();
     _readPageLink();
     _readInviteLink();
@@ -171,11 +181,19 @@ class NeoRouterController extends ChangeNotifier {
     if (user != null) _openInvite();
   }
 
+  // "?join-pool=<invite link>" comes from the host's invite page; "?pool=<token>"
+  // is an invite opened on this NeoRouter's own address (the host's server).
   void _readPoolLink() {
-    final link = Uri.base.queryParameters['pool'];
-    if (link == null || link.isEmpty) return;
-    // The whole link: it names the host as well as the invite.
-    pendingPoolInvite = Uri.base.toString();
+    final params = Uri.base.queryParameters;
+    final forwarded = params['join-pool'];
+    final token = params['pool'];
+    if (forwarded != null && forwarded.isNotEmpty) {
+      pendingPoolInvite = forwarded;
+    } else if (token != null && token.isNotEmpty) {
+      pendingPoolInvite = Uri.base.toString();
+    } else {
+      return;
+    }
     if (user != null) _openPoolInvite();
   }
 
@@ -352,7 +370,40 @@ class NeoRouterController extends ChangeNotifier {
 
   void go(AppPage next) {
     page = canOpen(next) ? next : _firstOpenPage();
+    _prefs?.setString(_pageKey, page.name);
     notifyListeners();
+  }
+
+  void _restorePage(String? name) {
+    final match = AppPage.values.where((item) => item.name == name).firstOrNull;
+    if (match != null && user != null && canOpen(match)) page = match;
+  }
+
+  static Map<String, String> _readTabs(String? raw) {
+    try {
+      final value = raw == null ? null : jsonDecode(raw);
+      if (value is Map) return value.map((key, item) => MapEntry('$key', '$item'));
+    } catch (_) {
+      // A broken value just means no remembered tabs.
+    }
+    return <String, String>{};
+  }
+
+  /// The tab a screen had open last time, or [fallback].
+  T savedTab<T extends Enum>(String screen, List<T> values, T fallback) => values.where((item) => item.name == _tabs[screen]).firstOrNull ?? fallback;
+
+  /// A remembered choice that is not a tab, such as the open pool.
+  String? savedChoice(String screen) => _tabs[screen];
+
+  /// Remembers a screen's tab (or other choice) for the next reload.
+  void rememberTab(String screen, Object? value) {
+    final name = value is Enum ? value.name : value?.toString();
+    if (name == null) {
+      _tabs.remove(screen);
+    } else {
+      _tabs[screen] = name;
+    }
+    _prefs?.setString(_tabsKey, jsonEncode(_tabs));
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {

@@ -715,12 +715,6 @@ abstract class AppL10n {
   /// **'Custom'**
   String get categoryCustom;
 
-  /// No description provided for @categoryCommunity.
-  ///
-  /// In en, this message translates to:
-  /// **'Community'**
-  String get categoryCommunity;
-
   /// No description provided for @categorySearch.
   ///
   /// In en, this message translates to:
@@ -6088,7 +6082,7 @@ abstract class AppL10n {
   /// No description provided for @poolInviteBody.
   ///
   /// In en, this message translates to:
-  /// **'Send this link to someone with their own NeoRouter. They paste it on their Team page under Pool. It works once and expires in 7 days.'**
+  /// **'Send this link, or the ready-made text below, to someone with their own NeoRouter. The link opens a page that takes them to their own NeoRouter to join. It works once and expires in 7 days.'**
   String get poolInviteBody;
 
   /// No description provided for @poolStateOnline.
@@ -6172,8 +6166,74 @@ abstract class AppL10n {
   /// No description provided for @poolShareHint.
   ///
   /// In en, this message translates to:
-  /// **'Only free models, only from the connections you choose. Your own requests always come first.'**
+  /// **'Free models from the connections you choose. Your own requests always come first.'**
   String get poolShareHint;
+
+  /// No description provided for @filterPool.
+  ///
+  /// In en, this message translates to:
+  /// **'Pool'**
+  String get filterPool;
+
+  /// No description provided for @modelsPoolHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What your pool partners share with you. Only keys with pool access use these, and it costs you nothing.'**
+  String get modelsPoolHint;
+
+  /// No description provided for @poolViaPartner.
+  ///
+  /// In en, this message translates to:
+  /// **'via {name}'**
+  String poolViaPartner(String name);
+
+  /// No description provided for @poolPaidTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid models'**
+  String get poolPaidTitle;
+
+  /// No description provided for @poolPaidHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Off unless you turn it on for a connection. Partners then use its paid models when no free one can serve them, and you pay for it. The daily limits below still apply; subscriptions are never shared.'**
+  String get poolPaidHint;
+
+  /// No description provided for @poolPaidBilled.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} paid models · billed to you'**
+  String poolPaidBilled(String count);
+
+  /// No description provided for @poolPaidPrepaid.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} paid models · uses your balance'**
+  String poolPaidPrepaid(String count);
+
+  /// No description provided for @poolPaidConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share paid models of {name}?'**
+  String poolPaidConfirmTitle(String name);
+
+  /// No description provided for @poolPaidConfirmBilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Partners in {pool} can then use this connection’s paid models. That costs you real money, billed by the provider. Your daily limits for partners still apply.'**
+  String poolPaidConfirmBilled(String pool);
+
+  /// No description provided for @poolPaidConfirmPrepaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Partners in {pool} can then use this connection’s paid models. That spends your prepaid balance. Your daily limits for partners still apply.'**
+  String poolPaidConfirmPrepaid(String pool);
+
+  /// No description provided for @poolPaidConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Share paid models'**
+  String get poolPaidConfirm;
 
   /// No description provided for @poolShareNone.
   ///
@@ -6473,6 +6533,150 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Pools'**
   String get homePoolsTitle;
+
+  /// No description provided for @poolInviteText.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi! {host} is inviting you to the NeoRouter pool \"{pool}\", where our NeoRouters share their free AI capacity. Open this link and enter the address of your own NeoRouter: {link}\n(It works once and expires in 7 days.)'**
+  String poolInviteText(String host, String pool, String link);
+
+  /// No description provided for @poolInviteCopyText.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy invite text'**
+  String get poolInviteCopyText;
+
+  /// No description provided for @poolInviteTextLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language of the text'**
+  String get poolInviteTextLanguage;
+
+  /// No description provided for @galleryFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get galleryFilterAll;
+
+  /// No description provided for @galleryFilterFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get galleryFilterFree;
+
+  /// No description provided for @galleryFilterPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscriptions'**
+  String get galleryFilterPlans;
+
+  /// No description provided for @galleryFilterPayg.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay as you go'**
+  String get galleryFilterPayg;
+
+  /// No description provided for @galleryFilterTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Search & weather'**
+  String get galleryFilterTools;
+
+  /// No description provided for @galleryFilterOwn.
+  ///
+  /// In en, this message translates to:
+  /// **'Local & custom'**
+  String get galleryFilterOwn;
+
+  /// No description provided for @galleryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} providers'**
+  String galleryCount(String count);
+
+  /// No description provided for @galleryNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No provider matches. A custom OpenAI-compatible endpoint works with almost any service.'**
+  String get galleryNoMatch;
+
+  /// No description provided for @costTagFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get costTagFree;
+
+  /// No description provided for @costTagFreeModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Free models'**
+  String get costTagFreeModels;
+
+  /// No description provided for @costTagPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription'**
+  String get costTagPlan;
+
+  /// No description provided for @costTagPayg.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay as you go'**
+  String get costTagPayg;
+
+  /// No description provided for @costTagConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get costTagConnected;
+
+  /// No description provided for @costSummaryFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free tier without a card'**
+  String get costSummaryFree;
+
+  /// No description provided for @costSummaryFreeModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Some models are free'**
+  String get costSummaryFreeModels;
+
+  /// No description provided for @costSummaryPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'A subscription you already pay for'**
+  String get costSummaryPlan;
+
+  /// No description provided for @costSummaryPayg.
+  ///
+  /// In en, this message translates to:
+  /// **'You pay for what you use'**
+  String get costSummaryPayg;
+
+  /// No description provided for @costChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked {date}'**
+  String costChecked(String date);
+
+  /// No description provided for @costSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get costSource;
+
+  /// No description provided for @providerWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Website'**
+  String get providerWebsite;
+
+  /// No description provided for @providerGetKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Get a key'**
+  String get providerGetKey;
 
   /// No description provided for @statSuccessRate.
   ///

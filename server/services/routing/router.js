@@ -133,6 +133,8 @@ function maxOutputFor(request, entry) {
 // How many failures one connection may cost a single request. A provider with
 // many models must not use up every attempt before others get a turn.
 const MAX_FAILURES_PER_ACCOUNT = 2;
+// Tier offset that puts paid models behind free ones for a pool partner.
+const PARTNER_PAID_TIER = 100;
 // Failures that say the connection is struggling, not that this request is odd.
 const CONNECTION_FAILURES = new Set(['rate_limit', 'quota_exhausted', 'payment', 'auth', 'not_found', 'server', 'network', 'timeout']);
 
@@ -145,7 +147,8 @@ function rejection(entry, ctx, now) {
   if (!allowedByKey(entry, key)) return 'not_allowed_for_key';
   if ((ctx.accountFailures?.get(entry.accountId) || 0) >= MAX_FAILURES_PER_ACCOUNT && !ctx.primaryRefs.has(entry.ref)) return 'account_failing';
   if ((!ctx.longShot || !longShotDue(entry.ref, now)) && accountHealth.restingUntil(entry.accountId, now) && !ctx.primaryRefs.has(entry.ref)) return 'account_resting';
-  const kind = kindAllowed(entry, key, freeOnly);
+  // A partner's key has no cost choice of its own: what the owner shares decides (below).
+  const kind = key.peer_link_id ? null : kindAllowed(entry, key, freeOnly);
   if (kind) return kind;
   // Pools: a partner's request only reaches what is shared with them, and is
   // never passed on; an own request reaches partners only with a pool key,
@@ -483,6 +486,8 @@ class RoutingPlan {
       if (this.task && item.details.capability < weakBelow(this.need)) value *= WEAK_FOR_TASK_FACTOR;
       // A custom style's preference between free, subscription and paid models.
       item.tier = this.profile.constraints.kinds ? kindTier(this.profile.constraints.kinds, item.entry) : 0;
+      // A partner's request uses paid models someone shared only when no free one can serve.
+      if (this.key.peer_link_id && !item.entry.isFree) item.tier += PARTNER_PAID_TIER;
       if ((this.needs.tools && item.entry.tools === null) || (this.needs.json && item.entry.json === false)) value *= UNKNOWN_CAPABILITY_FACTOR;
       // Far more than this request's fair share of the budget: last resort only.
       if (this.pacing && !item.entry.isFree && !item.entry.isPlan) {

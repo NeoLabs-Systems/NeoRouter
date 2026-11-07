@@ -42,14 +42,17 @@ function gatewayErrorHandler(format) {
 
 const KINDS = new Set(require('../../core/capability_registry').list().map((item) => item.id));
 
-// A pool partner sees only the free models of connections shared with it,
+// A pool partner sees only what this pool is offered (sharePolicy.offers),
 // never another partner's (sharePolicy decides per request what is in reach).
 function modelsVisibleTo(key, capability = 'chat') {
   if (key.peer_link_id && !sharePolicy.sharingWith(key)) return [];
   const poolId = sharePolicy.poolOfKey(key);
   return catalog.listForUser(key.user_id, { capability })
-    .filter((entry) => entry.enabled && entry.accountEnabled && allowedByKey(entry, key) && !kindAllowed(entry, key))
-    .filter((entry) => !key.peer_link_id || (!isPeerEntry(entry) && entry.isFree && sharePolicy.accountShared(poolId, entry.accountId)));
+    .filter((entry) => entry.enabled && entry.accountEnabled && allowedByKey(entry, key) && (key.peer_link_id || !kindAllowed(entry, key)))
+    .filter((entry) => (key.peer_link_id
+      ? sharePolicy.offers(poolId, entry)
+      // Partners' models only for keys allowed to use the pool, as in routing.
+      : !isPeerEntry(entry) || key.pool_access === 'pool'));
 }
 
 // Models of this kind the key's free/plan/paid choice leaves out, so an app
@@ -158,9 +161,11 @@ router.get('/models', requireRouterKey, (req, res) => {
         ...(entry.maxOutput ? { max_output_tokens: entry.maxOutput } : {}),
         ...(typeof entry.tools === 'boolean' ? { supports_tools: entry.tools } : {}),
         ...(typeof entry.vision === 'boolean' ? { supports_vision: entry.vision } : {}),
-        pricing: entry.isFree || entry.isPlan ? { prompt: '0', completion: '0' } : { prompt: entry.priceIn === null ? null : String(entry.priceIn / 1e6), completion: entry.priceOut === null ? null : String(entry.priceOut / 1e6) },
+        // A partner pays nothing: whatever it costs is on us.
+        pricing: entry.isFree || entry.isPlan || key.peer_link_id ? { prompt: '0', completion: '0' } : { prompt: entry.priceIn === null ? null : String(entry.priceIn / 1e6), completion: entry.priceOut === null ? null : String(entry.priceOut / 1e6) },
         neorouter: {
-          kind, free: entry.isFree, plan: entry.isPlan, intelligence: entry.intelligence, tools: entry.tools, vision: entry.vision,
+          kind, free: entry.isFree || Boolean(key.peer_link_id), plan: entry.isPlan,
+          ...(key.peer_link_id && !entry.isFree ? { partner_pays: true } : {}), intelligence: entry.intelligence, tools: entry.tools, vision: entry.vision,
           ...(entry.priceUnit ? { unit_price: entry.unitPrice, price_unit: entry.priceUnit } : {}),
           ...(kind === 'live' ? { protocols: liveProtocols(entry) } : {}),
           ...(kind === 'moderation' ? { decision: entry.decision } : {}),

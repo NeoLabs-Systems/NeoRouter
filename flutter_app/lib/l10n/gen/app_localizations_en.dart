@@ -341,9 +341,6 @@ class AppL10nEn extends AppL10n {
   String get categoryCustom => 'Custom';
 
   @override
-  String get categoryCommunity => 'Community';
-
-  @override
   String get categorySearch => 'Web search';
 
   @override
@@ -3435,7 +3432,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get poolInviteBody =>
-      'Send this link to someone with their own NeoRouter. They paste it on their Team page under Pool. It works once and expires in 7 days.';
+      'Send this link, or the ready-made text below, to someone with their own NeoRouter. The link opens a page that takes them to their own NeoRouter to join. It works once and expires in 7 days.';
 
   @override
   String get poolStateOnline => 'Online';
@@ -3480,7 +3477,54 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get poolShareHint =>
-      'Only free models, only from the connections you choose. Your own requests always come first.';
+      'Free models from the connections you choose. Your own requests always come first.';
+
+  @override
+  String get filterPool => 'Pool';
+
+  @override
+  String get modelsPoolHint =>
+      'What your pool partners share with you. Only keys with pool access use these, and it costs you nothing.';
+
+  @override
+  String poolViaPartner(String name) {
+    return 'via $name';
+  }
+
+  @override
+  String get poolPaidTitle => 'Paid models';
+
+  @override
+  String get poolPaidHint =>
+      'Off unless you turn it on for a connection. Partners then use its paid models when no free one can serve them, and you pay for it. The daily limits below still apply; subscriptions are never shared.';
+
+  @override
+  String poolPaidBilled(String count) {
+    return '$count paid models · billed to you';
+  }
+
+  @override
+  String poolPaidPrepaid(String count) {
+    return '$count paid models · uses your balance';
+  }
+
+  @override
+  String poolPaidConfirmTitle(String name) {
+    return 'Share paid models of $name?';
+  }
+
+  @override
+  String poolPaidConfirmBilled(String pool) {
+    return 'Partners in $pool can then use this connection’s paid models. That costs you real money, billed by the provider. Your daily limits for partners still apply.';
+  }
+
+  @override
+  String poolPaidConfirmPrepaid(String pool) {
+    return 'Partners in $pool can then use this connection’s paid models. That spends your prepaid balance. Your daily limits for partners still apply.';
+  }
+
+  @override
+  String get poolPaidConfirm => 'Share paid models';
 
   @override
   String get poolShareNone => 'None of your connections has free models yet.';
@@ -3656,6 +3700,85 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get homePoolsTitle => 'Pools';
+
+  @override
+  String poolInviteText(String host, String pool, String link) {
+    return 'Hi! $host is inviting you to the NeoRouter pool \"$pool\", where our NeoRouters share their free AI capacity. Open this link and enter the address of your own NeoRouter: $link\n(It works once and expires in 7 days.)';
+  }
+
+  @override
+  String get poolInviteCopyText => 'Copy invite text';
+
+  @override
+  String get poolInviteTextLanguage => 'Language of the text';
+
+  @override
+  String get galleryFilterAll => 'All';
+
+  @override
+  String get galleryFilterFree => 'Free';
+
+  @override
+  String get galleryFilterPlans => 'Subscriptions';
+
+  @override
+  String get galleryFilterPayg => 'Pay as you go';
+
+  @override
+  String get galleryFilterTools => 'Search & weather';
+
+  @override
+  String get galleryFilterOwn => 'Local & custom';
+
+  @override
+  String galleryCount(String count) {
+    return '$count providers';
+  }
+
+  @override
+  String get galleryNoMatch =>
+      'No provider matches. A custom OpenAI-compatible endpoint works with almost any service.';
+
+  @override
+  String get costTagFree => 'Free';
+
+  @override
+  String get costTagFreeModels => 'Free models';
+
+  @override
+  String get costTagPlan => 'Subscription';
+
+  @override
+  String get costTagPayg => 'Pay as you go';
+
+  @override
+  String get costTagConnected => 'Connected';
+
+  @override
+  String get costSummaryFree => 'Free tier without a card';
+
+  @override
+  String get costSummaryFreeModels => 'Some models are free';
+
+  @override
+  String get costSummaryPlan => 'A subscription you already pay for';
+
+  @override
+  String get costSummaryPayg => 'You pay for what you use';
+
+  @override
+  String costChecked(String date) {
+    return 'Checked $date';
+  }
+
+  @override
+  String get costSource => 'Source';
+
+  @override
+  String get providerWebsite => 'Website';
+
+  @override
+  String get providerGetKey => 'Get a key';
 
   @override
   String get statSuccessRate => 'Success rate';

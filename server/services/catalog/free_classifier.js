@@ -58,6 +58,8 @@ function classify({ definition, billingMode, billingState = 'unknown', modelId, 
   if (overrides.free === true) return { isFree: true, reason: REASONS.MANUAL_FREE };
   if (overrides.free === false) return { isFree: false, reason: REASONS.MANUAL_PAID };
   if (overrides.billedAt) return { isFree: false, reason: REASONS.BILLED_OBSERVED };
+  // A model the listing marks as needing paid credit is never free, on any plan.
+  if (listing.paidOnly) return { isFree: false, reason: REASONS.PAID };
   if (matchesAny(billing.alwaysFree, modelId)) return { isFree: true, reason: REASONS.PROVIDER_FREE_MODEL };
   if (listing.freeHint === true && billing.trustListingFree) return { isFree: true, reason: REASONS.LISTED_ZERO_PRICE };
   if (billingMode === 'free_tier' && hasFreeTier(billing)) {

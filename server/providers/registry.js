@@ -38,7 +38,7 @@ const definitionSchema = z.object({
   id: z.string().regex(/^[a-z0-9][a-z0-9_-]*$/),
   label: z.string().min(1),
   description: z.string().default(''),
-  category: z.enum(['free', 'paid', 'aggregator', 'plan', 'local', 'custom', 'community', 'search', 'weather', 'pool']),
+  category: z.enum(['free', 'paid', 'aggregator', 'plan', 'local', 'custom', 'search', 'weather', 'pool']),
   // Web search engines: which dialect the search adapter speaks.
   // Connected by signing in instead of pasting a key.
   connect: z.enum(['codex_device']).optional(),
@@ -215,6 +215,9 @@ function publicDefinition(definition) {
       verified: Boolean(definition.billing.verify),
       hasAlwaysFreeModels: definition.billing.alwaysFree.length > 0,
       note: definition.billing.note,
+      // Where the free/paid facts were checked, and when.
+      source: definition.billing.source || null,
+      checkedAt: definition.billing.checkedAt || null,
       // Prepaid plans: offered by the provider, or possible on any custom endpoint.
       planAvailable: Boolean(definition.billing.plan) || definition.editableBaseUrl,
       planNote: definition.billing.plan?.note || null,

@@ -342,9 +342,6 @@ class AppL10nDe extends AppL10n {
   String get categoryCustom => 'Eigene Endpoints';
 
   @override
-  String get categoryCommunity => 'Community';
-
-  @override
   String get categorySearch => 'Websuche';
 
   @override
@@ -3456,7 +3453,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get poolInviteBody =>
-      'Schick diesen Link an jemanden mit eigenem NeoRouter. Dort wird er auf der Team-Seite unter Pool eingefügt. Er funktioniert einmal und läuft nach 7 Tagen ab.';
+      'Schick diesen Link oder den fertigen Text unten an jemanden mit eigenem NeoRouter. Der Link öffnet eine Seite, die zum eigenen NeoRouter führt, um dort beizutreten. Er funktioniert einmal und läuft nach 7 Tagen ab.';
 
   @override
   String get poolStateOnline => 'Online';
@@ -3501,7 +3498,54 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get poolShareHint =>
-      'Nur Gratis-Modelle, nur von den Verbindungen, die du auswählst. Deine eigenen Anfragen gehen immer vor.';
+      'Gratis-Modelle der Verbindungen, die du auswählst. Deine eigenen Anfragen gehen immer vor.';
+
+  @override
+  String get filterPool => 'Pool';
+
+  @override
+  String get modelsPoolHint =>
+      'Was deine Pool-Partner mit dir teilen. Nur Keys mit Pool-Zugang nutzen diese Modelle, und sie kosten dich nichts.';
+
+  @override
+  String poolViaPartner(String name) {
+    return 'über $name';
+  }
+
+  @override
+  String get poolPaidTitle => 'Bezahlte Modelle';
+
+  @override
+  String get poolPaidHint =>
+      'Aus, bis du es für eine Verbindung einschaltest. Partner nutzen dann deren bezahlte Modelle, wenn kein Gratis-Modell passt, und du zahlst dafür. Die Tageslimits unten gelten weiter; Abos werden nie geteilt.';
+
+  @override
+  String poolPaidBilled(String count) {
+    return '$count bezahlte Modelle · wird dir berechnet';
+  }
+
+  @override
+  String poolPaidPrepaid(String count) {
+    return '$count bezahlte Modelle · nutzt dein Guthaben';
+  }
+
+  @override
+  String poolPaidConfirmTitle(String name) {
+    return 'Bezahlte Modelle von $name teilen?';
+  }
+
+  @override
+  String poolPaidConfirmBilled(String pool) {
+    return 'Partner in $pool können dann die bezahlten Modelle dieser Verbindung nutzen. Das kostet dich echtes Geld, abgerechnet vom Anbieter. Deine Tageslimits für Partner gelten weiter.';
+  }
+
+  @override
+  String poolPaidConfirmPrepaid(String pool) {
+    return 'Partner in $pool können dann die bezahlten Modelle dieser Verbindung nutzen. Das verbraucht dein Guthaben. Deine Tageslimits für Partner gelten weiter.';
+  }
+
+  @override
+  String get poolPaidConfirm => 'Bezahlte teilen';
 
   @override
   String get poolShareNone =>
@@ -3677,6 +3721,85 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get homePoolsTitle => 'Pools';
+
+  @override
+  String poolInviteText(String host, String pool, String link) {
+    return 'Hallo! $host lädt dich in den NeoRouter-Pool „$pool“ ein, in dem unsere NeoRouter ihre Gratis-KI-Kapazität teilen. Öffne diesen Link und gib die Adresse deines eigenen NeoRouter ein: $link\n(Er funktioniert einmal und läuft nach 7 Tagen ab.)';
+  }
+
+  @override
+  String get poolInviteCopyText => 'Einladungstext kopieren';
+
+  @override
+  String get poolInviteTextLanguage => 'Sprache des Textes';
+
+  @override
+  String get galleryFilterAll => 'Alle';
+
+  @override
+  String get galleryFilterFree => 'Gratis';
+
+  @override
+  String get galleryFilterPlans => 'Abos';
+
+  @override
+  String get galleryFilterPayg => 'Nach Verbrauch';
+
+  @override
+  String get galleryFilterTools => 'Suche & Wetter';
+
+  @override
+  String get galleryFilterOwn => 'Lokal & eigene';
+
+  @override
+  String galleryCount(String count) {
+    return '$count Anbieter';
+  }
+
+  @override
+  String get galleryNoMatch =>
+      'Kein Anbieter passt. Ein eigener OpenAI-kompatibler Endpunkt funktioniert mit fast jedem Dienst.';
+
+  @override
+  String get costTagFree => 'Gratis';
+
+  @override
+  String get costTagFreeModels => 'Gratis-Modelle';
+
+  @override
+  String get costTagPlan => 'Abo';
+
+  @override
+  String get costTagPayg => 'Nach Verbrauch';
+
+  @override
+  String get costTagConnected => 'Verbunden';
+
+  @override
+  String get costSummaryFree => 'Gratis-Tarif ohne Karte';
+
+  @override
+  String get costSummaryFreeModels => 'Einige Modelle sind gratis';
+
+  @override
+  String get costSummaryPlan => 'Ein Abo, das du schon bezahlst';
+
+  @override
+  String get costSummaryPayg => 'Du zahlst, was du nutzt';
+
+  @override
+  String costChecked(String date) {
+    return 'Geprüft am $date';
+  }
+
+  @override
+  String get costSource => 'Quelle';
+
+  @override
+  String get providerWebsite => 'Website';
+
+  @override
+  String get providerGetKey => 'Key holen';
 
   @override
   String get statSuccessRate => 'Erfolgsquote';

@@ -8,7 +8,9 @@
 //   2. Daily caps per partner: requests, tokens, and requests at once.
 //   3. Balance: a partner who takes far more than they give (over the last
 //      week) gets gradually lower caps. Never a hard stop.
-// Only free models on connections the owner chose to share are ever offered.
+// Only models on connections the owner chose to share are offered: free ones,
+// and paid ones (billed or prepaid) only where the owner explicitly turned that
+// on for that connection in that pool. Plan (subscription) models never.
 const { getDatabase } = require('../../db/database');
 const { HttpError } = require('../../middleware/error_handler');
 const quota = require('../quota/quota_service');
@@ -107,15 +109,22 @@ function admit(key, now = Date.now()) {
 const sharedCache = new Map();
 const SHARED_TTL_MS = 5000;
 
-// Whether this connection is shared in this pool (each pool has its own list).
-function accountShared(poolId, accountId, now = Date.now()) {
+// How this connection is shared in this pool: null or { paid } (each pool has its own list).
+function shareOf(poolId, accountId, now = Date.now()) {
   const id = `${poolId}|${accountId}`;
   const hit = sharedCache.get(id);
   if (hit && now - hit.at < SHARED_TTL_MS) return hit.value;
-  const value = store.isShared(poolId, accountId);
+  const value = store.shareOf(poolId, accountId);
   if (sharedCache.size > 5000) sharedCache.clear();
   sharedCache.set(id, { at: now, value });
   return value;
+}
+
+// Whether partners in this pool are offered this model at all.
+function offers(poolId, entry, now = Date.now()) {
+  if (!poolId || isPeerEntry(entry) || entry.isPlan) return false;
+  const share = shareOf(poolId, entry.accountId, now);
+  return Boolean(share && (entry.isFree || share.paid));
 }
 
 // The pool a partner key belongs to (null when its link is gone).
@@ -129,7 +138,7 @@ function poolOfKey(key) {
  */
 function rejection(entry, { inputTokens = 0, reserve = DEFAULT_SHARE.reserve, poolId = null } = {}, now = Date.now()) {
   if (isPeerEntry(entry)) return 'peer_no_forward';
-  if (!entry.isFree || !poolId || !accountShared(poolId, entry.accountId, now)) return 'not_shared';
+  if (!offers(poolId, entry, now)) return 'not_shared';
   if (quota.evaluate(entry, inputTokens, now).headroom < reserve) return 'kept_for_owner';
   const parallel = concurrency.limitFor(entry, now);
   if (parallel) {
@@ -146,10 +155,10 @@ function sharingWith(key) {
   return Boolean(link && pool && !pool.paused && link.status === 'active');
 }
 
-function setAccountShared(userId, poolId, accountId, shared) {
+function setAccountShared(userId, poolId, accountId, shared, paid) {
   const own = getDatabase().prepare("SELECT 1 FROM provider_accounts WHERE id = ? AND user_id = ? AND definition_id != 'neorouter_peer'").get(accountId, userId);
   if (!own) return false;
-  store.setShared(userId, poolId, accountId, shared);
+  store.setShared(userId, poolId, accountId, shared, paid);
   sharedCache.delete(`${poolId}|${accountId}`);
   return true;
 }
@@ -163,4 +172,4 @@ function resetForTests() {
   sharedCache.clear();
 }
 
-module.exports = { DEFAULT_SHARE, SHARE_BOUNDS, BALANCE, shareSettings, balance, capsFor, admit, rejection, accountShared, poolOfKey, sharingWith, setAccountShared, forget, resetForTests };
+module.exports = { DEFAULT_SHARE, SHARE_BOUNDS, BALANCE, shareSettings, balance, capsFor, admit, rejection, shareOf, offers, poolOfKey, sharingWith, setAccountShared, forget, resetForTests };

@@ -32,7 +32,7 @@ class ActivityScreen extends StatefulWidget {
 }
 
 class _ActivityScreenState extends State<ActivityScreen> {
-  _ActivityTab _tab = _ActivityTab.overview;
+  late _ActivityTab _tab = widget.controller.savedTab('activity', _ActivityTab.values, _ActivityTab.overview);
   String _range = '7d';
   // Keys the numbers are limited to; empty means all of them.
   Set<String> _keyIds = <String>{};
@@ -74,7 +74,10 @@ class _ActivityScreenState extends State<ActivityScreen> {
             (value: _ActivityTab.requests, label: t.tabRequests, count: null),
           ],
           selected: _tab,
-          onChanged: (value) => setState(() => _tab = value),
+          onChanged: (value) {
+            widget.controller.rememberTab('activity', value);
+            setState(() => _tab = value);
+          },
         ),
         // What it learned belongs to the models, not to any one key.
         if (_keys.length > 1 && _tab != _ActivityTab.learned) _KeyFilter(keys: _keys, selected: _keyIds, onChanged: (value) => setState(() => _keyIds = value)),

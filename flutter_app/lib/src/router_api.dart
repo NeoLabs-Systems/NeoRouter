@@ -167,8 +167,9 @@ class RouterApi {
   Future<String> createPoolInvite(String poolId) async => (await client.post('$_base/pools/$poolId/invites'))['link'] as String;
   Future<void> revokePoolInvite(String poolId, String id) => client.delete('$_base/pools/$poolId/invites/$id');
   Future<PoolsSummary> updatePoolShare(String poolId, Map<String, Object?> body) async => PoolsSummary(await client.putJson('$_base/pools/$poolId/share', _clean(body)));
-  Future<PoolsSummary> setAccountPoolShare(String poolId, String accountId, bool shared) async =>
-      PoolsSummary(await client.putJson('$_base/pools/$poolId/accounts/$accountId/share', <String, Object>{'shared': shared}));
+  /// [paid] also sets whether its paid models are shared; left out, that stays as it was.
+  Future<PoolsSummary> setAccountPoolShare(String poolId, String accountId, bool shared, {bool? paid}) async =>
+      PoolsSummary(await client.putJson('$_base/pools/$poolId/accounts/$accountId/share', <String, Object>{'shared': shared, if (paid != null) 'paid': paid}));
   Future<PoolsSummary> setPoolPaused(String poolId, bool paused) async => PoolsSummary(await client.putJson('$_base/pools/$poolId/paused', <String, Object>{'paused': paused}));
   Future<PoolsSummary> setPartnerPaused(String linkId, bool paused) async =>
       PoolsSummary(await client.putJson('$_base/pools/partners/$linkId/paused', <String, Object>{'paused': paused}));

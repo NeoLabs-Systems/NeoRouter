@@ -107,6 +107,16 @@ class ProviderDefinition {
   bool get planAvailable => billing['planAvailable'] == true;
   String? get planNote => billing['planNote'] as String?;
   String get billingNote => billing['note'] as String? ?? '';
+  String? get billingSource => billing['source'] as String?;
+  String? get billingCheckedAt => billing['checkedAt'] as String?;
+
+  /// How using it is paid for, in one word: free, free_models, plan or payg.
+  String get costKind {
+    if (category == 'plan') return 'plan';
+    if (freeTierAvailable && !freeTierPartial) return 'free';
+    if (freeTierAvailable || hasAlwaysFreeModels) return 'free_models';
+    return 'payg';
+  }
 }
 
 class ProviderAccount {
@@ -162,6 +172,8 @@ class CatalogModel {
   List<String> get liveProtocols => _strings(raw['liveProtocols']);
   String get definitionId => raw['definitionId'] as String;
   String get accountId => raw['accountId'] as String;
+  /// Offered by a pool partner (providerName is the partner).
+  bool get fromPool => definitionId == 'neorouter_peer';
   bool get enabled => raw['enabled'] == true;
   bool get isFree => raw['isFree'] == true;
   bool get isPlan => raw['isPlan'] == true;
@@ -355,6 +367,10 @@ class ShareableAccount {
   String get label => raw['label'] as String? ?? '';
   String get definitionId => raw['definitionId'] as String? ?? '';
   int get freeModels => _int(raw['freeModels']) ?? 0;
+  /// Paid (not subscription) models, shared only after an explicit opt-in.
+  int get paidModels => _int(raw['paidModels']) ?? 0;
+  /// The provider reports a balance: partner use spends it instead of being billed.
+  bool get prepaid => raw['prepaid'] == true;
 }
 
 class PoolShare {
@@ -380,6 +396,8 @@ class PoolInfo {
   List<PoolPartner> get partners => (raw['partners'] as List? ?? const <Object>[]).map((item) => PoolPartner(_map(item))).toList();
   int get onlinePartners => partners.where((partner) => partner.state == 'online').length;
   List<String> get sharedAccountIds => _strings(raw['sharedAccountIds']);
+  /// Shared connections whose paid models are shared too.
+  List<String> get paidAccountIds => _strings(raw['paidAccountIds']);
   List<Map<String, dynamic>> get invites => (raw['invites'] as List? ?? const <Object>[]).map(_map).toList();
   PoolShare get share => PoolShare(_map(raw['share']));
 }
@@ -395,6 +413,10 @@ class PoolsSummary {
   /// The pool just created or joined, when the server says.
   String? get createdId => raw['poolId'] as String?;
   List<ShareableAccount> get shareable => (raw['shareable'] as List? ?? const <Object>[]).map((item) => ShareableAccount(_map(item))).toList();
+  /// Connections with free models: what the ordinary sharing picker offers.
+  List<ShareableAccount> get shareableFree => shareable.where((account) => account.freeModels > 0).toList();
+  /// Connections with paid models: offered only for the explicit paid opt-in.
+  List<ShareableAccount> get shareablePaid => shareable.where((account) => account.paidModels > 0).toList();
   bool get keepSensitivePrivate => _map(raw['privacy'])['keepSensitivePrivate'] != false;
   int get maxPools => _int(raw['maxPools']) ?? 10;
 }

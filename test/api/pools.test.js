@@ -97,7 +97,7 @@ test('creating a pool and inviting: the link is single-use and only its hash is 
   assert.deepEqual(mine.partners, []);
   assert.deepEqual(mine.sharedAccountIds, [people.alex.account]);
   const link = await invite();
-  assert.match(link, /\/app\/\?pool=[A-Za-z0-9_-]{32}$/);
+  assert.match(link, /\/pool\/join\?pool=[A-Za-z0-9_-]{32}$/);
   const token = new URL(link).searchParams.get('pool');
   assert.equal(getDatabase().prepare('SELECT COUNT(*) n FROM pool_invites WHERE token_hash = ?').get(token).n, 0);
   const preview = await api('bea', 'post', '/pools/preview', { link });
@@ -140,6 +140,15 @@ test('a pool key uses a partner’s free model; an own key never does', async ()
   const own = await chat('alex', 'own', model);
   assert.notEqual(own.status, 200);
   assert.equal(mocks.bea.calls.length, before + 1, 'an own key never reaches a partner');
+  // The model list matches: a pool key lists the partner's model, an own key does not.
+  const listed = async (keyName) => (await request(base).get('/v1/models').set('Authorization', `Bearer ${people.alex.keys[keyName]}`)).body.data;
+  const poolList = await listed('pool');
+  const viaBea = poolList.find((item) => item.id === model);
+  assert.ok(viaBea, `a pool key lists ${model}`);
+  assert.match(viaBea.name, /via bea/);
+  assert.equal(viaBea.neorouter.free, true);
+  assert.ok(poolList.some((item) => item.id.startsWith('auto')), 'autos are listed too');
+  assert.equal((await listed('own')).some((item) => item.id === model), false, 'an own key does not list partner models');
 });
 
 test('the partner sees counts only: no per-request log, no route headers, no content', async () => {
@@ -221,6 +230,40 @@ test('what is shared: unshared connections and used-up shares are refused', asyn
   await api('bea', 'put', `/pools/${poolId}/share`, { requestsPerDay: 300 });
 });
 
+test('paid models are shared only after an explicit opt-in, and cost the partner nothing', async () => {
+  mocks.beaPaid = await createMockProvider({ models: ['paid-bea'] });
+  const added = await api('bea', 'post', '/providers/accounts', { definitionId: 'custom_openai', slug: 'paidmock', baseUrl: mocks.beaPaid.url, secret: 'good-key', billingMode: 'paid' });
+  assert.equal(added.status, 201, JSON.stringify(added.body));
+  const paidAccount = added.body.account.id;
+  const offered = (await api('bea', 'get', '/pools')).body.shareable.find((account) => account.id === paidAccount);
+  assert.deepEqual([offered.freeModels, offered.paidModels], [0, 1], 'a paid-only connection can be offered for paid sharing');
+  const listsPaid = async () => {
+    await api('alex', 'post', `/pools/${poolId}/sync`);
+    return (await api('alex', 'get', '/models?all=1')).body.models.some((item) => item.providerSlug === 'pool-bea' && item.id.endsWith('/paid-bea'));
+  };
+  // Shared without the opt-in: its paid models stay home.
+  await api('bea', 'put', `/pools/${poolId}/accounts/${paidAccount}/share`, { shared: true });
+  assert.equal(await listsPaid(), false);
+  // Opted in: Alex sees it as free (Bea pays) and Bea's connection serves it.
+  const on = await api('bea', 'put', `/pools/${poolId}/accounts/${paidAccount}/share`, { shared: true, paid: true });
+  assert.equal(on.status, 200, JSON.stringify(on.body));
+  assert.ok(on.body.pools[0].paidAccountIds.includes(paidAccount));
+  assert.equal(await listsPaid(), true);
+  const model = await partnerModel('alex', 'bea', 'paid-bea');
+  const entry = (await api('alex', 'get', '/models?all=1')).body.models.find((item) => item.id === model);
+  assert.equal(entry.isFree, true, 'free for the partner');
+  const before = mocks.beaPaid.calls.length;
+  const served = await chat('alex', 'pool', model);
+  assert.equal(served.status, 200, JSON.stringify(served.body));
+  assert.equal(mocks.beaPaid.calls.length, before + 1);
+  // Plain sharing again (no paid flag sent) keeps the choice; unsharing ends it.
+  await api('bea', 'put', `/pools/${poolId}/accounts/${paidAccount}/share`, { shared: true });
+  assert.ok((await summary('bea')).paidAccountIds.includes(paidAccount));
+  await api('bea', 'put', `/pools/${poolId}/accounts/${paidAccount}/share`, { shared: false });
+  assert.notEqual((await chat('alex', 'pool', model)).status, 200);
+  assert.deepEqual((await summary('bea')).paidAccountIds, []);
+});
+
 test('the quick switch pauses giving and using, and turning it on restores everything', async () => {
   const toBea = await partnerModel('alex', 'bea', 'ok-bea');
   await addKey('bea', 'pool', { poolAccess: 'pool' });
@@ -291,4 +334,23 @@ test('one person can be in several pools, each with its own sharing and switch',
   assert.equal((await chat('alex', 'pool', workModel)).status, 200);
   for (const id of [work, family]) await api('alex', 'post', `/pools/${id}/leave`);
   assert.deepEqual((await api('bea', 'get', '/pools')).body.pools, [], 'closing both pools reached Bea');
+});
+
+test('an invite link opens a page that sends the invited person to their own NeoRouter', async () => {
+  const created = await api('alex', 'post', '/pools', { name: 'Quiz <Night>', selfName: 'alex', sharedAccountIds: [] });
+  const link = (await api('alex', 'post', `/pools/${created.body.poolId}/invites`)).body.link;
+  const url = new URL(link);
+  assert.equal(url.pathname, '/pool/join');
+  const page = await request(base).get(`${url.pathname}${url.search}`).set('Accept-Language', 'en-US');
+  assert.equal(page.status, 200);
+  assert.match(page.text, /<meta property="og:title" content="Invite to the pool &quot;Quiz &lt;Night&gt;&quot;">/, 'the pool name is in the link preview, escaped');
+  assert.match(page.text, /join-pool=/, 'it forwards to the own NeoRouter with the invite');
+  const german = await request(base).get(`${url.pathname}${url.search}&lang=de`);
+  assert.match(german.text, /Einladung in den Pool/);
+  const invalid = await request(base).get('/pool/join?pool=' + 'x'.repeat(32));
+  assert.match(invalid.text, /no longer valid|gilt nicht mehr/);
+  // The page's link still works for joining directly in the app.
+  const preview = await api('bea', 'post', '/pools/preview', { link });
+  assert.equal(preview.body.pool.name, 'Quiz <Night>');
+  await api('alex', 'post', `/pools/${created.body.poolId}/leave`);
 });

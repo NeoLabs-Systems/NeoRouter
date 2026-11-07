@@ -144,7 +144,6 @@
   "categoryPaid": "Paid APIs",
   "categoryLocal": "Local",
   "categoryCustom": "Custom",
-  "categoryCommunity": "Community",
   "categorySearch": "Web search",
   "categoryPlan": "Subscriptions",
   "kindFree": "Free models",
@@ -2041,7 +2040,7 @@
   "poolTosNotice": "Some providers do not allow sharing free access with others. Check their terms before you share a connection.",
   "poolInvite": "Invite",
   "poolInviteTitle": "Pool invite link",
-  "poolInviteBody": "Send this link to someone with their own NeoRouter. They paste it on their Team page under Pool. It works once and expires in 7 days.",
+  "poolInviteBody": "Send this link, or the ready-made text below, to someone with their own NeoRouter. The link opens a page that takes them to their own NeoRouter to join. It works once and expires in 7 days.",
   "poolStateOnline": "Online",
   "poolStateOffline": "Not reachable",
   "poolStateConnecting": "Connecting",
@@ -2062,7 +2061,60 @@
     }
   },
   "poolShareTitle": "What you share",
-  "poolShareHint": "Only free models, only from the connections you choose. Your own requests always come first.",
+  "poolShareHint": "Free models from the connections you choose. Your own requests always come first.",
+  "filterPool": "Pool",
+  "modelsPoolHint": "What your pool partners share with you. Only keys with pool access use these, and it costs you nothing.",
+  "poolViaPartner": "via {name}",
+  "@poolViaPartner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidTitle": "Paid models",
+  "poolPaidHint": "Off unless you turn it on for a connection. Partners then use its paid models when no free one can serve them, and you pay for it. The daily limits below still apply; subscriptions are never shared.",
+  "poolPaidBilled": "{count} paid models · billed to you",
+  "@poolPaidBilled": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidPrepaid": "{count} paid models · uses your balance",
+  "@poolPaidPrepaid": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidConfirmTitle": "Share paid models of {name}?",
+  "@poolPaidConfirmTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidConfirmBilled": "Partners in {pool} can then use this connection’s paid models. That costs you real money, billed by the provider. Your daily limits for partners still apply.",
+  "@poolPaidConfirmBilled": {
+    "placeholders": {
+      "pool": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidConfirmPrepaid": "Partners in {pool} can then use this connection’s paid models. That spends your prepaid balance. Your daily limits for partners still apply.",
+  "@poolPaidConfirmPrepaid": {
+    "placeholders": {
+      "pool": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidConfirm": "Share paid models",
   "poolShareNone": "None of your connections has free models yet.",
   "poolFreeModels": "{count} free models",
   "@poolFreeModels": {
@@ -2193,6 +2245,57 @@
   },
   "poolShareInPools": "Share in pools…",
   "homePoolsTitle": "Pools",
+  "poolInviteText": "Hi! {host} is inviting you to the NeoRouter pool \"{pool}\", where our NeoRouters share their free AI capacity. Open this link and enter the address of your own NeoRouter: {link}\n(It works once and expires in 7 days.)",
+  "@poolInviteText": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "pool": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "poolInviteCopyText": "Copy invite text",
+  "poolInviteTextLanguage": "Language of the text",
+  "galleryFilterAll": "All",
+  "galleryFilterFree": "Free",
+  "galleryFilterPlans": "Subscriptions",
+  "galleryFilterPayg": "Pay as you go",
+  "galleryFilterTools": "Search & weather",
+  "galleryFilterOwn": "Local & custom",
+  "galleryCount": "{count} providers",
+  "@galleryCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "galleryNoMatch": "No provider matches. A custom OpenAI-compatible endpoint works with almost any service.",
+  "costTagFree": "Free",
+  "costTagFreeModels": "Free models",
+  "costTagPlan": "Subscription",
+  "costTagPayg": "Pay as you go",
+  "costTagConnected": "Connected",
+  "costSummaryFree": "Free tier without a card",
+  "costSummaryFreeModels": "Some models are free",
+  "costSummaryPlan": "A subscription you already pay for",
+  "costSummaryPayg": "You pay for what you use",
+  "costChecked": "Checked {date}",
+  "@costChecked": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "costSource": "Source",
+  "providerWebsite": "Website",
+  "providerGetKey": "Get a key",
   "statSuccessRate": "Success rate",
   "statCost": "Spent",
   "statTokens": "Tokens",

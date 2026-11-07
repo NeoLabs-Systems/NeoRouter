@@ -84,7 +84,8 @@ test('listing price zero counts only when the provider listing is trusted', () =
   const zero = { freeHint: true, priceKnown: true };
   assert.equal(classify({ definition: registry.get('siliconflow'), billingMode: 'paid', modelId: 'x', listing: zero }).isFree, true);
   assert.equal(classify({ definition: registry.get('together'), billingMode: 'paid', modelId: 'x', listing: zero }).isFree, false);
-  assert.equal(classify({ definition: registry.get('together'), billingMode: 'paid', modelId: 'Llama-3.3-70B-Instruct-Turbo-Free', listing: zero }).isFree, true);
+  // Together needs a prepaid purchase before any use, so even "-Free" names are not free.
+  assert.equal(classify({ definition: registry.get('together'), billingMode: 'paid', modelId: 'Llama-3.3-70B-Instruct-Turbo-Free', listing: zero }).isFree, false);
 });
 
 test('manual overrides win', () => {

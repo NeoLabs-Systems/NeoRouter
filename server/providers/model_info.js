@@ -79,13 +79,23 @@ function parseListedCost(cost) {
 
 function parsePricing(raw) {
   // Some listings flag models that need a balance regardless of price fields.
-  if (raw.paid_only === true || raw.usage_based_only === true) {
+  if (raw.paid_only === true || raw.usage_based_only === true || raw.required_plan) {
     return { priceIn: null, priceOut: null, priceKnown: false, freeHint: false };
   }
-  if (raw.price === 'free' || raw.pricing === 'free' || raw.is_free === true || raw.free === true) {
+  // Free markers in a listing: xKiro access_tier, Api.Airforce and KiosAPI
+  // tier, BlockRun billing_mode, Blaze and Iteracompute is_free.
+  if (raw.price === 'free' || raw.pricing === 'free' || raw.is_free === true || raw.free === true
+    || raw.access_tier === 'free' || raw.tier === 'free' || raw.billing_mode === 'free') {
     return { priceIn: 0, priceOut: 0, priceKnown: true, freeHint: true };
   }
-  const pricing = raw.pricing && typeof raw.pricing === 'object' ? raw.pricing : null;
+  // Requesty: input_price / output_price per token at the top level (its
+  // pricing field is a list of context tiers).
+  const topIn = toNumber(raw.input_price);
+  const topOut = toNumber(raw.output_price);
+  if (topIn !== null && topOut !== null && topIn >= 0 && topOut >= 0) {
+    return { priceIn: perMillion(topIn), priceOut: perMillion(topOut), priceKnown: true, freeHint: topIn === 0 && topOut === 0 };
+  }
+  const pricing = raw.pricing && typeof raw.pricing === 'object' && !Array.isArray(raw.pricing) ? raw.pricing : null;
   const priced = pricing ? null : parseListedCost(raw.cost);
   if (priced) return priced;
   if (pricing) {
@@ -170,6 +180,8 @@ function normalizeModel(raw, overrides = {}) {
     reasoning: params ? params.includes('reasoning') || params.includes('include_reasoning') : flag(supports(raw.capabilities?.reasoning)),
     // System One decision models (POST /v1/systemone), listed under OpenRouter's decisions modality.
     decision: (raw.architecture?.output_modalities || []).includes('decisions'),
+    // The listing says this model needs paid credit whatever the plan (Pollinations' paid_only).
+    paidOnly: raw.paid_only === true || raw.usage_based_only === true || Boolean(raw.required_plan),
     raw,
     ...overrides,
   };
