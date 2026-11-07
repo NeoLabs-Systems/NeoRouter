@@ -86,10 +86,16 @@ class OpenAICompatibleAdapter extends BaseAdapter {
     return [...listed, ...manual].filter((model) => !known.has(model.id) && known.add(model.id));
   }
 
+  // Headers a per-request dialect needs (a session id, a conversation hint).
+  requestHeaders() {
+    return {};
+  }
+
   async chat(canonical, { modelId, signal, timeoutMs }) {
     const { data, headers } = await this.http(this.chatPath(), {
       method: 'POST',
       body: this.buildBody(canonical, modelId, false),
+      headers: this.requestHeaders(canonical),
       signal,
       timeoutMs: timeoutMs || this.timeoutMs,
     });
@@ -103,7 +109,7 @@ class OpenAICompatibleAdapter extends BaseAdapter {
   async *stream(canonical, { modelId, signal, onHeaders }) {
     const response = await this.request(this.url(this.chatPath()), {
       method: 'POST',
-      headers: this.headers({ Accept: 'text/event-stream' }),
+      headers: this.headers({ Accept: 'text/event-stream', ...this.requestHeaders(canonical) }),
       body: this.buildBody(canonical, modelId, true),
       signal,
       raw: true,

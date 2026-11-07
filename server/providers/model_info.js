@@ -93,6 +93,24 @@ function parsePricing(raw) {
   return { priceIn: null, priceOut: null, priceKnown: false, freeHint: false };
 }
 
+// A structured price block: { text: { input: { price }, output: { price } } }
+// per 1M tokens, as the OpenCode listings report it (Gemini uses `prompt` and
+// `completion`). Only the base price is read; peak-hour multipliers and
+// long-context surcharges stay out of the routing estimate.
+function parseCostBlock(raw) {
+  const block = raw.cost && typeof raw.cost === 'object' ? raw.cost : null;
+  if (!block) return { priceIn: null, priceOut: null, priceKnown: false, freeHint: false };
+  // { text: { input: { price }, output: { price } } } or { prompt: { price }, completion: { price } }.
+  const part = (side) => {
+    const entry = block.text?.[side] ?? block[side] ?? (side === 'input' ? block.prompt : block.completion);
+    return entry && typeof entry === 'object' ? toNumber(entry.price) : toNumber(entry);
+  };
+  const input = part('input');
+  const output = part('output');
+  if (input === null || output === null) return { priceIn: null, priceOut: null, priceKnown: false, freeHint: false };
+  return { priceIn: input, priceOut: output, priceKnown: true, freeHint: input === 0 && output === 0 };
+}
+
 // Unit prices for media listings, in USD: OpenRouter's video SKUs are cents
 // per output second per resolution; the cheapest resolution is the floor.
 function parseUnitPricing(raw) {
@@ -127,10 +145,11 @@ function normalizeModel(raw, overrides = {}) {
   const params = supportedParameters(raw);
   const inputs = raw.architecture?.input_modalities || raw.input_modalities || raw.modalities?.input;
   const contextWindow = toNumber(raw.context_length ?? raw.context_window ?? raw.max_context_length
-    ?? raw.top_provider?.context_length ?? raw.max_model_len ?? raw.inputTokenLimit);
+    ?? raw.top_provider?.context_length ?? raw.max_model_len ?? raw.inputTokenLimit ?? raw.limit?.context);
   const maxOutput = toNumber(raw.max_output_tokens ?? raw.top_provider?.max_completion_tokens ?? raw.max_completion_tokens
-    ?? raw.outputTokenLimit);
+    ?? raw.outputTokenLimit ?? raw.limit?.output);
   const pricing = parsePricing(raw);
+  if (!pricing.priceKnown) Object.assign(pricing, parseCostBlock(raw));
   if (/:free$/.test(id)) {
     pricing.freeHint = true;
     pricing.priceKnown = true;

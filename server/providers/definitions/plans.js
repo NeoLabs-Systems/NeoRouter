@@ -24,7 +24,63 @@ function minimaxWindows(data) {
   return results;
 }
 
+// OpenCode Go reports its allowance as one percentage used per window on its
+// usage endpoint (undocumented, but the one its own clients read):
+// { usage: { rolling: { percent, resetsAt }, weekly: {...}, monthly: {...} } }.
+// A window is reported as percentage used, so what is left is 100 - percent;
+// older shapes with used/limit pairs are read too.
+function opencodeGoWindows(data) {
+  const usage = data?.usage && typeof data.usage === 'object' ? data.usage : data;
+  const windows = [
+    ['plan_5h', usage?.rolling],
+    ['plan_week', usage?.weekly],
+    ['plan_5h', usage?.rollingUsage ? { percent: Number(usage.rollingUsage.usagePercent), resetsAt: null, resetInSec: usage.rollingUsage.resetInSec } : null],
+    ['plan_week', usage?.weeklyUsage ? { percent: Number(usage.weeklyUsage.usagePercent), resetsAt: null, resetInSec: usage.weeklyUsage.resetInSec } : null],
+    ['plan_month', usage?.monthly],
+  ];
+  const seen = new Set();
+  const results = [];
+  for (const [metric, window] of windows) {
+    if (!window || seen.has(metric)) continue;
+    const used = Number(window.percent ?? window.usage_percent);
+    const limit = Number(window.limit);
+    const remainingDirect = Number(window.remaining ?? window.remaining_percent);
+    let remaining = null;
+    if (Number.isFinite(used)) remaining = Math.max(0, 100 - used);
+    else if (Number.isFinite(remainingDirect)) remaining = remainingDirect;
+    else if (Number.isFinite(limit) && Number.isFinite(Number(window.used))) remaining = Math.max(0, limit - Number(window.used));
+    if (!Number.isFinite(remaining)) continue;
+    const resetAt = Date.parse(window.resetsAt) || (Number(window.resetInSec) ? Date.now() + Number(window.resetInSec) * 1000 : null);
+    seen.add(metric);
+    results.push({ metric, limit: 100, remaining, resetAt });
+  }
+  return results;
+}
+
 module.exports = [
+  {
+    id: 'opencode_go',
+    label: 'OpenCode Go',
+    description: 'The OpenCode Go subscription (Go, Go Plus, Go Teams) for coding agents.',
+    category: 'plan',
+    website: 'https://opencode.ai/docs/go',
+    keyUrl: 'https://opencode.ai/console',
+    adapter: 'opencode_go',
+    baseUrl: 'https://opencode.ai/inference/go',
+    chatPath: '/openai/v1/chat/completions',
+    // /models is public, so the authenticated usage route proves the key.
+    models: { path: '/v1/models' },
+    validate: { path: '/v1/usage' },
+    billing: {
+      defaultMode: 'plan',
+      plan: { note: 'Each model has its own monthly allowance; 5 hours, a week and the month draw on it (20 %, 50 %, 100 %). Go reports what is left of each window.' },
+      note: 'A coding subscription: requests within the allowance cost nothing extra. OpenCode asks clients to identify themselves and to send a stable session id, which NeoRouter does not fake. Extra Usage (falling back to a prepaid balance) is off unless it is turned on in the console, so a used-up window blocks requests. The free models Go includes for a limited time are read from its own listing.',
+      source: 'https://opencode.ai/docs/go',
+      checkedAt: '2026-11-07',
+    },
+    quota: { probe: { path: 'https://opencode.ai/inference/go/v1/usage', parse: opencodeGoWindows } },
+    quirks: { timeoutMs: 300000, userAgent: 'NeoRouter' },
+  },
   {
     id: 'chatgpt',
     label: 'ChatGPT',
@@ -126,3 +182,4 @@ module.exports = [
 ];
 
 module.exports.minimaxWindows = minimaxWindows;
+module.exports.opencodeGoWindows = opencodeGoWindows;

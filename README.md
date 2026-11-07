@@ -106,7 +106,7 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
   </tr>
 </table>
 
-**Subscriptions:** ChatGPT (Plus/Pro, through the Codex sign-in), Ollama Cloud Pro/Max, Synthetic, MiniMax M Plan and Kimi Code as prepaid plans: used first while the allowance lasts, then stopped or billed per use.
+**Subscriptions:** ChatGPT (Plus/Pro, through the Codex sign-in), Ollama Cloud Pro/Max, Synthetic, OpenCode Go, MiniMax M Plan and Kimi Code as prepaid plans: used first while the allowance lasts, then stopped or billed per use.
 
 **Search engines:** Tavily, Exa, Linkup, Parallel, Firecrawl, Serper, Brave Search, Jina and self-hosted SearXNG.
 

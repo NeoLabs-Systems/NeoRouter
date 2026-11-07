@@ -87,5 +87,12 @@ record `source` and `checkedAt` whenever free-tier facts change.
 Adapters live in `server/providers/adapters/` and implement `validate`,
 `listModels`, `chat`, `stream` and optionally `fetchQuota`, always in the
 canonical (OpenAI Chat) format. Existing: `openai_compatible`, `anthropic`,
-`google_gemini`, `cloudflare`. Register a new adapter in `ADAPTERS` in
+`google_gemini`, `cloudflare`, `codex`, `nous`, `search`, `weather`, `deepgram`,
+`elevenlabs`, `opencode_go`. Register a new adapter in `ADAPTERS` in
 `registry.js`.
+
+`opencode_go` (OpenCode Go) is an OpenAI-compatible upstream with one extra
+rule: every request must carry a stable `x-opencode-session`. The adapter
+derives it from the system messages and the first user turn, so all turns of a
+conversation share one id without the router storing anything; override
+`requestHeaders(canonical)` on `OpenAICompatibleAdapter` for similar dialects.

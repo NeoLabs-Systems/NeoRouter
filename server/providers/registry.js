@@ -12,6 +12,7 @@ const { WeatherAdapter } = require('./adapters/weather');
 const { DeepgramAdapter } = require('./adapters/deepgram');
 const { ElevenLabsAdapter } = require('./adapters/elevenlabs');
 const { CodexAdapter } = require('./adapters/codex');
+const { OpenCodeGoAdapter } = require('./adapters/opencode_go');
 
 const ADAPTERS = {
   openai_compatible: OpenAICompatibleAdapter,
@@ -23,6 +24,7 @@ const ADAPTERS = {
   deepgram: DeepgramAdapter,
   elevenlabs: ElevenLabsAdapter,
   codex: CodexAdapter,
+  opencode_go: OpenCodeGoAdapter,
 };
 
 const limitSchema = z.object({
