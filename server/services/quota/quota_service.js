@@ -215,6 +215,27 @@ function clearObservedExhaustion(accountId, refs = []) {
   }
 }
 
+// Everything observed about an account's limits (headers, errors), not what a
+// person stated: for when the other side says its limits changed (a pool
+// partner raised its share).
+function forgetObserved(accountId, refs = []) {
+  load();
+  const scopes = new Set([`p:${accountId}`, `a:${accountId}`, ...refs.map((ref) => `m:${ref}`)]);
+  const db = getDatabase();
+  for (const key of [...states.keys()]) {
+    const [scope, metric] = key.split('|');
+    if (!scopes.has(scope)) continue;
+    states.delete(key);
+    db.prepare('DELETE FROM quota_state WHERE scope_key = ? AND metric = ?').run(scope, metric);
+  }
+  for (const [key, record] of [...limits]) {
+    const [scope, metric] = key.split('|');
+    if (!scopes.has(scope) || record.source === 'manual') continue;
+    limits.delete(key);
+    db.prepare('DELETE FROM quota_limits WHERE scope_key = ? AND metric = ?').run(scope, metric);
+  }
+}
+
 function evaluate(entry, estimatedTokens = 0, now = Date.now()) {
   let headroom = 1;
   let blocked = null;
@@ -266,7 +287,7 @@ function resetForTests() {
   loaded = false;
 }
 
-module.exports = {
+module.exports = { forgetObserved,
   scopesFor,
   effectiveLimits,
   usageOf,

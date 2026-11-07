@@ -38,7 +38,7 @@ const definitionSchema = z.object({
   id: z.string().regex(/^[a-z0-9][a-z0-9_-]*$/),
   label: z.string().min(1),
   description: z.string().default(''),
-  category: z.enum(['free', 'paid', 'aggregator', 'plan', 'local', 'custom', 'community', 'search', 'weather']),
+  category: z.enum(['free', 'paid', 'aggregator', 'plan', 'local', 'custom', 'community', 'search', 'weather', 'pool']),
   // Web search engines: which dialect the search adapter speaks.
   // Connected by signing in instead of pasting a key.
   connect: z.enum(['codex_device']).optional(),

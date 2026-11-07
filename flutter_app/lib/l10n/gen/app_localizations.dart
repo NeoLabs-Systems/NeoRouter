@@ -6061,6 +6061,455 @@ abstract class AppL10n {
   /// **'Nothing has happened yet.'**
   String get teamActivityEmpty;
 
+  /// No description provided for @teamTabPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get teamTabPeople;
+
+  /// No description provided for @teamTabPool.
+  ///
+  /// In en, this message translates to:
+  /// **'Pool'**
+  String get teamTabPool;
+
+  /// No description provided for @poolDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Share free capacity with friends who run their own NeoRouter. Nobody hands out keys: each request runs on the server of whoever shares it.'**
+  String get poolDescription;
+
+  /// No description provided for @poolEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not in a pool yet'**
+  String get poolEmptyTitle;
+
+  /// No description provided for @poolEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Start one and invite others, or join with a link someone sent you.'**
+  String get poolEmptyMessage;
+
+  /// No description provided for @poolCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a pool'**
+  String get poolCreate;
+
+  /// No description provided for @poolJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join with a link'**
+  String get poolJoin;
+
+  /// No description provided for @poolTrustNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests through the pool run on a partner\'s server. NeoRouter keeps no content there and hides secrets first, but whoever runs that server could technically see what is sent. Only share with people you trust.'**
+  String get poolTrustNotice;
+
+  /// No description provided for @poolTosNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Some providers do not allow sharing free access with others. Check their terms before you share a connection.'**
+  String get poolTosNotice;
+
+  /// No description provided for @poolTrustConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'I understand'**
+  String get poolTrustConfirm;
+
+  /// No description provided for @poolSwitchLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pool on'**
+  String get poolSwitchLabel;
+
+  /// No description provided for @poolSwitchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Off pauses giving and using for now. Nothing else changes.'**
+  String get poolSwitchHint;
+
+  /// No description provided for @poolPartnersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Partners'**
+  String get poolPartnersTitle;
+
+  /// No description provided for @poolPartnersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Their NeoRouters and yours share free models with each other.'**
+  String get poolPartnersHint;
+
+  /// No description provided for @poolNoPartners.
+  ///
+  /// In en, this message translates to:
+  /// **'No partners yet. Invite someone with a link.'**
+  String get poolNoPartners;
+
+  /// No description provided for @poolInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get poolInvite;
+
+  /// No description provided for @poolInviteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pool invite link'**
+  String get poolInviteTitle;
+
+  /// No description provided for @poolInviteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Send this link to someone with their own NeoRouter. They paste it on their Team page under Pool. It works once and expires in 7 days.'**
+  String get poolInviteBody;
+
+  /// No description provided for @poolStateOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get poolStateOnline;
+
+  /// No description provided for @poolStateOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not reachable'**
+  String get poolStateOffline;
+
+  /// No description provided for @poolStateConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting'**
+  String get poolStateConnecting;
+
+  /// No description provided for @poolStatePaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get poolStatePaused;
+
+  /// No description provided for @poolHost.
+  ///
+  /// In en, this message translates to:
+  /// **'host'**
+  String get poolHost;
+
+  /// No description provided for @poolPartnerModels.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} models'**
+  String poolPartnerModels(String count);
+
+  /// No description provided for @poolToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today: gave {given}, took {taken}'**
+  String poolToday(String given, String taken);
+
+  /// No description provided for @poolBalanceNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get poolBalanceNew;
+
+  /// No description provided for @poolBalanceBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get poolBalanceBalanced;
+
+  /// No description provided for @poolBalanceGiving.
+  ///
+  /// In en, this message translates to:
+  /// **'You give more'**
+  String get poolBalanceGiving;
+
+  /// No description provided for @poolBalanceTaking.
+  ///
+  /// In en, this message translates to:
+  /// **'You take more'**
+  String get poolBalanceTaking;
+
+  /// No description provided for @poolPausePartner.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause this partner'**
+  String get poolPausePartner;
+
+  /// No description provided for @poolResumePartner.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume this partner'**
+  String get poolResumePartner;
+
+  /// No description provided for @poolRemoveMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from pool'**
+  String get poolRemoveMember;
+
+  /// No description provided for @poolRemoveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} loses access to the pool right away.'**
+  String poolRemoveConfirm(String name);
+
+  /// No description provided for @poolShareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What you share'**
+  String get poolShareTitle;
+
+  /// No description provided for @poolShareHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only free models, only from the connections you choose. Your own requests always come first.'**
+  String get poolShareHint;
+
+  /// No description provided for @poolShareNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None of your connections has free models yet.'**
+  String get poolShareNone;
+
+  /// No description provided for @poolFreeModels.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} free models'**
+  String poolFreeModels(String count);
+
+  /// No description provided for @poolLimitsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Per partner and day'**
+  String get poolLimitsLabel;
+
+  /// No description provided for @poolLimitsValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{requests} requests · {tokens} tokens · {concurrent} at once · {reserve}% kept for you'**
+  String poolLimitsValue(
+    String requests,
+    String tokens,
+    String concurrent,
+    String reserve,
+  );
+
+  /// No description provided for @poolLimitsChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get poolLimitsChange;
+
+  /// No description provided for @poolLimitsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share per partner'**
+  String get poolLimitsTitle;
+
+  /// No description provided for @poolLimitRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests per day'**
+  String get poolLimitRequests;
+
+  /// No description provided for @poolLimitTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens per day'**
+  String get poolLimitTokens;
+
+  /// No description provided for @poolLimitConcurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests at once'**
+  String get poolLimitConcurrent;
+
+  /// No description provided for @poolLimitReserve.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept for you (%)'**
+  String get poolLimitReserve;
+
+  /// No description provided for @poolLimitReserveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The part of each connection\'s allowance partners never use.'**
+  String get poolLimitReserveHint;
+
+  /// No description provided for @poolLimitsBalanceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Partners who take far more than they give get a little less over time.'**
+  String get poolLimitsBalanceHint;
+
+  /// No description provided for @poolLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave pool'**
+  String get poolLeave;
+
+  /// No description provided for @poolClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close pool'**
+  String get poolClose;
+
+  /// No description provided for @poolLeaveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave {name}? Partners lose access to your connections at once, and you to theirs.'**
+  String poolLeaveConfirm(String name);
+
+  /// No description provided for @poolCloseConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Close {name}? As its host, leaving ends the pool for everyone.'**
+  String poolCloseConfirm(String name);
+
+  /// No description provided for @poolCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a pool'**
+  String get poolCreateTitle;
+
+  /// No description provided for @poolNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pool name'**
+  String get poolNameLabel;
+
+  /// No description provided for @poolSelfNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name in the pool'**
+  String get poolSelfNameLabel;
+
+  /// No description provided for @poolSelfNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Partners see this name.'**
+  String get poolSelfNameHint;
+
+  /// No description provided for @poolChooseShared.
+  ///
+  /// In en, this message translates to:
+  /// **'Share these connections'**
+  String get poolChooseShared;
+
+  /// No description provided for @poolJoinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a pool'**
+  String get poolJoinTitle;
+
+  /// No description provided for @poolLinkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link'**
+  String get poolLinkLabel;
+
+  /// No description provided for @poolCheckLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Check link'**
+  String get poolCheckLink;
+
+  /// No description provided for @poolJoinPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Join {name}?'**
+  String poolJoinPreview(String name);
+
+  /// No description provided for @poolJoinMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Hosted by {host} · {count} members'**
+  String poolJoinMembers(String host, String count);
+
+  /// No description provided for @poolJoinAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Join pool'**
+  String get poolJoinAction;
+
+  /// No description provided for @poolInfoTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'About the pool'**
+  String get poolInfoTooltip;
+
+  /// No description provided for @keyPoolLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the pool'**
+  String get keyPoolLabel;
+
+  /// No description provided for @keyPoolHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Also uses partners\' free models, mostly when yours are busy.'**
+  String get keyPoolHint;
+
+  /// No description provided for @keyPoolChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Pool'**
+  String get keyPoolChip;
+
+  /// No description provided for @settingsPoolTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pool'**
+  String get settingsPoolTitle;
+
+  /// No description provided for @settingsKeepSensitive.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep very sensitive requests off the pool'**
+  String get settingsKeepSensitive;
+
+  /// No description provided for @settingsKeepSensitiveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests with passwords, keys, card or ID numbers, or many people\'s personal data stay on your own connections. Clear cases are caught, not every secret.'**
+  String get settingsKeepSensitiveHint;
+
+  /// No description provided for @homePoolOn.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} partners share free capacity with you'**
+  String homePoolOn(String count);
+
+  /// No description provided for @homePoolPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused for now: you neither use nor give.'**
+  String get homePoolPaused;
+
+  /// No description provided for @poolShareConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Share in pool'**
+  String get poolShareConnection;
+
+  /// No description provided for @poolUnshareConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sharing in pool'**
+  String get poolUnshareConnection;
+
+  /// No description provided for @keptPrivateTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept private'**
+  String get keptPrivateTag;
+
   /// No description provided for @teamEventInviteCreate.
   ///
   /// In en, this message translates to:

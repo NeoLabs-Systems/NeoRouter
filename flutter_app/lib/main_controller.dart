@@ -50,6 +50,14 @@ class NeoRouterController extends ChangeNotifier {
   /// The owner whose space is shown, or null for the user's own space.
   String? spaceOwnerId;
 
+  /// The pool of the space that is shown (other NeoRouters sharing free
+  /// capacity); null until loaded. Pool controls appear only while in one.
+  PoolSummary? pool;
+
+  /// A pool invite link the app was opened with ("?pool=…"), joined from the
+  /// Team page's pool tab after sign-in.
+  String? pendingPoolInvite;
+
   /// An invite link the app was opened with ("?invite=…"), redeemed on the
   /// Team page after sign-in.
   String? pendingInvite;
@@ -84,6 +92,31 @@ class NeoRouterController extends ChangeNotifier {
     return needed != null && can(needed);
   }
 
+  bool get inPool => pool?.inPool ?? false;
+
+  /// Pool settings belong to the space owner.
+  bool get canManagePool => !inSharedSpace;
+
+  Future<void> refreshPool() async {
+    try {
+      pool = await api.pool();
+    } catch (_) {
+      pool = null;
+    }
+    notifyListeners();
+  }
+
+  /// The quick switch (home and pool page): pause or resume giving and using.
+  Future<void> setPoolPaused(bool paused) async {
+    pool = await api.setPoolPaused(paused);
+    notifyListeners();
+  }
+
+  void updatePool(PoolSummary next) {
+    pool = next;
+    notifyListeners();
+  }
+
   /// "Created by" tags only matter once more than one person works in a space.
   bool get showCreators => inSharedSpace || (team?.members.isNotEmpty ?? false);
 
@@ -109,7 +142,9 @@ class NeoRouterController extends ChangeNotifier {
     _readOAuthResult();
     _readPageLink();
     _readInviteLink();
+    _readPoolLink();
     _readConnectLink();
+    if (user != null) await refreshPool();
     await refreshRegistration();
     bootstrapping = false;
     notifyListeners();
@@ -135,6 +170,23 @@ class NeoRouterController extends ChangeNotifier {
     if (invite == null || invite.isEmpty) return;
     pendingInvite = invite;
     if (user != null) _openInvite();
+  }
+
+  void _readPoolLink() {
+    final link = Uri.base.queryParameters['pool'];
+    if (link == null || link.isEmpty) return;
+    // The whole link: it names the host as well as the invite.
+    pendingPoolInvite = Uri.base.toString();
+    if (user != null) _openPoolInvite();
+  }
+
+  void _openPoolInvite() {
+    if (spaceOwnerId != null) _setSpace(null);
+    page = AppPage.team;
+  }
+
+  void consumePoolInvite() {
+    pendingPoolInvite = null;
   }
 
   void _readConnectLink() {
@@ -190,6 +242,7 @@ class NeoRouterController extends ChangeNotifier {
     await refreshTeam();
     _setSpace(ownerId != null && team?.owner?.id == ownerId ? ownerId : null);
     if (!canOpen(page)) page = _firstOpenPage();
+    await refreshPool();
     notifyListeners();
   }
 
@@ -228,7 +281,9 @@ class NeoRouterController extends ChangeNotifier {
     _setSpace(null);
     await _loadInfo();
     await refreshTeam();
+    await refreshPool();
     if (pendingInvite != null) _openInvite();
+    if (pendingPoolInvite != null) _openPoolInvite();
   }
 
   Future<bool> login(String account, String password) => _authAction(() async {
@@ -287,6 +342,7 @@ class NeoRouterController extends ChangeNotifier {
     (await SharedPreferences.getInstance()).remove(_tokenKey);
     user = null;
     team = null;
+    pool = null;
     _setSpace(null);
     await refreshRegistration();
     notifyListeners();

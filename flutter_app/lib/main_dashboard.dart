@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
+import 'main_pool.dart';
 import 'main_live_traffic.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
@@ -150,6 +151,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     if (!setupDone) ...<Widget>[_SetupChecklist(controller: controller, providers: _accounts.length, keys: _keys.length, requests: _logs.length), const SizedBox(height: 28)],
                     if (_logs.isNotEmpty) ...<Widget>[SettingsHeading(title: t.homeLast7Days), _WeekStrip(totals: _totals), const SizedBox(height: 28)],
                     if (active.isNotEmpty && _capacity != null) ...<Widget>[_CapacityCard(capacity: _capacity!), const SizedBox(height: 28)],
+                    // The pool's quick switch, only while in a pool.
+                    ListenableBuilder(
+                      listenable: controller,
+                      builder: (context, _) {
+                        final pool = controller.pool;
+                        if (pool == null || !pool.inPool) return const SizedBox.shrink();
+                        final online = pool.partners.where((partner) => partner.state == 'online').length;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 28),
+                          child: SettingsGroup(
+                            title: pool.name,
+                            children: <Widget>[PoolSwitchRow(controller: controller, description: pool.paused ? t.homePoolPaused : t.homePoolOn('$online'))],
+                          ),
+                        );
+                      },
+                    ),
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final connections = _ConnectionsList(accounts: active, onAll: () => controller.go(AppPage.providers));

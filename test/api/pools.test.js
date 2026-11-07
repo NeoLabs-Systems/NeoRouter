@@ -1,0 +1,262 @@
+'use strict';
+
+// Pools between NeoRouters. Three people (Alex, Bea, Cem) take part from one
+// test server: each has their own space, signing key and provider, and every
+// pool call travels over real HTTP to the server's own address, exactly as it
+// would between three machines.
+require('../support/env');
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const request = require('supertest');
+const { createApp } = require('../../server/app');
+const { createMockProvider } = require('../support/mock_provider');
+const { getDatabase } = require('../../server/db/database');
+const federation = require('../../server/routes/federation');
+const sharePolicy = require('../../server/services/pools/share_policy');
+
+let server;
+let base;
+const mocks = {};
+const people = {};
+
+const api = (who, method, path, body) => {
+  const call = request(base)[method](`/api/v1${path}`).set('Authorization', `Bearer ${people[who].token}`);
+  return body ? call.send(body) : call;
+};
+const chat = (who, keyName, model, content = 'hi', extra = {}) => request(base).post('/v1/chat/completions')
+  .set('Authorization', `Bearer ${people[who].keys[keyName]}`).send({ model, messages: [{ role: 'user', content }], ...extra });
+
+async function register(name) {
+  const response = await request(base).post('/api/v1/auth/register').send({ username: name, email: `${name}@example.test`, password: 'correct-horse-battery' });
+  assert.equal(response.status, 201, JSON.stringify(response.body));
+  people[name] = { id: response.body.user.id, token: response.body.session.token, keys: {} };
+}
+
+async function addKey(who, name, input = {}) {
+  const response = await api(who, 'post', '/keys', { name, ...input });
+  assert.equal(response.status, 201, JSON.stringify(response.body));
+  people[who].keys[name] = response.body.secret;
+}
+
+// The id of the partner's model in this person's catalog.
+async function partnerModel(who, partner, model) {
+  const response = await api(who, 'get', '/models?all=1');
+  const entry = response.body.models.find((item) => item.providerSlug === `pool-${partner}` && item.id.endsWith(`/${model}`));
+  assert.ok(entry, `${who} sees ${partner}'s ${model}: ${response.body.models.map((item) => item.id).join(', ')}`);
+  return entry.id;
+}
+
+const summary = async (who) => (await api(who, 'get', '/pools')).body;
+
+test.before(async () => {
+  const app = createApp();
+  server = app.listen(0);
+  await new Promise((resolve) => server.once('listening', resolve));
+  base = `http://127.0.0.1:${server.address().port}`;
+  mocks.alex = await createMockProvider({ models: ['ok-alex'] });
+  mocks.bea = await createMockProvider({ models: ['echo-bea', 'ok-bea'] });
+  mocks.cem = await createMockProvider({ models: ['ok-cem'] });
+  await register('alex');
+  await api('alex', 'patch', '/admin/settings', { registrationOpen: true });
+  await register('bea');
+  await register('cem');
+  for (const who of ['alex', 'bea', 'cem']) {
+    const added = await api(who, 'post', '/providers/accounts', { definitionId: 'custom_openai', slug: 'mock', baseUrl: mocks[who].url, secret: 'good-key', billingMode: 'free_tier' });
+    assert.equal(added.status, 201, JSON.stringify(added.body));
+    people[who].account = added.body.account.id;
+  }
+});
+
+test.beforeEach(() => federation.limiter.clear());
+
+test.after(async () => {
+  for (const mock of Object.values(mocks)) await mock.close();
+  await new Promise((resolve) => server.close(resolve));
+});
+
+async function invite() {
+  const response = await api('alex', 'post', '/pools/invites');
+  assert.equal(response.status, 201, JSON.stringify(response.body));
+  return response.body.link;
+}
+
+async function join(who, link) {
+  const response = await api(who, 'post', '/pools/join', { link, selfName: who, sharedAccountIds: [people[who].account] });
+  assert.equal(response.status, 200, JSON.stringify(response.body));
+  return response.body;
+}
+
+test('creating a pool and inviting: the link is single-use and only its hash is stored', async () => {
+  const created = await api('alex', 'post', '/pools', { name: 'Friends', selfName: 'alex', sharedAccountIds: [people.alex.account] });
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  assert.equal(created.body.pool.isHost, true);
+  assert.deepEqual(created.body.partners, []);
+  assert.deepEqual(created.body.shareable.map((account) => account.shared), [true]);
+  const link = await invite();
+  assert.match(link, /\/app\/\?pool=[A-Za-z0-9_-]{32}$/);
+  const token = new URL(link).searchParams.get('pool');
+  assert.equal(getDatabase().prepare('SELECT COUNT(*) n FROM pool_invites WHERE token_hash = ?').get(token).n, 0);
+  const preview = await api('bea', 'post', '/pools/preview', { link });
+  assert.equal(preview.status, 200, JSON.stringify(preview.body));
+  assert.equal(preview.body.pool.name, 'Friends');
+  assert.equal(preview.body.host.name, 'alex');
+  const joined = await join('bea', link);
+  assert.equal(joined.pool.name, 'Friends');
+  assert.equal(joined.partners.length, 1);
+  assert.equal(joined.partners[0].name, 'alex');
+  assert.equal(joined.partners[0].state, 'online', JSON.stringify(joined.partners[0]));
+  const reused = await api('cem', 'post', '/pools/join', { link, selfName: 'cem', sharedAccountIds: [] });
+  assert.equal(reused.body.error.code, 'POOL_INVITE_INVALID');
+});
+
+test('a third member is introduced to everyone and all three are linked', async () => {
+  await join('cem', await invite());
+  for (const who of ['alex', 'bea', 'cem']) {
+    const view = await summary(who);
+    assert.deepEqual(view.partners.map((partner) => partner.state), ['online', 'online'], `${who}: ${JSON.stringify(view.partners)}`);
+  }
+  // Partner keys are not on the keys page, and partners are not listed as connections.
+  const keys = await api('bea', 'get', '/keys');
+  assert.equal(keys.body.keys.filter((key) => key.name.startsWith('Pool:')).length, 0);
+  const accounts = await api('bea', 'get', '/providers/accounts');
+  assert.deepEqual(accounts.body.accounts.map((account) => account.definitionId), ['custom_openai']);
+});
+
+test('a pool key uses a partner’s free model; an own key never does', async () => {
+  await addKey('alex', 'pool', { poolAccess: 'pool' });
+  await addKey('alex', 'own');
+  const model = await partnerModel('alex', 'bea', 'ok-bea');
+  const before = mocks.bea.calls.length;
+  const ok = await chat('alex', 'pool', model, 'hi', { user: 'end-user-42' });
+  assert.equal(ok.status, 200, JSON.stringify(ok.body));
+  assert.equal(ok.body.choices[0].message.content, 'hello from ok-bea');
+  const call = mocks.bea.calls.at(-1);
+  assert.equal(mocks.bea.calls.length, before + 1);
+  assert.equal(call.model, 'ok-bea');
+  const own = await chat('alex', 'own', model);
+  assert.notEqual(own.status, 200);
+  assert.equal(mocks.bea.calls.length, before + 1, 'an own key never reaches a partner');
+});
+
+test('the partner sees counts only: no per-request log, no route headers, no content', async () => {
+  const model = await partnerModel('alex', 'bea', 'ok-bea');
+  const response = await chat('alex', 'pool', model);
+  assert.equal(response.status, 200);
+  const logs = await api('bea', 'get', '/usage/logs');
+  assert.equal(logs.body.logs.length, 0, 'partner requests are not listed one by one');
+  const view = await summary('bea');
+  const alex = view.partners.find((partner) => partner.name === 'alex');
+  assert.ok(alex.today.given.requests >= 2, JSON.stringify(alex.today));
+  const alexView = await summary('alex');
+  assert.ok(alexView.partners.find((partner) => partner.name === 'bea').today.taken.requests >= 2);
+  // Rows kept on Bea's side hold no error text and no trail messages.
+  const rows = getDatabase().prepare('SELECT r.error_message, r.trail_json FROM requests r JOIN router_keys k ON k.id = r.router_key_id WHERE k.peer_link_id IS NOT NULL').all();
+  assert.ok(rows.length >= 2);
+  for (const row of rows) {
+    assert.equal(row.error_message, null);
+    assert.ok(!row.trail_json.includes('message'));
+  }
+});
+
+test('private values become placeholders before they reach a partner, and come back in the answer', async () => {
+  const model = await partnerModel('alex', 'bea', 'echo-bea');
+  const response = await chat('alex', 'pool', model, 'Please write to jane.doe@example.com');
+  assert.equal(response.status, 200, JSON.stringify(response.body));
+  const sent = JSON.stringify(mocks.bea.calls.at(-1).messages);
+  assert.ok(!sent.includes('jane.doe@example.com'), sent);
+  assert.match(sent, /\[EMAIL_1\]/);
+  assert.match(response.body.choices[0].message.content, /jane\.doe@example\.com/);
+});
+
+test('very sensitive requests stay on own connections', async () => {
+  const secret = 'Deploy with password: Sup3r!Secret#9';
+  const model = await partnerModel('alex', 'bea', 'ok-bea');
+  const before = mocks.bea.calls.length;
+  const kept = await chat('alex', 'pool', model, secret);
+  assert.equal(kept.status, 503, JSON.stringify(kept.body));
+  assert.match(kept.body.error.message, /very sensitive data/);
+  assert.equal(mocks.bea.calls.length, before, 'never sent to the partner');
+  const auto = await chat('alex', 'pool', 'auto', secret);
+  assert.equal(auto.status, 200, JSON.stringify(auto.body));
+  assert.equal(auto.headers['x-neorouter-kept-private'], 'secret');
+  assert.equal(mocks.bea.calls.length, before);
+  // Switched off, the same request may go to the partner (with the secret hidden).
+  await api('alex', 'put', '/pools/privacy', { keepSensitivePrivate: false });
+  const sent = await chat('alex', 'pool', model, secret);
+  assert.equal(sent.status, 200, JSON.stringify(sent.body));
+  assert.ok(!JSON.stringify(mocks.bea.calls.at(-1).messages).includes('Sup3r!Secret#9'));
+  await api('alex', 'put', '/pools/privacy', { keepSensitivePrivate: true });
+});
+
+test('a partner request is never passed on, and the hop header is refused on ordinary keys', async () => {
+  // Bea lists only her own shared models to Alex, not Cem's.
+  const listed = await api('alex', 'get', '/models?all=1');
+  const viaBea = listed.body.models.filter((model) => model.providerSlug === 'pool-bea');
+  assert.ok(viaBea.length > 0);
+  assert.ok(!viaBea.some((model) => model.id.startsWith('pool-bea/pool-')), viaBea.map((model) => model.id).join(', '));
+  await addKey('bea', 'own');
+  const hop = await request(base).post('/v1/chat/completions').set('Authorization', `Bearer ${people.bea.keys.own}`).set('X-NeoRouter-Hop', '1')
+    .send({ model: 'auto', messages: [{ role: 'user', content: 'hi' }] });
+  assert.equal(hop.status, 403);
+  assert.equal(hop.body.error.code, 'POOL_HOP_REFUSED');
+  assert.equal(sharePolicy.rejection({ definitionId: 'neorouter_peer', isFree: true, accountId: 'x' }), 'peer_no_forward');
+});
+
+test('what is shared: unshared connections and used-up shares are refused', async () => {
+  const model = await partnerModel('alex', 'bea', 'ok-bea');
+  await api('bea', 'put', `/pools/accounts/${people.bea.account}/share`, { shared: false });
+  const unshared = await chat('alex', 'pool', model);
+  assert.notEqual(unshared.status, 200);
+  await api('bea', 'put', `/pools/accounts/${people.bea.account}/share`, { shared: true });
+  const used = (await summary('bea')).partners.find((partner) => partner.name === 'alex').today.given.requests;
+  const capped = await api('bea', 'put', '/pools/share', { requestsPerDay: used + 1 });
+  assert.equal(capped.status, 200, JSON.stringify(capped.body));
+  assert.equal((await chat('alex', 'pool', model)).status, 200);
+  const over = await chat('alex', 'pool', model);
+  assert.notEqual(over.status, 200, 'the day’s share is used up');
+  await api('bea', 'put', '/pools/share', { requestsPerDay: 300 });
+});
+
+test('the quick switch pauses giving and using, and turning it on restores everything', async () => {
+  const toBea = await partnerModel('alex', 'bea', 'ok-bea');
+  await addKey('bea', 'pool', { poolAccess: 'pool' });
+  const toAlex = await partnerModel('bea', 'alex', 'ok-alex');
+  const paused = await api('alex', 'put', '/pools/paused', { paused: true });
+  assert.equal(paused.body.pool.paused, true);
+  assert.notEqual((await chat('alex', 'pool', toBea)).status, 200, 'Alex uses no partner while paused');
+  assert.notEqual((await chat('bea', 'pool', toAlex)).status, 200, 'and gives nothing');
+  await api('alex', 'put', '/pools/paused', { paused: false });
+  const again = await chat('alex', 'pool', toBea);
+  assert.equal(again.status, 200, JSON.stringify(again.body));
+  const back = await chat('bea', 'pool', toAlex);
+  assert.equal(back.status, 200, JSON.stringify(back.body));
+});
+
+test('messages with a wrong signature are refused', async () => {
+  const forged = await request(base).post('/federation/v1/leave').send({ body: { v: 1, type: 'leave', from: '00000000-0000-0000-0000-000000000000', to: 'x', ts: Date.now(), nonce: 'n1', data: {} }, signature: 'AAAA' });
+  assert.equal(forged.status, 404);
+  const alexMember = getDatabase().prepare('SELECT member_id FROM pool_identities WHERE user_id = ?').get(people.alex.id).member_id;
+  const beaMember = getDatabase().prepare('SELECT member_id FROM pool_identities WHERE user_id = ?').get(people.bea.id).member_id;
+  const wrong = await request(base).post('/federation/v1/leave').send({ body: { v: 1, type: 'leave', from: beaMember, to: alexMember, ts: Date.now(), nonce: 'n2', data: {} }, signature: Buffer.alloc(64).toString('base64') });
+  assert.equal(wrong.status, 401);
+  assert.equal((await summary('alex')).partners.length, 2, 'nothing changed');
+});
+
+test('leaving removes both directions at once; the host can remove and close', async () => {
+  const left = await api('cem', 'post', '/pools/leave');
+  assert.equal(left.status, 200, JSON.stringify(left.body));
+  assert.equal(left.body.pool, null);
+  assert.equal(getDatabase().prepare('SELECT COUNT(*) n FROM peer_links WHERE user_id = ?').get(people.cem.id).n, 0);
+  for (const who of ['alex', 'bea']) assert.deepEqual((await summary(who)).partners.map((partner) => partner.name).sort(), [who === 'alex' ? 'bea' : 'alex']);
+  const beaMember = getDatabase().prepare('SELECT member_id FROM pool_identities WHERE user_id = ?').get(people.bea.id).member_id;
+  const removed = await api('alex', 'delete', `/pools/members/${beaMember}`);
+  assert.equal(removed.status, 200, JSON.stringify(removed.body));
+  assert.equal(removed.body.partners.length, 0);
+  assert.equal((await summary('bea')).pool, null, 'Bea was told and left the pool');
+  const afterwards = await chat('bea', 'pool', 'auto');
+  assert.equal(afterwards.status, 200, `a pool key keeps working on own models after the pool is gone: ${JSON.stringify(afterwards.body)}`);
+  assert.equal(getDatabase().prepare("SELECT COUNT(*) n FROM router_keys WHERE peer_link_id IS NOT NULL").get().n, 0, 'no partner key is left anywhere');
+  assert.equal(getDatabase().prepare("SELECT COUNT(*) n FROM provider_accounts WHERE definition_id = 'neorouter_peer'").get().n, 0);
+  await api('alex', 'post', '/pools/leave');
+  assert.equal((await summary('alex')).pool, null);
+});

@@ -7,6 +7,7 @@ import 'main_controller.dart';
 import 'main_model_picker.dart';
 import 'main_routing.dart';
 import 'main_shared.dart';
+import 'main_pool.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
 import 'src/backend_client.dart';
@@ -15,7 +16,7 @@ import 'src/models.dart';
 
 /// "Free · Plans · Paid" for the kinds of models a key may use.
 String keyKindsLabel(AppL10n t, RouterKey key) =>
-    <String>[if (key.allowFree) t.kindFreeShort, if (key.allowPlan) t.kindPlanShort, if (key.allowPaid) t.kindPaidShort].join(' · ');
+    <String>[if (key.allowFree) t.kindFreeShort, if (key.allowPlan) t.kindPlanShort, if (key.allowPaid) t.kindPaidShort, if (key.usesPool) t.keyPoolChip].join(' · ');
 
 class KeysScreen extends StatefulWidget {
   const KeysScreen({super.key, required this.controller});
@@ -460,6 +461,7 @@ class _KeyFormState extends State<_KeyForm> {
   late bool _free = widget.existing?.allowFree ?? true;
   late bool _plan = widget.existing?.allowPlan ?? true;
   late bool _paid = widget.existing?.allowPaid ?? false;
+  late bool _pool = widget.existing?.usesPool ?? false;
   late String _period = widget.existing?.budgetPeriod ?? 'monthly';
   late String _profile = widget.existing?.profile ?? 'balanced';
   bool _advanced = false;
@@ -544,6 +546,8 @@ class _KeyFormState extends State<_KeyForm> {
       'tokenPeriod': _tokenPeriod,
       'allowedModels': _allowedList(),
       'profile': _profile,
+      // Only sent while in a pool, so a key keeps its choice if the pool is left and rejoined.
+      if (widget.controller.inPool) 'poolAccess': _pool ? 'pool' : 'own',
     };
     try {
       if (widget.existing != null) {
@@ -593,6 +597,8 @@ class _KeyFormState extends State<_KeyForm> {
                 onPaid: (value) => setState(() => _paid = value),
                 onPeriod: (value) => setState(() => _period = value),
                 onTokenPeriod: (value) => setState(() => _tokenPeriod = value),
+                pool: _pool,
+                onPool: widget.controller.inPool ? (value) => setState(() => _pool = value) : null,
               ),
               if (_available.length > 1) ...<Widget>[
                 const SizedBox(height: AppSpacing.md),
@@ -697,6 +703,8 @@ class KeyAccessFields extends StatelessWidget {
     required this.onPaid,
     required this.onPeriod,
     required this.onTokenPeriod,
+    this.pool = false,
+    this.onPool,
   });
 
   final bool free;
@@ -714,6 +722,11 @@ class KeyAccessFields extends StatelessWidget {
   final ValueChanged<String> onPeriod;
   final ValueChanged<String> onTokenPeriod;
 
+  /// Whether the key may also use pool partners' free models; the choice is
+  /// shown only while in a pool (onPool set).
+  final bool pool;
+  final ValueChanged<bool>? onPool;
+
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
@@ -728,6 +741,18 @@ class KeyAccessFields extends StatelessWidget {
         _KindCheck(title: t.kindFree, description: t.kindFreeHint, value: free, onChanged: onFree),
         _KindCheck(title: t.kindPlan, description: t.kindPlanHint, value: plan, onChanged: onPlan),
         _KindCheck(title: t.kindPaid, description: t.kindPaidHint, value: paid, onChanged: onPaid),
+        if (onPool != null)
+          _KindCheck(
+            title: t.keyPoolLabel,
+            description: t.keyPoolHint,
+            value: pool && free,
+            onChanged: free ? onPool! : (_) {},
+            trailing: IconButton(
+              tooltip: t.poolInfoTooltip,
+              icon: const Icon(Icons.info_outline_rounded, size: 18),
+              onPressed: () => showPoolTrustInfo(context),
+            ),
+          ),
         const SizedBox(height: AppSpacing.md),
         Text(t.keyLimitsTitle, style: label),
         const SizedBox(height: 2),
@@ -804,12 +829,13 @@ class _LimitRow extends StatelessWidget {
 
 /// One kind of model a key may use: a checkbox card.
 class _KindCheck extends StatelessWidget {
-  const _KindCheck({required this.title, required this.description, required this.value, required this.onChanged});
+  const _KindCheck({required this.title, required this.description, required this.value, required this.onChanged, this.trailing});
 
   final String title;
   final String description;
   final bool value;
   final ValueChanged<bool> onChanged;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -844,6 +870,7 @@ class _KindCheck extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (trailing != null) trailing!,
               ],
             ),
           ),

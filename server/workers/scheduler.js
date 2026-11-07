@@ -16,6 +16,7 @@ const QUOTA_FLUSH_MS = 10_000;
 const BILLING_CHECK_MS = 6 * 60 * 60_000;
 const UPDATE_CHECK_MS = 6 * 60 * 60_000;
 const LOG_RETENTION_DAYS = 90;
+const POOL_SYNC_MS = 10 * 60_000;
 const timers = [];
 
 function jitter(ms) {
@@ -74,6 +75,8 @@ function start() {
   });
   every('check-updates', UPDATE_CHECK_MS, () => updates.check(), { runAtStart: true });
   every('prune-logs', 24 * 60 * 60_000, () => usage.prune(LOG_RETENTION_DAYS));
+  // Pools: pick up members who joined or left while this server was away.
+  every('sync-pools', POOL_SYNC_MS, () => require('../services/pools/pool_service').syncAll(), { runAtStart: true });
 }
 
 function stop() {

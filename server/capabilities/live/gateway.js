@@ -314,6 +314,8 @@ function attach(server) {
     if (!dialect) return socket.destroy();
     const key = routerKeys.authenticate(tokenOf(request, url));
     if (!key) return reject(socket, 401, 'A valid NeoRouter key (nrt_…) is required.');
+    // Pool partners reach chat only.
+    if (key.peer_link_id) return reject(socket, 403, 'Pool partners can only use chat models.');
     return wss.handleUpgrade(request, socket, head, (client) => new LiveSession({ client, request, url, dialect, key }).start());
   });
   return wss;

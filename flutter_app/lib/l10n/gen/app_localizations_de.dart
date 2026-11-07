@@ -3441,6 +3441,267 @@ class AppL10nDe extends AppL10n {
   String get teamActivityEmpty => 'Bisher ist nichts passiert.';
 
   @override
+  String get teamTabPeople => 'Personen';
+
+  @override
+  String get teamTabPool => 'Pool';
+
+  @override
+  String get poolDescription =>
+      'Teile Gratis-Kapazität mit Freunden, die einen eigenen NeoRouter betreiben. Niemand gibt Schlüssel heraus: Jede Anfrage läuft auf dem Server dessen, der teilt.';
+
+  @override
+  String get poolEmptyTitle => 'Noch in keinem Pool';
+
+  @override
+  String get poolEmptyMessage =>
+      'Starte einen und lade andere ein, oder tritt mit einem Link bei, den du bekommen hast.';
+
+  @override
+  String get poolCreate => 'Pool starten';
+
+  @override
+  String get poolJoin => 'Mit Link beitreten';
+
+  @override
+  String get poolTrustNotice =>
+      'Anfragen über den Pool laufen auf dem Server eines Partners. NeoRouter speichert dort keine Inhalte und blendet Geheimnisse vorher aus. Wer den Server betreibt, könnte Inhalte aber technisch sehen. Teile nur mit Menschen, denen du vertraust.';
+
+  @override
+  String get poolTosNotice =>
+      'Manche Anbieter erlauben nicht, Gratis-Zugang mit anderen zu teilen. Prüfe ihre Bedingungen, bevor du eine Verbindung teilst.';
+
+  @override
+  String get poolTrustConfirm => 'Verstanden';
+
+  @override
+  String get poolSwitchLabel => 'Pool an';
+
+  @override
+  String get poolSwitchHint =>
+      'Aus pausiert Geben und Nutzen vorübergehend. Sonst ändert sich nichts.';
+
+  @override
+  String get poolPartnersTitle => 'Partner';
+
+  @override
+  String get poolPartnersHint =>
+      'Ihre NeoRouter und deiner teilen Gratis-Modelle miteinander.';
+
+  @override
+  String get poolNoPartners =>
+      'Noch keine Partner. Lade jemanden mit einem Link ein.';
+
+  @override
+  String get poolInvite => 'Einladen';
+
+  @override
+  String get poolInviteTitle => 'Pool-Einladungslink';
+
+  @override
+  String get poolInviteBody =>
+      'Schick diesen Link an jemanden mit eigenem NeoRouter. Dort wird er auf der Team-Seite unter Pool eingefügt. Er funktioniert einmal und läuft nach 7 Tagen ab.';
+
+  @override
+  String get poolStateOnline => 'Online';
+
+  @override
+  String get poolStateOffline => 'Nicht erreichbar';
+
+  @override
+  String get poolStateConnecting => 'Verbindet';
+
+  @override
+  String get poolStatePaused => 'Pausiert';
+
+  @override
+  String get poolHost => 'Gastgeber';
+
+  @override
+  String poolPartnerModels(String count) {
+    return '$count Modelle';
+  }
+
+  @override
+  String poolToday(String given, String taken) {
+    return 'Heute: $given gegeben, $taken genommen';
+  }
+
+  @override
+  String get poolBalanceNew => 'Neu';
+
+  @override
+  String get poolBalanceBalanced => 'Ausgewogen';
+
+  @override
+  String get poolBalanceGiving => 'Du gibst mehr';
+
+  @override
+  String get poolBalanceTaking => 'Du nimmst mehr';
+
+  @override
+  String get poolPausePartner => 'Diesen Partner pausieren';
+
+  @override
+  String get poolResumePartner => 'Diesen Partner fortsetzen';
+
+  @override
+  String get poolRemoveMember => 'Aus dem Pool entfernen';
+
+  @override
+  String poolRemoveConfirm(String name) {
+    return '$name verliert sofort den Zugang zum Pool.';
+  }
+
+  @override
+  String get poolShareTitle => 'Was du teilst';
+
+  @override
+  String get poolShareHint =>
+      'Nur Gratis-Modelle, nur von den Verbindungen, die du auswählst. Deine eigenen Anfragen gehen immer vor.';
+
+  @override
+  String get poolShareNone =>
+      'Noch keine deiner Verbindungen hat Gratis-Modelle.';
+
+  @override
+  String poolFreeModels(String count) {
+    return '$count Gratis-Modelle';
+  }
+
+  @override
+  String get poolLimitsLabel => 'Pro Partner und Tag';
+
+  @override
+  String poolLimitsValue(
+    String requests,
+    String tokens,
+    String concurrent,
+    String reserve,
+  ) {
+    return '$requests Anfragen · $tokens Tokens · $concurrent gleichzeitig · $reserve % für dich reserviert';
+  }
+
+  @override
+  String get poolLimitsChange => 'Ändern';
+
+  @override
+  String get poolLimitsTitle => 'Anteil pro Partner';
+
+  @override
+  String get poolLimitRequests => 'Anfragen pro Tag';
+
+  @override
+  String get poolLimitTokens => 'Tokens pro Tag';
+
+  @override
+  String get poolLimitConcurrent => 'Anfragen gleichzeitig';
+
+  @override
+  String get poolLimitReserve => 'Für dich reserviert (%)';
+
+  @override
+  String get poolLimitReserveHint =>
+      'Der Teil jedes Kontingents, den Partner nie nutzen.';
+
+  @override
+  String get poolLimitsBalanceHint =>
+      'Wer deutlich mehr nimmt als gibt, bekommt mit der Zeit etwas weniger.';
+
+  @override
+  String get poolLeave => 'Pool verlassen';
+
+  @override
+  String get poolClose => 'Pool schließen';
+
+  @override
+  String poolLeaveConfirm(String name) {
+    return '$name verlassen? Partner verlieren sofort den Zugang zu deinen Verbindungen und du zu ihren.';
+  }
+
+  @override
+  String poolCloseConfirm(String name) {
+    return '$name schließen? Als Gastgeber beendest du den Pool damit für alle.';
+  }
+
+  @override
+  String get poolCreateTitle => 'Pool starten';
+
+  @override
+  String get poolNameLabel => 'Name des Pools';
+
+  @override
+  String get poolSelfNameLabel => 'Dein Name im Pool';
+
+  @override
+  String get poolSelfNameHint => 'Partner sehen diesen Namen.';
+
+  @override
+  String get poolChooseShared => 'Diese Verbindungen teilen';
+
+  @override
+  String get poolJoinTitle => 'Einem Pool beitreten';
+
+  @override
+  String get poolLinkLabel => 'Einladungslink';
+
+  @override
+  String get poolCheckLink => 'Link prüfen';
+
+  @override
+  String poolJoinPreview(String name) {
+    return '$name beitreten?';
+  }
+
+  @override
+  String poolJoinMembers(String host, String count) {
+    return 'Gastgeber $host · $count Mitglieder';
+  }
+
+  @override
+  String get poolJoinAction => 'Pool beitreten';
+
+  @override
+  String get poolInfoTooltip => 'Über den Pool';
+
+  @override
+  String get keyPoolLabel => 'Pool mitbenutzen';
+
+  @override
+  String get keyPoolHint =>
+      'Nutzt auch Gratis-Modelle von Partnern, vor allem wenn deine ausgelastet sind.';
+
+  @override
+  String get keyPoolChip => 'Pool';
+
+  @override
+  String get settingsPoolTitle => 'Pool';
+
+  @override
+  String get settingsKeepSensitive => 'Sehr sensible Anfragen nie an den Pool';
+
+  @override
+  String get settingsKeepSensitiveHint =>
+      'Anfragen mit Passwörtern, Schlüsseln, Karten- oder Ausweisnummern oder den Daten vieler Personen bleiben auf deinen eigenen Verbindungen. Eindeutige Fälle werden erkannt, nicht jedes Geheimnis.';
+
+  @override
+  String homePoolOn(String count) {
+    return '$count Partner teilen Gratis-Kapazität mit dir';
+  }
+
+  @override
+  String get homePoolPaused => 'Gerade pausiert: du nutzt und gibst nichts.';
+
+  @override
+  String get poolShareConnection => 'Im Pool teilen';
+
+  @override
+  String get poolUnshareConnection => 'Nicht mehr im Pool teilen';
+
+  @override
+  String get keptPrivateTag => 'Privat gehalten';
+
+  @override
   String teamEventInviteCreate(String actor) {
     return '$actor hat einen Einladungslink erstellt';
   }

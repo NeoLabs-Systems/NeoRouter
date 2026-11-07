@@ -13,6 +13,8 @@ const budget = require('../budget/budget_service');
 const pacing = require('../budget/pacing');
 const plans = require('./plans');
 const priority = require('./priority');
+const sharePolicy = require('../pools/share_policy');
+const { isPeerEntry } = require('../pools/links');
 const { classify } = require('./task/classifier');
 const { neededIntelligence } = require('./task/skills');
 const { getConfig } = require('../../config/env');
@@ -37,6 +39,9 @@ const { FEATURE_FLOOR } = scoring;
 // that are good enough stay in the running on a style that wants speed.
 const WEAK_FOR_TASK_FACTOR = 0.6;
 const weakBelow = (need) => Math.max(0.08, Math.min(0.12, (need ?? 0) * 0.3));
+// A pool partner's copy of a model counts for a little less than an own
+// connection, so partners' capacity is used when it helps, not by habit.
+const PEER_FACTOR = 0.8;
 
 function globToRegExp(pattern) {
   const escaped = String(pattern).replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
@@ -142,6 +147,16 @@ function rejection(entry, ctx, now) {
   if (!ctx.longShot && accountHealth.restingUntil(entry.accountId, now) && !ctx.primaryRefs.has(entry.ref)) return 'account_resting';
   const kind = kindAllowed(entry, key, freeOnly);
   if (kind) return kind;
+  // Pools: a partner's request only reaches what is shared with them, and is
+  // never passed on; an own request reaches partners only with a pool key,
+  // and not when it holds very sensitive data.
+  if (key.peer_link_id) {
+    const shared = sharePolicy.rejection(entry, { inputTokens, reserve: ctx.shareReserve ?? undefined }, now);
+    if (shared) return shared;
+  } else if (isPeerEntry(entry)) {
+    if (key.pool_access !== 'pool') return 'not_in_pool';
+    if (ctx.keepPrivate) return 'kept_private';
+  }
   if (ctx.tokenLimitReached && (entry.isFree || entry.isPlan)) return 'token_limit';
   // A connection on "Free" has no credits: its models that are not free fail.
   if (needsCredits(entry)) return 'needs_credits';
@@ -291,10 +306,11 @@ function needsCredits(entry) {
 const REJECTION_GROUPS = [
   ['tokens', ['token_limit'], "are past this key's token limit until it resets"],
   ['credits', ['needs_credits'], 'need credits, and their connection is set to free'],
-  ['busy', ['account_failing', 'account_resting', 'quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'held_for_priority', 'plan_used_up', 'not_available'], 'are used up, rate-limited or cooling down for now'],
+  ['busy', ['account_failing', 'account_resting', 'quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'held_for_priority', 'plan_used_up', 'not_available', 'kept_for_owner'], 'are used up, rate-limited or cooling down for now'],
   ['fit', ['no_tools', 'no_vision', 'context_too_small', 'context_unknown', 'needs_more_tokens', 'incompatible'], 'cannot handle this request (tools, images or its size)'],
   ['profile', ['below_min_intelligence', 'too_expensive', 'too_slow', 'provider_not_included', 'provider_excluded', 'model_excluded', 'kind_not_in_style'], "are left out by the routing style"],
-  ['key', ['not_free', 'not_allowed_for_key', 'other_kind', 'price_unknown', 'budget_exhausted', 'key_too_expensive'], 'are not allowed for this key'],
+  ['key', ['not_free', 'not_allowed_for_key', 'other_kind', 'price_unknown', 'budget_exhausted', 'key_too_expensive', 'not_in_pool', 'not_shared', 'peer_no_forward'], 'are not allowed for this key'],
+  ['private', ['kept_private'], 'are pool partners, and this request holds very sensitive data that stays on your own connections'],
 ];
 
 function explainNoModel(rejected, capability = 'chat') {
@@ -323,8 +339,12 @@ const MINUTE_MS = 60_000;
 
 class RoutingPlan {
   // taskHint: a task kind the client named (X-NeoRouter-Task).
-  constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null, taskHint = null }) {
+  // keepPrivate: very sensitive content, kept off pool partners.
+  // shareReserve: for a partner's request, the share of capacity kept for the owner.
+  constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null, taskHint = null, keepPrivate = false, shareReserve = null }) {
     this.capability = capability;
+    this.keepPrivate = keepPrivate;
+    this.shareReserve = shareReserve;
     // Non-chat kinds price per image, second or character; they pass their own estimate.
     this.estimateCost = estimateCost;
     this.key = key;
@@ -389,7 +409,7 @@ class RoutingPlan {
   }
 
   context() {
-    return { longShot: this.longShot, accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost };
+    return { keepPrivate: this.keepPrivate, shareReserve: this.shareReserve, longShot: this.longShot, accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost };
   }
 
   rank({ includeRejected = false, sample = true, now = Date.now() } = {}) {
@@ -447,6 +467,7 @@ class RoutingPlan {
       let value = base * quotaFactor * penalty * load;
       if (qualityProfile && features.intelligence < bestIntelligence - QUALITY_GAP) value *= QUALITY_GATE_FACTOR;
       value *= plans.factor(item.entry);
+      if (isPeerEntry(item.entry)) value *= PEER_FACTOR;
       // Far too weak for this task: taken only when nothing better can serve.
       if (this.task && item.details.capability < weakBelow(this.need)) value *= WEAK_FOR_TASK_FACTOR;
       // A custom style's preference between free, subscription and paid models.

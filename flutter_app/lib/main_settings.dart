@@ -500,6 +500,8 @@ class _AccountPageState extends State<_AccountPage> {
         const SizedBox(height: 28),
         _TwoFactorSection(controller: widget.controller),
         const SizedBox(height: 28),
+        // Only relevant while this account is in a pool.
+        if (widget.controller.inPool && widget.controller.canManagePool) _PoolPrivacySetting(controller: widget.controller),
         SettingsCardList(
           children: <Widget>[
             SettingsRow(
@@ -553,6 +555,48 @@ class _AccountPageState extends State<_AccountPage> {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+/// "Keep very sensitive requests off the pool": requests the server judges
+/// very sensitive stay on the owner's own connections.
+class _PoolPrivacySetting extends StatefulWidget {
+  const _PoolPrivacySetting({required this.controller});
+
+  final NeoRouterController controller;
+
+  @override
+  State<_PoolPrivacySetting> createState() => _PoolPrivacySettingState();
+}
+
+class _PoolPrivacySettingState extends State<_PoolPrivacySetting> {
+  bool _busy = false;
+
+  Future<void> _set(bool keep) async {
+    setState(() => _busy = true);
+    try {
+      await widget.controller.api.setPoolPrivacy(keep);
+      await widget.controller.refreshPool();
+    } on ApiException catch (error) {
+      if (mounted) showSnack(context, error.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    return SettingsGroup(
+      title: t.settingsPoolTitle,
+      children: <Widget>[
+        SettingsRow(
+          label: t.settingsKeepSensitive,
+          description: t.settingsKeepSensitiveHint,
+          control: Switch(value: widget.controller.pool?.keepSensitivePrivate ?? true, onChanged: _busy ? null : _set),
         ),
       ],
     );

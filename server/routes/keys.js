@@ -22,6 +22,7 @@ const keyInput = z.object({
   // Maximum price per million tokens for paid models used with this key.
   // When set, models whose output price exceeds this limit are rejected.
   maxPricePerMillion: z.number().min(0).nullable().optional(),
+  poolAccess: z.enum(['own', 'pool']).optional(),
   // Tokens on free and subscription models per period (null = no limit).
   tokenLimit: z.number().int().positive().nullable().optional(),
   tokenPeriod: z.enum(['total', 'monthly', 'daily']).optional(),

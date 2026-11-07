@@ -578,6 +578,8 @@ class _RequestDetails extends StatelessWidget {
       if (log.capability != 'chat') (t.activityKind, capabilityInfo(log.capability).label(t)),
       if (log.task != null) (t.detailTask, taskLabel(t, log.task)),
       (t.detailFormat, '${log.apiFormat}${log.stream ? ' · stream' : ''}'),
+      // Very sensitive content: kept off pool partners (what kind, never the value).
+      if (log.keptPrivate != null) (t.keptPrivateTag, log.keptPrivate!.replaceAll('_', ' ').replaceAll(',', ', ')),
       (t.detailTime, formatTime(log.createdAt)),
     ];
     return Container(

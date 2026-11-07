@@ -47,7 +47,14 @@ function update(ref, task, mutate, now = Date.now()) {
   if (!ref || !task) return;
   const row = decay(load(ref, task), now);
   mutate(row);
-  save(row);
+  try {
+    save(row);
+  } catch (error) {
+    // The model is gone (its connection was removed, a pool partner left):
+    // nothing left to learn about, and never a reason to fail a request.
+    if (error.code !== 'SQLITE_CONSTRAINT_FOREIGNKEY') throw error;
+    cache.delete(`${ref}|${task}`);
+  }
 }
 
 function recordOutcome(ref, task, ok, now) {

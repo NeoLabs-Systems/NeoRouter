@@ -54,6 +54,8 @@ function createApp() {
   app.use(compression());
   // "Connect with NeoRouter": the OAuth endpoints apps talk to.
   app.use(require('./routes/connect').router);
+  // Pools: what other NeoRouters call to join and keep a pool in order.
+  app.use('/federation/v1', require('./routes/federation'));
   // Gateway reference for agents (Markdown).
   app.use(require('./routes/api_docs'));
   // Playground audio uploads arrive as base64 JSON (25 MB of audio).

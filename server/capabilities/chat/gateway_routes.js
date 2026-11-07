@@ -9,6 +9,8 @@ const experience = require('../../services/routing/task/experience');
 const { getDatabase } = require('../../db/database');
 const { allowedByKey, routeAllowedByKey, kindAllowed, modelKind, MODEL_KINDS } = require('../../services/routing/router');
 const profiles = require('../../services/routing/profiles');
+const sharePolicy = require('../../services/pools/share_policy');
+const { isPeerEntry } = require('../../services/pools/links');
 const { createLogger } = require('../../utils/logger');
 
 const logger = createLogger('gateway');
@@ -40,9 +42,13 @@ function gatewayErrorHandler(format) {
 
 const KINDS = new Set(require('../../core/capability_registry').list().map((item) => item.id));
 
+// A pool partner sees only the free models of connections shared with it,
+// never another partner's (sharePolicy decides per request what is in reach).
 function modelsVisibleTo(key, capability = 'chat') {
+  if (key.peer_link_id && !sharePolicy.sharingWith(key)) return [];
   return catalog.listForUser(key.user_id, { capability })
-    .filter((entry) => entry.enabled && entry.accountEnabled && allowedByKey(entry, key) && !kindAllowed(entry, key));
+    .filter((entry) => entry.enabled && entry.accountEnabled && allowedByKey(entry, key) && !kindAllowed(entry, key))
+    .filter((entry) => !key.peer_link_id || (!isPeerEntry(entry) && entry.isFree && sharePolicy.accountShared(entry.accountId)));
 }
 
 // Models of this kind the key's free/plan/paid choice leaves out, so an app
@@ -114,8 +120,10 @@ function autoModels(key, entries, type) {
 
 // The same model is offered by several providers, so a picker that only shows
 // the name cannot tell the copies apart: "Llama 3.3 70B (Groq)".
+// A pool partner's model: "Llama 3.3 70B (Groq, via Alex)".
 function listedName(entry) {
   const provider = entry.providerName || entry.providerSlug;
+  if (isPeerEntry(entry) && provider) return /\)$/.test(entry.name) ? entry.name.replace(/\)$/, `, via ${provider})`) : `${entry.name} (via ${provider})`;
   return provider && !entry.name.toLowerCase().includes(provider.toLowerCase()) ? `${entry.name} (${provider})` : entry.name;
 }
 
@@ -126,7 +134,8 @@ router.get('/models', requireRouterKey, (req, res) => {
   const reachable = modelsVisibleTo(key, kind);
   const created = Math.floor(Date.now() / 1000);
   // Only the autos the key may ask for, and models only when it may name them.
-  const autos = autoModels(key, reachable, kind).filter((auto) => routeAllowedByKey(auto.id, key));
+  // A partner's router picks models itself, so it gets no autos.
+  const autos = key.peer_link_id ? [] : autoModels(key, reachable, kind).filter((auto) => routeAllowedByKey(auto.id, key));
   const entries = reachable.filter((entry) => routeAllowedByKey(entry.id, key));
   if (req.get('anthropic-version')) {
     const data = [...autos.map((auto) => ({ type: 'model', id: auto.id, display_name: auto.name, created_at: new Date().toISOString() })),
@@ -144,6 +153,10 @@ router.get('/models', requireRouterKey, (req, res) => {
         owned_by: entry.providerSlug,
         name: listedName(entry),
         context_length: entry.contextWindow,
+        // Read by other routers (and NeoRouter pool partners) to know what the model can do.
+        ...(entry.maxOutput ? { max_output_tokens: entry.maxOutput } : {}),
+        ...(typeof entry.tools === 'boolean' ? { supports_tools: entry.tools } : {}),
+        ...(typeof entry.vision === 'boolean' ? { supports_vision: entry.vision } : {}),
         pricing: entry.isFree || entry.isPlan ? { prompt: '0', completion: '0' } : { prompt: entry.priceIn === null ? null : String(entry.priceIn / 1e6), completion: entry.priceOut === null ? null : String(entry.priceOut / 1e6) },
         neorouter: {
           kind, free: entry.isFree, plan: entry.isPlan, intelligence: entry.intelligence, tools: entry.tools, vision: entry.vision,
@@ -153,7 +166,7 @@ router.get('/models', requireRouterKey, (req, res) => {
         },
       })),
     ],
-    neorouter: { not_allowed_for_key: modelsHiddenFrom(key, kind) },
+    ...(key.peer_link_id ? {} : { neorouter: { not_allowed_for_key: modelsHiddenFrom(key, kind) } }),
   });
 });
 

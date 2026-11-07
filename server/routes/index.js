@@ -23,6 +23,7 @@ router.get('/info', (req, res) => {
 });
 router.use('/admin', requireOwnSpace, require('./admin'));
 router.use('/teams', requireOwnSpace, require('./teams'));
+router.use('/pools', require('./pools'));
 router.use('/providers', require('./providers'));
 router.use('/models', require('./models'));
 router.use('/keys', require('./keys'));

@@ -156,6 +156,25 @@ class RouterApi {
 
   // ---- teams --------------------------------------------------------------------
   Future<TeamSummary> team() async => TeamSummary(await client.get('$_base/teams'));
+
+  // Pools (other NeoRouters sharing free capacity)
+  Future<PoolSummary> pool() async => PoolSummary(await client.get('$_base/pools'));
+  Future<PoolSummary> createPool(String name, String selfName, List<String> sharedAccountIds) async =>
+      PoolSummary(await client.post('$_base/pools', <String, Object>{'name': name, 'selfName': selfName, 'sharedAccountIds': sharedAccountIds}));
+  Future<Map<String, dynamic>> previewPool(String link) => client.post('$_base/pools/preview', <String, Object>{'link': link});
+  Future<PoolSummary> joinPool(String link, String selfName, List<String> sharedAccountIds) async =>
+      PoolSummary(await client.post('$_base/pools/join', <String, Object>{'link': link, 'selfName': selfName, 'sharedAccountIds': sharedAccountIds}));
+  Future<String> createPoolInvite() async => (await client.post('$_base/pools/invites'))['link'] as String;
+  Future<void> revokePoolInvite(String id) => client.delete('$_base/pools/invites/$id');
+  Future<PoolSummary> updatePoolShare(Map<String, Object?> body) async => PoolSummary(await client.putJson('$_base/pools/share', _clean(body)));
+  Future<PoolSummary> setAccountPoolShare(String accountId, bool shared) async =>
+      PoolSummary(await client.putJson('$_base/pools/accounts/$accountId/share', <String, Object>{'shared': shared}));
+  Future<PoolSummary> setPoolPaused(bool paused) async => PoolSummary(await client.putJson('$_base/pools/paused', <String, Object>{'paused': paused}));
+  Future<PoolSummary> setPartnerPaused(String linkId, bool paused) async =>
+      PoolSummary(await client.putJson('$_base/pools/partners/$linkId/paused', <String, Object>{'paused': paused}));
+  Future<PoolSummary> removePoolMember(String memberId) async => PoolSummary(await client.deleteJson('$_base/pools/members/$memberId'));
+  Future<PoolSummary> leavePool() async => PoolSummary(await client.post('$_base/pools/leave'));
+  Future<void> setPoolPrivacy(bool keepSensitivePrivate) => client.put('$_base/pools/privacy', <String, Object>{'keepSensitivePrivate': keepSensitivePrivate});
   Future<Map<String, dynamic>> previewInvite(String link) => client.post('$_base/teams/invites/preview', <String, Object>{'link': link});
   Future<TeamSummary> redeemInvite(String link) async => TeamSummary(await client.post('$_base/teams/invites/redeem', <String, Object>{'link': link}));
   Future<String> createInvite({required String label, required List<String> permissions, int? expiresInHours, required bool singleUse}) async =>

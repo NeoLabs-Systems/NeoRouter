@@ -20,7 +20,8 @@ const router = express.Router();
 // Who is changing an account, for the checks on where its key may be sent.
 const actorOf = (req) => ({ role: req.user.role, isOwner: req.space.isOwner });
 
-router.get('/definitions', (_req, res) => res.json({ definitions: registry.list().map(registry.publicDefinition) }));
+// Pool partners are added by joining a pool, not by hand.
+router.get('/definitions', (_req, res) => res.json({ definitions: registry.list().filter((definition) => definition.category !== 'pool').map(registry.publicDefinition) }));
 
 router.get('/accounts', requirePermission('providers.view'), (req, res) => res.json({ accounts: accounts.list(req.space.ownerId) }));
 

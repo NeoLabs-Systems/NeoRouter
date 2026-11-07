@@ -135,6 +135,8 @@ class ProviderAccount {
   String? get lastSyncedAt => raw['lastSyncedAt'] as String?;
   int get modelCount => _int(_map(raw['models'])['total']) ?? 0;
   int get freeModelCount => _int(_map(raw['models'])['free']) ?? 0;
+  /// Whether its free models are shared with pool partners.
+  bool get poolShare => raw['poolShare'] == true;
   /// "Free models only" can be chosen (the provider or its listing has free models).
   bool get freeAvailable => raw['freeAvailable'] == true;
   bool get freeTierAll => raw['freeTierAll'] == true;
@@ -220,6 +222,8 @@ class RouterKey {
   String get priority => raw['priority'] as String? ?? 'normal';
   int? get tokenLimit => _int(raw['tokenLimit']);
   double? get maxPricePerMillion => _double(raw['maxPricePerMillion']);
+  /// Whether the key may also use pool partners' free models.
+  bool get usesPool => raw['poolAccess'] == 'pool';
   String get tokenPeriod => raw['tokenPeriod'] as String? ?? 'monthly';
   int? get tokensUsed => _int(raw['tokensUsed']);
   String? get tokenResetsAt => raw['tokenResetsAt'] as String?;
@@ -310,4 +314,72 @@ class RequestLog {
   int get queuedMs => _int(raw['queuedMs']) ?? 0;
   bool get stream => raw['stream'] == true;
   List<Map<String, dynamic>> get trail => (raw['trail'] as List? ?? const <Object>[]).map(_map).toList();
+  /// Why the request stayed off the pool (very sensitive content), or null.
+  String? get keptPrivate => raw['keptPrivate'] as String?;
+}
+
+/// Give and take with one partner (requests and tokens).
+class PoolTraffic {
+  PoolTraffic(this.raw);
+  final Map<String, dynamic> raw;
+
+  int get givenRequests => _int(_map(raw['given'])['requests']) ?? 0;
+  int get takenRequests => _int(_map(raw['taken'])['requests']) ?? 0;
+  int get givenTokens => _int(_map(raw['given'])['tokens']) ?? 0;
+  int get takenTokens => _int(_map(raw['taken'])['tokens']) ?? 0;
+}
+
+class PoolPartner {
+  PoolPartner(this.raw);
+  final Map<String, dynamic> raw;
+
+  String get memberId => raw['memberId'] as String;
+  String get name => raw['name'] as String? ?? '';
+  bool get isHost => raw['isHost'] == true;
+  String? get linkId => raw['linkId'] as String?;
+  /// connecting, online, offline or paused.
+  String get state => raw['state'] as String? ?? 'connecting';
+  String? get problem => raw['problem'] as String?;
+  int get models => _int(raw['models']) ?? 0;
+  /// new, balanced, giving_more or taking_more.
+  String get balance => _map(raw['balance'])['state'] as String? ?? 'new';
+  PoolTraffic get week => PoolTraffic(_map(_map(raw['balance'])['week']));
+  PoolTraffic get today => PoolTraffic(_map(raw['today']));
+}
+
+class ShareableAccount {
+  ShareableAccount(this.raw);
+  final Map<String, dynamic> raw;
+
+  String get id => raw['id'] as String;
+  String get label => raw['label'] as String? ?? '';
+  bool get shared => raw['shared'] == true;
+  int get freeModels => _int(raw['freeModels']) ?? 0;
+}
+
+class PoolShare {
+  PoolShare(this.raw);
+  final Map<String, dynamic> raw;
+
+  int get requestsPerDay => _int(raw['requestsPerDay']) ?? 300;
+  int get tokensPerDay => _int(raw['tokensPerDay']) ?? 600000;
+  int get concurrent => _int(raw['concurrent']) ?? 2;
+  double get reserve => _double(raw['reserve']) ?? 0.3;
+}
+
+class PoolSummary {
+  PoolSummary(this.raw);
+  final Map<String, dynamic> raw;
+
+  Map<String, dynamic>? get _pool => raw['pool'] is Map ? _map(raw['pool']) : null;
+  bool get inPool => _pool != null;
+  String get name => _pool?['name'] as String? ?? '';
+  bool get isHost => _pool?['isHost'] == true;
+  bool get paused => _pool?['paused'] == true;
+  String get selfName => _pool?['selfName'] as String? ?? '';
+  List<PoolPartner> get partners => (raw['partners'] as List? ?? const <Object>[]).map((item) => PoolPartner(_map(item))).toList();
+  List<ShareableAccount> get shareable => (raw['shareable'] as List? ?? const <Object>[]).map((item) => ShareableAccount(_map(item))).toList();
+  List<Map<String, dynamic>> get invites => (raw['invites'] as List? ?? const <Object>[]).map(_map).toList();
+  PoolShare get share => PoolShare(_map(raw['share']));
+  bool get keepSensitivePrivate => _map(raw['privacy'])['keepSensitivePrivate'] != false;
 }

@@ -108,6 +108,8 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
     showCreator: widget.controller.showCreators,
     canManage: canManage,
     canDelete: widget.controller.can('providers.delete'),
+    // "Share in pool" only while in a pool, for the owner, on connections with free models.
+    canPoolShare: widget.controller.inPool && widget.controller.canManagePool && account.freeModelCount > 0,
     onToggle: (enabled) => _run(account.id, () async {
       await widget.controller.api.updateAccount(account.id, <String, Object?>{'enabled': enabled});
       return null;
@@ -186,6 +188,11 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
           final validation = result['validation'] as Map?;
           final failing = validation != null && validation['status'] == 'invalid';
           return failing ? t.markFixedStillFailing('${validation['message'] ?? ''}') : t.markFixedDone;
+        });
+      case _AccountAction.poolShare:
+        await _run(account.id, () async {
+          widget.controller.updatePool(await api.setAccountPoolShare(account.id, !account.poolShare));
+          return null;
         });
       case _AccountAction.edit:
         await _edit(account);
@@ -287,7 +294,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
   }
 }
 
-enum _AccountAction { check, sync, balance, fixed, edit, another, remove }
+enum _AccountAction { check, sync, balance, fixed, edit, another, poolShare, remove }
 
 /// A provider connected with several accounts: one row for the provider, its
 /// accounts in a dropdown under it.
@@ -405,6 +412,7 @@ class _AccountRow extends StatelessWidget {
     this.showCreator = false,
     this.canManage = true,
     this.canDelete = true,
+    this.canPoolShare = false,
   });
 
   final ProviderAccount account;
@@ -412,6 +420,7 @@ class _AccountRow extends StatelessWidget {
   final bool showCreator;
   final bool canManage;
   final bool canDelete;
+  final bool canPoolShare;
   final ValueChanged<bool> onToggle;
   final ValueChanged<_AccountAction> onAction;
 
@@ -502,6 +511,8 @@ class _AccountRow extends StatelessWidget {
                     _menuItem(_AccountAction.edit, Icons.edit_outlined, t.editProvider),
                     _menuItem(_AccountAction.another, Icons.add_rounded, t.addAnotherAccount),
                   ],
+                  if (canPoolShare)
+                    _menuItem(_AccountAction.poolShare, Icons.hub_outlined, account.poolShare ? t.poolUnshareConnection : t.poolShareConnection),
                   if (canManage && canDelete) const PopupMenuDivider(),
                   if (canDelete) _menuItem(_AccountAction.remove, Icons.delete_outline_rounded, t.removeProvider, destructive: palette.error),
                 ],

@@ -122,6 +122,8 @@ function publicAccount(row) {
     // What the person stated, and the in-flight limit in force with its source (manual, learned or documented).
     limits: require('../quota/account_limits').get(row.id),
     concurrency: require('../routing/concurrency').limitFor({ accountId: row.id, definitionId: row.definition_id }),
+    // Whether its free models are shared with pool partners.
+    poolShare: row.pool_share === 1,
   };
 }
 
@@ -308,8 +310,9 @@ function remove(userId, accountId) {
   getDatabase().prepare('DELETE FROM provider_accounts WHERE id = ?').run(accountId);
 }
 
+// Pool partners (services/pools) are managed on the pool page, not listed as connections.
 function list(userId) {
-  return getDatabase().prepare('SELECT * FROM provider_accounts WHERE user_id = ? ORDER BY created_at').all(userId).map(publicAccount);
+  return getDatabase().prepare("SELECT * FROM provider_accounts WHERE user_id = ? AND definition_id != 'neorouter_peer' ORDER BY created_at").all(userId).map(publicAccount);
 }
 
 function get(userId, accountId) {
@@ -349,4 +352,5 @@ module.exports = {
   prepaidIds,
   probeQuota,
   AUTH_FAILURES_BEFORE_DISABLE,
+  publicOnly,
 };
