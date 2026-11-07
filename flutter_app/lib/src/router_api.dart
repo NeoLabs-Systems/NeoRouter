@@ -64,6 +64,11 @@ class RouterApi {
       client.post('$_base/providers/chatgpt/login', _clean(<String, Object?>{'accountId': accountId, 'billingMode': billingMode}));
   Future<Map<String, dynamic>> chatgptLoginPoll(String loginId) => client.post('$_base/providers/chatgpt/login/$loginId');
 
+  /// Nous Portal device sign-in: start, then poll until approved.
+  Future<Map<String, dynamic>> nousLoginStart({String? accountId}) =>
+      client.post('$_base/providers/nous/login', _clean(<String, Object?>{'accountId': accountId}));
+  Future<Map<String, dynamic>> nousLoginPoll(String loginId) => client.post('$_base/providers/nous/login/$loginId');
+
   // ---- catalog ---------------------------------------------------------------
   Future<List<CatalogModel>> models({String capability = 'chat'}) async =>
       _list(await client.get('$_base/models?capability=$capability'), 'models', CatalogModel.new);

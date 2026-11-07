@@ -167,6 +167,22 @@
   "chatgptWaiting": "Waiting for you to confirm…",
   "chatgptExpired": "The code expired. Start again.",
   "chatgptConnected": "ChatGPT connected",
+  "nousSignIn": "Sign in with Nous Portal",
+  "nousSignInAgain": "Sign in again",
+  "nousSignInHint": "NeoRouter shows a code. Enter it in Nous Portal to let it use your subscription and credits.",
+  "nousEnterCode": "Enter this code in Nous Portal",
+  "nousOpenPage": "Open Nous Portal",
+  "nousWaiting": "Waiting for you to confirm…",
+  "nousExpired": "The code expired. Start again.",
+  "nousConnected": "Nous Portal connected",
+  "nousSignedInAs": "Signed in as {email}",
+  "@nousSignedInAs": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
   "apiKey": "API key",
   "apiKeyOptional": "API key (optional)",
   "apiKeyKeep": "API key (leave empty to keep the current one)",

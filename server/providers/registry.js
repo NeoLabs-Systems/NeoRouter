@@ -12,6 +12,7 @@ const { WeatherAdapter } = require('./adapters/weather');
 const { DeepgramAdapter } = require('./adapters/deepgram');
 const { ElevenLabsAdapter } = require('./adapters/elevenlabs');
 const { CodexAdapter } = require('./adapters/codex');
+const { NousAdapter } = require('./adapters/nous');
 
 const ADAPTERS = {
   openai_compatible: OpenAICompatibleAdapter,
@@ -23,6 +24,7 @@ const ADAPTERS = {
   deepgram: DeepgramAdapter,
   elevenlabs: ElevenLabsAdapter,
   codex: CodexAdapter,
+  nous: NousAdapter,
 };
 
 const limitSchema = z.object({
@@ -41,7 +43,7 @@ const definitionSchema = z.object({
   category: z.enum(['free', 'paid', 'aggregator', 'plan', 'local', 'custom', 'search', 'weather', 'pool']),
   // Web search engines: which dialect the search adapter speaks.
   // Connected by signing in instead of pasting a key.
-  connect: z.enum(['codex_device']).optional(),
+  connect: z.enum(['codex_device', 'nous_device']).optional(),
   search: z.object({ engine: z.enum(['tavily', 'exa', 'linkup', 'parallel', 'firecrawl', 'serper', 'brave', 'jina', 'searxng']) }).optional(),
   // Weather services: which dialect the weather adapter speaks.
   weather: z.object({ service: z.enum(['open_meteo', 'openweathermap', 'weatherapi', 'tomorrow', 'visual_crossing']) }).optional(),

@@ -8,6 +8,9 @@ const accounts = require('../services/providers/account_service');
 const { markAccountFixed } = require('../services/routing/fixed');
 const accountLimits = require('../services/quota/account_limits');
 const codexOAuth = require('../services/providers/codex_oauth');
+const nousOAuth = require('../services/providers/nous_oauth');
+const { ProviderError, KINDS } = require('../providers/provider_error');
+const { HttpError } = require('../middleware/error_handler');
 const catalog = require('../services/catalog/catalog_service');
 const { validate } = require('../middleware/validate');
 const { requirePermission } = require('../middleware/space');
@@ -77,6 +80,53 @@ router.post('/chatgpt/login/:loginId', requirePermission('providers.manage'), as
     logger.warn('ChatGPT model sync failed', { accountId: account.id, error: error.message });
   }
   return res.json({ status: 'done', plan: result.plan, account: accounts.get(pending.ownerId, account.id) });
+}));
+
+// Nous Portal sign-in with a device code: start, then poll until the user
+// approved it in the Portal. Same rules as the ChatGPT sign-in above.
+const nousLogins = new Map();
+const nousPolls = new Map();
+
+// A refused or failed Nous sign-in is told to the person as it is, not as an internal error.
+function nousSignInError(error) {
+  if (!(error instanceof ProviderError)) return error;
+  return new HttpError(error.kind === KINDS.AUTH ? 400 : 502, 'NOUS_SIGN_IN_FAILED', error.message);
+}
+
+router.post('/nous/login', requirePermission('providers.manage'), asyncRoute(async (req, res) => {
+  const login = await nousOAuth.startDeviceLogin().catch((error) => { throw nousSignInError(error); });
+  nousLogins.set(login.loginId, { ownerId: req.space.ownerId, actorId: req.space.actorId, accountId: req.body?.accountId || null });
+  nousPolls.delete(login.loginId);
+  res.json(login);
+}));
+
+router.post('/nous/login/:loginId', requirePermission('providers.manage'), asyncRoute(async (req, res) => {
+  const pending = nousLogins.get(req.params.loginId);
+  if (!pending || pending.ownerId !== req.space.ownerId) return res.status(404).json({ error: { code: 'LOGIN_NOT_FOUND', message: 'This sign-in expired. Start again.' } });
+  const result = await nousOAuth.pollDeviceLogin(req.params.loginId).catch((error) => {
+    nousLogins.delete(req.params.loginId);
+    throw nousSignInError(error);
+  });
+  if (result.status !== 'done') {
+    if (result.status === 'expired') nousLogins.delete(req.params.loginId);
+    // slow_down: the Portal asked for a longer interval, so the app must wait.
+    if (result.status === 'slow_down') nousPolls.set(req.params.loginId, (nousPolls.get(req.params.loginId) || 5) + 5);
+    return res.json({ status: result.status === 'slow_down' ? 'pending' : result.status, interval: nousPolls.get(req.params.loginId) || null });
+  }
+  nousLogins.delete(req.params.loginId);
+  nousPolls.delete(req.params.loginId);
+  let account;
+  if (pending.accountId) {
+    account = await accounts.update(pending.ownerId, pending.accountId, { secret: result.secret });
+  } else {
+    ({ account } = await accounts.create(pending.ownerId, { definitionId: 'nous', secret: result.secret, billingMode: 'paid' }, pending.actorId));
+  }
+  try {
+    await catalog.syncAccount(account.id);
+  } catch (error) {
+    logger.warn('Nous Portal model sync failed', { accountId: account.id, error: error.message });
+  }
+  return res.json({ status: 'done', email: result.email, tier: result.tier, account: accounts.get(pending.ownerId, account.id) });
 }));
 
 router.post('/probe', requirePermission('providers.manage'), validate(accountInput), asyncRoute(async (req, res) => res.json(await accounts.probe(req.space.ownerId, req.body, actorOf(req)))));
