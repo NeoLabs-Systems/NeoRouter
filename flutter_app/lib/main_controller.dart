@@ -155,6 +155,8 @@ class NeoRouterController extends ChangeNotifier {
     _readPoolLink();
     _readConnectLink();
     if (user == null) await refreshRegistration();
+    // A page a link opened is where a reload should land, too.
+    if (user != null) prefs.setString(_pageKey, page.name);
     bootstrapping = false;
     notifyListeners();
   }
@@ -395,8 +397,8 @@ class NeoRouterController extends ChangeNotifier {
   /// A remembered choice that is not a tab, such as the open pool.
   String? savedChoice(String screen) => _tabs[screen];
 
-  /// Remembers a screen's tab (or other choice) for the next reload.
-  void rememberTab(String screen, Object? value) {
+  /// Remembers a screen's tab or other choice (such as the open pool) for the next reload.
+  void rememberChoice(String screen, Object? value) {
     final name = value is Enum ? value.name : value?.toString();
     if (name == null) {
       _tabs.remove(screen);

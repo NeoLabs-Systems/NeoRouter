@@ -367,10 +367,11 @@ class ShareableAccount {
   String get label => raw['label'] as String? ?? '';
   String get definitionId => raw['definitionId'] as String? ?? '';
   int get freeModels => _int(raw['freeModels']) ?? 0;
-  /// Paid (not subscription) models, shared only after an explicit opt-in.
+  /// Subscription and pay-as-you-go models: shared only at a level the owner picks.
+  int get planModels => _int(raw['planModels']) ?? 0;
   int get paidModels => _int(raw['paidModels']) ?? 0;
   /// The provider reports a balance: partner use spends it instead of being billed.
-  bool get prepaid => raw['prepaid'] == true;
+  bool get hasBalance => raw['hasBalance'] == true;
 }
 
 class PoolShare {
@@ -396,8 +397,8 @@ class PoolInfo {
   List<PoolPartner> get partners => (raw['partners'] as List? ?? const <Object>[]).map((item) => PoolPartner(_map(item))).toList();
   int get onlinePartners => partners.where((partner) => partner.state == 'online').length;
   List<String> get sharedAccountIds => _strings(raw['sharedAccountIds']);
-  /// Shared connections whose paid models are shared too.
-  List<String> get paidAccountIds => _strings(raw['paidAccountIds']);
+  /// How much of each shared connection this pool gets: free, plan or paid.
+  Map<String, String> get shareLevels => _map(raw['shareLevels']).map((key, value) => MapEntry(key, '$value'));
   List<Map<String, dynamic>> get invites => (raw['invites'] as List? ?? const <Object>[]).map(_map).toList();
   PoolShare get share => PoolShare(_map(raw['share']));
 }
@@ -415,8 +416,6 @@ class PoolsSummary {
   List<ShareableAccount> get shareable => (raw['shareable'] as List? ?? const <Object>[]).map((item) => ShareableAccount(_map(item))).toList();
   /// Connections with free models: what the ordinary sharing picker offers.
   List<ShareableAccount> get shareableFree => shareable.where((account) => account.freeModels > 0).toList();
-  /// Connections with paid models: offered only for the explicit paid opt-in.
-  List<ShareableAccount> get shareablePaid => shareable.where((account) => account.paidModels > 0).toList();
   bool get keepSensitivePrivate => _map(raw['privacy'])['keepSensitivePrivate'] != false;
   int get maxPools => _int(raw['maxPools']) ?? 10;
 }

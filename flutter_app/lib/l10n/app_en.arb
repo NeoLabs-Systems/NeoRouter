@@ -1399,7 +1399,6 @@
   "accountNotVerified": "Free plan, not verified yet",
   "moreActions": "More actions",
   "chooseProviderHint": "Pick the service you have a key for. Providers marked \"Free models\" can be used without paying.",
-  "providerFreeTag": "Free models",
   "getKeyAt": "Get a key at {name}",
   "@getKeyAt": {
     "placeholders": {
@@ -2061,31 +2060,52 @@
     }
   },
   "poolShareTitle": "What you share",
-  "poolShareHint": "Free models from the connections you choose. Your own requests always come first.",
-  "filterPool": "Pool",
-  "modelsPoolHint": "What your pool partners share with you. Only keys with pool access use these, and it costs you nothing.",
-  "poolViaPartner": "via {name}",
-  "@poolViaPartner": {
+  "poolShareHint": "Free models from the connections you choose; use ⋯ on a connection to share its subscription or paid models too. Your own requests always come first.",
+  "poolLevelMenu": "What to share",
+  "poolLevelFree": "Only free models",
+  "poolLevelPlan": "Also subscription models",
+  "poolLevelPaid": "Also paid models",
+  "poolSharesPlan": "Free + subscription",
+  "poolSharesPaid": "Free + paid",
+  "poolPlanModels": "{count} subscription models",
+  "@poolPlanModels": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidModels": "{count} paid models",
+  "@poolPaidModels": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPlanConfirmTitle": "Share the subscription of {name}?",
+  "@poolPlanConfirmTitle": {
     "placeholders": {
       "name": {
         "type": "String"
       }
     }
   },
-  "poolPaidTitle": "Paid models",
-  "poolPaidHint": "Off unless you turn it on for a connection. Partners then use its paid models when no free one can serve them, and you pay for it. The daily limits below still apply; subscriptions are never shared.",
-  "poolPaidBilled": "{count} paid models · billed to you",
-  "@poolPaidBilled": {
+  "poolPlanConfirmBody": "Partners in {pool} can then also use this subscription when no free model can serve them. That uses up your plan’s limits, and many subscriptions do not allow sharing. Your daily limits for partners still apply.",
+  "@poolPlanConfirmBody": {
     "placeholders": {
-      "count": {
+      "pool": {
         "type": "String"
       }
     }
   },
-  "poolPaidPrepaid": "{count} paid models · uses your balance",
-  "@poolPaidPrepaid": {
+  "poolPlanConfirm": "Share subscription",
+  "filterPool": "Pool",
+  "modelsPoolHint": "What your pool partners share with you. Only keys with pool access use these, and it costs you nothing.",
+  "poolViaPartner": "via {name}",
+  "@poolViaPartner": {
     "placeholders": {
-      "count": {
+      "name": {
         "type": "String"
       }
     }
@@ -2245,7 +2265,7 @@
   },
   "poolShareInPools": "Share in pools…",
   "homePoolsTitle": "Pools",
-  "poolInviteText": "Hi! {host} is inviting you to the NeoRouter pool \"{pool}\", where our NeoRouters share their free AI capacity. Open this link and enter the address of your own NeoRouter: {link}\n(It works once and expires in 7 days.)",
+  "poolInviteText": "Hi! {host} is inviting you to the NeoRouter pool \"{pool}\", where our NeoRouters share AI capacity. Open this link and enter the address of your own NeoRouter: {link}\n(It works once and expires in 7 days.)",
   "@poolInviteText": {
     "placeholders": {
       "host": {

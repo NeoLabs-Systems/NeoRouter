@@ -77,9 +77,14 @@ function parseListedCost(cost) {
   return { priceIn: input, priceOut: output, priceKnown: true, freeHint: input === 0 && output === 0 };
 }
 
+// The listing says this model needs paid credit whatever the plan or price
+// (Pollinations' paid_only, usage_based_only, NavyAI's required_plan).
+function isPaidOnly(raw) {
+  return raw.paid_only === true || raw.usage_based_only === true || Boolean(raw.required_plan);
+}
+
 function parsePricing(raw) {
-  // Some listings flag models that need a balance regardless of price fields.
-  if (raw.paid_only === true || raw.usage_based_only === true || raw.required_plan) {
+  if (isPaidOnly(raw)) {
     return { priceIn: null, priceOut: null, priceKnown: false, freeHint: false };
   }
   // Free markers in a listing: xKiro access_tier, Api.Airforce and KiosAPI
@@ -180,8 +185,7 @@ function normalizeModel(raw, overrides = {}) {
     reasoning: params ? params.includes('reasoning') || params.includes('include_reasoning') : flag(supports(raw.capabilities?.reasoning)),
     // System One decision models (POST /v1/systemone), listed under OpenRouter's decisions modality.
     decision: (raw.architecture?.output_modalities || []).includes('decisions'),
-    // The listing says this model needs paid credit whatever the plan (Pollinations' paid_only).
-    paidOnly: raw.paid_only === true || raw.usage_based_only === true || Boolean(raw.required_plan),
+    paidOnly: isPaidOnly(raw),
     raw,
     ...overrides,
   };

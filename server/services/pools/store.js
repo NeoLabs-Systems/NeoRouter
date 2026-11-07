@@ -158,31 +158,29 @@ function activeInviteCount(userId, poolId) {
   return db().prepare('SELECT COUNT(*) count FROM pool_invites WHERE user_id = ? AND pool_id = ? AND used_at IS NULL AND revoked_at IS NULL AND expires_at > ?').get(userId, poolId, Date.now()).count;
 }
 
+// The connections shared in a pool, each at a level: free, plan or paid.
 function sharedAccountIds(userId, poolId) {
   return db().prepare('SELECT account_id FROM pool_shared_accounts WHERE user_id = ? AND pool_id = ?').all(userId, poolId).map((row) => row.account_id);
 }
 
-// Connections whose paid models are shared too (a subset of the shared ones).
-function paidAccountIds(userId, poolId) {
-  return db().prepare('SELECT account_id FROM pool_shared_accounts WHERE user_id = ? AND pool_id = ? AND share_paid = 1').all(userId, poolId).map((row) => row.account_id);
+function shareLevels(userId, poolId) {
+  return Object.fromEntries(db().prepare('SELECT account_id, share_level FROM pool_shared_accounts WHERE user_id = ? AND pool_id = ?').all(userId, poolId).map((row) => [row.account_id, row.share_level]));
 }
 
-// paid: true or false sets whether paid models are shared too; left out, it stays as it was.
-function setShared(userId, poolId, accountId, shared, paid) {
-  if (!shared) {
-    db().prepare('DELETE FROM pool_shared_accounts WHERE user_id = ? AND pool_id = ? AND account_id = ?').run(userId, poolId, accountId);
+// shared: false removes it; true adds it (at `level`, or keeps its level when left out).
+function setShare(userId, poolId, accountId, { shared, level } = {}) {
+  const where = 'WHERE user_id = ? AND pool_id = ? AND account_id = ?';
+  if (shared === false) {
+    db().prepare(`DELETE FROM pool_shared_accounts ${where}`).run(userId, poolId, accountId);
     return;
   }
   db().prepare('INSERT OR IGNORE INTO pool_shared_accounts (user_id, pool_id, account_id) VALUES (?, ?, ?)').run(userId, poolId, accountId);
-  if (typeof paid === 'boolean') {
-    db().prepare('UPDATE pool_shared_accounts SET share_paid = ? WHERE user_id = ? AND pool_id = ? AND account_id = ?').run(paid ? 1 : 0, userId, poolId, accountId);
-  }
+  if (level) db().prepare(`UPDATE pool_shared_accounts SET share_level = ? ${where}`).run(level, userId, poolId, accountId);
 }
 
-// How a connection is shared in a pool: null (not at all) or { paid }.
-function shareOf(poolId, accountId) {
-  const row = db().prepare('SELECT share_paid FROM pool_shared_accounts WHERE pool_id = ? AND account_id = ?').get(poolId, accountId);
-  return row ? { paid: row.share_paid === 1 } : null;
+// The level a connection is shared at in a pool, or null.
+function shareLevelOf(poolId, accountId) {
+  return db().prepare('SELECT share_level FROM pool_shared_accounts WHERE pool_id = ? AND account_id = ?').get(poolId, accountId)?.share_level || null;
 }
 
 function poolMemberships() {
@@ -194,5 +192,5 @@ module.exports = {
   members, member, upsertMember, removeMember,
   links, link, linkById, linkToMember, linkForAccount, insertLink, updateLink, deleteLink,
   invites, insertInvite, inviteByHash, useInvite, revokeInvite, activeInviteCount,
-  sharedAccountIds, paidAccountIds, setShared, shareOf, poolMemberships,
+  sharedAccountIds, shareLevels, setShare, shareLevelOf, poolMemberships,
 };

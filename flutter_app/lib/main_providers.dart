@@ -230,7 +230,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
             ],
             selected: _tab,
             onChanged: (value) {
-              widget.controller.rememberTab('providers', value);
+              widget.controller.rememberChoice('providers', value);
               setState(() => _tab = value);
             },
           ),

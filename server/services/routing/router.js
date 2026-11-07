@@ -133,8 +133,8 @@ function maxOutputFor(request, entry) {
 // How many failures one connection may cost a single request. A provider with
 // many models must not use up every attempt before others get a turn.
 const MAX_FAILURES_PER_ACCOUNT = 2;
-// Tier offset that puts paid models behind free ones for a pool partner.
-const PARTNER_PAID_TIER = 100;
+// Tier offsets for a pool partner's request: free first, then subscription, then paid.
+const PARTNER_KIND_TIER = Object.freeze({ free: 0, plan: 100, paid: 200 });
 // Failures that say the connection is struggling, not that this request is odd.
 const CONNECTION_FAILURES = new Set(['rate_limit', 'quota_exhausted', 'payment', 'auth', 'not_found', 'server', 'network', 'timeout']);
 
@@ -486,8 +486,8 @@ class RoutingPlan {
       if (this.task && item.details.capability < weakBelow(this.need)) value *= WEAK_FOR_TASK_FACTOR;
       // A custom style's preference between free, subscription and paid models.
       item.tier = this.profile.constraints.kinds ? kindTier(this.profile.constraints.kinds, item.entry) : 0;
-      // A partner's request uses paid models someone shared only when no free one can serve.
-      if (this.key.peer_link_id && !item.entry.isFree) item.tier += PARTNER_PAID_TIER;
+      // A partner's request uses shared subscription models only when no free one can serve, and paid ones last.
+      if (this.key.peer_link_id) item.tier += PARTNER_KIND_TIER[modelKind(item.entry)];
       if ((this.needs.tools && item.entry.tools === null) || (this.needs.json && item.entry.json === false)) value *= UNKNOWN_CAPABILITY_FACTOR;
       // Far more than this request's fair share of the budget: last resort only.
       if (this.pacing && !item.entry.isFree && !item.entry.isPlan) {

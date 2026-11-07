@@ -1,8 +1,9 @@
 'use strict';
 
 // One partner link in both directions:
-//   inbound   a router key on this instance the partner calls us with. It
-//             reaches free models only, is hidden from the keys page, and is
+//   inbound   a router key on this instance the partner calls us with. Its
+//             own cost settings are not used: the share policy decides what it
+//             reaches (sharePolicy.offers). Hidden from the keys page, and
 //             stored as a hash like every key.
 //   outbound  a provider account ("Pool partner") holding the partner's key
 //             for us, encrypted like every provider key. Through it the

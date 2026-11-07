@@ -2251,9 +2251,6 @@ class AppL10nEn extends AppL10n {
       'Pick the service you have a key for. Providers marked \"Free models\" can be used without paying.';
 
   @override
-  String get providerFreeTag => 'Free models';
-
-  @override
   String getKeyAt(String name) {
     return 'Get a key at $name';
   }
@@ -3477,7 +3474,48 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get poolShareHint =>
-      'Free models from the connections you choose. Your own requests always come first.';
+      'Free models from the connections you choose; use ⋯ on a connection to share its subscription or paid models too. Your own requests always come first.';
+
+  @override
+  String get poolLevelMenu => 'What to share';
+
+  @override
+  String get poolLevelFree => 'Only free models';
+
+  @override
+  String get poolLevelPlan => 'Also subscription models';
+
+  @override
+  String get poolLevelPaid => 'Also paid models';
+
+  @override
+  String get poolSharesPlan => 'Free + subscription';
+
+  @override
+  String get poolSharesPaid => 'Free + paid';
+
+  @override
+  String poolPlanModels(String count) {
+    return '$count subscription models';
+  }
+
+  @override
+  String poolPaidModels(String count) {
+    return '$count paid models';
+  }
+
+  @override
+  String poolPlanConfirmTitle(String name) {
+    return 'Share the subscription of $name?';
+  }
+
+  @override
+  String poolPlanConfirmBody(String pool) {
+    return 'Partners in $pool can then also use this subscription when no free model can serve them. That uses up your plan’s limits, and many subscriptions do not allow sharing. Your daily limits for partners still apply.';
+  }
+
+  @override
+  String get poolPlanConfirm => 'Share subscription';
 
   @override
   String get filterPool => 'Pool';
@@ -3489,23 +3527,6 @@ class AppL10nEn extends AppL10n {
   @override
   String poolViaPartner(String name) {
     return 'via $name';
-  }
-
-  @override
-  String get poolPaidTitle => 'Paid models';
-
-  @override
-  String get poolPaidHint =>
-      'Off unless you turn it on for a connection. Partners then use its paid models when no free one can serve them, and you pay for it. The daily limits below still apply; subscriptions are never shared.';
-
-  @override
-  String poolPaidBilled(String count) {
-    return '$count paid models · billed to you';
-  }
-
-  @override
-  String poolPaidPrepaid(String count) {
-    return '$count paid models · uses your balance';
   }
 
   @override
@@ -3703,7 +3724,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String poolInviteText(String host, String pool, String link) {
-    return 'Hi! $host is inviting you to the NeoRouter pool \"$pool\", where our NeoRouters share their free AI capacity. Open this link and enter the address of your own NeoRouter: $link\n(It works once and expires in 7 days.)';
+    return 'Hi! $host is inviting you to the NeoRouter pool \"$pool\", where our NeoRouters share AI capacity. Open this link and enter the address of your own NeoRouter: $link\n(It works once and expires in 7 days.)';
   }
 
   @override

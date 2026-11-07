@@ -4045,12 +4045,6 @@ abstract class AppL10n {
   /// **'Pick the service you have a key for. Providers marked \"Free models\" can be used without paying.'**
   String get chooseProviderHint;
 
-  /// No description provided for @providerFreeTag.
-  ///
-  /// In en, this message translates to:
-  /// **'Free models'**
-  String get providerFreeTag;
-
   /// No description provided for @getKeyAt.
   ///
   /// In en, this message translates to:
@@ -6166,8 +6160,74 @@ abstract class AppL10n {
   /// No description provided for @poolShareHint.
   ///
   /// In en, this message translates to:
-  /// **'Free models from the connections you choose. Your own requests always come first.'**
+  /// **'Free models from the connections you choose; use ⋯ on a connection to share its subscription or paid models too. Your own requests always come first.'**
   String get poolShareHint;
+
+  /// No description provided for @poolLevelMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'What to share'**
+  String get poolLevelMenu;
+
+  /// No description provided for @poolLevelFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Only free models'**
+  String get poolLevelFree;
+
+  /// No description provided for @poolLevelPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Also subscription models'**
+  String get poolLevelPlan;
+
+  /// No description provided for @poolLevelPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Also paid models'**
+  String get poolLevelPaid;
+
+  /// No description provided for @poolSharesPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Free + subscription'**
+  String get poolSharesPlan;
+
+  /// No description provided for @poolSharesPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Free + paid'**
+  String get poolSharesPaid;
+
+  /// No description provided for @poolPlanModels.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} subscription models'**
+  String poolPlanModels(String count);
+
+  /// No description provided for @poolPaidModels.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} paid models'**
+  String poolPaidModels(String count);
+
+  /// No description provided for @poolPlanConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share the subscription of {name}?'**
+  String poolPlanConfirmTitle(String name);
+
+  /// No description provided for @poolPlanConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Partners in {pool} can then also use this subscription when no free model can serve them. That uses up your plan’s limits, and many subscriptions do not allow sharing. Your daily limits for partners still apply.'**
+  String poolPlanConfirmBody(String pool);
+
+  /// No description provided for @poolPlanConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Share subscription'**
+  String get poolPlanConfirm;
 
   /// No description provided for @filterPool.
   ///
@@ -6186,30 +6246,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'via {name}'**
   String poolViaPartner(String name);
-
-  /// No description provided for @poolPaidTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Paid models'**
-  String get poolPaidTitle;
-
-  /// No description provided for @poolPaidHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Off unless you turn it on for a connection. Partners then use its paid models when no free one can serve them, and you pay for it. The daily limits below still apply; subscriptions are never shared.'**
-  String get poolPaidHint;
-
-  /// No description provided for @poolPaidBilled.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} paid models · billed to you'**
-  String poolPaidBilled(String count);
-
-  /// No description provided for @poolPaidPrepaid.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} paid models · uses your balance'**
-  String poolPaidPrepaid(String count);
 
   /// No description provided for @poolPaidConfirmTitle.
   ///
@@ -6537,7 +6573,7 @@ abstract class AppL10n {
   /// No description provided for @poolInviteText.
   ///
   /// In en, this message translates to:
-  /// **'Hi! {host} is inviting you to the NeoRouter pool \"{pool}\", where our NeoRouters share their free AI capacity. Open this link and enter the address of your own NeoRouter: {link}\n(It works once and expires in 7 days.)'**
+  /// **'Hi! {host} is inviting you to the NeoRouter pool \"{pool}\", where our NeoRouters share AI capacity. Open this link and enter the address of your own NeoRouter: {link}\n(It works once and expires in 7 days.)'**
   String poolInviteText(String host, String pool, String link);
 
   /// No description provided for @poolInviteCopyText.

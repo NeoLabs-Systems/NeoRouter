@@ -8,16 +8,15 @@ const express = require('express');
 const { z } = require('zod');
 const pools = require('../services/pools/pool_service');
 const peerPrivacy = require('../services/pools/peer_privacy');
-const { SHARE_BOUNDS } = require('../services/pools/share_policy');
+const { SHARE_BOUNDS, SHARE_LEVELS } = require('../services/pools/share_policy');
 const { validate } = require('../middleware/validate');
 const { requireOwnSpace } = require('../middleware/space');
-const { getConfig } = require('../config/env');
 const { asyncRoute } = require('./helpers');
+const { publicOrigin } = require('../utils/public_origin');
 
 const router = express.Router();
 
 // This NeoRouter's public address, as partners must reach it.
-const selfUrl = (req) => getConfig().publicUrl || `${req.protocol}://${req.get('host')}`;
 const owner = (req) => req.space.ownerId;
 
 router.get('/', (req, res) => res.json(pools.summary(owner(req), { canManage: req.space.isOwner })));
@@ -28,7 +27,7 @@ const name = z.string().trim().min(1).max(60);
 const accountIds = z.array(z.string().max(64)).max(200);
 
 router.post('/', validate(z.object({ name, selfName: name, sharedAccountIds: accountIds.default([]) })), (req, res) => {
-  res.status(201).json(pools.create(owner(req), { ...req.body, selfUrl: selfUrl(req) }));
+  res.status(201).json(pools.create(owner(req), { ...req.body, selfUrl: publicOrigin(req) }));
 });
 
 router.post('/preview', validate(z.object({ link: z.string().min(1).max(2048) })), asyncRoute(async (req, res) => {
@@ -36,7 +35,7 @@ router.post('/preview', validate(z.object({ link: z.string().min(1).max(2048) })
 }));
 
 router.post('/join', validate(z.object({ link: z.string().min(1).max(2048), selfName: name, sharedAccountIds: accountIds.default([]) })), asyncRoute(async (req, res) => {
-  res.json(await pools.join(owner(req), { ...req.body, selfUrl: selfUrl(req) }));
+  res.json(await pools.join(owner(req), { ...req.body, selfUrl: publicOrigin(req) }));
 }));
 
 // "Keep very sensitive requests off pools" (account settings), for all pools.
@@ -70,10 +69,12 @@ pool.put('/share', validate(z.object({
   concurrent: bounded('concurrent'),
   reserve: bounded('reserve', false),
   sharedAccountIds: accountIds.optional(),
+  shareLevels: z.record(z.enum(SHARE_LEVELS)).optional(),
 }).strict()), asyncRoute(async (req, res) => res.json(await pools.updateShare(owner(req), poolId(req), req.body))));
 
-pool.put('/accounts/:id/share', validate(z.object({ shared: z.boolean(), paid: z.boolean().optional() })), asyncRoute(async (req, res) => {
-  res.json(await pools.setAccountShared(owner(req), poolId(req), req.params.id, req.body.shared, req.body.paid));
+// shared: on or off; level: free, plan (also subscription models) or paid. Either or both.
+pool.put('/accounts/:id/share', validate(z.object({ shared: z.boolean().optional(), level: z.enum(SHARE_LEVELS).optional() }).refine((body) => body.shared !== undefined || body.level !== undefined)), asyncRoute(async (req, res) => {
+  res.json(await pools.setAccountShared(owner(req), poolId(req), req.params.id, req.body));
 }));
 
 // The quick switch: this pool on or off for now.

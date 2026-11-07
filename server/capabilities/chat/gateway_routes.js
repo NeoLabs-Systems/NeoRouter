@@ -164,8 +164,7 @@ router.get('/models', requireRouterKey, (req, res) => {
         // A partner pays nothing: whatever it costs is on us.
         pricing: entry.isFree || entry.isPlan || key.peer_link_id ? { prompt: '0', completion: '0' } : { prompt: entry.priceIn === null ? null : String(entry.priceIn / 1e6), completion: entry.priceOut === null ? null : String(entry.priceOut / 1e6) },
         neorouter: {
-          kind, free: entry.isFree || Boolean(key.peer_link_id), plan: entry.isPlan,
-          ...(key.peer_link_id && !entry.isFree ? { partner_pays: true } : {}), intelligence: entry.intelligence, tools: entry.tools, vision: entry.vision,
+          kind, free: entry.isFree || Boolean(key.peer_link_id), plan: entry.isPlan, intelligence: entry.intelligence, tools: entry.tools, vision: entry.vision,
           ...(entry.priceUnit ? { unit_price: entry.unitPrice, price_unit: entry.priceUnit } : {}),
           ...(kind === 'live' ? { protocols: liveProtocols(entry) } : {}),
           ...(kind === 'moderation' ? { decision: entry.decision } : {}),

@@ -191,7 +191,7 @@ class _TeamScreenState extends State<TeamScreen> {
       ],
       selected: _tab,
       onChanged: (tab) {
-        widget.controller.rememberTab('network', tab);
+        widget.controller.rememberChoice('network', tab);
         setState(() => _tab = tab);
       },
     );

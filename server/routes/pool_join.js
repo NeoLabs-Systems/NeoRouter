@@ -6,13 +6,14 @@
 // address and land in its join dialog with the invite filled in. Link
 // previews (messengers) show the pool's name too.
 const pools = require('../services/pools/pool_service');
+const { publicOrigin } = require('../utils/public_origin');
 
 const TEXT = {
   en: {
     title: (pool) => `Invite to the pool "${pool}"`,
-    preview: (host) => `${host} invites you to share free AI capacity between your NeoRouters.`,
+    preview: (host) => `${host} invites you to share AI capacity between your NeoRouters.`,
     heading: 'You are invited to a pool',
-    lead: (host, pool) => `${host} invites you to “${pool}”: NeoRouters that share their free AI capacity with each other. Nobody hands out keys; each request runs on the server of whoever shares it.`,
+    lead: (host, pool) => `${host} invites you to “${pool}”: NeoRouters that share AI capacity with each other. Nobody hands out keys; each request runs on the server of whoever shares it.`,
     members: (count) => (count === 1 ? '1 member so far' : `${count} members so far`),
     step: 'Join from your own NeoRouter. Enter its address and you will land in its join dialog with this invite filled in.',
     label: 'Address of your NeoRouter',
@@ -28,9 +29,9 @@ const TEXT = {
   },
   de: {
     title: (pool) => `Einladung in den Pool „${pool}“`,
-    preview: (host) => `${host} lädt dich ein, Gratis-KI-Kapazität zwischen euren NeoRoutern zu teilen.`,
+    preview: (host) => `${host} lädt dich ein, KI-Kapazität zwischen euren NeoRoutern zu teilen.`,
     heading: 'Du bist in einen Pool eingeladen',
-    lead: (host, pool) => `${host} lädt dich in „${pool}“ ein: NeoRouter, die ihre Gratis-KI-Kapazität miteinander teilen. Niemand gibt Schlüssel heraus; jede Anfrage läuft auf dem Server dessen, der teilt.`,
+    lead: (host, pool) => `${host} lädt dich in „${pool}“ ein: NeoRouter, die KI-Kapazität miteinander teilen. Niemand gibt Schlüssel heraus; jede Anfrage läuft auf dem Server dessen, der teilt.`,
     members: (count) => (count === 1 ? 'Bisher 1 Mitglied' : `Bisher ${count} Mitglieder`),
     step: 'Tritt von deinem eigenen NeoRouter aus bei. Gib seine Adresse ein, dann landest du dort im Beitrittsdialog mit dieser Einladung.',
     label: 'Adresse deines NeoRouter',
@@ -139,7 +140,7 @@ ${valid ? `<h1>${escape(t.heading)}</h1>
 
 function poolJoinPage(req, res) {
   const lang = language(req);
-  const origin = `${req.protocol}://${req.get('host')}`;
+  const origin = publicOrigin(req);
   let invite = null;
   try {
     const preview = pools.handlePreview({ token: String(req.query.pool || '') });
@@ -152,4 +153,4 @@ function poolJoinPage(req, res) {
   res.type('html').send(page({ lang, origin, invite }));
 }
 
-module.exports = { poolJoinPage, TEXT };
+module.exports = { poolJoinPage };

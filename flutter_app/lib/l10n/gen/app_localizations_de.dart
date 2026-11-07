@@ -2268,9 +2268,6 @@ class AppL10nDe extends AppL10n {
       'Wähle den Dienst, für den du einen Key hast. Anbieter mit „Gratis-Modelle“ kannst du ohne Bezahlung nutzen.';
 
   @override
-  String get providerFreeTag => 'Gratis-Modelle';
-
-  @override
   String getKeyAt(String name) {
     return 'Key bei $name holen';
   }
@@ -3498,7 +3495,48 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get poolShareHint =>
-      'Gratis-Modelle der Verbindungen, die du auswählst. Deine eigenen Anfragen gehen immer vor.';
+      'Gratis-Modelle der Verbindungen, die du auswählst; über ⋯ an einer Verbindung auch ihre Abo- oder bezahlten Modelle. Deine eigenen Anfragen gehen immer vor.';
+
+  @override
+  String get poolLevelMenu => 'Was geteilt wird';
+
+  @override
+  String get poolLevelFree => 'Nur Gratis-Modelle';
+
+  @override
+  String get poolLevelPlan => 'Auch Abo-Modelle';
+
+  @override
+  String get poolLevelPaid => 'Auch bezahlte Modelle';
+
+  @override
+  String get poolSharesPlan => 'Gratis + Abo';
+
+  @override
+  String get poolSharesPaid => 'Gratis + bezahlt';
+
+  @override
+  String poolPlanModels(String count) {
+    return '$count Abo-Modelle';
+  }
+
+  @override
+  String poolPaidModels(String count) {
+    return '$count bezahlte Modelle';
+  }
+
+  @override
+  String poolPlanConfirmTitle(String name) {
+    return 'Abo von $name teilen?';
+  }
+
+  @override
+  String poolPlanConfirmBody(String pool) {
+    return 'Partner in $pool können dann auch dieses Abo nutzen, wenn kein Gratis-Modell passt. Das verbraucht die Limits deines Abos, und viele Abos erlauben kein Teilen. Deine Tageslimits für Partner gelten weiter.';
+  }
+
+  @override
+  String get poolPlanConfirm => 'Abo teilen';
 
   @override
   String get filterPool => 'Pool';
@@ -3510,23 +3548,6 @@ class AppL10nDe extends AppL10n {
   @override
   String poolViaPartner(String name) {
     return 'über $name';
-  }
-
-  @override
-  String get poolPaidTitle => 'Bezahlte Modelle';
-
-  @override
-  String get poolPaidHint =>
-      'Aus, bis du es für eine Verbindung einschaltest. Partner nutzen dann deren bezahlte Modelle, wenn kein Gratis-Modell passt, und du zahlst dafür. Die Tageslimits unten gelten weiter; Abos werden nie geteilt.';
-
-  @override
-  String poolPaidBilled(String count) {
-    return '$count bezahlte Modelle · wird dir berechnet';
-  }
-
-  @override
-  String poolPaidPrepaid(String count) {
-    return '$count bezahlte Modelle · nutzt dein Guthaben';
   }
 
   @override
@@ -3724,7 +3745,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String poolInviteText(String host, String pool, String link) {
-    return 'Hallo! $host lädt dich in den NeoRouter-Pool „$pool“ ein, in dem unsere NeoRouter ihre Gratis-KI-Kapazität teilen. Öffne diesen Link und gib die Adresse deines eigenen NeoRouter ein: $link\n(Er funktioniert einmal und läuft nach 7 Tagen ab.)';
+    return 'Hallo! $host lädt dich in den NeoRouter-Pool „$pool“ ein, in dem unsere NeoRouter KI-Kapazität teilen. Öffne diesen Link und gib die Adresse deines eigenen NeoRouter ein: $link\n(Er funktioniert einmal und läuft nach 7 Tagen ab.)';
   }
 
   @override

@@ -4,14 +4,13 @@
 // LLM tools that read it directly. Examples carry this server's own origin.
 // scripts/build_api_docs.js publishes the same text to GitHub Pages.
 const express = require('express');
-const { getConfig } = require('../config/env');
 const capabilities = require('../core/capability_registry');
 const profiles = require('../services/routing/profiles');
 const { TASK_KINDS } = require('../services/routing/task/classifier');
+const { publicOrigin } = require('../utils/public_origin');
 
 const router = express.Router();
 
-const originOf = (req) => (getConfig().publicUrl || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '');
 
 /** placeholder: the origin stands in for the reader's own server (static copies). */
 function reference(origin, { placeholder = false } = {}) {
@@ -386,7 +385,7 @@ Use \`access_token\` as the router key against \`base_url\`.
 
 router.get('/api', (req, res) => {
   res.type('text/markdown; charset=utf-8');
-  res.send(reference(originOf(req)));
+  res.send(reference(publicOrigin(req)));
 });
 
 module.exports = router;

@@ -230,24 +230,28 @@ test('what is shared: unshared connections and used-up shares are refused', asyn
   await api('bea', 'put', `/pools/${poolId}/share`, { requestsPerDay: 300 });
 });
 
-test('paid models are shared only after an explicit opt-in, and cost the partner nothing', async () => {
+test('each connection is shared up to a level; paid models only at "paid", at no cost to the partner', async () => {
   mocks.beaPaid = await createMockProvider({ models: ['paid-bea'] });
   const added = await api('bea', 'post', '/providers/accounts', { definitionId: 'custom_openai', slug: 'paidmock', baseUrl: mocks.beaPaid.url, secret: 'good-key', billingMode: 'paid' });
   assert.equal(added.status, 201, JSON.stringify(added.body));
   const paidAccount = added.body.account.id;
   const offered = (await api('bea', 'get', '/pools')).body.shareable.find((account) => account.id === paidAccount);
-  assert.deepEqual([offered.freeModels, offered.paidModels], [0, 1], 'a paid-only connection can be offered for paid sharing');
+  assert.deepEqual([offered.freeModels, offered.planModels, offered.paidModels], [0, 0, 1]);
   const listsPaid = async () => {
     await api('alex', 'post', `/pools/${poolId}/sync`);
     return (await api('alex', 'get', '/models?all=1')).body.models.some((item) => item.providerSlug === 'pool-bea' && item.id.endsWith('/paid-bea'));
   };
-  // Shared without the opt-in: its paid models stay home.
-  await api('bea', 'put', `/pools/${poolId}/accounts/${paidAccount}/share`, { shared: true });
+  const share = (body) => api('bea', 'put', `/pools/${poolId}/accounts/${paidAccount}/share`, body);
+  // Shared at the default level (free): its paid model stays home, and so at "plan".
+  await share({ shared: true });
+  assert.equal((await summary('bea')).shareLevels[paidAccount], 'free');
   assert.equal(await listsPaid(), false);
-  // Opted in: Alex sees it as free (Bea pays) and Bea's connection serves it.
-  const on = await api('bea', 'put', `/pools/${poolId}/accounts/${paidAccount}/share`, { shared: true, paid: true });
+  await share({ level: 'plan' });
+  assert.equal(await listsPaid(), false);
+  // At "paid": Alex sees it as free (Bea pays) and Bea's connection serves it.
+  const on = await share({ level: 'paid' });
   assert.equal(on.status, 200, JSON.stringify(on.body));
-  assert.ok(on.body.pools[0].paidAccountIds.includes(paidAccount));
+  assert.equal(on.body.pools[0].shareLevels[paidAccount], 'paid');
   assert.equal(await listsPaid(), true);
   const model = await partnerModel('alex', 'bea', 'paid-bea');
   const entry = (await api('alex', 'get', '/models?all=1')).body.models.find((item) => item.id === model);
@@ -256,12 +260,14 @@ test('paid models are shared only after an explicit opt-in, and cost the partner
   const served = await chat('alex', 'pool', model);
   assert.equal(served.status, 200, JSON.stringify(served.body));
   assert.equal(mocks.beaPaid.calls.length, before + 1);
-  // Plain sharing again (no paid flag sent) keeps the choice; unsharing ends it.
-  await api('bea', 'put', `/pools/${poolId}/accounts/${paidAccount}/share`, { shared: true });
-  assert.ok((await summary('bea')).paidAccountIds.includes(paidAccount));
-  await api('bea', 'put', `/pools/${poolId}/accounts/${paidAccount}/share`, { shared: false });
+  // Saving the list keeps each connection's level; leaving it out stops sharing it.
+  await api('bea', 'put', `/pools/${poolId}/share`, { sharedAccountIds: [people.bea.account, paidAccount] });
+  assert.equal((await summary('bea')).shareLevels[paidAccount], 'paid');
+  await api('bea', 'put', `/pools/${poolId}/share`, { sharedAccountIds: [people.bea.account] });
   assert.notEqual((await chat('alex', 'pool', model)).status, 200);
-  assert.deepEqual((await summary('bea')).paidAccountIds, []);
+  assert.equal((await summary('bea')).shareLevels[paidAccount], undefined);
+  assert.equal((await share({})).status, 400, 'a change needs shared or level');
+  assert.equal((await share({ level: 'everything' })).status, 400);
 });
 
 test('the quick switch pauses giving and using, and turning it on restores everything', async () => {

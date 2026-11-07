@@ -133,7 +133,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
           ],
           selected: _tab,
           onChanged: (value) {
-            widget.controller.rememberTab('processing', value);
+            widget.controller.rememberChoice('processing', value);
             setState(() => _tab = value);
           },
         ),

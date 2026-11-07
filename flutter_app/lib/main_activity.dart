@@ -75,7 +75,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
           ],
           selected: _tab,
           onChanged: (value) {
-            widget.controller.rememberTab('activity', value);
+            widget.controller.rememberChoice('activity', value);
             setState(() => _tab = value);
           },
         ),

@@ -166,7 +166,7 @@ class _AdminScreenState extends State<AdminScreen> {
       ];
 
   void _open(_AdminTab tab) => setState(() {
-        widget.controller.rememberTab('admin', tab);
+        widget.controller.rememberChoice('admin', tab);
         _tab = tab;
         _search.clear();
       });

@@ -95,12 +95,17 @@ class _PoolSwitchState extends State<PoolSwitch> {
 
 /// Picks connections as tiles: one tap selects, a tick shows it. With many
 /// connections a filter narrows the list; "All" and "None" act on what is shown.
+/// With [levels], each tile has a ⋯ menu for how much of it is shared.
 class ConnectionPicker extends StatefulWidget {
-  const ConnectionPicker({super.key, required this.accounts, required this.selected, required this.onChanged});
+  const ConnectionPicker({super.key, required this.accounts, required this.selected, required this.onChanged, this.levels, this.onLevel});
 
   final List<ShareableAccount> accounts;
   final Set<String> selected;
   final ValueChanged<Set<String>> onChanged;
+
+  /// Level per selected connection (free, plan, paid); null hides the menu.
+  final Map<String, String>? levels;
+  final void Function(ShareableAccount account, String level)? onLevel;
 
   @override
   State<ConnectionPicker> createState() => _ConnectionPickerState();
@@ -116,7 +121,8 @@ class _ConnectionPickerState extends State<ConnectionPicker> {
     final palette = neoRouterPaletteOf(context);
     if (widget.accounts.isEmpty) return InlineHint(message: t.poolShareNone);
     final shown = widget.accounts.where((account) => account.label.toLowerCase().contains(_query.toLowerCase())).toList();
-    final ids = shown.map((account) => account.id).toSet();
+    // A connection without free models shares nothing at "free": it is picked through its menu.
+    final ids = shown.where((account) => account.freeModels > 0).map((account) => account.id).toSet();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -153,9 +159,14 @@ class _ConnectionPickerState extends State<ConnectionPicker> {
                     child: _ConnectionTile(
                       account: account,
                       selected: widget.selected.contains(account.id),
-                      onTap: () => widget.onChanged(widget.selected.contains(account.id)
-                          ? (<String>{...widget.selected}..remove(account.id))
-                          : <String>{...widget.selected, account.id}),
+                      level: widget.levels == null ? null : widget.levels![account.id] ?? 'free',
+                      onLevel: widget.onLevel == null ? null : (level) => widget.onLevel!(account, level),
+                      onTap: () => widget.selected.contains(account.id)
+                          ? widget.onChanged(<String>{...widget.selected}..remove(account.id))
+                          : account.freeModels > 0 || widget.onLevel == null
+                          ? widget.onChanged(<String>{...widget.selected, account.id})
+                          // Nothing free: pick how much of it to share instead.
+                          : widget.onLevel!(account, account.planModels > 0 ? 'plan' : 'paid'),
                     ),
                   ),
               ],
@@ -167,12 +178,57 @@ class _ConnectionPickerState extends State<ConnectionPicker> {
   }
 }
 
+/// The ⋯ on a connection tile: share only its free models, also its
+/// subscription models, or also its paid ones. Only kinds it has are offered.
+class _LevelMenu extends StatelessWidget {
+  const _LevelMenu({required this.account, required this.level, required this.onLevel});
+
+  final ShareableAccount account;
+  final String? level;
+  final ValueChanged<String> onLevel;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final options = <(String, String)>[
+      if (account.freeModels > 0) ('free', t.poolLevelFree),
+      if (account.planModels > 0) ('plan', t.poolLevelPlan),
+      if (account.paidModels > 0) ('paid', t.poolLevelPaid),
+    ];
+    return SizedBox.square(
+      dimension: 28,
+      child: PopupMenuButton<String>(
+        tooltip: t.poolLevelMenu,
+        padding: EdgeInsets.zero,
+        iconSize: 18,
+        icon: Icon(Icons.more_vert_rounded, color: palette.textMuted),
+        onSelected: onLevel,
+        itemBuilder: (_) => <PopupMenuEntry<String>>[
+          for (final (value, label) in options)
+            CheckedPopupMenuItem<String>(value: value, checked: value == level, child: Text(label)),
+        ],
+      ),
+    );
+  }
+}
+
 class _ConnectionTile extends StatelessWidget {
-  const _ConnectionTile({required this.account, required this.selected, required this.onTap});
+  const _ConnectionTile({required this.account, required this.selected, required this.onTap, this.level, this.onLevel});
 
   final ShareableAccount account;
   final bool selected;
   final VoidCallback onTap;
+  final String? level;
+  final ValueChanged<String>? onLevel;
+
+  // What the tile says it shares (selected) or could share.
+  String _subtitle(AppL10n t) {
+    if (selected && level == 'plan') return t.poolSharesPlan;
+    if (selected && level == 'paid') return t.poolSharesPaid;
+    if (account.freeModels > 0) return t.poolFreeModels('${account.freeModels}');
+    return account.planModels > 0 ? t.poolPlanModels('${account.planModels}') : t.poolPaidModels('${account.paidModels}');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +254,7 @@ class _ConnectionTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(account.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: palette.text)),
-                    Text(t.poolFreeModels('${account.freeModels}'), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: palette.textMuted)),
+                    Text(_subtitle(t), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: selected && level != null && level != 'free' ? palette.accent : palette.textMuted)),
                   ],
                 ),
               ),
@@ -209,6 +265,7 @@ class _ConnectionTile extends StatelessWidget {
                     ? Icon(Icons.check_circle_rounded, key: const ValueKey<bool>(true), size: 18, color: palette.accent)
                     : Icon(Icons.circle_outlined, key: const ValueKey<bool>(false), size: 18, color: palette.borderStrong),
               ),
+              if (onLevel != null) _LevelMenu(account: account, level: selected ? level ?? 'free' : null, onLevel: onLevel!),
             ],
           ),
         ),
@@ -236,7 +293,7 @@ class _PoolTabState extends State<PoolTab> {
   NeoRouterController get controller => widget.controller;
 
   void _openPool(String? id) {
-    controller.rememberTab('pool.open', id);
+    controller.rememberChoice('pool.open', id);
     setState(() => _poolId = id);
   }
 
@@ -410,7 +467,7 @@ class _PoolPageState extends State<_PoolPage> {
   late _PoolSection _section = widget.controller.savedTab('pool', _PoolSection.values, _PoolSection.overview);
 
   void _openSection(_PoolSection section) {
-    widget.controller.rememberTab('pool', section);
+    widget.controller.rememberChoice('pool', section);
     setState(() => _section = section);
   }
 
@@ -885,19 +942,47 @@ class _SharingSection extends StatefulWidget {
 
 class _SharingSectionState extends State<_SharingSection> {
   late Set<String> _selected = widget.pool.sharedAccountIds.toSet();
+  late Map<String, String> _levels = Map<String, String>.of(widget.pool.shareLevels);
   bool _saving = false;
 
   bool get _changed {
     final saved = widget.pool.sharedAccountIds.toSet();
-    return saved.length != _selected.length || !saved.containsAll(_selected);
+    final savedLevels = widget.pool.shareLevels;
+    return saved.length != _selected.length || !saved.containsAll(_selected) || _selected.any((id) => (_levels[id] ?? 'free') != (savedLevels[id] ?? 'free'));
+  }
+
+  void _discard() => setState(() {
+    _selected = widget.pool.sharedAccountIds.toSet();
+    _levels = Map<String, String>.of(widget.pool.shareLevels);
+  });
+
+  // Subscription and paid sharing cost the owner, so each needs a clear yes.
+  Future<void> _setLevel(ShareableAccount account, String level) async {
+    final t = AppL10n.of(context);
+    if (level != 'free') {
+      final confirmed = await confirmAction(
+        context,
+        title: level == 'plan' ? t.poolPlanConfirmTitle(account.label) : t.poolPaidConfirmTitle(account.label),
+        message: level == 'plan'
+            ? t.poolPlanConfirmBody(widget.pool.name)
+            : account.hasBalance
+            ? t.poolPaidConfirmPrepaid(widget.pool.name)
+            : t.poolPaidConfirmBilled(widget.pool.name),
+        confirmLabel: level == 'plan' ? t.poolPlanConfirm : t.poolPaidConfirm,
+        cancelLabel: t.cancel,
+      );
+      if (!confirmed || !mounted) return;
+    }
+    setState(() {
+      _levels[account.id] = level;
+      _selected = <String>{..._selected, account.id};
+    });
   }
 
   Future<void> _save() async {
     setState(() => _saving = true);
-    // Connections shared only for their paid models are not in this picker; they stay shared.
-    final free = (widget.controller.pools?.shareableFree ?? const <ShareableAccount>[]).map((account) => account.id).toSet();
-    final paidOnly = widget.pool.sharedAccountIds.where((id) => !free.contains(id));
-    await _apply(context, widget.controller, () => widget.controller.api.updatePoolShare(widget.pool.id, <String, Object?>{'sharedAccountIds': <String>{..._selected, ...paidOnly}.toList()}));
+    final levels = <String, String>{for (final id in _selected) id: _levels[id] ?? 'free'};
+    await _apply(context, widget.controller, () => widget.controller.api.updatePoolShare(widget.pool.id, <String, Object?>{'sharedAccountIds': _selected.toList(), 'shareLevels': levels}));
     if (mounted) setState(() => _saving = false);
   }
 
@@ -910,7 +995,7 @@ class _SharingSectionState extends State<_SharingSection> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final share = widget.pool.share;
-    final accounts = widget.controller.pools?.shareableFree ?? const <ShareableAccount>[];
+    final accounts = widget.controller.pools?.shareable ?? const <ShareableAccount>[];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -919,18 +1004,17 @@ class _SharingSectionState extends State<_SharingSection> {
           description: t.poolShareHint,
           trailing: _changed
               ? Wrap(spacing: 8, children: <Widget>[
-                  TextButton(onPressed: _saving ? null : () => setState(() => _selected = widget.pool.sharedAccountIds.toSet()), child: Text(t.poolDiscard)),
+                  TextButton(onPressed: _saving ? null : _discard, child: Text(t.poolDiscard)),
                   FilledButton(onPressed: _saving ? null : _save, child: Text(t.save)),
                 ])
               : null,
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: ConnectionPicker(accounts: accounts, selected: _selected, onChanged: (next) => setState(() => _selected = next)),
+              child: ConnectionPicker(accounts: accounts, selected: _selected, levels: _levels, onLevel: _setLevel, onChanged: (next) => setState(() => _selected = next)),
             ),
           ],
         ),
-        _PaidSharingGroup(controller: widget.controller, pool: widget.pool),
         SettingsGroup(
           title: t.poolLimitsTitle,
           description: t.poolLimitsBalanceHint,
@@ -943,63 +1027,6 @@ class _SharingSectionState extends State<_SharingSection> {
           ],
         ),
         InlineHint(message: t.poolTosNotice),
-      ],
-    );
-  }
-}
-
-/// Paid models, per connection and only after an explicit yes: partners
-/// then use them when no free model can serve, and the owner pays.
-class _PaidSharingGroup extends StatefulWidget {
-  const _PaidSharingGroup({required this.controller, required this.pool});
-
-  final NeoRouterController controller;
-  final PoolInfo pool;
-
-  @override
-  State<_PaidSharingGroup> createState() => _PaidSharingGroupState();
-}
-
-class _PaidSharingGroupState extends State<_PaidSharingGroup> {
-  final Set<String> _busy = <String>{};
-
-  Future<void> _set(ShareableAccount account, bool paid) async {
-    final t = AppL10n.of(context);
-    if (paid) {
-      final confirmed = await confirmAction(
-        context,
-        title: t.poolPaidConfirmTitle(account.label),
-        message: account.prepaid ? t.poolPaidConfirmPrepaid(widget.pool.name) : t.poolPaidConfirmBilled(widget.pool.name),
-        confirmLabel: t.poolPaidConfirm,
-        cancelLabel: t.cancel,
-      );
-      if (!confirmed || !mounted) return;
-    }
-    // Turning paid off keeps the connection's free models shared if they were.
-    final shared = paid || (account.freeModels > 0 && widget.pool.sharedAccountIds.contains(account.id));
-    setState(() => _busy.add(account.id));
-    await _apply(context, widget.controller, () => widget.controller.api.setAccountPoolShare(widget.pool.id, account.id, shared, paid: paid));
-    if (mounted) setState(() => _busy.remove(account.id));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppL10n.of(context);
-    final accounts = widget.controller.pools?.shareablePaid ?? const <ShareableAccount>[];
-    if (accounts.isEmpty) return const SizedBox.shrink();
-    return SettingsGroup(
-      title: t.poolPaidTitle,
-      description: t.poolPaidHint,
-      children: <Widget>[
-        for (final account in accounts)
-          SettingsRow(
-            label: account.label,
-            description: account.prepaid ? t.poolPaidPrepaid('${account.paidModels}') : t.poolPaidBilled('${account.paidModels}'),
-            control: Switch(
-              value: widget.pool.paidAccountIds.contains(account.id),
-              onChanged: _busy.contains(account.id) ? null : (on) => _set(account, on),
-            ),
-          ),
       ],
     );
   }
@@ -1375,7 +1402,7 @@ class _SharePoolsDialogState extends State<_SharePoolsDialog> {
 
   Future<void> _set(PoolInfo pool, bool shared) async {
     setState(() => _busy.add(pool.id));
-    await _apply(context, widget.controller, () => widget.controller.api.setAccountPoolShare(pool.id, widget.accountId, shared));
+    await _apply(context, widget.controller, () => widget.controller.api.setAccountPoolShare(pool.id, widget.accountId, shared: shared));
     if (mounted) setState(() => _busy.remove(pool.id));
   }
 

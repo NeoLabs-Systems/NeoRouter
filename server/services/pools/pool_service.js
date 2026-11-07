@@ -92,25 +92,30 @@ function assertPeerKey(value) {
   if (typeof value !== 'string' || !/^nrt_[a-f0-9]{8}_[A-Za-z0-9_-]{20,100}$/.test(value)) throw fail(400, 'POOL_MESSAGE_INVALID', 'The partner key is malformed.');
 }
 
-// In this pool, exactly these of the person's own connections are shared.
-function setShared(userId, poolId, accountIds = []) {
+// In this pool, exactly these of the person's own connections are shared;
+// levels sets some of their levels (the others keep theirs, new ones start at free).
+function setSharedAccounts(userId, poolId, accountIds = [], levels = {}) {
   const wanted = new Set(accountIds.map(String));
   const rows = getDatabase().prepare("SELECT id FROM provider_accounts WHERE user_id = ? AND definition_id != 'neorouter_peer'").all(userId);
-  for (const row of rows) sharePolicy.setAccountShared(userId, poolId, row.id, wanted.has(row.id));
+  for (const row of rows) sharePolicy.setAccountShare(userId, poolId, row.id, { shared: wanted.has(row.id), level: levels[row.id] });
 }
 
-// Own connections with chat models that could be shared: free ones, or paid
-// ones (only ever shared after an explicit opt-in). prepaid: the provider
-// reports a balance, so partner use spends it; otherwise it is billed.
+// Own connections with chat models that could be shared, and how many of
+// each kind: free, plan (subscription) and paid. Plan and paid models are only
+// shared at a level the owner picks. hasBalance: the provider reports a
+// balance, so paid partner use spends it; otherwise it is billed.
 function shareableAccounts(userId) {
   return getDatabase().prepare(`SELECT a.id, a.label, a.definition_id, a.enabled,
       (SELECT COUNT(*) FROM models m WHERE m.account_id = a.id AND m.is_free = 1 AND m.available = 1 AND m.capability = 'chat') free_models,
-      -- Plan (subscription) connections never count: their models are not shared.
-      CASE WHEN a.prepaid THEN 0 ELSE (SELECT COUNT(*) FROM models m WHERE m.account_id = a.id AND m.is_free = 0 AND m.available = 1 AND m.capability = 'chat') END paid_models,
-      EXISTS (SELECT 1 FROM quota_state q WHERE q.scope_key = 'a:' || a.id AND q.metric = 'balance') prepaid
+      -- a.prepaid marks a plan (subscription) connection: its other models are plan models.
+      (SELECT COUNT(*) FROM models m WHERE m.account_id = a.id AND m.is_free = 0 AND m.available = 1 AND m.capability = 'chat') other_models,
+      EXISTS (SELECT 1 FROM quota_state q WHERE q.scope_key = 'a:' || a.id AND q.metric = 'balance') has_balance
     FROM provider_accounts a WHERE a.user_id = ? AND a.definition_id != 'neorouter_peer' ORDER BY a.label COLLATE NOCASE`).all(userId)
-    .filter((row) => row.free_models > 0 || row.paid_models > 0)
-    .map((row) => ({ id: row.id, label: row.label, definitionId: row.definition_id, enabled: row.enabled === 1, freeModels: row.free_models, paidModels: row.paid_models, prepaid: row.prepaid === 1 }));
+    .filter((row) => row.free_models > 0 || row.other_models > 0)
+    .map((row) => ({
+      id: row.id, label: row.label, definitionId: row.definition_id, enabled: row.enabled === 1, hasBalance: row.has_balance === 1,
+      freeModels: row.free_models, planModels: row.prepaid ? row.other_models : 0, paidModels: row.prepaid ? 0 : row.other_models,
+    }));
 }
 
 // ---------------------------------------------------------------- creating
@@ -126,7 +131,7 @@ function create(userId, { name, selfName, selfUrl, sharedAccountIds = [] }) {
     hostMemberId: me.memberId, hostPublicKey: me.publicKey, hostUrl: url, selfUrl: url, selfName: ownName, share: {},
   });
   store.upsertMember(userId, poolId, { memberId: me.memberId, name: ownName, url, publicKey: me.publicKey });
-  setShared(userId, poolId, sharedAccountIds);
+  setSharedAccounts(userId, poolId, sharedAccountIds);
   return { poolId, ...summary(userId) };
 }
 
@@ -224,7 +229,7 @@ async function join(userId, { link, selfName, selfUrl, sharedAccountIds = [] }) 
     userId, poolId, name: cleanName(info.pool?.name, 'Pool'), isHost: false,
     hostMemberId: host.memberId, hostPublicKey: host.publicKey, hostUrl: origin, selfUrl: url, selfName: ownName, share: {},
   });
-  setShared(userId, poolId, sharedAccountIds);
+  setSharedAccounts(userId, poolId, sharedAccountIds);
   const hostLink = store.insertLink(userId, poolId, host);
   let welcome;
   try {
@@ -488,15 +493,15 @@ async function updateShare(userId, poolId, input) {
   const next = { ...pool.share };
   for (const field of Object.keys(sharePolicy.DEFAULT_SHARE)) if (input[field] !== undefined) next[field] = input[field];
   store.updatePool(userId, poolId, { share: sharePolicy.shareSettings({ share: next }) });
-  if (Array.isArray(input.sharedAccountIds)) setShared(userId, poolId, input.sharedAccountIds);
+  if (Array.isArray(input.sharedAccountIds)) setSharedAccounts(userId, poolId, input.sharedAccountIds, input.shareLevels);
   await announceShared(userId, poolId);
   return summary(userId);
 }
 
-// paid (optional): whether this connection's paid models are shared too.
-async function setAccountShared(userId, poolId, accountId, shared, paid) {
+// One connection in one pool: { shared } on or off, { level } how much of it.
+async function setAccountShared(userId, poolId, accountId, change) {
   requirePool(userId, poolId);
-  if (!sharePolicy.setAccountShared(userId, poolId, accountId, shared, paid)) throw fail(404, 'ACCOUNT_NOT_FOUND', 'This connection does not exist.');
+  if (!sharePolicy.setAccountShare(userId, poolId, accountId, change)) throw fail(404, 'ACCOUNT_NOT_FOUND', 'This connection does not exist.');
   await announceShared(userId, poolId);
   return summary(userId);
 }
@@ -563,7 +568,7 @@ function poolView(userId, pool, { canManage }) {
     partners: store.members(userId, pool.poolId).filter((member) => member.memberId !== me).map((member) => partnerView(userId, pool, member)),
     share: sharePolicy.shareSettings(pool),
     sharedAccountIds: store.sharedAccountIds(userId, pool.poolId),
-    paidAccountIds: store.paidAccountIds(userId, pool.poolId),
+    shareLevels: store.shareLevels(userId, pool.poolId),
     invites: pool.isHost && canManage ? store.invites(userId, pool.poolId) : [],
   };
 }
