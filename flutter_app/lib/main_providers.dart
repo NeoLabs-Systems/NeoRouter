@@ -811,7 +811,8 @@ class _ProviderFormState extends State<_ProviderForm> {
   // ChatGPT device sign-in in progress: the code to show and the poll timer.
   Map<String, dynamic>? _deviceLogin;
   Timer? _devicePoll;
-  bool _advanced = false;
+  // Open when editing a connection whose free/paid setting was changed, so it is not hidden.
+  late bool _advanced = (widget.account?.classification ?? 'auto') != 'auto';
   Map<String, dynamic>? _probe;
   String? _error;
 
@@ -1173,31 +1174,6 @@ class _ProviderFormState extends State<_ProviderForm> {
             const SizedBox(height: AppSpacing.xs),
             Text(t.billingAlwaysFreeNote, style: TextStyle(color: palette.textSoft, fontSize: 12.5, height: 1.45)),
           ],
-          // Overrides the automatic free/paid result for all its models (a pool
-          // partner's models are always free for us, so not there).
-          if (definition.category != 'pool') ...<Widget>[
-          const SizedBox(height: AppSpacing.lg),
-          Row(
-            children: <Widget>[
-              Expanded(child: Text(t.classificationTitle, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text))),
-              SegmentedButton<String>(
-                showSelectedIcon: false,
-                segments: <ButtonSegment<String>>[
-                  ButtonSegment<String>(value: 'auto', label: Text(t.classificationAuto)),
-                  ButtonSegment<String>(value: 'free', label: Text(t.classificationFree)),
-                  ButtonSegment<String>(value: 'paid', label: Text(t.classificationPaid)),
-                ],
-                selected: <String>{_classification},
-                onSelectionChanged: (value) => setState(() => _classification = value.first),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            _classification == 'free' ? t.classificationFreeWarning : t.classificationHint,
-            style: TextStyle(color: _classification == 'free' ? palette.warning : palette.textSoft, fontSize: 12.5, height: 1.45),
-          ),
-          ],
           const SizedBox(height: AppSpacing.md),
           Align(
             alignment: Alignment.centerLeft,
@@ -1243,6 +1219,31 @@ class _ProviderFormState extends State<_ProviderForm> {
                 maxLines: 6,
                 decoration: InputDecoration(labelText: t.manualModels, helperText: t.manualModelsHint, helperMaxLines: 2),
               ),
+            ],
+            // Overrides the automatic free/paid result for all its models (a pool
+            // partner's models are always free for us, so not there).
+            if (definition.category != 'pool') ...<Widget>[
+            gap,
+            Row(
+              children: <Widget>[
+                Expanded(child: Text(t.classificationTitle, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text))),
+                SegmentedButton<String>(
+                  showSelectedIcon: false,
+                  segments: <ButtonSegment<String>>[
+                    ButtonSegment<String>(value: 'auto', label: Text(t.classificationAuto)),
+                    ButtonSegment<String>(value: 'free', label: Text(t.classificationFree)),
+                    ButtonSegment<String>(value: 'paid', label: Text(t.classificationPaid)),
+                  ],
+                  selected: <String>{_classification},
+                  onSelectionChanged: (value) => setState(() => _classification = value.first),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              _classification == 'free' ? t.classificationFreeWarning : t.classificationHint,
+              style: TextStyle(color: _classification == 'free' ? palette.warning : palette.textSoft, fontSize: 12.5, height: 1.45),
+            ),
             ],
           ],
           if (_custom) ...<Widget>[
