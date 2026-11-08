@@ -50,6 +50,8 @@ deployment/data
 .neorouter-dev
 tmp
 .DS_Store
+# The dashboard CI hands in through its own build context.
+web-archive
 
 # Container files themselves are cheap; keep them for the entrypoint.
 !docker/**

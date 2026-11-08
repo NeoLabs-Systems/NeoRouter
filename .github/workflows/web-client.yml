@@ -45,6 +45,15 @@ jobs:
       - name: Package
         run: tar -czf neorouter-web.tar.gz -C flutter_app/build/web .
 
+      # The Docker workflow takes the dashboard from here: workflow artifacts
+      # stay reachable when GitHub's release downloads time out.
+      - name: Keep for the Docker build
+        uses: actions/upload-artifact@v4
+        with:
+          name: neorouter-web
+          path: neorouter-web.tar.gz
+          retention-days: 7
+
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}

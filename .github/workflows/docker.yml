@@ -68,15 +68,44 @@ jobs:
       - name: Image name
         run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
-      # The image downloads the dashboard that the Web Client workflow builds
-      # from the same push; wait for it so the image never ships the previous one.
+      # The image ships the dashboard that the Web Client workflow builds from
+      # the same push: wait for it so the image never gets the previous one.
       - name: Wait for this commit's web client
+        id: web
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           run=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow web-client.yml --commit "$GITHUB_SHA" --json databaseId -q '.[0].databaseId')
           if [ -n "$run" ]; then gh run watch "$run" --repo "$GITHUB_REPOSITORY" --exit-status --interval 10; else echo "No web client build for this commit."; fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
+      # The dashboard goes into the build as a file (the web-archive build
+      # context), so the build itself downloads nothing from GitHub, whose
+      # release links can time out for minutes. This commit's build comes from
+      # its workflow artifact; otherwise the current release file, retried.
+      - name: Dashboard from this commit's web client
+        if: steps.web.outputs.run != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: neorouter-web
+          path: web-archive/incoming
+          run-id: ${{ steps.web.outputs.run }}
+          github-token: ${{ github.token }}
+
+      - name: Dashboard from the release
+        if: steps.web.outputs.run == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE: ${{ (github.ref_name == 'beta' || github.base_ref == 'beta') && 'web-beta' || 'web-main' }}
+        run: |
+          mkdir -p web-archive/incoming
+          for attempt in $(seq 1 20); do
+            if gh release download "$RELEASE" --repo "$GITHUB_REPOSITORY" --pattern neorouter-web.tar.gz --dir web-archive/incoming --clobber; then exit 0; fi
+            echo "Attempt $attempt failed; trying again in 15 seconds."
+            sleep 15
+          done
+          exit 1
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
@@ -88,10 +117,11 @@ jobs:
           # The image with the downloaded dashboard. Without a target Docker
           # builds the last stage, runtime-from-source, which compiles Flutter.
           target: runtime
+          build-contexts: web-archive=web-archive
           load: true
           tags: neorouter:ci
           # The dashboard matches the branch: main is stable, beta is beta.
-          # NEOROUTER_WEB_STAMP makes the dashboard download run again instead of reusing a cached copy.
+          # NEOROUTER_WEB_STAMP makes the dashboard step run again instead of reusing a cached copy.
           build-args: |
             NEOROUTER_CHANNEL=${{ github.ref_name == 'beta' && 'beta' || 'stable' }}
             NEOROUTER_WEB_STAMP=${{ github.sha }}
@@ -138,6 +168,7 @@ jobs:
         with:
           context: .
           target: runtime
+          build-contexts: web-archive=web-archive
           platforms: linux/${{ matrix.arch }}
           build-args: |
             NEOROUTER_CHANNEL=${{ github.ref_name == 'beta' && 'beta' || 'stable' }}

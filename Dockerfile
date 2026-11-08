@@ -85,6 +85,12 @@ RUN --mount=type=cache,target=/root/.npm \
 # web-main releases (.github/workflows/web-client.yml). This is also what an
 # npm install without the Flutter SDK uses, so no Flutter is needed here.
 # ---------------------------------------------------------------------------
+# A dashboard archive handed to the build, which then downloads nothing:
+#   docker build --build-context web-archive=<dir> .   (with incoming/neorouter-web.tar.gz)
+# CI does this. Without it this stage is empty and the archive is downloaded.
+FROM debian:bookworm-slim AS web-archive
+RUN mkdir /incoming
+
 FROM debian:bookworm-slim AS web-prebuilt
 
 # The dashboard always matches the code: the channel decides which release tag
@@ -102,6 +108,7 @@ RUN apt-get update \
 ARG NEOROUTER_WEB_STAMP=
 
 WORKDIR /web
+COPY --from=web-archive /incoming /incoming
 # GitHub's download link sometimes answers 504 for minutes at a time (also
 # right after the Web Client workflow replaces the archive); GitHub's API serves
 # the same file, so it is the fallback for the default URL.
@@ -113,8 +120,10 @@ RUN set -eux; \
       *) echo "NEOROUTER_CHANNEL must be beta or stable, got '${NEOROUTER_CHANNEL}'" >&2; exit 1 ;; \
     esac; \
     url="${NEOROUTER_WEB_URL:-https://github.com/NeoLabs-Systems/NeoRouter/releases/download/${release}/neorouter-web.tar.gz}"; \
-    echo "Downloading web client: $url"; \
-    if ! curl -fsSL --retry 3 --retry-delay 3 --retry-all-errors -o web.tar.gz "$url"; then \
+    if [ -f /incoming/neorouter-web.tar.gz ]; then \
+      echo "Web client handed to the build"; \
+      cp /incoming/neorouter-web.tar.gz web.tar.gz; \
+    elif echo "Downloading web client: $url" && ! curl -fsSL --retry 3 --retry-delay 3 --retry-all-errors -o web.tar.gz "$url"; then \
       test -z "${NEOROUTER_WEB_URL}"; \
       echo "The download link failed; fetching the same archive through GitHub's API"; \
       asset="$(curl -fsSL --retry 3 "https://api.github.com/repos/NeoLabs-Systems/NeoRouter/releases/tags/${release}" | tr ',' '\n' | grep -o 'https://api.github.com/repos/[^"]*/releases/assets/[0-9]*' | head -n 1)"; \
@@ -156,7 +165,8 @@ LABEL org.opencontainers.image.title="NeoRouter" \
       org.opencontainers.image.licenses="AGPL-3.0-only"
 
 # ffmpeg is optional for NeoRouter (speech output is converted to the format
-# the client asked for), tini is PID 1 so SIGTERM reaches the server and the
+# the client asked for), libgomp1 is what llama.cpp needs for local models,
+# tini is PID 1 so SIGTERM reaches the server and the
 # scheduler shuts down instead of the container timing out.
 #
 # The process runs as an unprivileged uid; the data volume is the only thing it
@@ -167,7 +177,7 @@ ARG UID=1000
 ARG GID=1000
 ARG NEOROUTER_CHANNEL=beta
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates ffmpeg tini \
+ && apt-get install -y --no-install-recommends ca-certificates ffmpeg libgomp1 tini \
  && rm -rf /var/lib/apt/lists/* \
  && if ! getent group "$GID" >/dev/null; then groupadd --gid "$GID" neorouter; fi \
  && if ! getent passwd "$UID" >/dev/null; then \
