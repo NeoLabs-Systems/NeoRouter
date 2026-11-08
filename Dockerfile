@@ -102,6 +102,8 @@ RUN apt-get update \
 ARG NEOROUTER_WEB_STAMP=
 
 WORKDIR /web
+# Right after the Web Client workflow replaces the archive, GitHub answers 504
+# or 404 for a little while, so the download keeps trying for up to 3 minutes.
 RUN set -eux; \
     echo "Web client for ${NEOROUTER_WEB_STAMP:-this build}"; \
     case "${NEOROUTER_CHANNEL:-beta}" in \
@@ -111,7 +113,7 @@ RUN set -eux; \
     esac; \
     url="${NEOROUTER_WEB_URL:-https://github.com/NeoLabs-Systems/NeoRouter/releases/download/${release}/neorouter-web.tar.gz}"; \
     echo "Downloading web client: $url"; \
-    curl -fsSL --retry 3 --retry-delay 2 -o web.tar.gz "$url"; \
+    curl -fsSL --retry 10 --retry-delay 5 --retry-max-time 180 --retry-all-errors -o web.tar.gz "$url"; \
     tar -xzf web.tar.gz; \
     rm web.tar.gz; \
     test -f index.html; \
