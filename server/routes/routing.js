@@ -5,6 +5,7 @@ const { z } = require('zod');
 const profiles = require('../services/routing/profiles');
 const router_ = require('../services/routing/router');
 const loadTracker = require('../services/routing/load_tracker');
+const smoothing = require('../services/routing/smoothing');
 const { requirements, estimateInputTokens, normalizeRequest } = require('../capabilities/chat/canonical');
 const { validate } = require('../middleware/validate');
 const { requirePermission } = require('../middleware/space');
@@ -44,6 +45,10 @@ router.post('/preview', requirePermission('routing.view'), validate(z.object({
   }));
 });
 
+// Settings → Usage: even out usage, once there is enough data to go by.
+router.get('/smoothing', requirePermission('routing.view'), (req, res) => res.json(smoothing.status(req.space.ownerId)));
+router.put('/smoothing', requirePermission('routing.edit'), validate(z.object({ enabled: z.boolean() })),
+  (req, res) => res.json(smoothing.setEnabled(req.space.ownerId, req.body.enabled)));
 router.get('/load', requirePermission('routing.view'), (_req, res) => res.json(loadTracker.snapshot()));
 
 module.exports = router;

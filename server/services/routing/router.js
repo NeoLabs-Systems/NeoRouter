@@ -13,6 +13,7 @@ const budget = require('../budget/budget_service');
 const pacing = require('../budget/pacing');
 const plans = require('./plans');
 const priority = require('./priority');
+const smoothing = require('./smoothing');
 const sharePolicy = require('../pools/share_policy');
 const { isPeerEntry } = require('../pools/links');
 const { classify } = require('./task/classifier');
@@ -198,6 +199,7 @@ function rejection(entry, ctx, now) {
   const quotaState = quota.evaluate(entry, inputTokens, now);
   if (quotaState.blocked) return `quota_${quotaState.blocked.metric}`;
   if (priority.heldBack(entry, key.priority)) return 'held_for_priority';
+  if (ctx.smoothing && smoothing.held(entry, { userId: ctx.userId, inputTokens, priority: key.priority, now })) return 'paced';
   return null;
 }
 
@@ -210,6 +212,8 @@ function rejection(entry, ctx, now) {
 const SIBLING_FLOOR = 0.55;
 // Budget pacing (services/budget/pacing.js).
 const PACED_COST_FLOOR = 0.1;
+// A connection held back to even out usage gets a little room again within minutes.
+const PACED_RECHECK_MS = 5 * 60_000;
 const OVER_PACE_FACTOR = 0.15;
 const TYPICAL_OUTPUT_TOKENS = 1500;
 const ACCOUNT_SOFT_CAPACITY = 8;
@@ -319,6 +323,7 @@ const REJECTION_GROUPS = [
   ['profile', ['below_min_intelligence', 'too_expensive', 'too_slow', 'provider_not_included', 'provider_excluded', 'model_excluded', 'kind_not_in_style'], "are left out by the routing style"],
   ['budget', ['price_unknown', 'budget_exhausted', 'key_too_expensive'], "have no known price or would go past this key's budget or price limit"],
   ['key', ['not_free', 'not_allowed_for_key', 'other_kind', 'not_in_pool', 'not_shared', 'peer_no_forward'], 'are not allowed for this key'],
+  ['paced', ['paced'], 'are being spread out so their limits last until they reset (Settings → Usage → even out usage); keys with a high priority still get through'],
   ['private', ['kept_private'], 'are pool partners, and this request holds very sensitive data that stays on your own connections'],
 ];
 
@@ -397,6 +402,9 @@ class RoutingPlan {
       this.weights = { ...this.weights, cost: Math.max(this.weights.cost, PACED_COST_FLOOR) * this.pacing.costShift };
     }
     this.tokenLimitReached = budget.tokenLimitReached(key);
+    // Settings → even out usage: allowances are spent at a steady pace.
+    this.userId = userId;
+    this.smoothing = smoothing.active(userId);
     this.entries = catalog.listForUser(userId, { capability }).map((entry) => plans.effective(entry));
     // Outcomes are learned per kind of task (learning.js).
     if (this.task) for (const entry of this.entries) entry.task = this.task.primary;
@@ -428,7 +436,7 @@ class RoutingPlan {
   }
 
   context() {
-    return { keepPrivate: this.keepPrivate, shareReserve: this.shareReserve, sharePoolId: this.sharePoolId, longShot: this.longShot, accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost };
+    return { keepPrivate: this.keepPrivate, shareReserve: this.shareReserve, sharePoolId: this.sharePoolId, longShot: this.longShot, accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost, smoothing: this.smoothing, userId: this.userId };
   }
 
   rank({ includeRejected = false, sample = true, now = Date.now() } = {}) {
@@ -580,6 +588,7 @@ class RoutingPlan {
       const reason = rejection(entry, ctx, now);
       let at = null;
       if (reason === 'account_busy' || reason === 'held_for_priority') at = now + BUSY_RECHECK_MS;
+      else if (reason === 'paced') at = now + PACED_RECHECK_MS;
       else if (SHORT_COOLDOWNS.has(reason)) at = stats.availability(entry.ref, now).until || now + BUSY_RECHECK_MS;
       else if (reason && reason.startsWith('quota_')) {
         const blocked = quota.evaluate(entry, this.inputTokens, now).blocked;

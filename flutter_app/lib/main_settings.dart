@@ -6,32 +6,36 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
 import 'main_settings_account_data.dart';
+import 'main_settings_smoothing.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
 import 'src/backend_client.dart';
 
-enum _SettingsPage { account, appearance, connect }
+enum _SettingsPage { account, usage, appearance, connect }
 
 enum _SettingsScope { you, app }
 
 extension on _SettingsPage {
-  _SettingsScope get scope => this == _SettingsPage.account ? _SettingsScope.you : _SettingsScope.app;
+  _SettingsScope get scope => this == _SettingsPage.account || this == _SettingsPage.usage ? _SettingsScope.you : _SettingsScope.app;
 
   IconData get icon => switch (this) {
         _SettingsPage.account => Icons.person_outline,
+        _SettingsPage.usage => Icons.waves_rounded,
         _SettingsPage.appearance => Icons.palette_outlined,
         _SettingsPage.connect => Icons.code_rounded,
       };
 
   String label(AppL10n t) => switch (this) {
         _SettingsPage.account => t.account,
+        _SettingsPage.usage => t.settingsUsage,
         _SettingsPage.appearance => t.appearance,
         _SettingsPage.connect => t.connectApps,
       };
 
   String description(AppL10n t) => switch (this) {
         _SettingsPage.account => t.settingsAccountDescription,
+        _SettingsPage.usage => t.settingsUsageDescription,
         _SettingsPage.appearance => t.settingsAppearanceDescription,
         _SettingsPage.connect => t.settingsConnectDescription,
       };
@@ -290,6 +294,7 @@ class _SettingsPageView extends StatelessWidget {
                 const SizedBox(height: 26),
                 switch (page) {
                   _SettingsPage.account => _AccountPage(controller: controller),
+                  _SettingsPage.usage => SmoothingSection(controller: controller),
                   _SettingsPage.appearance => _AppearancePage(controller: controller),
                   _SettingsPage.connect => _ConnectPage(controller: controller),
                 },

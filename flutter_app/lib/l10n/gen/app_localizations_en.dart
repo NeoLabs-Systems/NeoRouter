@@ -1166,6 +1166,79 @@ class AppL10nEn extends AppL10n {
       'Theme and language of this dashboard.';
 
   @override
+  String get settingsUsage => 'Usage';
+
+  @override
+  String get settingsUsageDescription =>
+      'Spread free and plan limits evenly until they reset.';
+
+  @override
+  String get smoothTitle => 'Even out usage';
+
+  @override
+  String get smoothHint =>
+      'Without this, NeoRouter answers at full speed until a limit is used up, and then turns requests away until it resets. With it, free and plan limits are spread so they last the whole period: a little more waiting at busy times, far fewer rejections later.';
+
+  @override
+  String get smoothSwitch => 'Spread limits until they reset';
+
+  @override
+  String get smoothOn => 'On. Limits are spread over their whole period.';
+
+  @override
+  String get smoothOff => 'Off. Requests use limits as fast as they come.';
+
+  @override
+  String get smoothLearning =>
+      'NeoRouter is still learning how you use it. This unlocks by itself once there is enough to go by.';
+
+  @override
+  String get smoothPausedLearning =>
+      'On, but paused until there is enough data again.';
+
+  @override
+  String get smoothStatusActive => 'Active';
+
+  @override
+  String get smoothStatusOff => 'Off';
+
+  @override
+  String get smoothStatusLearning => 'Learning';
+
+  @override
+  String get smoothNeedDays => 'Days of history';
+
+  @override
+  String get smoothNeedActiveDays => 'Days with requests (last 14)';
+
+  @override
+  String get smoothNeedRequests => 'Answered requests (last 14 days)';
+
+  @override
+  String get smoothNeedCoverage =>
+      'Requests on connections with a known limit (last 7 days)';
+
+  @override
+  String smoothProgress(String have, String need) {
+    return '$have of $need';
+  }
+
+  @override
+  String get smoothHowTitle => 'How it works';
+
+  @override
+  String get smoothHowDaily =>
+      'Daily limits: each hour gets its share of the day, more at the times you usually send requests.';
+
+  @override
+  String get smoothHowPlans =>
+      'Plans (5 hours, a week, a month): never used much faster than the time that has passed.';
+
+  @override
+  String get smoothHowPriority =>
+      'Keys with a high priority always get through, and paid models are not affected.';
+
+  @override
   String get settingsConnectDescription =>
       'Ready-to-paste setup for your SDKs and tools.';
 

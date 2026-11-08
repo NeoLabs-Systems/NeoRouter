@@ -2179,6 +2179,132 @@ abstract class AppL10n {
   /// **'Theme and language of this dashboard.'**
   String get settingsAppearanceDescription;
 
+  /// No description provided for @settingsUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage'**
+  String get settingsUsage;
+
+  /// No description provided for @settingsUsageDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread free and plan limits evenly until they reset.'**
+  String get settingsUsageDescription;
+
+  /// No description provided for @smoothTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Even out usage'**
+  String get smoothTitle;
+
+  /// No description provided for @smoothHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Without this, NeoRouter answers at full speed until a limit is used up, and then turns requests away until it resets. With it, free and plan limits are spread so they last the whole period: a little more waiting at busy times, far fewer rejections later.'**
+  String get smoothHint;
+
+  /// No description provided for @smoothSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread limits until they reset'**
+  String get smoothSwitch;
+
+  /// No description provided for @smoothOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On. Limits are spread over their whole period.'**
+  String get smoothOn;
+
+  /// No description provided for @smoothOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off. Requests use limits as fast as they come.'**
+  String get smoothOff;
+
+  /// No description provided for @smoothLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter is still learning how you use it. This unlocks by itself once there is enough to go by.'**
+  String get smoothLearning;
+
+  /// No description provided for @smoothPausedLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'On, but paused until there is enough data again.'**
+  String get smoothPausedLearning;
+
+  /// No description provided for @smoothStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get smoothStatusActive;
+
+  /// No description provided for @smoothStatusOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get smoothStatusOff;
+
+  /// No description provided for @smoothStatusLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning'**
+  String get smoothStatusLearning;
+
+  /// No description provided for @smoothNeedDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days of history'**
+  String get smoothNeedDays;
+
+  /// No description provided for @smoothNeedActiveDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days with requests (last 14)'**
+  String get smoothNeedActiveDays;
+
+  /// No description provided for @smoothNeedRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered requests (last 14 days)'**
+  String get smoothNeedRequests;
+
+  /// No description provided for @smoothNeedCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests on connections with a known limit (last 7 days)'**
+  String get smoothNeedCoverage;
+
+  /// No description provided for @smoothProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{have} of {need}'**
+  String smoothProgress(String have, String need);
+
+  /// No description provided for @smoothHowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How it works'**
+  String get smoothHowTitle;
+
+  /// No description provided for @smoothHowDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily limits: each hour gets its share of the day, more at the times you usually send requests.'**
+  String get smoothHowDaily;
+
+  /// No description provided for @smoothHowPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Plans (5 hours, a week, a month): never used much faster than the time that has passed.'**
+  String get smoothHowPlans;
+
+  /// No description provided for @smoothHowPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Keys with a high priority always get through, and paid models are not affected.'**
+  String get smoothHowPriority;
+
   /// No description provided for @settingsConnectDescription.
   ///
   /// In en, this message translates to:

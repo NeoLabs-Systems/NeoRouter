@@ -74,6 +74,24 @@ function pace(entry, now = Date.now()) {
   return tightest;
 }
 
+/**
+ * How far the tightest plan window is used compared with how far it has run:
+ * { usedShare, elapsedShare } (both 0 to 1), or null when no window has a
+ * known length and reset time. Smoothing (smoothing.js) holds a plan back
+ * while usedShare runs ahead of elapsedShare.
+ */
+function schedule(entry, now = Date.now()) {
+  let worst = null;
+  for (const window of windows(entry.accountId)) {
+    const length = WINDOW_MS[window.metric];
+    if (!length || !window.resetAt || window.resetAt <= now) continue;
+    const usedShare = 1 - Math.max(0, window.remaining ?? window.limit) / window.limit;
+    const elapsedShare = Math.min(1, Math.max(0, 1 - (window.resetAt - now) / length));
+    if (!worst || usedShare - elapsedShare > worst.usedShare - worst.elapsedShare) worst = { usedShare, elapsedShare };
+  }
+  return worst;
+}
+
 /** The allowance a request spends, priced by pace() (0 for models outside a plan). */
 function allowanceCost(entry, now = Date.now()) {
   if (!entry.isPlan) return 0;
@@ -136,4 +154,4 @@ function resetForTests() {
   sent.clear();
 }
 
-module.exports = { room, pace, allowanceCost, onSent, effective, rejection, factor, observeHeaders, PLAN_METRICS, resetForTests };
+module.exports = { room, pace, schedule, allowanceCost, onSent, effective, rejection, factor, observeHeaders, PLAN_METRICS, resetForTests };

@@ -115,6 +115,9 @@ class RouterApi {
   Future<void> deleteKey(String id) => client.delete('$_base/keys/$id');
 
   // ---- routing ----------------------------------------------------------------
+  /// Settings → Usage → even out usage: { enabled, active, readiness }.
+  Future<Map<String, dynamic>> smoothing() => client.get('$_base/routing/smoothing');
+  Future<Map<String, dynamic>> setSmoothing(bool enabled) => client.putJson('$_base/routing/smoothing', <String, Object>{'enabled': enabled});
   Future<List<RoutingProfile>> profiles() async => _list(await client.get('$_base/routing/profiles'), 'profiles', RoutingProfile.new);
   Future<RoutingProfile> createProfile(String name, RoutingWeights weights, Map<String, Object?> constraints) async => RoutingProfile(
     Map<String, dynamic>.from(

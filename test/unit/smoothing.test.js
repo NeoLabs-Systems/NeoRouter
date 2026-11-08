@@ -1,0 +1,74 @@
+'use strict';
+
+// Even out usage: allowances are spent at a steady pace once there is enough
+// data, high-priority keys and paid models are left alone.
+require('../support/env');
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { migrate } = require('../../server/db/migrate');
+const { getDatabase } = require('../../server/db/database');
+const quota = require('../../server/services/quota/quota_service');
+const smoothing = require('../../server/services/routing/smoothing');
+
+const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
+
+test.before(() => {
+  migrate(getDatabase(), { quiet: true });
+  const db = getDatabase();
+  db.prepare("INSERT INTO users (id, username, email, password_hash, role) VALUES ('u1', 'one', 'one@example.test', 'x', 'user')").run();
+  db.prepare("INSERT INTO users (id, username, email, password_hash, role) VALUES ('u2', 'two', 'two@example.test', 'x', 'user')").run();
+});
+
+test.beforeEach(() => {
+  quota.resetForTests();
+  smoothing.resetForTests();
+});
+
+const free = (ref) => ({ ref, accountId: `acc-${ref}`, modelId: 'some-model', definitionId: 'custom_openai', isFree: true, isPlan: false });
+
+test('not ready without a week of history, enough requests and known limits', () => {
+  const now = Date.now();
+  const empty = smoothing.readiness('u1', now);
+  assert.equal(empty.ready, false);
+  assert.deepEqual([empty.days, empty.activeDays, empty.requests], [0, 0, 0]);
+  assert.throws(() => smoothing.setEnabled('u1', true, now), (error) => error.code === 'NOT_ENOUGH_DATA');
+
+  // Nine days of answers, but to models without a known limit: still not ready.
+  const insert = getDatabase().prepare("INSERT INTO requests (id, user_id, created_at, api_format, requested_model, status) VALUES (?, 'u1', ?, 'chat', 'auto', 'success')");
+  for (let day = 0; day < 9; day += 1) for (let i = 0; i < 15; i += 1) insert.run(`r-${day}-${i}`, now - day * DAY - i * 60_000 - HOUR);
+  smoothing.resetForTests();
+  const unknownLimits = smoothing.readiness('u1', now);
+  assert.equal(unknownLimits.days >= 8, true);
+  assert.equal(unknownLimits.activeDays >= 8, true);
+  assert.equal(unknownLimits.requests, 135);
+  assert.equal(unknownLimits.coverage, 0);
+  assert.equal(unknownLimits.ready, false, 'limits must be known for the traffic');
+});
+
+test('a daily limit is spread over the day: an hour gets its share, with room for peaks', () => {
+  const now = Date.now();
+  const entry = free('m1');
+  quota.setLimit('m:m1', 'rpd', 240, 'manual');
+  // No history: every hour counts the same, 240 / 24 × 1.6 ≈ 16 requests an hour.
+  assert.equal(smoothing.held(entry, { userId: 'u2', now }), false);
+  for (let i = 0; i < 15; i += 1) quota.recordRequest(entry, 100, now - i * 60_000);
+  assert.equal(smoothing.held(entry, { userId: 'u2', now }), false, '15 of about 16 is fine');
+  quota.recordRequest(entry, 100, now);
+  assert.equal(smoothing.held(entry, { userId: 'u2', now }), true, 'past its share for this hour');
+  assert.equal(smoothing.held(entry, { userId: 'u2', priority: 'high', now }), false, 'a high-priority key still gets through');
+  assert.equal(smoothing.held({ ...entry, isFree: false }, { userId: 'u2', now }), false, 'paid models are not paced');
+  // An hour later the window has moved on.
+  assert.equal(smoothing.held(entry, { userId: 'u2', now: now + HOUR + 60_000 }), false);
+});
+
+test('a plan may run only a little ahead of the time that has passed', () => {
+  const now = Date.now();
+  const plan = { ...free('p1'), isFree: false, isPlan: true };
+  // A week with six days to go: 1/7 of it has passed.
+  quota.setState('a:acc-p1', 'plan_week', { limit: 100, remaining: 90, resetAt: now + 6 * DAY }, 'headers', now);
+  assert.equal(smoothing.held(plan, { userId: 'u2', now }), false, '10 % used at 14 % of the week');
+  quota.setState('a:acc-p1', 'plan_week', { limit: 100, remaining: 60, resetAt: now + 6 * DAY }, 'headers', now);
+  assert.equal(smoothing.held(plan, { userId: 'u2', now }), true, '40 % used at 14 % of the week');
+  assert.equal(smoothing.held(plan, { userId: 'u2', now: now + 4 * DAY }), false, 'by day five, 40 % is behind schedule');
+});

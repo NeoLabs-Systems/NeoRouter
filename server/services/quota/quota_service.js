@@ -119,6 +119,29 @@ function usageOf(scope, now = Date.now()) {
   return result;
 }
 
+/** Requests and tokens a scope used in the last `minutes` minutes. */
+function usageInLast(scopeKey, minutes, now = Date.now()) {
+  load();
+  const map = buckets.get(scopeKey);
+  const result = { requests: 0, tokens: 0 };
+  if (!map) return result;
+  const from = minuteOf(now) - minutes + 1;
+  for (const [minute, bucket] of map) {
+    if (minute >= from) {
+      result.requests += bucket.requests;
+      result.tokens += bucket.tokens;
+    }
+  }
+  return result;
+}
+
+/** A scope's daily limits, as { rpd, tpd } (null when unknown). */
+function dailyLimits(scope, now = Date.now()) {
+  const known = effectiveLimits(scope);
+  const daily = (metric) => known[metric]?.value ?? liveState(scope.key, metric, now)?.limit ?? null;
+  return { rpd: daily('rpd'), tpd: daily('tpd') };
+}
+
 function effectiveLimits(scope) {
   load();
   const result = {};
@@ -296,6 +319,8 @@ module.exports = { forgetObserved,
   scopesFor,
   effectiveLimits,
   usageOf,
+  usageInLast,
+  dailyLimits,
   evaluate,
   recordRequest,
   refundRequest,

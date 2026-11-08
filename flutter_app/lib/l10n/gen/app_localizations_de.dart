@@ -1174,6 +1174,81 @@ class AppL10nDe extends AppL10n {
       'Design und Sprache dieses Dashboards.';
 
   @override
+  String get settingsUsage => 'Nutzung';
+
+  @override
+  String get settingsUsageDescription =>
+      'Gratis- und Abo-Limits gleichmäßig verteilen, bis sie zurückgesetzt werden.';
+
+  @override
+  String get smoothTitle => 'Gleichmäßig verteilen';
+
+  @override
+  String get smoothHint =>
+      'Ohne diese Einstellung antwortet NeoRouter mit voller Geschwindigkeit, bis ein Limit aufgebraucht ist, und lehnt danach ab, bis es zurückgesetzt wird. Mit ihr werden Gratis- und Abo-Limits so verteilt, dass sie den ganzen Zeitraum reichen: zu Spitzenzeiten etwas mehr Warten, später viel weniger Ablehnungen.';
+
+  @override
+  String get smoothSwitch => 'Limits bis zum Zurücksetzen verteilen';
+
+  @override
+  String get smoothOn =>
+      'An. Limits werden über ihren ganzen Zeitraum verteilt.';
+
+  @override
+  String get smoothOff =>
+      'Aus. Anfragen nutzen Limits so schnell, wie sie kommen.';
+
+  @override
+  String get smoothLearning =>
+      'NeoRouter lernt noch, wie du es nutzt. Das schaltet sich frei, sobald genug Daten da sind.';
+
+  @override
+  String get smoothPausedLearning =>
+      'An, aber pausiert, bis wieder genug Daten da sind.';
+
+  @override
+  String get smoothStatusActive => 'Aktiv';
+
+  @override
+  String get smoothStatusOff => 'Aus';
+
+  @override
+  String get smoothStatusLearning => 'Lernt noch';
+
+  @override
+  String get smoothNeedDays => 'Tage Verlauf';
+
+  @override
+  String get smoothNeedActiveDays => 'Tage mit Anfragen (letzte 14)';
+
+  @override
+  String get smoothNeedRequests => 'Beantwortete Anfragen (letzte 14 Tage)';
+
+  @override
+  String get smoothNeedCoverage =>
+      'Anfragen über Verbindungen mit bekanntem Limit (letzte 7 Tage)';
+
+  @override
+  String smoothProgress(String have, String need) {
+    return '$have von $need';
+  }
+
+  @override
+  String get smoothHowTitle => 'So funktioniert es';
+
+  @override
+  String get smoothHowDaily =>
+      'Tageslimits: Jede Stunde bekommt ihren Anteil am Tag, mehr zu den Zeiten, in denen du meist Anfragen schickst.';
+
+  @override
+  String get smoothHowPlans =>
+      'Abos (5 Stunden, eine Woche, ein Monat): nie viel schneller verbraucht, als Zeit vergangen ist.';
+
+  @override
+  String get smoothHowPriority =>
+      'Keys mit hoher Priorität kommen immer durch, und bezahlte Modelle sind nicht betroffen.';
+
+  @override
   String get settingsConnectDescription =>
       'Fertige Einrichtung für deine SDKs und Tools.';
 
