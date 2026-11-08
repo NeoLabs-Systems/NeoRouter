@@ -61,6 +61,8 @@ or with npm:
 npm i -g --allow-git=root --allow-scripts=bcrypt,better-sqlite3,onnxruntime-node,protobufjs github:NeoLabs-Systems/NeoRouter && neorouter install
 ```
 
+On fish, wrap the first command: `bash -c 'bash <(curl -fsSL https://raw.githubusercontent.com/NeoLabs-Systems/NeoRouter/main/install.sh)'`. Afterwards the `neorouter` command works in a new terminal (`neorouter update`, `neorouter doctor`, …); if your shell does not pick up `~/.local/bin` yet, the installer prints the one line to add it.
+
 You need Node.js 20+ and git. The web app comes prebuilt; if it cannot be downloaded, the installer sets up Flutter for you and builds it.
 
 Then open **http://localhost:4600/app**. The first account you create becomes the administrator. Add a provider, create a router key, and point any OpenAI or Anthropic SDK at `http://localhost:4600/v1`.
