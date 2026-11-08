@@ -121,3 +121,28 @@ test('the pool shield minimum: hidden secrets, placeholders for contact data, no
   assert.equal(on.privacy.modes.secret, 'hide', 'secrets never come back from a partner round trip');
   assert.equal(on.privacy.modes.person, 'restore', 'own choices above the minimum stay');
 });
+
+test('the owner keeps what they usually still need today; a connection they hardly use is almost all for partners', () => {
+  const ownerReserve = require('../../server/services/pools/owner_reserve');
+  const db = getDatabase();
+  db.prepare("INSERT OR IGNORE INTO provider_accounts (id, user_id, definition_id, slug, label, billing_mode) VALUES ('busy', 'u1', 'groq', 'groq-busy', 'Busy', 'free_tier')").run();
+  db.prepare("INSERT OR IGNORE INTO provider_accounts (id, user_id, definition_id, slug, label, billing_mode) VALUES ('idle', 'u1', 'groq', 'groq-idle', 'Idle', 'free_tier')").run();
+  const DAY = 86_400_000;
+  const now = Math.floor(Date.now() / DAY) * DAY + 10 * 3_600_000; // 10:00 UTC today
+  const insert = db.prepare("INSERT INTO requests (id, user_id, created_at, api_format, requested_model, account_id, status) VALUES (?, 'u1', ?, 'chat', 'auto', 'busy', 'success')");
+  // Last week, from 10:00 on: 40 requests a day, one day 200 (a spike), and some before 10:00 that do not count.
+  for (let day = 1; day <= 7; day += 1) {
+    const start = now - day * DAY;
+    const count = day === 3 ? 200 : 40;
+    for (let index = 0; index < count; index += 1) insert.run(`own-${day}-${index}`, start + 60_000 + index);
+    insert.run(`early-${day}`, start - 3_600_000);
+  }
+  ownerReserve.resetForTests();
+  assert.equal(ownerReserve.expectedOwnUse({ accountId: 'busy', userId: 'u1' }, now), Math.ceil(40 * ownerReserve.MARGIN), 'a busy day, not the spike, plus the margin');
+  assert.equal(ownerReserve.expectedOwnUse({ accountId: 'idle', userId: 'u1' }, now), 0);
+  const quota = (remaining) => ({ headroom: remaining / 1000, details: [{ metric: 'rpd', remaining, limit: 1000 }] });
+  assert.equal(ownerReserve.keptForOwner({ accountId: 'busy', userId: 'u1' }, quota(40), now), true, '40 left, the owner usually needs 48');
+  assert.equal(ownerReserve.keptForOwner({ accountId: 'busy', userId: 'u1' }, quota(500), now), false);
+  assert.equal(ownerReserve.keptForOwner({ accountId: 'idle', userId: 'u1' }, quota(150), now), false, 'an unused connection is shared down to the margin');
+  assert.equal(ownerReserve.keptForOwner({ accountId: 'idle', userId: 'u1' }, quota(50), now), true, 'but a small margin always stays');
+});

@@ -562,6 +562,9 @@ class _Member {
   final PoolPartner? partner;
 }
 
+int _offeredModels(ShareableAccount account, Set<String> kinds) =>
+    (kinds.contains('free') ? account.freeModels : 0) + (kinds.contains('plan') ? account.planModels : 0) + (kinds.contains('paid') ? account.paidModels : 0);
+
 String _ourBalance(int given, int taken) {
   if (given + taken < 10) return 'new';
   if (given > 2 * taken) return 'giving_more';
@@ -598,7 +601,8 @@ class _PoolOverviewState extends State<_PoolOverview> {
         name: pool.selfName.isEmpty ? (widget.controller.user?.displayName ?? '') : pool.selfName,
         isYou: true,
         state: 'online',
-        models: shared.fold<int>(0, (sum, account) => sum + account.freeModels),
+        // The models each connection really offers here: only the kinds ticked for it.
+        models: shared.fold<int>(0, (sum, account) => sum + _offeredModels(account, pool.shareKinds[account.id] ?? const <String>{'free'})),
         connections: pool.sharedAccountIds.length,
         gave: partners.fold<int>(0, (sum, partner) => sum + partner.today.givenRequests),
         took: partners.fold<int>(0, (sum, partner) => sum + partner.today.takenRequests),
@@ -640,9 +644,10 @@ class _PoolOverviewState extends State<_PoolOverview> {
     final members = _members(t);
     final totalModels = math.max(1, members.fold<int>(0, (sum, member) => sum + member.models));
     final you = members.first;
-    // How much of our own daily share is still free (what partners may still take from us).
+    // How much of what partners may take from us today is still free: what
+    // they took (our "gave") against the sum of their limits for today.
     final capacity = math.max(1, pool.partners.fold<int>(0, (sum, partner) => sum + partner.capRequests));
-    final level = pool.partners.isEmpty ? 1.0 : (1 - you.took / capacity).clamp(0.0, 1.0);
+    final level = pool.partners.isEmpty ? 1.0 : (1 - you.gave / capacity).clamp(0.0, 1.0);
     final selected = members.where((member) => member.id == _selected).firstOrNull ?? you;
     final graph = PoolGraph(
       members: <PoolGraphMember>[
@@ -662,7 +667,7 @@ class _PoolOverviewState extends State<_PoolOverview> {
       level: level,
       levelLabel: '${(level * 100).round()}%',
       levelCaption: t.graphFreeToday,
-      footnote: t.graphRequestsToday(formatCount(you.gave + you.took)),
+      footnote: pool.partners.isEmpty ? t.graphRequestsToday('0') : t.graphShareUsed(formatCount(you.gave), formatCount(capacity)),
       active: !pool.paused,
       selectedId: selected.id,
       onSelect: (id) => setState(() => _selected = id),

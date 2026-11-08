@@ -2,7 +2,8 @@
 
 // What a partner may take from us, and when.
 //   1. Own requests first: a connection or model takes partner work only while
-//      it keeps a reserve (allowance and parallel slots) for its owner, and
+//      it keeps what its owner is expected to need today, from their own use
+//      of it over the last week (owner_reserve.js), and a parallel slot; and
 //      partner keys have the lowest priority, so they yield whenever the owner
 //      waits for the same capacity.
 //   2. Daily caps per partner, automatic and fair: every partner starts with
@@ -22,8 +23,10 @@ const loadTracker = require('../routing/load_tracker');
 const store = require('./store');
 const traffic = require('./traffic');
 const { isPeerEntry } = require('./links');
+const ownerReserve = require('./owner_reserve');
 
-const AUTO_SHARE = Object.freeze({ requestsPerDay: 300, tokensPerDay: 600_000, concurrent: 2, reserve: 0.3 });
+// reserve: null means automatic, from the owner's own use (owner_reserve.js).
+const AUTO_SHARE = Object.freeze({ requestsPerDay: 300, tokensPerDay: 600_000, concurrent: 2, reserve: null });
 const SHARE_FIELDS = Object.freeze(Object.keys(AUTO_SHARE));
 const SHARE_BOUNDS = Object.freeze({ requestsPerDay: [1, 100_000], tokensPerDay: [1_000, 100_000_000], concurrent: [1, 20], reserve: [0, 0.9] });
 // Give and take over `days`: factor = (what they gave us + smoothing) / (what
@@ -71,7 +74,7 @@ function capsFor(linkId, settings, now = Date.now()) {
     requests: fixed('requestsPerDay') ? settings.requestsPerDay : Math.max(1, Math.floor(AUTO_SHARE.requestsPerDay * factor)),
     tokens: fixed('tokensPerDay') ? settings.tokensPerDay : Math.max(1, Math.floor(AUTO_SHARE.tokensPerDay * factor)),
     concurrent: fixed('concurrent') ? settings.concurrent : Math.min(4, Math.max(1, Math.round(AUTO_SHARE.concurrent * factor))),
-    reserve: fixed('reserve') ? settings.reserve : AUTO_SHARE.reserve,
+    reserve: fixed('reserve') ? settings.reserve : null,
     factor,
     auto: Object.fromEntries(SHARE_FIELDS.map((field) => [field, !fixed(field)])),
   };
@@ -154,13 +157,17 @@ function poolOfKey(key) {
  * For requests that come in through a partner's key: why this model may not
  * serve it (or null). Partner work never goes on to another partner.
  */
-function rejection(entry, { inputTokens = 0, reserve = AUTO_SHARE.reserve, poolId = null } = {}, now = Date.now()) {
+// reserve: a share of each allowance the owner fixed by hand, or null for the
+// automatic reserve from their own use.
+function rejection(entry, { inputTokens = 0, reserve = null, poolId = null } = {}, now = Date.now()) {
   if (isPeerEntry(entry)) return 'peer_no_forward';
   if (!offers(poolId, entry, now)) return 'not_shared';
-  if (quota.evaluate(entry, inputTokens, now).headroom < reserve) return 'kept_for_owner';
+  const state = quota.evaluate(entry, inputTokens, now);
+  if (reserve !== null && reserve !== undefined ? state.headroom < reserve : ownerReserve.keptForOwner(entry, state, now)) return 'kept_for_owner';
+  // Parallel slots: the fixed share, or else one slot always stays free for the owner.
   const parallel = concurrency.limitFor(entry, now);
   if (parallel) {
-    const allowed = Math.max(1, Math.floor(parallel.limit * (1 - reserve)));
+    const allowed = reserve !== null && reserve !== undefined ? Math.max(1, Math.floor(parallel.limit * (1 - reserve))) : Math.max(1, parallel.limit - 1);
     if (loadTracker.inflight(entry).account >= allowed) return 'kept_for_owner';
   }
   return null;

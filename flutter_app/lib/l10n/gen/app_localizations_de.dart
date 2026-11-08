@@ -3678,7 +3678,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get poolLimitsAutoHint =>
-      'Automatisch und fair: Jeder Partner bekommt gleich viel; wer dir mehr gibt, bekommt bis zu dreimal so viel, wer nur nimmt, die Hälfte. Deine eigenen Anfragen gehen immer vor.';
+      'Automatisch und fair: Jeder Partner bekommt gleich viel; wer dir mehr gibt, bekommt bis zu dreimal so viel, wer nur nimmt, die Hälfte. Von jeder Verbindung bleibt dir, was du an dem Tag sonst noch brauchst, nach deiner letzten Woche; den Rest nutzen Partner.';
 
   @override
   String poolPartnerCaps(String requests, String tokens, String concurrent) {
@@ -3713,7 +3713,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get poolLimitReserveHint =>
-      'Der Teil jedes Kontingents, den Partner nie nutzen.';
+      'Leer: so viel, wie du heute sonst noch brauchst, nach deiner letzten Woche. Eine Zahl hält diesen Anteil jedes Kontingents frei.';
 
   @override
   String get poolLeave => 'Pool verlassen';
@@ -3958,7 +3958,7 @@ class AppL10nDe extends AppL10n {
   String get statBalance => 'Deine Bilanz';
 
   @override
-  String get statModels => 'Geteilte Gratis-Modelle';
+  String get statModels => 'Geteilte Modelle';
 
   @override
   String statOnlineValue(String online, String total) {
@@ -3993,12 +3993,12 @@ class AppL10nDe extends AppL10n {
 
   @override
   String panelSharesPartner(String models, String percent) {
-    return 'Teilt $models Gratis-Modelle mit dir, $percent % der Modelle in diesem Pool.';
+    return 'Teilt $models Modelle mit dir, für dich gratis, $percent % der Modelle in diesem Pool.';
   }
 
   @override
   String panelSharesYou(String connections, String models, String percent) {
-    return 'Du teilst $connections Verbindungen mit $models Gratis-Modellen, $percent % der Modelle in diesem Pool.';
+    return 'Du teilst $connections Verbindungen mit $models Modellen, $percent % der Modelle in diesem Pool.';
   }
 
   @override
@@ -4031,6 +4031,11 @@ class AppL10nDe extends AppL10n {
   @override
   String graphRequestsToday(String count) {
     return '$count Anfragen heute';
+  }
+
+  @override
+  String graphShareUsed(String used, String total) {
+    return '$used von $total Anfragen genutzt';
   }
 
   @override

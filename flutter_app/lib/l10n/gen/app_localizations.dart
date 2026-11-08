@@ -6460,7 +6460,7 @@ abstract class AppL10n {
   /// No description provided for @poolLimitsAutoHint.
   ///
   /// In en, this message translates to:
-  /// **'Automatic and fair: every partner gets the same share; one who gives you more gets up to three times as much, one who only takes half. Your own requests always come first.'**
+  /// **'Automatic and fair: every partner gets the same share; one who gives you more gets up to three times as much, one who only takes half. Of each connection you keep what you usually still need that day, judged from your last week; partners use the rest.'**
   String get poolLimitsAutoHint;
 
   /// No description provided for @poolPartnerCaps.
@@ -6520,7 +6520,7 @@ abstract class AppL10n {
   /// No description provided for @poolLimitReserveHint.
   ///
   /// In en, this message translates to:
-  /// **'The part of each connection\'s allowance partners never use.'**
+  /// **'Empty: as much as you usually still need today, from your last week. A number keeps that share of every allowance.'**
   String get poolLimitReserveHint;
 
   /// No description provided for @poolLeave.
@@ -6958,7 +6958,7 @@ abstract class AppL10n {
   /// No description provided for @statModels.
   ///
   /// In en, this message translates to:
-  /// **'Shared free models'**
+  /// **'Shared models'**
   String get statModels;
 
   /// No description provided for @statOnlineValue.
@@ -7018,13 +7018,13 @@ abstract class AppL10n {
   /// No description provided for @panelSharesPartner.
   ///
   /// In en, this message translates to:
-  /// **'Shares {models} free models with you, {percent} % of the models in this pool.'**
+  /// **'Shares {models} models with you, free for you, {percent} % of the models in this pool.'**
   String panelSharesPartner(String models, String percent);
 
   /// No description provided for @panelSharesYou.
   ///
   /// In en, this message translates to:
-  /// **'You share {connections} connections with {models} free models, {percent} % of the models in this pool.'**
+  /// **'You share {connections} connections with {models} models, {percent} % of the models in this pool.'**
   String panelSharesYou(String connections, String models, String percent);
 
   /// No description provided for @memberCaptionPartner.
@@ -7074,6 +7074,12 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'{count} requests today'**
   String graphRequestsToday(String count);
+
+  /// No description provided for @graphShareUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {total} requests used'**
+  String graphShareUsed(String used, String total);
 
   /// No description provided for @graphFreeToday.
   ///

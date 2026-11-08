@@ -2197,7 +2197,7 @@
     }
   },
   "poolLimitsTitle": "Share per partner",
-  "poolLimitsAutoHint": "Automatic and fair: every partner gets the same share; one who gives you more gets up to three times as much, one who only takes half. Your own requests always come first.",
+  "poolLimitsAutoHint": "Automatic and fair: every partner gets the same share; one who gives you more gets up to three times as much, one who only takes half. Of each connection you keep what you usually still need that day, judged from your last week; partners use the rest.",
   "poolPartnerCaps": "Today: {requests} requests · {tokens} tokens · {concurrent} at once",
   "@poolPartnerCaps": {
     "placeholders": {
@@ -2220,7 +2220,7 @@
   "poolLimitTokens": "Tokens per day",
   "poolLimitConcurrent": "Requests at once",
   "poolLimitReserve": "Kept for you (%)",
-  "poolLimitReserveHint": "The part of each connection's allowance partners never use.",
+  "poolLimitReserveHint": "Empty: as much as you usually still need today, from your last week. A number keeps that share of every allowance.",
   "poolLeave": "Leave pool",
   "poolClose": "Close pool",
   "poolLeaveConfirm": "Leave {name}? Partners lose access to your connections at once, and you to theirs.",
@@ -2388,7 +2388,7 @@
   "poolLoadFailed": "Pools could not be loaded.",
   "networkDescription": "Share free capacity with other NeoRouters, and let people help you manage this one.",
   "statBalance": "Your balance",
-  "statModels": "Shared free models",
+  "statModels": "Shared models",
   "statOnlineValue": "{online} of {total}",
   "@statOnlineValue": {
     "placeholders": {
@@ -2415,7 +2415,7 @@
   },
   "panelTook": "Took today",
   "panelGave": "Gave today",
-  "panelSharesPartner": "Shares {models} free models with you, {percent} % of the models in this pool.",
+  "panelSharesPartner": "Shares {models} models with you, free for you, {percent} % of the models in this pool.",
   "@panelSharesPartner": {
     "placeholders": {
       "models": {
@@ -2426,7 +2426,7 @@
       }
     }
   },
-  "panelSharesYou": "You share {connections} connections with {models} free models, {percent} % of the models in this pool.",
+  "panelSharesYou": "You share {connections} connections with {models} models, {percent} % of the models in this pool.",
   "@panelSharesYou": {
     "placeholders": {
       "connections": {
@@ -2475,6 +2475,17 @@
   "@graphRequestsToday": {
     "placeholders": {
       "count": {
+        "type": "String"
+      }
+    }
+  },
+  "graphShareUsed": "{used} of {total} requests used",
+  "@graphShareUsed": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "total": {
         "type": "String"
       }
     }
