@@ -56,7 +56,7 @@ test.before(async () => {
   await new Promise((resolve) => server.once('listening', resolve));
   base = `http://127.0.0.1:${server.address().port}`;
   mocks.alex = await createMockProvider({ models: ['ok-alex'] });
-  mocks.bea = await createMockProvider({ models: ['echo-bea', 'ok-bea'] });
+  mocks.bea = await createMockProvider({ models: ['echo-bea', 'ok-bea', 'hang-bea'] });
   mocks.cem = await createMockProvider({ models: ['ok-cem'] });
   await register('alex');
   await api('alex', 'patch', '/admin/settings', { registrationOpen: true });
@@ -299,6 +299,16 @@ test('a request the partner cannot serve does not use up the day\'s share', asyn
   await api('bea', 'put', `/pools/${poolId}/accounts/${people.bea.account}/share`, { shared: true });
   assert.equal((await chat('alex', 'pool', model)).status, 200);
   assert.equal(await givenToAlex(), before + 1, 'a served one is');
+});
+
+test('a request the partner cancels before the answer does not use up the day\'s share', async () => {
+  const model = await partnerModel('alex', 'bea', 'hang-bea');
+  const givenToAlex = async () => (await summary('bea')).partners.find((partner) => partner.name === 'alex').today.given.requests;
+  const before = await givenToAlex();
+  // Alex's router gives up early (as when it races several partners and drops the slower ones).
+  await assert.rejects(chat('alex', 'pool', model).timeout(800));
+  await new Promise((resolve) => setTimeout(resolve, 5_500));
+  assert.equal(await givenToAlex(), before, 'cancelled requests are not counted');
 });
 
 test('the quick switch pauses giving and using, and turning it on restores everything', async () => {

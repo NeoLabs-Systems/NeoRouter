@@ -187,17 +187,17 @@ async function execute(options) {
   // A partner's request: admitted within its share, and announced to the
   // partner's router as rate-limit headers.
   const share = sharePolicy.admit(key);
-  let served = false;
+  const outcome = { answered: false };
   try {
     res.set(share.headers);
-    const result = await run({ ...options, shareReserve: share.reserve, sharePoolId: share.poolId });
-    served = true;
-    return result;
+    return await run({ ...options, shareReserve: share.reserve, sharePoolId: share.poolId, shareOutcome: outcome });
   } catch (error) {
     throw peerSafeError(error);
   } finally {
-    // Only a request this side actually answered counts against the day's share.
-    share.release({ served });
+    // Only a request this side actually answered counts against the day's
+    // share: not one that failed, nor one the partner cancelled first (its
+    // router races several partners and drops the slower ones).
+    share.release({ served: outcome.answered });
   }
 }
 
@@ -212,7 +212,7 @@ function peerSafeError(error) {
   return new HttpError(error.status, error.code, error.message, error.details?.retryAfterSeconds ? { retryAfterSeconds: error.details.retryAfterSeconds } : undefined);
 }
 
-async function run({ req, res, key, format, body, freeOnly = false, canonical: preset = null, internal = false, shareReserve = null, sharePoolId = null }) {
+async function run({ req, res, key, format, body, freeOnly = false, canonical: preset = null, internal = false, shareReserve = null, sharePoolId = null, shareOutcome = null }) {
   const translator = translators[format];
   // A partner's request leaves no trace beyond counts: no headers about the
   // route, no stored error texts, no repeat detection, none of the owner's
@@ -302,6 +302,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
   let freesUpAt = null;
 
   const finish = (fields) => {
+    if (shareOutcome && fields.status === 'success') shareOutcome.answered = true;
     try {
       traffic.recordFinished({ key, accountId: fields.account_id, success: fields.status === 'success', tokens: (fields.input_tokens || 0) + (fields.output_tokens || 0) });
     } catch (error) {
