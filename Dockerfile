@@ -102,8 +102,9 @@ RUN apt-get update \
 ARG NEOROUTER_WEB_STAMP=
 
 WORKDIR /web
-# Right after the Web Client workflow replaces the archive, GitHub answers 504
-# or 404 for a little while, so the download keeps trying for up to 3 minutes.
+# GitHub's download link sometimes answers 504 for minutes at a time (also
+# right after the Web Client workflow replaces the archive); GitHub's API serves
+# the same file, so it is the fallback for the default URL.
 RUN set -eux; \
     echo "Web client for ${NEOROUTER_WEB_STAMP:-this build}"; \
     case "${NEOROUTER_CHANNEL:-beta}" in \
@@ -113,7 +114,13 @@ RUN set -eux; \
     esac; \
     url="${NEOROUTER_WEB_URL:-https://github.com/NeoLabs-Systems/NeoRouter/releases/download/${release}/neorouter-web.tar.gz}"; \
     echo "Downloading web client: $url"; \
-    curl -fsSL --retry 10 --retry-delay 5 --retry-max-time 180 --retry-all-errors -o web.tar.gz "$url"; \
+    if ! curl -fsSL --retry 3 --retry-delay 3 --retry-all-errors -o web.tar.gz "$url"; then \
+      test -z "${NEOROUTER_WEB_URL}"; \
+      echo "The download link failed; fetching the same archive through GitHub's API"; \
+      asset="$(curl -fsSL --retry 3 "https://api.github.com/repos/NeoLabs-Systems/NeoRouter/releases/tags/${release}" | tr ',' '\n' | grep -o 'https://api.github.com/repos/[^"]*/releases/assets/[0-9]*' | head -n 1)"; \
+      test -n "$asset"; \
+      curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors -H 'Accept: application/octet-stream' -o web.tar.gz "$asset"; \
+    fi; \
     tar -xzf web.tar.gz; \
     rm web.tar.gz; \
     test -f index.html; \

@@ -23,12 +23,15 @@ function writeClient(dir, marker) {
 }
 
 // Commands as a real machine would answer them, minus the network.
-function commands({ root, prebuilt }) {
+// directDown: GitHub's download link answers 504; its API still serves the file.
+function commands({ root, prebuilt, directDown = false }) {
   const calls = [];
   const run = (command, args, options = {}) => {
     calls.push([path.basename(command), ...args]);
     if (command === 'curl') {
       if (!prebuilt) return { status: 22 };
+      if (directDown && args.at(-1).includes('/releases/download/')) return { status: 22 };
+      if (args.at(-1).includes('/releases/tags/')) return { status: 0, stdout: JSON.stringify({ assets: [{ name: 'neorouter-web.tar.gz', url: 'https://api.github.com/repos/x/y/releases/assets/1' }] }) };
       const source = path.join(root, 'prebuilt');
       writeClient(source, 'prebuilt');
       return spawnSync('tar', ['-czf', args[args.indexOf('-o') + 1], '-C', source, '.']);
@@ -118,4 +121,13 @@ test('a new enough Flutter is left alone', () => {
 
 test('a Flutter that reports no version is left alone', () => {
   assert.ok(!buildWith('0.0.0-unknown').commands.includes('upgrade'));
+});
+
+test('when GitHub\'s download link fails, the same archive comes through its API', () => {
+  const ws = workspace();
+  const { run, calls } = commands({ root: ws.root, prebuilt: true, directDown: true });
+  const built = buildBundledWebClientIfPossible({ flutterAppDir: ws.appDir, webClientDir: ws.webDir, runCommand: run, commandExistsFn: () => false, channel: 'beta', toolsDir: ws.toolsDir, fail });
+  assert.equal(built, true);
+  assert.ok(calls.some((call) => call[0] === 'curl' && call.includes('Accept: application/octet-stream') && call.at(-1).endsWith('/releases/assets/1')));
+  assert.equal(fs.readFileSync(path.join(ws.webDir, 'index.html'), 'utf8'), 'prebuilt');
 });
