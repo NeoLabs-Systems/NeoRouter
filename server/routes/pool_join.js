@@ -8,6 +8,8 @@
 const pools = require('../services/pools/pool_service');
 const { publicOrigin } = require('../utils/public_origin');
 
+const GITHUB_URL = 'https://github.com/NeoLabs-Systems/NeoRouter';
+
 const TEXT = {
   en: {
     title: (pool) => `Invite to the pool "${pool}"`,
@@ -114,7 +116,7 @@ ${valid ? `<h1>${escape(t.heading)}</h1>
 <div class="error" id="error" role="alert">${escape(t.bad)}</div>
 </form>
 <p class="small">${escape(t.manual)}<br>${escape(t.once)}</p>
-<p class="small">${escape(t.none)} <a href="/">${escape(t.noneLink)}</a></p>
+<p class="small">${escape(t.none)} <a href="${GITHUB_URL}" target="_blank" rel="noopener">${escape(t.noneLink)}</a></p>
 <script>
 (function(){
   var input=document.getElementById('address'),error=document.getElementById('error');
@@ -132,7 +134,7 @@ ${valid ? `<h1>${escape(t.heading)}</h1>
 })();
 </script>` : `<h1>${escape(t.invalidTitle)}</h1>
 <p>${escape(t.invalid)}</p>
-<p class="small">${escape(t.none)} <a href="/">${escape(t.noneLink)}</a></p>`}
+<p class="small">${escape(t.none)} <a href="${GITHUB_URL}" target="_blank" rel="noopener">${escape(t.noneLink)}</a></p>`}
 </main>
 </body>
 </html>`;
