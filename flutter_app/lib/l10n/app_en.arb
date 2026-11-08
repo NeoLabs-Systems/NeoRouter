@@ -3019,13 +3019,27 @@
     }
   },
   "lmMemory": "Memory",
-  "lmMemoryUse": "{used} of {total} in use by local models",
-  "@lmMemoryUse": {
+  "lmMemoryModels": "Local models: {size}",
+  "@lmMemoryModels": {
     "placeholders": {
-      "used": {
+      "size": {
         "type": "String"
-      },
-      "total": {
+      }
+    }
+  },
+  "lmMemoryOthers": "Everything else: about {size} on average",
+  "@lmMemoryOthers": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "lmMemoryMeasuring": "Everything else: still measuring",
+  "lmMemoryFree": "Free for models: {size}",
+  "@lmMemoryFree": {
+    "placeholders": {
+      "size": {
         "type": "String"
       }
     }
@@ -3126,6 +3140,7 @@
   "lmRatingGreat": "Runs great",
   "lmRatingGood": "Runs well",
   "lmRatingSlow": "Runs, but slowly",
+  "lmRatingTight": "Tight on memory",
   "lmRatingTooBig": "Needs more memory",
   "lmRatingUnsupported": "Not on this system",
   "lmSizes": "{download} · needs {memory} memory",
@@ -3139,6 +3154,18 @@
       }
     }
   },
+  "lmSizesMeasured": "{download} · used {memory} here",
+  "@lmSizesMeasured": {
+    "placeholders": {
+      "download": {
+        "type": "String"
+      },
+      "memory": {
+        "type": "String"
+      }
+    }
+  },
+  "lmTightHint": "Fits this server, but other programs here usually use so much memory that it may not start.",
   "lmRecommended": "Recommended",
   "lmReadsImages": "Reads images",
   "lmManyLanguages": "Many languages",

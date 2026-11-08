@@ -147,16 +147,6 @@ class _AdminScreenState extends State<AdminScreen> {
     }
   }
 
-  String _privacyModelState(AppL10n t, Map<String, dynamic> model) {
-    if (model['enabled'] != true) return t.privacyModelOff;
-    return switch ('${model['status']}') {
-      'downloading' => t.privacyModelDownloading('${(((model['progress'] as num?) ?? 0) * 100).round()}'),
-      'loading' => t.privacyModelLoading,
-      'ready' => t.privacyModelReady,
-      'error' => t.privacyModelError('${model['error'] ?? ''}'),
-      _ => t.privacyModelIdle,
-    };
-  }
 
   List<_AdminSearchEntry> _index(AppL10n t) => <_AdminSearchEntry>[
         _AdminSearchEntry(t.users, _AdminTab.users, 'accounts konten people email username admin role delete disable'),
@@ -164,6 +154,7 @@ class _AdminScreenState extends State<AdminScreen> {
         _AdminSearchEntry(t.serverTitle, _AdminTab.server, 'version endpoint url capabilities server'),
         _AdminSearchEntry(t.updatesTitle, _AdminTab.server, 'update upgrade version channel beta stable github release aktualisieren'),
         _AdminSearchEntry(t.privacyModelTitle, _AdminTab.server, 'privacy filter openai datenschutz pii ai detection'),
+        _AdminSearchEntry(t.privacyModelTitle, _AdminTab.localModels, 'privacy filter openai datenschutz pii local model lokal'),
         _AdminSearchEntry(t.lmTab, _AdminTab.localModels, 'local lokal models modelle llama ollama gpu grafik download whisper speech tts embeddings self-hosted offline'),
         _AdminSearchEntry(t.metadataSources, _AdminTab.metadata, 'models.dev openrouter prices preise context intelligence'),
         _AdminSearchEntry(t.aaKey, _AdminTab.metadata, 'artificial analysis benchmark key api'),
@@ -292,7 +283,7 @@ class _AdminScreenState extends State<AdminScreen> {
               children: <Widget>[
                 SettingsRow(
                   label: t.privacyModelEnable,
-                  description: _privacyModelState(t, privacyModel),
+                  description: privacyFilterState(t, privacyModel),
                   control: Switch(
                     value: privacyModel['enabled'] == true,
                     onChanged: (value) => _guard(() => widget.controller.api.updateAdminSettings(<String, Object?>{'privacyModel': value})),

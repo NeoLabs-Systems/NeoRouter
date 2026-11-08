@@ -1,7 +1,8 @@
 'use strict';
 
 // Admin → Local models: what this server can run, installing, starting,
-// stopping, repairing and removing models, and who may use them.
+// stopping, repairing and removing models, who may use them, and the privacy
+// filter (a local model too, run inside NeoRouter).
 const express = require('express');
 const { z } = require('zod');
 const localModels = require('../services/local_models/local_model_service');
@@ -13,6 +14,7 @@ const router = express.Router();
 
 router.get('/', asyncRoute(async (_req, res) => res.json(await localModels.overview())));
 router.put('/access', validate(z.object({ level: z.enum(access.ACCESS) })), asyncRoute(async (req, res) => res.json(await localModels.setAccess(req.body.level))));
+router.put('/privacy-filter', validate(z.object({ enabled: z.boolean() })), asyncRoute(async (req, res) => res.json(await localModels.setPrivacyFilter(req.body.enabled))));
 router.post('/starter', asyncRoute(async (req, res) => res.status(202).json(await localModels.installStarter(req.auth.userId))));
 router.post('/:id/install', asyncRoute(async (req, res) => res.status(202).json(await localModels.install(req.auth.userId, [req.params.id]))));
 router.post('/:id/start', asyncRoute(async (req, res) => res.json(await localModels.setEnabled(req.params.id, true))));

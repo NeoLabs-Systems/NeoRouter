@@ -16,6 +16,8 @@ const hardware = require('../../server/services/local_models/hardware');
 const hfFiles = require('../../server/services/local_models/hf_files');
 const access = require('../../server/services/local_models/access');
 const localModels = require('../../server/services/local_models/local_model_service');
+const memory = require('../../server/services/local_models/memory');
+const privacyModel = require('../../server/services/processing/privacy_model');
 
 let server;
 let base;
@@ -76,6 +78,8 @@ test.before(async () => {
     gpu: { type: 'cuda', name: 'Test GPU', memoryMb: 24576, cuda: '13.0' }, disk: { freeMb: 500_000, totalMb: 1_000_000 },
   });
   hfFiles.resolve = async () => [];
+  // Other programs use 2 GB on average on this pretend server.
+  memory.setForTests({ others: 2048 });
   server = createApp().listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
   base = `http://127.0.0.1:${server.address().port}`;
@@ -91,6 +95,7 @@ test.after(async () => {
   Object.assign(engines, { engineFor: original.engineFor });
   Object.assign(hardware, { detect: original.detect });
   Object.assign(hfFiles, { resolve: original.resolve });
+  memory.setForTests(null);
   await mock.close();
   await new Promise((resolve) => server.close(resolve));
 });
@@ -163,7 +168,10 @@ test('other people get local models only when an admin shares them', async () =>
   assert.notEqual(after.status, 200);
 });
 
-test('a model that does not fit beside the running ones waits, and starts on "try again" once there is room', async () => {
+test('a model that does not fit beside the running ones waits, and starts on "try again" once there is room', async (t) => {
+  // Nothing else uses memory here, so only the fixed reserve is kept.
+  memory.setForTests({ others: 0 });
+  t.after(() => memory.setForTests({ others: 2048 }));
   assert.equal((await api('admin', 'post', '/admin/local-models/gemma-4-26b-a4b/install')).status, 202);
   await waitFor('gemma-4-26b-a4b', 'running');
   assert.equal((await api('admin', 'post', '/admin/local-models/qwen3.6-35b-a3b/install')).status, 202);
@@ -194,4 +202,30 @@ test('the starter set installs in one go', async () => {
   assert.equal(response.status, 202, JSON.stringify(response.body));
   for (const id of suggested) await waitFor(id, 'running');
   assert.deepEqual(response.body.starter, [], 'no suggestion once models are installed');
+});
+
+test('the privacy filter is switched on and off from the local models page and keeps its memory free', async (t) => {
+  privacyModel.setLibraryForTests(async () => ({ env: {}, pipeline: () => new Promise(() => {}) }));
+  t.after(async () => {
+    await api('admin', 'put', '/admin/local-models/privacy-filter', { enabled: false });
+    privacyModel.setLibraryForTests(() => import('@huggingface/transformers'));
+  });
+  const before = (await api('admin', 'get', '/admin/local-models')).body;
+  assert.equal(before.privacyFilter.enabled, false);
+  assert.equal(before.memory.othersMb, 2048);
+  assert.equal(before.memory.roomMb, 32768 - 2048 - 1024);
+  assert.equal((await api('user', 'put', '/admin/local-models/privacy-filter', { enabled: true })).status, 403);
+  const on = (await api('admin', 'put', '/admin/local-models/privacy-filter', { enabled: true })).body;
+  assert.equal(on.privacyFilter.enabled, true);
+  assert.equal(on.memory.usedMb, before.memory.usedMb + on.privacyFilter.memoryMb, 'its memory is kept free until it loads');
+  assert.equal((await api('admin', 'get', '/admin/settings')).body.privacyModel.enabled, true, 'the same setting as on the server page');
+});
+
+test('a model that has run is judged by the memory it really used', async () => {
+  memory.setForTests({ others: 2048, models: { 'qwen3.5-9b': 2000 } });
+  const overview = (await api('admin', 'get', '/admin/local-models')).body;
+  const model = overview.catalog.find((item) => item.id === 'qwen3.5-9b');
+  assert.equal(model.memoryMb, 2000);
+  assert.equal(model.measured, true);
+  memory.setForTests({ others: 2048 });
 });

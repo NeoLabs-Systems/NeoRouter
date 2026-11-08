@@ -4813,8 +4813,21 @@ class AppL10nEn extends AppL10n {
   String get lmMemory => 'Memory';
 
   @override
-  String lmMemoryUse(String used, String total) {
-    return '$used of $total in use by local models';
+  String lmMemoryModels(String size) {
+    return 'Local models: $size';
+  }
+
+  @override
+  String lmMemoryOthers(String size) {
+    return 'Everything else: about $size on average';
+  }
+
+  @override
+  String get lmMemoryMeasuring => 'Everything else: still measuring';
+
+  @override
+  String lmMemoryFree(String size) {
+    return 'Free for models: $size';
   }
 
   @override
@@ -4975,6 +4988,9 @@ class AppL10nEn extends AppL10n {
   String get lmRatingSlow => 'Runs, but slowly';
 
   @override
+  String get lmRatingTight => 'Tight on memory';
+
+  @override
   String get lmRatingTooBig => 'Needs more memory';
 
   @override
@@ -4984,6 +5000,15 @@ class AppL10nEn extends AppL10n {
   String lmSizes(String download, String memory) {
     return '$download · needs $memory memory';
   }
+
+  @override
+  String lmSizesMeasured(String download, String memory) {
+    return '$download · used $memory here';
+  }
+
+  @override
+  String get lmTightHint =>
+      'Fits this server, but other programs here usually use so much memory that it may not start.';
 
   @override
   String get lmRecommended => 'Recommended';

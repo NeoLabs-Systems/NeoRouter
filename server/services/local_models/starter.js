@@ -23,7 +23,7 @@ function pick(kind, machine, roomMb) {
 
 /** [{ id, name, kind, downloadMb, memoryMb }] that fit together, or [] when nothing does. */
 function suggest(machine) {
-  const budgetMb = machine.memory.totalMb - fit.RESERVE_MB;
+  const budgetMb = fit.roomMb(machine);
   const chosen = [];
   let usedMb = 0;
   for (const kind of KINDS) {

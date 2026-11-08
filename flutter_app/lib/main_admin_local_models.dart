@@ -37,6 +37,18 @@ IconData _kindIcon(String kind) => switch (kind) {
   _ => Icons.chat_bubble_outline_rounded,
 };
 
+/// What the privacy filter is doing, in a sentence (also used on the server page).
+String privacyFilterState(AppL10n t, Map<String, dynamic> filter) {
+  if (filter['enabled'] != true) return t.privacyModelOff;
+  return switch ('${filter['status']}') {
+    'downloading' => t.privacyModelDownloading('${(((filter['progress'] as num?) ?? 0) * 100).round()}'),
+    'loading' => t.privacyModelLoading,
+    'ready' => t.privacyModelReady,
+    'error' => t.privacyModelError('${filter['error'] ?? ''}'),
+    _ => t.privacyModelIdle,
+  };
+}
+
 /// Admin → Local models: this machine, the models on it and the ones that fit.
 class LocalModelsSection extends StatefulWidget {
   const LocalModelsSection({super.key, required this.controller});
@@ -167,6 +179,23 @@ class _LocalModelsSectionState extends State<LocalModelsSection> {
                 ),
           ],
         ),
+        // The privacy filter is a local model too, run inside NeoRouter.
+        SettingsGroup(
+          title: t.privacyModelTitle,
+          description: t.privacyModelHint,
+          children: <Widget>[
+            SettingsRow(
+              label: t.privacyModelEnable,
+              description: privacyFilterState(t, overview.privacyFilter),
+              control: _working.contains('privacy')
+                  ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : Switch(
+                      value: overview.privacyFilter['enabled'] == true,
+                      onChanged: (value) => _run('privacy', () => widget.controller.api.setPrivacyFilter(enabled: value)),
+                    ),
+            ),
+          ],
+        ),
         SettingsGroup(
           title: t.lmAccessTitle,
           children: <Widget>[
@@ -259,7 +288,8 @@ class _ServerCard extends StatelessWidget {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final gpu = overview.gpu;
-    final budget = overview.memoryBudgetMb;
+    final total = overview.memoryMb;
+    final others = overview.memoryOthersMb;
     final value = TextStyle(color: palette.textSoft, fontSize: 13);
     return SettingsGroup(
       title: t.lmThisServer,
@@ -279,15 +309,18 @@ class _ServerCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              UsageBar(fraction: budget == 0 ? 0 : overview.memoryUsedMb / budget),
+              // The whole memory: what everything else uses on average plus the local models.
+              UsageBar(fraction: total == 0 ? 0 : ((others ?? 0) + overview.memoryUsedMb) / total),
               const SizedBox(height: 8),
               Text(
                 <String>[
-                  t.lmMemoryUse(formatMegabytes(context, overview.memoryUsedMb), formatMegabytes(context, budget)),
-                  if (overview.memoryLimited) t.lmMemoryLimited,
-                ].join(' '),
+                  t.lmMemoryModels(formatMegabytes(context, overview.memoryUsedMb)),
+                  others == null ? t.lmMemoryMeasuring : t.lmMemoryOthers(formatMegabytes(context, others)),
+                  t.lmMemoryFree(formatMegabytes(context, (overview.memoryRoomMb - overview.memoryUsedMb).clamp(0, total))),
+                ].join(' · '),
                 style: TextStyle(fontSize: 13, color: palette.textSoft, height: 1.45),
               ),
+              if (overview.memoryLimited) Text(t.lmMemoryLimited, style: TextStyle(fontSize: 13, color: palette.textSoft, height: 1.45)),
             ],
           ),
         ),
@@ -359,6 +392,10 @@ class _InstalledRow extends StatelessWidget {
     _ => model.state == 'download_failed' ? t.lmProblemDownload : t.lmProblemStart,
   };
 
+  // Once measured, how much memory it really takes.
+  String _withMemory(BuildContext context, String text) =>
+      model.memoryMeasured && model.memoryMb != null ? '$text · ${formatMegabytes(context, model.memoryMb!)}' : text;
+
   String _withTimeLeft(AppL10n t, String text) {
     final left = _timeLeft(t);
     return left == null ? text : '$text · $left';
@@ -374,7 +411,7 @@ class _InstalledRow extends StatelessWidget {
         _ => (t.lmPreparing, PillTone.neutral),
       },
       'download_failed' => (t.lmDownloadFailed(_problem(t)), PillTone.error),
-      'running' => (model.onGpu == true ? t.lmRunningGpu : model.onGpu == false ? t.lmRunningCpu : t.lmRunning, PillTone.success),
+      'running' => (_withMemory(context, model.onGpu == true ? t.lmRunningGpu : model.onGpu == false ? t.lmRunningCpu : t.lmRunning), PillTone.success),
       'starting' => (t.lmStarting, PillTone.warning),
       'restarting' => (t.lmRestarting, PillTone.warning),
       'failed' => (t.lmFailed(_problem(t)), PillTone.error),
@@ -475,6 +512,7 @@ class _CatalogRowState extends State<_CatalogRow> {
     'great' => (t.lmRatingGreat, PillTone.success),
     'good' => (t.lmRatingGood, PillTone.success),
     'slow' => (t.lmRatingSlow, PillTone.warning),
+    'tight' => (t.lmRatingTight, PillTone.warning),
     'too_big' => (t.lmRatingTooBig, PillTone.error),
     _ => (t.lmRatingUnsupported, PillTone.error),
   };
@@ -512,6 +550,10 @@ class _CatalogRowState extends State<_CatalogRow> {
         ),
         const SizedBox(height: 4),
         Text(localizedText(model.summary, language), style: TextStyle(color: palette.textSoft, fontSize: 13, height: 1.45)),
+        if (model.rating == 'tight') ...<Widget>[
+          const SizedBox(height: 4),
+          Text(t.lmTightHint, style: TextStyle(color: palette.textMuted, fontSize: 12.5, height: 1.45)),
+        ],
         const SizedBox(height: 8),
         Wrap(
           spacing: 6,
@@ -519,7 +561,7 @@ class _CatalogRowState extends State<_CatalogRow> {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: <Widget>[
             MetaPill(label: rating, tone: tone),
-            MetaPill(label: t.lmSizes(formatMegabytes(context, model.downloadMb), formatMegabytes(context, model.memoryMb))),
+            MetaPill(label: (model.measured ? t.lmSizesMeasured : t.lmSizes)(formatMegabytes(context, model.downloadMb), formatMegabytes(context, model.memoryMb))),
             if (model.vision) MetaPill(label: t.lmReadsImages, icon: Icons.image_outlined),
             InkWell(
               borderRadius: BorderRadius.circular(AppRadius.tag),

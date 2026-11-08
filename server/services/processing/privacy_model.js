@@ -19,6 +19,8 @@ const SETTING = 'privacy_model_enabled';
 const IDLE_MS = 15 * 60_000;
 const MAX_CHARS = 20_000;
 const MIN_SCORE = 0.5;
+// Roughly what it takes while loaded; local models keep this free while it is on.
+const MEMORY_MB = 2048;
 // The model's labels → the shield's categories.
 const CATEGORY_OF = {
   private_person: 'person',
@@ -44,7 +46,7 @@ function enabled() {
 }
 
 function status() {
-  return { enabled: enabled(), model: MODEL, ...state };
+  return { enabled: enabled(), model: MODEL, memoryMb: MEMORY_MB, ...state };
 }
 
 async function library() {
@@ -174,4 +176,4 @@ function setLibraryForTests(fake) {
   state.status = 'off';
 }
 
-module.exports = { status, setEnabled, resume, detect, enabled, setLibraryForTests, MODEL };
+module.exports = { status, setEnabled, resume, detect, enabled, setLibraryForTests, MODEL, MEMORY_MB };

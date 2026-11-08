@@ -455,8 +455,15 @@ class LocalModelsOverview {
   }
 
   int? get diskFreeMb => _int(_map(_system['disk'])['freeMb']);
+  /// Taken by local models (and kept for the privacy filter while it is on).
   int get memoryUsedMb => _int(_map(raw['memory'])['usedMb']) ?? 0;
-  int get memoryBudgetMb => _int(_map(raw['memory'])['budgetMb']) ?? 0;
+  /// What everything else uses on average; null until it has been measured.
+  int? get memoryOthersMb => _int(_map(raw['memory'])['othersMb']);
+  /// What models may use beside everything else.
+  int get memoryRoomMb => _int(_map(raw['memory'])['roomMb']) ?? 0;
+  /// The privacy filter: enabled, status (off · downloading · loading · ready · idle · error), progress, memoryMb.
+  Map<String, dynamic> get privacyFilter => _map(raw['privacyFilter']);
+  bool get _privacyFilterBusy => const <String>{'downloading', 'loading'}.contains(privacyFilter['status']);
   /// Text, safety and embedding models need llama.cpp, which runs on macOS and Linux.
   bool get textModelsSupported => _map(_map(raw['engines'])['llama_cpp'])['ok'] == true;
   bool get everyoneMayUse => raw['access'] == 'everyone';
@@ -468,7 +475,7 @@ class LocalModelsOverview {
   List<LocalModel> get installed => ((raw['installed'] as List?) ?? const <Object>[]).map((item) => LocalModel(_map(item))).toList();
   List<LocalCatalogModel> get catalog => ((raw['catalog'] as List?) ?? const <Object>[]).map((item) => LocalCatalogModel(_map(item))).toList();
   /// Something is changing (a download, a start): worth checking again soon.
-  bool get busy => installed.any((model) => model.busy);
+  bool get busy => _privacyFilterBusy || installed.any((model) => model.busy);
 }
 
 /// Text in the dashboard's language, from a server value with en and de.
@@ -498,6 +505,8 @@ class LocalModel {
   String? get problemMessage => _map(raw['problem'])['message'] as String?;
   bool? get onGpu => raw['gpu'] as bool?;
   int? get memoryMb => _int(raw['memoryMb']);
+  /// memoryMb is what it really used while running here (not an estimate).
+  bool get memoryMeasured => raw['memoryMeasured'] == true;
 }
 
 class LocalCatalogModel {
@@ -516,6 +525,8 @@ class LocalCatalogModel {
   bool get diskOk => raw['diskOk'] != false;
   int get downloadMb => _int(raw['downloadMb']) ?? 0;
   int get memoryMb => _int(raw['memoryMb']) ?? 0;
+  /// memoryMb is what it really used while it ran here (not an estimate).
+  bool get measured => raw['measured'] == true;
   String get license => raw['license'] as String? ?? '';
   /// 'many', or the two-letter languages it speaks.
   Object? get languages => raw['languages'];

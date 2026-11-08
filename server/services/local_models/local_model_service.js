@@ -18,6 +18,8 @@ const llamaCpp = require('./runtimes/llama_cpp');
 const { Runner } = require('./runner');
 const store = require('./store');
 const access = require('./access');
+const memory = require('./memory');
+const privacyFilter = require('../processing/privacy_model');
 const { HttpError } = require('../../middleware/error_handler');
 const { createLogger } = require('../../utils/logger');
 
@@ -52,20 +54,45 @@ function filesOf(entry) {
 
 // ------------------------------------------------------------ running
 
-// Memory taken by models that are running or about to.
+const ACTIVE = new Set(['starting', 'running', 'restarting']);
+
+// What a model takes: its average while it ran here, else the estimate.
+const modelMemory = (entry) => fit.needs(entry, memory.modelMb(entry.id)).memoryMb;
+
+// Kept for the privacy filter while it is on but not loaded (once loaded, it
+// is part of what everything else uses).
+function privacyReserveMb() {
+  const filter = privacyFilter.status();
+  return filter.enabled && filter.status !== 'ready' ? filter.memoryMb : 0;
+}
+
+// Memory taken by models that are running or about to, and the privacy filter.
 function memoryInUse(exceptId = null) {
-  let used = 0;
+  let used = privacyReserveMb();
   for (const [id, runner] of runners) {
-    if (id !== exceptId && ['starting', 'running', 'restarting'].includes(runner.state)) used += fit.needs(catalog.get(id)).memoryMb;
+    if (id !== exceptId && ACTIVE.has(runner.state)) used += modelMemory(catalog.get(id));
   }
   return used;
+}
+
+// The models running now, for the memory measurements.
+function runningProcesses() {
+  return [...runners].filter(([, runner]) => runner.state === 'running' && runner.instance?.proc?.child?.pid)
+    .map(([id, runner]) => ({ id, pid: runner.instance.proc.child.pid }));
+}
+
+// The machine with what everything else uses on average.
+async function machineNow({ fresh = false } = {}) {
+  if (fresh) await memory.refresh();
+  const machine = await hardware.detect({ fresh });
+  return { ...machine, memory: { ...machine.memory, othersMb: memory.othersMb() } };
 }
 
 function runnerFor(id) {
   if (!runners.has(id)) {
     const runner = new Runner(id, async () => {
       const entry = entryOrThrow(id);
-      return { entry, files: filesOf(entry), hardware: await hardware.detect() };
+      return { entry, files: filesOf(entry), hardware: await machineNow() };
     });
     runner.on('change', () => access.scheduleSync());
     runner.on('gave-up', () => autoRepair(id));
@@ -78,7 +105,7 @@ function runnerFor(id) {
 async function startModel(id) {
   const entry = entryOrThrow(id);
   const runner = runnerFor(id);
-  const assessed = fit.assess(entry, await hardware.detect(), { usedMb: memoryInUse(id) });
+  const assessed = fit.assess(entry, await machineNow({ fresh: true }), { usedMb: memoryInUse(id), measuredMb: memory.modelMb(id) });
   if (!assessed.fitsNow) {
     runner.refuse({ code: 'not_enough_memory', message: 'Not enough free memory. Stop another model first.' });
     return;
@@ -99,7 +126,7 @@ function download(id, { verify = false } = {}) {
 // ------------------------------------------------------------ actions
 
 async function install(userId, ids) {
-  const machine = await hardware.detect({ fresh: true });
+  const machine = await machineNow({ fresh: true });
   const entries = ids.map(entryOrThrow);
   for (const entry of entries) {
     if (store.get(entry.id)) throw new HttpError(409, 'LOCAL_MODEL_INSTALLED', 'This model is already installed.');
@@ -118,7 +145,7 @@ async function install(userId, ids) {
 
 // The suggested first set for this machine, all at once.
 async function installStarter(userId) {
-  const ids = starter.suggest(await hardware.detect({ fresh: true })).map((item) => item.id).filter((id) => !store.get(id));
+  const ids = starter.suggest(await machineNow({ fresh: true })).map((item) => item.id).filter((id) => !store.get(id));
   if (!ids.length) throw new HttpError(422, 'LOCAL_MODEL_NO_STARTER', 'No starter set fits this server.');
   return install(userId, ids);
 }
@@ -149,6 +176,7 @@ async function remove(id) {
   installer.cancel(id);
   await runners.get(id)?.stop();
   runners.delete(id);
+  memory.forget(id);
   store.remove(id);
   fs.rmSync(paths.modelDir(id), { recursive: true, force: true });
   access.scheduleSync();
@@ -179,6 +207,11 @@ function autoRepair(id) {
 
 async function setAccess(level) {
   access.setLevel(level);
+  return overview();
+}
+
+async function setPrivacyFilter(enabled) {
+  privacyFilter.setEnabled(enabled);
   return overview();
 }
 
@@ -216,13 +249,14 @@ function installedView(row) {
     enabled: row.enabled,
     progress,
     problem: progress?.error || runner?.problem || null,
-    memoryMb: entry ? fit.needs(entry).memoryMb : null,
+    memoryMb: entry ? modelMemory(entry) : null,
+    memoryMeasured: memory.modelMb(row.id) !== null,
     gpu: runner?.instance ? runner.instance.gpu : null,
   };
 }
 
 async function overview() {
-  const machine = await hardware.detect();
+  const machine = await machineNow();
   const installed = store.list();
   const ids = new Set(installed.map((row) => row.id));
   const usedMb = memoryInUse();
@@ -238,7 +272,10 @@ async function overview() {
       llama_cpp: { ...engines.engineFor('llama_cpp').support(machine), ...llamaCpp.status(machine) },
       transformers: engines.engineFor('transformers').support(machine),
     },
-    memory: { usedMb, budgetMb: Math.max(0, machine.memory.totalMb - fit.RESERVE_MB) },
+    // usedMb: local models (and the privacy filter's reserve); othersMb: what
+    // everything else uses on average; roomMb: what models may use beside it.
+    memory: { usedMb, othersMb: machine.memory.othersMb, roomMb: fit.roomMb(machine) },
+    privacyFilter: privacyFilter.status(),
     access: access.level(),
     starter: installed.length ? [] : starter.suggest(machine),
     installed: installed.map(installedView),
@@ -252,7 +289,7 @@ async function overview() {
       recommended: entry.recommended,
       features: entry.features,
       installed: ids.has(entry.id),
-      ...fit.assess(entry, machine, { usedMb }),
+      ...fit.assess(entry, machine, { usedMb, measuredMb: memory.modelMb(entry.id) }),
     })),
   };
 }
@@ -266,6 +303,7 @@ async function overview() {
  */
 async function resume() {
   try {
+    memory.start(runningProcesses);
     endOrphans();
     const rows = store.list().filter((row) => catalog.get(row.id));
     for (const row of rows.filter((item) => item.status === 'downloading')) download(row.id);
@@ -289,6 +327,7 @@ async function resume() {
 }
 
 async function shutdown() {
+  memory.stop();
   installer.cancelAll();
   await Promise.all([...runners.values()].map((runner) => runner.stop()));
 }
@@ -300,6 +339,6 @@ async function resetForTests() {
 }
 
 module.exports = {
-  overview, install, installStarter, retry, setEnabled, remove, repair, setAccess,
+  overview, install, installStarter, retry, setEnabled, remove, repair, setAccess, setPrivacyFilter,
   servedModels, runningInstance, resume, shutdown, resetForTests,
 };

@@ -8467,11 +8467,29 @@ abstract class AppL10n {
   /// **'Memory'**
   String get lmMemory;
 
-  /// No description provided for @lmMemoryUse.
+  /// No description provided for @lmMemoryModels.
   ///
   /// In en, this message translates to:
-  /// **'{used} of {total} in use by local models'**
-  String lmMemoryUse(String used, String total);
+  /// **'Local models: {size}'**
+  String lmMemoryModels(String size);
+
+  /// No description provided for @lmMemoryOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything else: about {size} on average'**
+  String lmMemoryOthers(String size);
+
+  /// No description provided for @lmMemoryMeasuring.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything else: still measuring'**
+  String get lmMemoryMeasuring;
+
+  /// No description provided for @lmMemoryFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free for models: {size}'**
+  String lmMemoryFree(String size);
 
   /// No description provided for @lmMemoryLimited.
   ///
@@ -8743,6 +8761,12 @@ abstract class AppL10n {
   /// **'Runs, but slowly'**
   String get lmRatingSlow;
 
+  /// No description provided for @lmRatingTight.
+  ///
+  /// In en, this message translates to:
+  /// **'Tight on memory'**
+  String get lmRatingTight;
+
   /// No description provided for @lmRatingTooBig.
   ///
   /// In en, this message translates to:
@@ -8760,6 +8784,18 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'{download} · needs {memory} memory'**
   String lmSizes(String download, String memory);
+
+  /// No description provided for @lmSizesMeasured.
+  ///
+  /// In en, this message translates to:
+  /// **'{download} · used {memory} here'**
+  String lmSizesMeasured(String download, String memory);
+
+  /// No description provided for @lmTightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Fits this server, but other programs here usually use so much memory that it may not start.'**
+  String get lmTightHint;
 
   /// No description provided for @lmRecommended.
   ///

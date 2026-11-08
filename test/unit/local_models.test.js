@@ -70,6 +70,46 @@ test('fit: small models run anywhere, big ones need memory, a graphics card make
   assert.equal(fit.assess(mid, machine({ disk: { freeMb: 2000, totalMb: 10_000 } })).diskOk, false);
 });
 
+test('fit: measured memory beats the estimate, and what else runs leaves less room', () => {
+  const mid = catalog.get('qwen3.5-9b');
+  const estimate = fit.assess(mid, machine()).memoryMb;
+  const measured = fit.assess(mid, machine(), { measuredMb: 5000 });
+  assert.equal(measured.memoryMb, 5000);
+  assert.equal(measured.measured, true);
+  assert.ok(estimate > 5000);
+  // Without measurements only the fixed reserve is kept.
+  assert.equal(fit.roomMb(machine()), 16384 - fit.RESERVE_MB);
+  // Other programs using 9 GB on average leave 16 - 9 - 1 GB of headroom.
+  const busy = machine({ memory: { totalMb: 16384, limited: false, othersMb: 9216 } });
+  assert.equal(fit.roomMb(busy), 16384 - 9216 - fit.HEADROOM_MB);
+  // Fits the machine, but not beside what it normally runs: tight, still installable.
+  const tight = fit.assess(mid, busy);
+  assert.equal(tight.rating, 'tight');
+  assert.equal(tight.fitsNow, false);
+  assert.equal(fit.assess(catalog.get('gpt-oss-120b'), busy).rating, 'too_big');
+  assert.equal(fit.assess(catalog.get('qwen3.5-0.8b'), busy).rating, 'good');
+});
+
+test('memory: averages what was measured, per model and for everything else', () => {
+  const memory = require('../../server/services/local_models/memory');
+  memory.setForTests({ others: 6000, models: { 'qwen3.5-4b': 3300 } });
+  assert.equal(memory.othersMb(), 6000);
+  assert.equal(memory.modelMb('qwen3.5-4b'), 3300);
+  assert.equal(memory.modelMb('whisper-base'), null);
+  memory.forget('qwen3.5-4b');
+  assert.equal(memory.modelMb('qwen3.5-4b'), null);
+  memory.setForTests(null);
+});
+
+test('memory: measures this machine', async () => {
+  const memory = require('../../server/services/local_models/memory');
+  memory.setForTests(null);
+  await memory.refresh();
+  const others = memory.othersMb();
+  assert.ok(others > 0 && others < os.totalmem() / (1024 * 1024), `${others} MB`);
+  memory.setForTests(null);
+});
+
 test('fit: speech models work everywhere, text models only where llama.cpp runs', () => {
   const windows = machine({ platform: 'win32' });
   assert.equal(fit.assess(catalog.get('whisper-base'), windows).rating, 'great');
@@ -210,7 +250,7 @@ test('stopping a model ends its process and does not restart it', async (t) => {
 test('the starter set is a text model, speech recognition and a voice that fit together', () => {
   const fits = (machineSpec) => {
     const set = starter.suggest(machineSpec);
-    const budget = machineSpec.memory.totalMb - fit.RESERVE_MB;
+    const budget = fit.roomMb(machineSpec);
     assert.ok(set.reduce((sum, item) => sum + item.memoryMb, 0) <= budget);
     return set;
   };

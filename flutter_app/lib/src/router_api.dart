@@ -224,6 +224,9 @@ class RouterApi {
   Future<LocalModelsOverview> setLocalModelsAccess({required bool everyone}) async =>
       LocalModelsOverview(await client.putJson('$_base/admin/local-models/access', <String, Object>{'level': everyone ? 'everyone' : 'admins'}));
 
+  Future<LocalModelsOverview> setPrivacyFilter({required bool enabled}) async =>
+      LocalModelsOverview(await client.putJson('$_base/admin/local-models/privacy-filter', <String, Object>{'enabled': enabled}));
+
   // ---- updates --------------------------------------------------------------
   Future<Map<String, dynamic>> updateStatus() => client.get('$_base/admin/update');
   Future<Map<String, dynamic>> checkForUpdate() => client.post('$_base/admin/update/check');
