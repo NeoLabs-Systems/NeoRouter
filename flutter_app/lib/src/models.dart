@@ -428,3 +428,89 @@ class PoolsSummary {
   bool get keepSensitivePrivate => _map(raw['privacy'])['keepSensitivePrivate'] != false;
   int get maxPools => _int(raw['maxPools']) ?? 10;
 }
+
+/// Admin → Local models: this machine, what is installed and what could be.
+class LocalModelsOverview {
+  LocalModelsOverview(this.raw);
+  final Map<String, dynamic> raw;
+
+  Map<String, dynamic> get _system => _map(raw['system']);
+  String get cpuName => '${_map(_system['cpu'])['name'] ?? ''}';
+  int get cpuCores => _int(_map(_system['cpu'])['cores']) ?? 0;
+  int get memoryMb => _int(_system['memoryMb']) ?? 0;
+  bool get memoryLimited => _system['memoryLimited'] == true;
+  /// Graphics a model can run on, or null (then it runs on the processor).
+  ({String name, String type, int memoryMb})? get gpu {
+    final gpu = _system['gpu'];
+    if (gpu is! Map) return null;
+    return (name: '${gpu['name']}', type: '${gpu['type']}', memoryMb: _int(gpu['memoryMb']) ?? 0);
+  }
+
+  int? get diskFreeMb => _int(_map(_system['disk'])['freeMb']);
+  int get memoryUsedMb => _int(_map(raw['memory'])['usedMb']) ?? 0;
+  int get memoryBudgetMb => _int(_map(raw['memory'])['budgetMb']) ?? 0;
+  /// Text, safety and embedding models need llama.cpp, which runs on macOS and Linux.
+  bool get textModelsSupported => _map(_map(raw['engines'])['llama_cpp'])['ok'] == true;
+  bool get everyoneMayUse => raw['access'] == 'everyone';
+  /// A first set for this machine, offered while nothing is installed.
+  List<({String id, String name, int downloadMb})> get starter => ((raw['starter'] as List?) ?? const <Object>[])
+      .map((item) => _map(item))
+      .map((item) => (id: '${item['id']}', name: '${item['name']}', downloadMb: _int(item['downloadMb']) ?? 0))
+      .toList();
+  List<LocalModel> get installed => ((raw['installed'] as List?) ?? const <Object>[]).map((item) => LocalModel(_map(item))).toList();
+  List<LocalCatalogModel> get catalog => ((raw['catalog'] as List?) ?? const <Object>[]).map((item) => LocalCatalogModel(_map(item))).toList();
+  /// Something is changing (a download, a start): worth checking again soon.
+  bool get busy => installed.any((model) => model.busy);
+}
+
+/// Text in the dashboard's language, from a server value with en and de.
+String localizedText(Object? value, String languageCode) {
+  final map = _map(value);
+  return '${map[languageCode] ?? map['en'] ?? ''}';
+}
+
+class LocalModel {
+  LocalModel(this.raw);
+  final Map<String, dynamic> raw;
+
+  String get id => raw['id'] as String;
+  String get name => raw['name'] as String? ?? id;
+  String get kind => raw['kind'] as String? ?? 'chat';
+  /// downloading · download_failed · stopped · starting · running · restarting · failed
+  String get state => raw['state'] as String? ?? 'stopped';
+  bool get enabled => raw['enabled'] == true;
+  bool get busy => const <String>{'downloading', 'starting', 'restarting'}.contains(state);
+  bool get installedFiles => state != 'downloading' && state != 'download_failed';
+  String? get phase => _map(raw['progress'])['phase'] as String?;
+  int get doneBytes => _int(_map(raw['progress'])['doneBytes']) ?? 0;
+  int get totalBytes => _int(_map(raw['progress'])['totalBytes']) ?? 0;
+  /// Download time left at the current speed, once it is known.
+  int? get secondsLeft => _int(_map(raw['progress'])['secondsLeft']);
+  String? get problemCode => _map(raw['problem'])['code'] as String?;
+  String? get problemMessage => _map(raw['problem'])['message'] as String?;
+  bool? get onGpu => raw['gpu'] as bool?;
+  int? get memoryMb => _int(raw['memoryMb']);
+}
+
+class LocalCatalogModel {
+  LocalCatalogModel(this.raw);
+  final Map<String, dynamic> raw;
+
+  String get id => raw['id'] as String;
+  String get name => raw['name'] as String? ?? id;
+  String get kind => raw['kind'] as String? ?? 'chat';
+  Object? get summary => raw['summary'];
+  bool get recommended => raw['recommended'] == true;
+  bool get installed => raw['installed'] == true;
+  /// great · good · slow · too_big · unsupported
+  String get rating => raw['rating'] as String? ?? 'unsupported';
+  bool get runs => rating != 'too_big' && rating != 'unsupported';
+  bool get diskOk => raw['diskOk'] != false;
+  int get downloadMb => _int(raw['downloadMb']) ?? 0;
+  int get memoryMb => _int(raw['memoryMb']) ?? 0;
+  String get license => raw['license'] as String? ?? '';
+  /// 'many', or the two-letter languages it speaks.
+  Object? get languages => raw['languages'];
+  bool get vision => _map(raw['features'])['vision'] == true;
+  bool get tools => _map(raw['features'])['tools'] == true;
+}

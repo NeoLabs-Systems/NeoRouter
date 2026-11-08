@@ -1557,7 +1557,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get adminDescription =>
-      'Diesen Server betreiben: Konten, Registrierung, Server-Details und Modell-Metadaten.';
+      'Diesen Server betreiben: Konten, Registrierung, Server-Details, lokale Modelle und Modell-Metadaten.';
 
   @override
   String get adminSearchHint =>
@@ -4794,4 +4794,296 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get priorityLowLabel => 'Niedrige Priorität';
+
+  @override
+  String get lmTab => 'Lokale Modelle';
+
+  @override
+  String get lmIntro =>
+      'Lass KI-Modelle auf diesem Server laufen. NeoRouter zeigt, was passt, lädt es herunter, hält es am Laufen und behebt Probleme selbst.';
+
+  @override
+  String get lmThisServer => 'Dieser Server';
+
+  @override
+  String get lmProcessor => 'Prozessor';
+
+  @override
+  String lmProcessorValue(String name, String cores) {
+    return '$name · $cores Kerne';
+  }
+
+  @override
+  String get lmMemory => 'Arbeitsspeicher';
+
+  @override
+  String lmMemoryUse(String used, String total) {
+    return '$used von $total durch lokale Modelle belegt';
+  }
+
+  @override
+  String get lmMemoryLimited => 'Durch den Container begrenzt.';
+
+  @override
+  String get lmGraphics => 'Grafik';
+
+  @override
+  String lmGraphicsValue(String name, String memory) {
+    return '$name · $memory nutzbar';
+  }
+
+  @override
+  String get lmNoGraphics =>
+      'Keine gefunden. Modelle laufen auf dem Prozessor.';
+
+  @override
+  String get lmDisk => 'Freier Speicherplatz';
+
+  @override
+  String get lmTextUnsupported =>
+      'Text-, Sicherheits- und Embedding-Modelle brauchen macOS oder Linux. Sprach- und Transkriptionsmodelle laufen hier.';
+
+  @override
+  String get lmInstalledTitle => 'Deine Modelle';
+
+  @override
+  String get lmInstalledEmpty =>
+      'Noch keine Modelle. Wähle unten eins aus: NeoRouter lädt es herunter und startet es für dich.';
+
+  @override
+  String get lmRunning => 'Läuft';
+
+  @override
+  String get lmRunningGpu => 'Läuft auf der Grafikkarte';
+
+  @override
+  String get lmRunningCpu => 'Läuft auf dem Prozessor';
+
+  @override
+  String get lmStarting => 'Wird gestartet …';
+
+  @override
+  String get lmRestarting => 'Startet nach einem Problem neu …';
+
+  @override
+  String get lmStopped => 'Gestoppt';
+
+  @override
+  String get lmPreparing => 'Wird vorbereitet …';
+
+  @override
+  String lmDownloading(String done, String total) {
+    return 'Wird heruntergeladen · $done von $total';
+  }
+
+  @override
+  String lmGettingEngine(String done, String total) {
+    return 'Engine wird eingerichtet · $done von $total';
+  }
+
+  @override
+  String get lmChecking => 'Dateien werden geprüft …';
+
+  @override
+  String lmDownloadFailed(String reason) {
+    return 'Download abgebrochen. $reason';
+  }
+
+  @override
+  String lmFailed(String reason) {
+    return 'Gestoppt. $reason';
+  }
+
+  @override
+  String get lmProblemMemory =>
+      'Nicht genug freier Speicher: stoppe zuerst ein anderes Modell.';
+
+  @override
+  String get lmProblemDisk => 'Nicht genug freier Speicherplatz.';
+
+  @override
+  String get lmProblemCrashed =>
+      'Es ist immer wieder unerwartet stehen geblieben. Reparieren prüft die Dateien und startet es neu.';
+
+  @override
+  String get lmProblemNotAnswering =>
+      'Es hat nicht mehr geantwortet. Reparieren prüft die Dateien und startet es neu.';
+
+  @override
+  String get lmProblemStart =>
+      'Es ließ sich nicht starten. Reparieren prüft die Dateien und startet es neu.';
+
+  @override
+  String get lmProblemDownload =>
+      'Prüfe die Internetverbindung und versuche es erneut.';
+
+  @override
+  String get lmRepair => 'Reparieren';
+
+  @override
+  String get lmRemove => 'Entfernen';
+
+  @override
+  String get lmCancelDownload => 'Download abbrechen';
+
+  @override
+  String lmRemoveTitle(String name) {
+    return '$name entfernen?';
+  }
+
+  @override
+  String get lmRemoveConfirm =>
+      'Die Dateien werden von diesem Server gelöscht. Du kannst es jederzeit wieder installieren.';
+
+  @override
+  String get lmAccessTitle => 'Wer sie nutzen darf';
+
+  @override
+  String get lmAccessEveryone => 'Alle auf diesem Server';
+
+  @override
+  String get lmAccessHint =>
+      'Aus: nur Admins. An: alle können „NeoRouter Local“ unter Verbindungen hinzufügen. Alle Anfragen teilen sich diesen Rechner.';
+
+  @override
+  String get lmAddTitle => 'Modell hinzufügen';
+
+  @override
+  String get lmAddHint =>
+      'Passend für diesen Server ausgewählt. Die Größe ist der Download; Speicher ist, was das Modell im Betrieb braucht.';
+
+  @override
+  String get lmKindAll => 'Alle';
+
+  @override
+  String get lmKindChat => 'Text';
+
+  @override
+  String get lmKindModeration => 'Sicherheit';
+
+  @override
+  String get lmKindEmbedding => 'Embeddings';
+
+  @override
+  String get lmKindTranscription => 'Transkription';
+
+  @override
+  String get lmKindSpeech => 'Sprachausgabe';
+
+  @override
+  String get lmRatingGreat => 'Läuft sehr gut';
+
+  @override
+  String get lmRatingGood => 'Läuft gut';
+
+  @override
+  String get lmRatingSlow => 'Läuft, aber langsam';
+
+  @override
+  String get lmRatingTooBig => 'Braucht mehr Speicher';
+
+  @override
+  String get lmRatingUnsupported => 'Nicht auf diesem System';
+
+  @override
+  String lmSizes(String download, String memory) {
+    return '$download · braucht $memory Speicher';
+  }
+
+  @override
+  String get lmRecommended => 'Empfohlen';
+
+  @override
+  String get lmReadsImages => 'Liest Bilder';
+
+  @override
+  String get lmManyLanguages => 'Viele Sprachen';
+
+  @override
+  String get lmInstall => 'Installieren';
+
+  @override
+  String get lmInstalled => 'Installiert';
+
+  @override
+  String get lmNoDisk => 'Zu wenig Speicherplatz';
+
+  @override
+  String lmInstallTitle(String name) {
+    return '$name installieren?';
+  }
+
+  @override
+  String lmInstallConfirm(String size) {
+    return 'NeoRouter lädt etwa $size herunter und startet das Modell, sobald es bereit ist. Du kannst in der Zwischenzeit weiterarbeiten.';
+  }
+
+  @override
+  String lmShowTooBig(String count) {
+    return '$count weitere anzeigen, die einen größeren Server brauchen';
+  }
+
+  @override
+  String get lmHideTooBig => 'Modelle ausblenden, die nicht passen';
+
+  @override
+  String get lmTurnOff => 'Ausschalten';
+
+  @override
+  String get lmLeftSeconds => 'noch unter einer Minute';
+
+  @override
+  String lmLeftMinutes(String count) {
+    return 'noch etwa $count Min.';
+  }
+
+  @override
+  String lmLeftHours(String hours, String minutes) {
+    return 'noch etwa $hours Std. $minutes Min.';
+  }
+
+  @override
+  String get lmStarterTitle => 'Schnellstart';
+
+  @override
+  String lmStarterHint(String models, String size) {
+    return '$models, passend für diesen Server. Lädt $size herunter und startet von selbst.';
+  }
+
+  @override
+  String get lmStarterInstall => 'Alle installieren';
+
+  @override
+  String get lmDetails => 'Details';
+
+  @override
+  String get lmLess => 'Weniger';
+
+  @override
+  String get lmLanguages => 'Sprachen';
+
+  @override
+  String get lmLicense => 'Lizenz';
+
+  @override
+  String get lmErrTooBig =>
+      'Dieser Server hat nicht genug Speicher für dieses Modell.';
+
+  @override
+  String get lmErrNoDisk =>
+      'Für dieses Modell ist nicht genug Speicherplatz frei.';
+
+  @override
+  String get lmErrUnsupported =>
+      'Dieses System kann dieses Modell nicht ausführen.';
+
+  @override
+  String get lmErrInstalled => 'Dieses Modell ist bereits installiert.';
+
+  @override
+  String get lmErrNoStarter =>
+      'Auf diesen Server passt kein Schnellstart-Paket.';
+
+  @override
+  String get lmNothingFits => 'Davon passt nichts auf diesen Server.';
 }

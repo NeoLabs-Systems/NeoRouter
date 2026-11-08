@@ -2866,7 +2866,7 @@ abstract class AppL10n {
   /// No description provided for @adminDescription.
   ///
   /// In en, this message translates to:
-  /// **'Run this server: accounts, sign-ups, server details and model metadata.'**
+  /// **'Run this server: accounts, sign-ups, server details, local models and model metadata.'**
   String get adminDescription;
 
   /// No description provided for @adminSearchHint.
@@ -8388,6 +8388,498 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Low priority'**
   String get priorityLowLabel;
+
+  /// No description provided for @lmTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Local models'**
+  String get lmTab;
+
+  /// No description provided for @lmIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Run AI models on this server. NeoRouter shows what fits, downloads it, keeps it running and fixes problems by itself.'**
+  String get lmIntro;
+
+  /// No description provided for @lmThisServer.
+  ///
+  /// In en, this message translates to:
+  /// **'This server'**
+  String get lmThisServer;
+
+  /// No description provided for @lmProcessor.
+  ///
+  /// In en, this message translates to:
+  /// **'Processor'**
+  String get lmProcessor;
+
+  /// No description provided for @lmProcessorValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} · {cores} cores'**
+  String lmProcessorValue(String name, String cores);
+
+  /// No description provided for @lmMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get lmMemory;
+
+  /// No description provided for @lmMemoryUse.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {total} in use by local models'**
+  String lmMemoryUse(String used, String total);
+
+  /// No description provided for @lmMemoryLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited by the container.'**
+  String get lmMemoryLimited;
+
+  /// No description provided for @lmGraphics.
+  ///
+  /// In en, this message translates to:
+  /// **'Graphics'**
+  String get lmGraphics;
+
+  /// No description provided for @lmGraphicsValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} · {memory} usable'**
+  String lmGraphicsValue(String name, String memory);
+
+  /// No description provided for @lmNoGraphics.
+  ///
+  /// In en, this message translates to:
+  /// **'None found. Models run on the processor.'**
+  String get lmNoGraphics;
+
+  /// No description provided for @lmDisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Free disk space'**
+  String get lmDisk;
+
+  /// No description provided for @lmTextUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Text, safety and embedding models need macOS or Linux. Speech and transcription models work here.'**
+  String get lmTextUnsupported;
+
+  /// No description provided for @lmInstalledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your models'**
+  String get lmInstalledTitle;
+
+  /// No description provided for @lmInstalledEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No models yet. Pick one below: NeoRouter downloads it and starts it for you.'**
+  String get lmInstalledEmpty;
+
+  /// No description provided for @lmRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get lmRunning;
+
+  /// No description provided for @lmRunningGpu.
+  ///
+  /// In en, this message translates to:
+  /// **'Running on the graphics card'**
+  String get lmRunningGpu;
+
+  /// No description provided for @lmRunningCpu.
+  ///
+  /// In en, this message translates to:
+  /// **'Running on the processor'**
+  String get lmRunningCpu;
+
+  /// No description provided for @lmStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting …'**
+  String get lmStarting;
+
+  /// No description provided for @lmRestarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Restarting after a problem …'**
+  String get lmRestarting;
+
+  /// No description provided for @lmStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get lmStopped;
+
+  /// No description provided for @lmPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting ready …'**
+  String get lmPreparing;
+
+  /// No description provided for @lmDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading · {done} of {total}'**
+  String lmDownloading(String done, String total);
+
+  /// No description provided for @lmGettingEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Setting up the engine · {done} of {total}'**
+  String lmGettingEngine(String done, String total);
+
+  /// No description provided for @lmChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the files …'**
+  String get lmChecking;
+
+  /// No description provided for @lmDownloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Download stopped. {reason}'**
+  String lmDownloadFailed(String reason);
+
+  /// No description provided for @lmFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped. {reason}'**
+  String lmFailed(String reason);
+
+  /// No description provided for @lmProblemMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough free memory: stop another model first.'**
+  String get lmProblemMemory;
+
+  /// No description provided for @lmProblemDisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough free disk space.'**
+  String get lmProblemDisk;
+
+  /// No description provided for @lmProblemCrashed.
+  ///
+  /// In en, this message translates to:
+  /// **'It kept stopping unexpectedly. Repair checks its files and starts it again.'**
+  String get lmProblemCrashed;
+
+  /// No description provided for @lmProblemNotAnswering.
+  ///
+  /// In en, this message translates to:
+  /// **'It stopped answering. Repair checks its files and starts it again.'**
+  String get lmProblemNotAnswering;
+
+  /// No description provided for @lmProblemStart.
+  ///
+  /// In en, this message translates to:
+  /// **'It would not start. Repair checks its files and starts it again.'**
+  String get lmProblemStart;
+
+  /// No description provided for @lmProblemDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the internet connection and try again.'**
+  String get lmProblemDownload;
+
+  /// No description provided for @lmRepair.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair'**
+  String get lmRepair;
+
+  /// No description provided for @lmRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get lmRemove;
+
+  /// No description provided for @lmCancelDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel download'**
+  String get lmCancelDownload;
+
+  /// No description provided for @lmRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}?'**
+  String lmRemoveTitle(String name);
+
+  /// No description provided for @lmRemoveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Its files are deleted from this server. You can install it again any time.'**
+  String get lmRemoveConfirm;
+
+  /// No description provided for @lmAccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can use them'**
+  String get lmAccessTitle;
+
+  /// No description provided for @lmAccessEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone on this server'**
+  String get lmAccessEveryone;
+
+  /// No description provided for @lmAccessHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Off: only admins. On: every user can add \"NeoRouter Local\" under Connections. All requests share this machine.'**
+  String get lmAccessHint;
+
+  /// No description provided for @lmAddTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a model'**
+  String get lmAddTitle;
+
+  /// No description provided for @lmAddHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Picked for this server. The size is the download; memory is what the model needs while it runs.'**
+  String get lmAddHint;
+
+  /// No description provided for @lmKindAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get lmKindAll;
+
+  /// No description provided for @lmKindChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get lmKindChat;
+
+  /// No description provided for @lmKindModeration.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety'**
+  String get lmKindModeration;
+
+  /// No description provided for @lmKindEmbedding.
+  ///
+  /// In en, this message translates to:
+  /// **'Embeddings'**
+  String get lmKindEmbedding;
+
+  /// No description provided for @lmKindTranscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcription'**
+  String get lmKindTranscription;
+
+  /// No description provided for @lmKindSpeech.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech'**
+  String get lmKindSpeech;
+
+  /// No description provided for @lmRatingGreat.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs great'**
+  String get lmRatingGreat;
+
+  /// No description provided for @lmRatingGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs well'**
+  String get lmRatingGood;
+
+  /// No description provided for @lmRatingSlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs, but slowly'**
+  String get lmRatingSlow;
+
+  /// No description provided for @lmRatingTooBig.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs more memory'**
+  String get lmRatingTooBig;
+
+  /// No description provided for @lmRatingUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Not on this system'**
+  String get lmRatingUnsupported;
+
+  /// No description provided for @lmSizes.
+  ///
+  /// In en, this message translates to:
+  /// **'{download} · needs {memory} memory'**
+  String lmSizes(String download, String memory);
+
+  /// No description provided for @lmRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended'**
+  String get lmRecommended;
+
+  /// No description provided for @lmReadsImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Reads images'**
+  String get lmReadsImages;
+
+  /// No description provided for @lmManyLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'Many languages'**
+  String get lmManyLanguages;
+
+  /// No description provided for @lmInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Install'**
+  String get lmInstall;
+
+  /// No description provided for @lmInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed'**
+  String get lmInstalled;
+
+  /// No description provided for @lmNoDisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough disk space'**
+  String get lmNoDisk;
+
+  /// No description provided for @lmInstallTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Install {name}?'**
+  String lmInstallTitle(String name);
+
+  /// No description provided for @lmInstallConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter downloads about {size} and starts the model when it is ready. You can keep working in the meantime.'**
+  String lmInstallConfirm(String size);
+
+  /// No description provided for @lmShowTooBig.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {count} more that need a bigger server'**
+  String lmShowTooBig(String count);
+
+  /// No description provided for @lmHideTooBig.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide models that do not fit'**
+  String get lmHideTooBig;
+
+  /// No description provided for @lmTurnOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get lmTurnOff;
+
+  /// No description provided for @lmLeftSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'less than a minute left'**
+  String get lmLeftSeconds;
+
+  /// No description provided for @lmLeftMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'about {count} min left'**
+  String lmLeftMinutes(String count);
+
+  /// No description provided for @lmLeftHours.
+  ///
+  /// In en, this message translates to:
+  /// **'about {hours} h {minutes} min left'**
+  String lmLeftHours(String hours, String minutes);
+
+  /// No description provided for @lmStarterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick start'**
+  String get lmStarterTitle;
+
+  /// No description provided for @lmStarterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{models}, chosen for this server. Downloads {size} and starts by itself.'**
+  String lmStarterHint(String models, String size);
+
+  /// No description provided for @lmStarterInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Install all'**
+  String get lmStarterInstall;
+
+  /// No description provided for @lmDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get lmDetails;
+
+  /// No description provided for @lmLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Less'**
+  String get lmLess;
+
+  /// No description provided for @lmLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'Languages'**
+  String get lmLanguages;
+
+  /// No description provided for @lmLicense.
+  ///
+  /// In en, this message translates to:
+  /// **'License'**
+  String get lmLicense;
+
+  /// No description provided for @lmErrTooBig.
+  ///
+  /// In en, this message translates to:
+  /// **'This server does not have enough memory for this model.'**
+  String get lmErrTooBig;
+
+  /// No description provided for @lmErrNoDisk.
+  ///
+  /// In en, this message translates to:
+  /// **'There is not enough free disk space for this model.'**
+  String get lmErrNoDisk;
+
+  /// No description provided for @lmErrUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This system cannot run this model.'**
+  String get lmErrUnsupported;
+
+  /// No description provided for @lmErrInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'This model is already installed.'**
+  String get lmErrInstalled;
+
+  /// No description provided for @lmErrNoStarter.
+  ///
+  /// In en, this message translates to:
+  /// **'No starter set fits this server.'**
+  String get lmErrNoStarter;
+
+  /// No description provided for @lmNothingFits.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing of this kind fits this server.'**
+  String get lmNothingFits;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

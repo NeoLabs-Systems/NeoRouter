@@ -14,7 +14,8 @@ test('every provider definition is valid and ids are unique', () => {
   const definitions = registry.list();
   assert.ok(definitions.length > 60);
   for (const definition of definitions) {
-    assert.ok(definition.baseUrl || definition.editableBaseUrl, `${definition.id} needs a base URL`);
+    // This server's local models are reached through the runtime, not a URL.
+    if (definition.adapter !== 'local_runtime') assert.ok(definition.baseUrl || definition.editableBaseUrl, `${definition.id} needs a base URL`);
     for (const pattern of definition.billing.alwaysFree) assert.doesNotThrow(() => new RegExp(pattern));
   }
 });

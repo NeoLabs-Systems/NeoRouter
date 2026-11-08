@@ -2,7 +2,7 @@
 
 Provider definitions are **data**. They live in `server/providers/definitions/`
 and are loaded and validated (zod) at startup by `server/providers/registry.js`.
-A file may export one definition or an array.
+A file may export one definition or an array. Models that run on the server itself (Admin → Local models) have their own catalog in `server/services/local_models/catalog/`, one data file per kind.
 
 ## Adding an OpenAI-compatible provider
 

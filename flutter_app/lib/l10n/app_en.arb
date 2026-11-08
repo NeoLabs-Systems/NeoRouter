@@ -829,7 +829,7 @@
     }
   },
   "navAdmin": "Admin",
-  "adminDescription": "Run this server: accounts, sign-ups, server details and model metadata.",
+  "adminDescription": "Run this server: accounts, sign-ups, server details, local models and model metadata.",
   "adminSearchHint": "Search admin settings, e.g. registration",
   "nothingMatches": "Nothing matches",
   "registrationTitle": "Sign-ups",
@@ -2995,5 +2995,216 @@
   "priorityLowHint": "Lets the others go first.",
   "priorityHighLabel": "High priority",
   "priorityNormalLabel": "Normal priority",
-  "priorityLowLabel": "Low priority"
+  "priorityLowLabel": "Low priority",
+  "lmTab": "Local models",
+  "lmIntro": "Run AI models on this server. NeoRouter shows what fits, downloads it, keeps it running and fixes problems by itself.",
+  "lmThisServer": "This server",
+  "lmProcessor": "Processor",
+  "lmProcessorValue": "{name} · {cores} cores",
+  "@lmProcessorValue": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "cores": {
+        "type": "String"
+      }
+    }
+  },
+  "lmMemory": "Memory",
+  "lmMemoryUse": "{used} of {total} in use by local models",
+  "@lmMemoryUse": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "lmMemoryLimited": "Limited by the container.",
+  "lmGraphics": "Graphics",
+  "lmGraphicsValue": "{name} · {memory} usable",
+  "@lmGraphicsValue": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "memory": {
+        "type": "String"
+      }
+    }
+  },
+  "lmNoGraphics": "None found. Models run on the processor.",
+  "lmDisk": "Free disk space",
+  "lmTextUnsupported": "Text, safety and embedding models need macOS or Linux. Speech and transcription models work here.",
+  "lmInstalledTitle": "Your models",
+  "lmInstalledEmpty": "No models yet. Pick one below: NeoRouter downloads it and starts it for you.",
+  "lmRunning": "Running",
+  "lmRunningGpu": "Running on the graphics card",
+  "lmRunningCpu": "Running on the processor",
+  "lmStarting": "Starting …",
+  "lmRestarting": "Restarting after a problem …",
+  "lmStopped": "Stopped",
+  "lmPreparing": "Getting ready …",
+  "lmDownloading": "Downloading · {done} of {total}",
+  "@lmDownloading": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "lmGettingEngine": "Setting up the engine · {done} of {total}",
+  "@lmGettingEngine": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "lmChecking": "Checking the files …",
+  "lmDownloadFailed": "Download stopped. {reason}",
+  "@lmDownloadFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "lmFailed": "Stopped. {reason}",
+  "@lmFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "lmProblemMemory": "Not enough free memory: stop another model first.",
+  "lmProblemDisk": "Not enough free disk space.",
+  "lmProblemCrashed": "It kept stopping unexpectedly. Repair checks its files and starts it again.",
+  "lmProblemNotAnswering": "It stopped answering. Repair checks its files and starts it again.",
+  "lmProblemStart": "It would not start. Repair checks its files and starts it again.",
+  "lmProblemDownload": "Check the internet connection and try again.",
+  "lmRepair": "Repair",
+  "lmRemove": "Remove",
+  "lmCancelDownload": "Cancel download",
+  "lmRemoveTitle": "Remove {name}?",
+  "@lmRemoveTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lmRemoveConfirm": "Its files are deleted from this server. You can install it again any time.",
+  "lmAccessTitle": "Who can use them",
+  "lmAccessEveryone": "Everyone on this server",
+  "lmAccessHint": "Off: only admins. On: every user can add \"NeoRouter Local\" under Connections. All requests share this machine.",
+  "lmAddTitle": "Add a model",
+  "lmAddHint": "Picked for this server. The size is the download; memory is what the model needs while it runs.",
+  "lmKindAll": "All",
+  "lmKindChat": "Text",
+  "lmKindModeration": "Safety",
+  "lmKindEmbedding": "Embeddings",
+  "lmKindTranscription": "Transcription",
+  "lmKindSpeech": "Speech",
+  "lmRatingGreat": "Runs great",
+  "lmRatingGood": "Runs well",
+  "lmRatingSlow": "Runs, but slowly",
+  "lmRatingTooBig": "Needs more memory",
+  "lmRatingUnsupported": "Not on this system",
+  "lmSizes": "{download} · needs {memory} memory",
+  "@lmSizes": {
+    "placeholders": {
+      "download": {
+        "type": "String"
+      },
+      "memory": {
+        "type": "String"
+      }
+    }
+  },
+  "lmRecommended": "Recommended",
+  "lmReadsImages": "Reads images",
+  "lmManyLanguages": "Many languages",
+  "lmInstall": "Install",
+  "lmInstalled": "Installed",
+  "lmNoDisk": "Not enough disk space",
+  "lmInstallTitle": "Install {name}?",
+  "@lmInstallTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lmInstallConfirm": "NeoRouter downloads about {size} and starts the model when it is ready. You can keep working in the meantime.",
+  "@lmInstallConfirm": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "lmShowTooBig": "Show {count} more that need a bigger server",
+  "@lmShowTooBig": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lmHideTooBig": "Hide models that do not fit",
+  "lmTurnOff": "Turn off",
+  "lmLeftSeconds": "less than a minute left",
+  "lmLeftMinutes": "about {count} min left",
+  "@lmLeftMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lmLeftHours": "about {hours} h {minutes} min left",
+  "@lmLeftHours": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "lmStarterTitle": "Quick start",
+  "lmStarterHint": "{models}, chosen for this server. Downloads {size} and starts by itself.",
+  "@lmStarterHint": {
+    "placeholders": {
+      "models": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "lmStarterInstall": "Install all",
+  "lmDetails": "Details",
+  "lmLess": "Less",
+  "lmLanguages": "Languages",
+  "lmLicense": "License",
+  "lmErrTooBig": "This server does not have enough memory for this model.",
+  "lmErrNoDisk": "There is not enough free disk space for this model.",
+  "lmErrUnsupported": "This system cannot run this model.",
+  "lmErrInstalled": "This model is already installed.",
+  "lmErrNoStarter": "No starter set fits this server.",
+  "lmNothingFits": "Nothing of this kind fits this server."
 }

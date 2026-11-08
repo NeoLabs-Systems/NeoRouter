@@ -209,6 +209,10 @@ function subtitles(result, format) {
   return format === 'vtt' ? `WEBVTT\n\n${cues.join('\n')}` : cues.join('\n');
 }
 
+// Whether a model can translate speech into English: per model where the
+// adapter knows (local models), per provider otherwise (not Deepgram or ElevenLabs).
+const canTranslate = (adapter, entry) => (typeof adapter.canTranslate === 'function' ? adapter.canTranslate(entry.modelId) : adapter.transcribeTranslate !== false);
+
 /** fields: multipart text fields; file: { data Buffer, filename, mime }. */
 async function transcription({ req, res, key, fields, file, translate = false, freeOnly = false, includeModel = false }) {
   const input = parseBody(transcriptionSchema, fields);
@@ -227,7 +231,7 @@ async function transcription({ req, res, key, fields, file, translate = false, f
   await runCapability({
     req, res, key, capability: 'transcription', method: 'transcribe', requestedModel: input.model, freeOnly, inputTokens: tokensFor(minutes), units: minutes,
     // Translation only goes to models that can translate (not Deepgram or ElevenLabs).
-    filter: (entry, adapter) => (!translate || adapter.transcribeTranslate !== false) && (!timestampFilter || timestampFilter(entry, adapter)),
+    filter: (entry, adapter) => (!translate || canTranslate(adapter, entry)) && (!timestampFilter || timestampFilter(entry, adapter)),
     // Audio is not text in a context window (Whisper lists 448 tokens).
     contextTokens: input.prompt ? estimateTokens([input.prompt]) : 0,
     estimateCost: (entry) => priced(unitCost(entry, 'minute', minutes), tokenCost(entry, tokensFor(minutes))),

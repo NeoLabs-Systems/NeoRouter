@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
+import 'main_admin_local_models.dart';
 import 'main_admin_update.dart';
 import 'main_controller.dart';
 import 'main_shared.dart';
@@ -12,7 +13,7 @@ import 'main_theme.dart';
 import 'src/backend_client.dart';
 import 'src/models.dart';
 
-enum _AdminTab { users, server, metadata }
+enum _AdminTab { users, server, localModels, metadata }
 
 /// One line for a team event, e.g. "anna joined neo's team".
 String teamEventLabel(AppL10n t, Map<String, dynamic> event) {
@@ -33,12 +34,14 @@ extension on _AdminTab {
   IconData get icon => switch (this) {
         _AdminTab.users => Icons.group_outlined,
         _AdminTab.server => Icons.dns_outlined,
+        _AdminTab.localModels => Icons.memory_outlined,
         _AdminTab.metadata => Icons.auto_awesome_outlined,
       };
 
   String label(AppL10n t) => switch (this) {
         _AdminTab.users => t.users,
         _AdminTab.server => t.serverTitle,
+        _AdminTab.localModels => t.lmTab,
         _AdminTab.metadata => t.metadataSources,
       };
 }
@@ -161,6 +164,7 @@ class _AdminScreenState extends State<AdminScreen> {
         _AdminSearchEntry(t.serverTitle, _AdminTab.server, 'version endpoint url capabilities server'),
         _AdminSearchEntry(t.updatesTitle, _AdminTab.server, 'update upgrade version channel beta stable github release aktualisieren'),
         _AdminSearchEntry(t.privacyModelTitle, _AdminTab.server, 'privacy filter openai datenschutz pii ai detection'),
+        _AdminSearchEntry(t.lmTab, _AdminTab.localModels, 'local lokal models modelle llama ollama gpu grafik download whisper speech tts embeddings self-hosted offline'),
         _AdminSearchEntry(t.metadataSources, _AdminTab.metadata, 'models.dev openrouter prices preise context intelligence'),
         _AdminSearchEntry(t.aaKey, _AdminTab.metadata, 'artificial analysis benchmark key api'),
       ];
@@ -298,6 +302,8 @@ class _AdminScreenState extends State<AdminScreen> {
             ),
           ],
         );
+      case _AdminTab.localModels:
+        return LocalModelsSection(controller: widget.controller);
       case _AdminTab.metadata:
         final metadata = Map<String, dynamic>.from((_settings?['metadata'] as Map?) ?? <String, Object>{});
         final fetchedAt = Map<String, dynamic>.from((metadata['fetchedAt'] as Map?) ?? <String, Object>{});

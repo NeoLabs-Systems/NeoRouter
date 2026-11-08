@@ -12,6 +12,7 @@ const nousOAuth = require('../services/providers/nous_oauth');
 const { ProviderError, KINDS } = require('../providers/provider_error');
 const { HttpError } = require('../middleware/error_handler');
 const catalog = require('../services/catalog/catalog_service');
+const localAccess = require('../services/local_models/access');
 const { validate } = require('../middleware/validate');
 const { requirePermission } = require('../middleware/space');
 const { asyncRoute } = require('./helpers');
@@ -23,8 +24,14 @@ const router = express.Router();
 // Who is changing an account, for the checks on where its key may be sent.
 const actorOf = (req) => ({ role: req.user.role, isOwner: req.space.isOwner });
 
-// Pool partners are added by joining a pool, not by hand.
-router.get('/definitions', (_req, res) => res.json({ definitions: registry.list().filter((definition) => definition.category !== 'pool').map(registry.publicDefinition) }));
+// Pool partners are added by joining a pool, not by hand; this server's local
+// models only when there are some and an admin lets this person use them.
+router.get('/definitions', (req, res) => res.json({
+  definitions: registry.list()
+    .filter((definition) => definition.category !== 'pool')
+    .filter((definition) => definition.id !== localAccess.DEFINITION_ID || localAccess.offered(req.space.ownerId))
+    .map(registry.publicDefinition),
+}));
 
 router.get('/accounts', requirePermission('providers.view'), (req, res) => res.json({ accounts: accounts.list(req.space.ownerId) }));
 
@@ -132,6 +139,9 @@ router.post('/nous/login/:loginId', requirePermission('providers.manage'), async
 router.post('/probe', requirePermission('providers.manage'), validate(accountInput), asyncRoute(async (req, res) => res.json(await accounts.probe(req.space.ownerId, req.body, actorOf(req)))));
 
 router.post('/accounts', requirePermission('providers.manage'), validate(accountInput), asyncRoute(async (req, res) => {
+  if (req.body.definitionId === localAccess.DEFINITION_ID && !localAccess.allowed(req.space.ownerId)) {
+    throw new HttpError(403, 'LOCAL_MODELS_NOT_SHARED', 'An admin has not shared this server’s local models with you.');
+  }
   const { account, validation } = await accounts.create(req.space.ownerId, req.body, req.space.actorId, actorOf(req));
   let sync = null;
   try {

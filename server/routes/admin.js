@@ -50,6 +50,8 @@ router.patch('/settings', validate(z.object({
 });
 router.post('/metadata/refresh', asyncRoute(async (_req, res) => res.json({ results: await metadata.refreshSources(), metadata: metadata.status() })));
 
+router.use('/local-models', require('./local_models'));
+
 router.get('/update', (_req, res) => res.json(updates.status()));
 router.post('/update/check', asyncRoute(async (_req, res) => res.json(await updates.check())));
 router.post('/update', (_req, res) => res.status(202).json(updates.start()));

@@ -13,6 +13,7 @@ const { DeepgramAdapter } = require('./adapters/deepgram');
 const { ElevenLabsAdapter } = require('./adapters/elevenlabs');
 const { CodexAdapter } = require('./adapters/codex');
 const { NousAdapter } = require('./adapters/nous');
+const { LocalRuntimeAdapter } = require('./adapters/local_runtime');
 
 const ADAPTERS = {
   openai_compatible: OpenAICompatibleAdapter,
@@ -25,6 +26,7 @@ const ADAPTERS = {
   elevenlabs: ElevenLabsAdapter,
   codex: CodexAdapter,
   nous: NousAdapter,
+  local_runtime: LocalRuntimeAdapter,
 };
 
 const limitSchema = z.object({

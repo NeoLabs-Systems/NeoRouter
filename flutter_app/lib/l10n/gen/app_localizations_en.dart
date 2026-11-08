@@ -1544,7 +1544,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get adminDescription =>
-      'Run this server: accounts, sign-ups, server details and model metadata.';
+      'Run this server: accounts, sign-ups, server details, local models and model metadata.';
 
   @override
   String get adminSearchHint => 'Search admin settings, e.g. registration';
@@ -4765,4 +4765,293 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get priorityLowLabel => 'Low priority';
+
+  @override
+  String get lmTab => 'Local models';
+
+  @override
+  String get lmIntro =>
+      'Run AI models on this server. NeoRouter shows what fits, downloads it, keeps it running and fixes problems by itself.';
+
+  @override
+  String get lmThisServer => 'This server';
+
+  @override
+  String get lmProcessor => 'Processor';
+
+  @override
+  String lmProcessorValue(String name, String cores) {
+    return '$name · $cores cores';
+  }
+
+  @override
+  String get lmMemory => 'Memory';
+
+  @override
+  String lmMemoryUse(String used, String total) {
+    return '$used of $total in use by local models';
+  }
+
+  @override
+  String get lmMemoryLimited => 'Limited by the container.';
+
+  @override
+  String get lmGraphics => 'Graphics';
+
+  @override
+  String lmGraphicsValue(String name, String memory) {
+    return '$name · $memory usable';
+  }
+
+  @override
+  String get lmNoGraphics => 'None found. Models run on the processor.';
+
+  @override
+  String get lmDisk => 'Free disk space';
+
+  @override
+  String get lmTextUnsupported =>
+      'Text, safety and embedding models need macOS or Linux. Speech and transcription models work here.';
+
+  @override
+  String get lmInstalledTitle => 'Your models';
+
+  @override
+  String get lmInstalledEmpty =>
+      'No models yet. Pick one below: NeoRouter downloads it and starts it for you.';
+
+  @override
+  String get lmRunning => 'Running';
+
+  @override
+  String get lmRunningGpu => 'Running on the graphics card';
+
+  @override
+  String get lmRunningCpu => 'Running on the processor';
+
+  @override
+  String get lmStarting => 'Starting …';
+
+  @override
+  String get lmRestarting => 'Restarting after a problem …';
+
+  @override
+  String get lmStopped => 'Stopped';
+
+  @override
+  String get lmPreparing => 'Getting ready …';
+
+  @override
+  String lmDownloading(String done, String total) {
+    return 'Downloading · $done of $total';
+  }
+
+  @override
+  String lmGettingEngine(String done, String total) {
+    return 'Setting up the engine · $done of $total';
+  }
+
+  @override
+  String get lmChecking => 'Checking the files …';
+
+  @override
+  String lmDownloadFailed(String reason) {
+    return 'Download stopped. $reason';
+  }
+
+  @override
+  String lmFailed(String reason) {
+    return 'Stopped. $reason';
+  }
+
+  @override
+  String get lmProblemMemory =>
+      'Not enough free memory: stop another model first.';
+
+  @override
+  String get lmProblemDisk => 'Not enough free disk space.';
+
+  @override
+  String get lmProblemCrashed =>
+      'It kept stopping unexpectedly. Repair checks its files and starts it again.';
+
+  @override
+  String get lmProblemNotAnswering =>
+      'It stopped answering. Repair checks its files and starts it again.';
+
+  @override
+  String get lmProblemStart =>
+      'It would not start. Repair checks its files and starts it again.';
+
+  @override
+  String get lmProblemDownload =>
+      'Check the internet connection and try again.';
+
+  @override
+  String get lmRepair => 'Repair';
+
+  @override
+  String get lmRemove => 'Remove';
+
+  @override
+  String get lmCancelDownload => 'Cancel download';
+
+  @override
+  String lmRemoveTitle(String name) {
+    return 'Remove $name?';
+  }
+
+  @override
+  String get lmRemoveConfirm =>
+      'Its files are deleted from this server. You can install it again any time.';
+
+  @override
+  String get lmAccessTitle => 'Who can use them';
+
+  @override
+  String get lmAccessEveryone => 'Everyone on this server';
+
+  @override
+  String get lmAccessHint =>
+      'Off: only admins. On: every user can add \"NeoRouter Local\" under Connections. All requests share this machine.';
+
+  @override
+  String get lmAddTitle => 'Add a model';
+
+  @override
+  String get lmAddHint =>
+      'Picked for this server. The size is the download; memory is what the model needs while it runs.';
+
+  @override
+  String get lmKindAll => 'All';
+
+  @override
+  String get lmKindChat => 'Text';
+
+  @override
+  String get lmKindModeration => 'Safety';
+
+  @override
+  String get lmKindEmbedding => 'Embeddings';
+
+  @override
+  String get lmKindTranscription => 'Transcription';
+
+  @override
+  String get lmKindSpeech => 'Speech';
+
+  @override
+  String get lmRatingGreat => 'Runs great';
+
+  @override
+  String get lmRatingGood => 'Runs well';
+
+  @override
+  String get lmRatingSlow => 'Runs, but slowly';
+
+  @override
+  String get lmRatingTooBig => 'Needs more memory';
+
+  @override
+  String get lmRatingUnsupported => 'Not on this system';
+
+  @override
+  String lmSizes(String download, String memory) {
+    return '$download · needs $memory memory';
+  }
+
+  @override
+  String get lmRecommended => 'Recommended';
+
+  @override
+  String get lmReadsImages => 'Reads images';
+
+  @override
+  String get lmManyLanguages => 'Many languages';
+
+  @override
+  String get lmInstall => 'Install';
+
+  @override
+  String get lmInstalled => 'Installed';
+
+  @override
+  String get lmNoDisk => 'Not enough disk space';
+
+  @override
+  String lmInstallTitle(String name) {
+    return 'Install $name?';
+  }
+
+  @override
+  String lmInstallConfirm(String size) {
+    return 'NeoRouter downloads about $size and starts the model when it is ready. You can keep working in the meantime.';
+  }
+
+  @override
+  String lmShowTooBig(String count) {
+    return 'Show $count more that need a bigger server';
+  }
+
+  @override
+  String get lmHideTooBig => 'Hide models that do not fit';
+
+  @override
+  String get lmTurnOff => 'Turn off';
+
+  @override
+  String get lmLeftSeconds => 'less than a minute left';
+
+  @override
+  String lmLeftMinutes(String count) {
+    return 'about $count min left';
+  }
+
+  @override
+  String lmLeftHours(String hours, String minutes) {
+    return 'about $hours h $minutes min left';
+  }
+
+  @override
+  String get lmStarterTitle => 'Quick start';
+
+  @override
+  String lmStarterHint(String models, String size) {
+    return '$models, chosen for this server. Downloads $size and starts by itself.';
+  }
+
+  @override
+  String get lmStarterInstall => 'Install all';
+
+  @override
+  String get lmDetails => 'Details';
+
+  @override
+  String get lmLess => 'Less';
+
+  @override
+  String get lmLanguages => 'Languages';
+
+  @override
+  String get lmLicense => 'License';
+
+  @override
+  String get lmErrTooBig =>
+      'This server does not have enough memory for this model.';
+
+  @override
+  String get lmErrNoDisk =>
+      'There is not enough free disk space for this model.';
+
+  @override
+  String get lmErrUnsupported => 'This system cannot run this model.';
+
+  @override
+  String get lmErrInstalled => 'This model is already installed.';
+
+  @override
+  String get lmErrNoStarter => 'No starter set fits this server.';
+
+  @override
+  String get lmNothingFits => 'Nothing of this kind fits this server.';
 }

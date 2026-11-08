@@ -212,6 +212,16 @@ class RouterApi {
   Future<Map<String, dynamic>> updateAdminSettings(Map<String, Object?> body) => client.patch('$_base/admin/settings', body);
   Future<Map<String, dynamic>> refreshMetadata() => client.post('$_base/admin/metadata/refresh');
 
+  // ---- local models ---------------------------------------------------------
+  String _localModel(String id) => '$_base/admin/local-models/${Uri.encodeComponent(id)}';
+  Future<LocalModelsOverview> localModels() async => LocalModelsOverview(await client.get('$_base/admin/local-models'));
+  /// action: install · start · stop · retry · repair
+  Future<LocalModelsOverview> localModelAction(String id, String action) async => LocalModelsOverview(await client.post('${_localModel(id)}/$action'));
+  Future<LocalModelsOverview> installLocalStarter() async => LocalModelsOverview(await client.post('$_base/admin/local-models/starter'));
+  Future<LocalModelsOverview> removeLocalModel(String id) async => LocalModelsOverview(await client.deleteJson(_localModel(id)));
+  Future<LocalModelsOverview> setLocalModelsAccess({required bool everyone}) async =>
+      LocalModelsOverview(await client.putJson('$_base/admin/local-models/access', <String, Object>{'level': everyone ? 'everyone' : 'admins'}));
+
   // ---- updates --------------------------------------------------------------
   Future<Map<String, dynamic>> updateStatus() => client.get('$_base/admin/update');
   Future<Map<String, dynamic>> checkForUpdate() => client.post('$_base/admin/update/check');
