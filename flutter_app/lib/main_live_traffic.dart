@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show PointMode;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,9 +19,12 @@ import 'src/models.dart';
 /// answers. New requests play as they arrive; in between, recent ones are
 /// replayed at an easy pace, and the view says which it is showing.
 class LiveTrafficHero extends StatefulWidget {
-  const LiveTrafficHero({super.key, required this.controller, required this.accounts, required this.keys, required this.title, required this.status, this.action, this.onMore});
+  const LiveTrafficHero({super.key, required this.controller, required this.accounts, required this.keys, required this.ready, required this.title, required this.status, this.action, this.onMore});
 
   final NeoRouterController controller;
+
+  /// Connections and keys have arrived; until then their cards are unknown.
+  final bool ready;
   final List<ProviderAccount> accounts;
   final List<RouterKey> keys;
   final String title;
@@ -48,7 +52,7 @@ class _Attempt {
 class _Packet {
   _Packet({required this.app, required this.attempts, required this.label, required this.success, required this.latency, required this.live, this.queued = 0});
 
-  final int app;
+  int app;
   final List<_Attempt> attempts;
   final String label;
   final bool success;
@@ -98,6 +102,34 @@ class _Scene extends ChangeNotifier {
       provFail = List<double>.filled(providers, -1e9);
       provBusy = List<int>.filled(providers, 0);
     }
+  }
+
+  /// The cards were rearranged: moves everything in flight (and each card's
+  /// glow) to where its card is now. map[old] is the new index, or -1.
+  void remap(List<int> appMap, List<int> provMap, int apps, int providers) {
+    int to(List<int> map, int index) => index >= 0 && index < map.length ? map[index] : -1;
+    List<T> moved<T>(List<T> old, List<int> map, int length, T empty) {
+      final next = List<T>.filled(length, empty);
+      for (var i = 0; i < old.length; i++) {
+        final j = to(map, i);
+        if (j >= 0 && j < length) next[j] = old[i];
+      }
+      return next;
+    }
+
+    appGlow = moved(appGlow, appMap, apps, 0.0);
+    appFlash = moved(appFlash, appMap, apps, -1e9);
+    provGlow = moved(provGlow, provMap, providers, 0.0);
+    provFail = moved(provFail, provMap, providers, -1e9);
+    provBusy = moved(provBusy, provMap, providers, 0);
+    for (final p in packets) {
+      p.app = math.max(0, to(appMap, p.app));
+      for (var k = 0; k < p.attempts.length; k++) {
+        p.attempts[k] = _Attempt(to(provMap, p.attempts[k].provider), p.attempts[k].ok);
+      }
+    }
+    // A request whose card is gone has nowhere to fly.
+    packets.removeWhere((p) => p.attempts.any((a) => a.provider < 0) && p.phase != 'home' && p.phase != 'fail');
   }
 
   int get thinking => packets.where((p) => p.phase == 'think' || p.phase == 'rethink').length;
@@ -310,6 +342,9 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
 
   bool _loaded = false;
 
+  // Requests and the connections and keys they go between have all arrived.
+  bool get _ready => _loaded && widget.ready;
+
   final _Scene _scene = _Scene();
   late final Ticker _ticker;
   Duration _last = Duration.zero;
@@ -330,7 +365,8 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   int? _poolIndex;
   Map<String, String> _slugToProvider = <String, String>{};
   final Map<String, int> _appRequests = <String, int>{};
-  final Map<int, String> _lastModel = <int, String>{};
+  // The model each provider card answered with last, by card key.
+  final Map<String, String> _lastModel = <String, String>{};
 
   @override
   void initState() {
@@ -344,9 +380,9 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   @override
   void didUpdateWidget(LiveTrafficHero oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.accounts != widget.accounts || oldWidget.keys != widget.keys) {
+    if (oldWidget.accounts != widget.accounts || oldWidget.keys != widget.keys || oldWidget.ready != widget.ready) {
       _arrange();
-      if (_history.isNotEmpty && !_warmed) _warmUp();
+      if (_history.isNotEmpty && !_warmed && widget.ready) _warmUp();
     }
   }
 
@@ -372,7 +408,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
       // The first load is history to replay; later arrivals play live.
       if (!first) _queue.addAll(fresh.reversed.take(30));
       _arrange();
-      if (first && !_warmed) _warmUp();
+      if (first && !_warmed && widget.ready) _warmUp();
     } catch (_) {
       // The next poll tries again; the scene keeps replaying meanwhile.
     }
@@ -389,10 +425,12 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
         slugCounts[slug] = (slugCounts[slug] ?? 0) + 1;
       }
     }
+    final oldApps = _apps;
+    final oldProviderSlugs = _providerSlugs;
     final keyNames = <String>{...(keyCounts.keys.toList()..sort((a, b) => keyCounts[b]!.compareTo(keyCounts[a]!))), ...widget.keys.map((key) => key.name)}.toList();
     final wide = MediaQuery.maybeSizeOf(context)?.width ?? 1200;
     final maxApps = wide < 640 ? 4 : 6;
-    _apps = keyNames.length > maxApps ? <String>[...keyNames.take(maxApps - 1), _otherLabel] : keyNames;
+    _apps = _keepOrder(oldApps, keyNames.length > maxApps ? <String>[...keyNames.take(maxApps - 1), _otherLabel] : keyNames);
     // One card per provider, however many of its accounts are connected.
     _slugToProvider = <String, String>{for (final account in widget.accounts) account.slug: account.providerKey};
     final providerCounts = <String, int>{};
@@ -404,20 +442,41 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
     final keys = providerNames.keys.toList()..sort((a, b) => providerCounts[b]!.compareTo(providerCounts[a]!));
     const maxProviders = 8;
     final shown = keys.length > maxProviders ? keys.take(maxProviders - 1).toList() : keys;
-    _providerSlugs = List<String>.of(shown);
-    _providers = shown.map((key) => providerNames[key]!).toList();
-    if (keys.length > maxProviders) {
-      _providerSlugs.add('*');
-      _providers.add(_otherLabel);
-    }
+    // "Other" and the pool card always come last.
+    final slugs = _keepOrder(oldProviderSlugs.where((slug) => slug != '*' && slug != _poolSlug).toList(), shown);
+    if (keys.length > maxProviders) slugs.add('*');
+    final inPool = widget.controller.pools?.inPool ?? false;
+    if (inPool) slugs.add(_poolSlug);
+    _providerSlugs = slugs;
+    _providers = <String>[
+      for (final slug in slugs)
+        slug == '*'
+            ? _otherLabel
+            : slug == _poolSlug
+            ? AppL10n.of(context).filterPool
+            : providerNames[slug]!,
+    ];
     // Pool partners share one card, set a little apart from the providers.
-    _poolIndex = null;
-    if (widget.controller.pools?.inPool ?? false) {
-      _poolIndex = _providers.length;
-      _providerSlugs.add(_poolSlug);
-      _providers.add(AppL10n.of(context).filterPool);
+    _poolIndex = inPool ? slugs.length - 1 : null;
+    final apps = math.max(1, _apps.length), providers = math.max(1, _providers.length);
+    if (!listEquals(oldApps, _apps) || !listEquals(oldProviderSlugs, _providerSlugs)) {
+      // Cards that moved take what is in flight to them along.
+      _scene.remap(
+        <int>[for (final name in oldApps) _apps.indexOf(name)],
+        <int>[for (final slug in oldProviderSlugs) _providerSlugs.indexOf(slug)],
+        apps,
+        providers,
+      );
     }
-    _scene.resize(math.max(1, _apps.length), math.max(1, _providers.length));
+    _scene.resize(apps, providers);
+  }
+
+  // The wanted cards, but those already shown keep their place, so a card
+  // does not jump (and lose its label) just because traffic shifted a little.
+  static List<String> _keepOrder(List<String> current, List<String> wanted) {
+    final wantedSet = wanted.toSet();
+    final kept = current.where(wantedSet.contains).toList();
+    return <String>[...kept, ...wanted.where((name) => !kept.contains(name))];
   }
 
   String get _otherLabel => AppL10n.of(context).liveOther;
@@ -451,7 +510,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
       final provider = model.contains('/') ? _providerIndex(model.split('/').first) : -1;
       if (provider < 0) continue;
       attempts.add(_Attempt(provider, outcome == 'success'));
-      if (outcome == 'success') _lastModel[provider] = model.substring(model.indexOf('/') + 1);
+      if (outcome == 'success') _lastModel[_providerSlugs[provider]] = model.substring(model.indexOf('/') + 1);
     }
     if (attempts.isEmpty && log.success && (log.model ?? '').contains('/')) {
       final provider = _providerIndex(log.model!.split('/').first);
@@ -513,6 +572,11 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   }
 
   void _step(double dt) {
+    // Without the connections, a request would not know which card it goes to.
+    if (!widget.ready) {
+      _scene.advance(dt);
+      return;
+    }
     _sinceSpawn += dt;
     if (_queue.isNotEmpty && _sinceSpawn > 260) {
       _sinceSpawn = 0;
@@ -543,15 +607,19 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _Header(title: widget.title, status: widget.status, action: widget.action, scene: _scene, liveSince: () => _lastLive, hasTraffic: () => _history.isNotEmpty, loaded: () => _loaded, compact: compact),
+              _Header(title: widget.title, status: widget.status, action: widget.action, scene: _scene, liveSince: () => _lastLive, hasTraffic: () => _history.isNotEmpty, loaded: () => _ready, compact: compact),
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, stage) {
                     // While loading, skeleton slots stand in for keys and connections.
-                    final apps = _loaded || _apps.isNotEmpty ? math.max(1, _apps.length) : (compact ? 3 : 4);
-                    final providers = _loaded || _providers.isNotEmpty ? math.max(1, _providers.length) : (compact ? 4 : 5);
+                    final apps = _ready || _apps.isNotEmpty ? math.max(1, _apps.length) : (compact ? 3 : 4);
+                    final providers = _ready || _providers.isNotEmpty ? math.max(1, _providers.length) : (compact ? 4 : 5);
                     final layout = _Layout(Size(stage.maxWidth, stage.maxHeight), apps, providers, poolIndex: _poolIndex);
-                    return _Stage(scene: _scene, layout: layout, apps: _apps, providers: _providers, appRequests: _appRequests, lastModel: _lastModel, empty: _history.isEmpty, loaded: _loaded, poolIndex: _poolIndex);
+                    final lastModels = <int, String>{
+                      for (var j = 0; j < _providerSlugs.length; j++)
+                        if (_lastModel[_providerSlugs[j]] != null) j: _lastModel[_providerSlugs[j]]!,
+                    };
+                    return _Stage(scene: _scene, layout: layout, apps: _apps, providers: _providers, appRequests: _appRequests, lastModel: lastModels, empty: _history.isEmpty, loaded: _ready, poolIndex: _poolIndex);
                   },
                 ),
               ),

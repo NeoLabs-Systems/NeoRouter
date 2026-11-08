@@ -122,6 +122,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             controller: controller,
             accounts: _accounts,
             keys: _keys,
+            ready: !_loading,
             title: _greeting(t),
             status: status,
             action: setupDone ? FilledButton(onPressed: () => controller.go(AppPage.playground), child: Text(t.homeOpenPlayground)) : null,
