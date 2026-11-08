@@ -97,8 +97,13 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl \
  && rm -rf /var/lib/apt/lists/*
 
+# Changes with every commit in CI (the commit id), so the download below runs
+# again instead of reusing a cached, older dashboard.
+ARG NEOROUTER_WEB_STAMP=
+
 WORKDIR /web
 RUN set -eux; \
+    echo "Web client for ${NEOROUTER_WEB_STAMP:-this build}"; \
     case "${NEOROUTER_CHANNEL:-beta}" in \
       beta) release=web-beta ;; \
       stable|main|latest) release=web-main ;; \
@@ -162,9 +167,11 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY --from=source --chown=${UID}:${GID} /src ./
+# Largest and least often changed first: an update that only touches the code
+# rebuilds, uploads and downloads just the last, small layer.
 COPY --from=deps --chown=${UID}:${GID} /app/node_modules ./node_modules
 COPY --from=web-prebuilt --chown=${UID}:${GID} /web ./flutter_app/build/web
+COPY --from=source --chown=${UID}:${GID} /src ./
 
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 # The symlink makes `docker compose exec neorouter neorouter status` work

@@ -7,9 +7,10 @@
 node_modules
 **/node_modules
 
-# Docs, tests and tooling are not needed at runtime.
+# Docs, tests, videos and tooling are not needed at runtime.
 test
 docs
+videos
 landing/*.md
 AGENTS.md
 CLAUDE.md

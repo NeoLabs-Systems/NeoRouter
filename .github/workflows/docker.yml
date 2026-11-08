@@ -43,13 +43,38 @@ concurrency:
   group: docker-${{ github.ref }}
   cancel-in-progress: true
 
+# Each platform builds on its own native runner (arm64 used to be emulated,
+# which took most of the time), is smoke-tested there, and is pushed by
+# digest; the last job joins both into one multi-arch tag.
 jobs:
   build:
-    name: Build and smoke test
-    runs-on: ubuntu-latest
+    name: Build and smoke test (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+      actions: read
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # The image downloads the dashboard that the Web Client workflow builds
+      # from the same push; wait for it so the image never ships the previous one.
+      - name: Wait for this commit's web client
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow web-client.yml --commit "$GITHUB_SHA" --json databaseId -q '.[0].databaseId')
+          if [ -n "$run" ]; then gh run watch "$run" --repo "$GITHUB_REPOSITORY" --exit-status --interval 10; else echo "No web client build for this commit."; fi
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
@@ -61,10 +86,12 @@ jobs:
           load: true
           tags: neorouter:ci
           # The dashboard matches the branch: main is stable, beta is beta.
+          # NEOROUTER_WEB_STAMP makes the dashboard download run again instead of reusing a cached copy.
           build-args: |
             NEOROUTER_CHANNEL=${{ github.ref_name == 'beta' && 'beta' || 'stable' }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            NEOROUTER_WEB_STAMP=${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
 
       # A build that passes but does not start is worthless: the native modules,
       # the web client path and the bind address only fail at runtime.
@@ -98,6 +125,61 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Everything is cached from the build above, so this only uploads.
+      - name: Push by digest
+        id: push
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/${{ matrix.arch }}
+          build-args: |
+            NEOROUTER_CHANNEL=${{ github.ref_name == 'beta' && 'beta' || 'stable' }}
+            NEOROUTER_WEB_STAMP=${{ github.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.arch }}
+
+      - name: Keep the digest
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p /tmp/digests
+          touch "/tmp/digests/${DIGEST#sha256:}"
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+
+      - name: Upload the digest
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.arch }}
+          path: /tmp/digests/*
+          retention-days: 1
+
+  publish:
+    name: Publish multi-arch tags
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digest-*
+          merge-multiple: true
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Tags and labels
         id: meta
         uses: docker/metadata-action@v5
@@ -109,16 +191,12 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Publish
-        if: github.event_name != 'pull_request'
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          platforms: linux/amd64,linux/arm64
-          build-args: |
-            NEOROUTER_CHANNEL=${{ github.ref_name == 'beta' && 'beta' || 'stable' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Create the multi-arch tags
+        working-directory: /tmp/digests
+        run: |
+          # Word splitting is wanted: one -t per tag, one argument per digest.
+          # shellcheck disable=SC2046
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.IMAGE }}@sha256:%s ' *)
+          docker buildx imagetools inspect "${{ env.IMAGE }}:${{ steps.meta.outputs.version }}"
