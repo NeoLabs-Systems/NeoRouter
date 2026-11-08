@@ -6451,34 +6451,47 @@ abstract class AppL10n {
   /// **'{count} free models'**
   String poolFreeModels(String count);
 
-  /// No description provided for @poolLimitsLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Per partner and day'**
-  String get poolLimitsLabel;
-
-  /// No description provided for @poolLimitsValue.
-  ///
-  /// In en, this message translates to:
-  /// **'{requests} requests · {tokens} tokens · {concurrent} at once · {reserve}% kept for you'**
-  String poolLimitsValue(
-    String requests,
-    String tokens,
-    String concurrent,
-    String reserve,
-  );
-
-  /// No description provided for @poolLimitsChange.
-  ///
-  /// In en, this message translates to:
-  /// **'Change'**
-  String get poolLimitsChange;
-
   /// No description provided for @poolLimitsTitle.
   ///
   /// In en, this message translates to:
   /// **'Share per partner'**
   String get poolLimitsTitle;
+
+  /// No description provided for @poolLimitsAutoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic and fair: every partner gets the same share; one who gives you more gets up to three times as much, one who only takes half. Your own requests always come first.'**
+  String get poolLimitsAutoHint;
+
+  /// No description provided for @poolPartnerCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Today: {requests} requests · {tokens} tokens · {concurrent} at once'**
+  String poolPartnerCaps(String requests, String tokens, String concurrent);
+
+  /// No description provided for @poolLimitsNoPartners.
+  ///
+  /// In en, this message translates to:
+  /// **'Limits show up here once someone joins.'**
+  String get poolLimitsNoPartners;
+
+  /// No description provided for @poolLimitsAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed limits (advanced)'**
+  String get poolLimitsAdvanced;
+
+  /// No description provided for @poolLimitsAdvancedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave a field empty to keep it automatic. A value you set applies to every partner in this pool, whatever they give.'**
+  String get poolLimitsAdvancedHint;
+
+  /// No description provided for @poolLimitAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get poolLimitAutomatic;
 
   /// No description provided for @poolLimitRequests.
   ///
@@ -6509,12 +6522,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'The part of each connection\'s allowance partners never use.'**
   String get poolLimitReserveHint;
-
-  /// No description provided for @poolLimitsBalanceHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Partners who take far more than they give get a little less over time.'**
-  String get poolLimitsBalanceHint;
 
   /// No description provided for @poolLeave.
   ///

@@ -171,7 +171,8 @@ class RouterApi {
       PoolsSummary(await client.post('$_base/pools/join', <String, Object>{'link': link, 'selfName': selfName, 'sharedAccountIds': sharedAccountIds}));
   Future<String> createPoolInvite(String poolId) async => (await client.post('$_base/pools/$poolId/invites'))['link'] as String;
   Future<void> revokePoolInvite(String poolId, String id) => client.delete('$_base/pools/$poolId/invites/$id');
-  Future<PoolsSummary> updatePoolShare(String poolId, Map<String, Object?> body) async => PoolsSummary(await client.putJson('$_base/pools/$poolId/share', _clean(body)));
+  /// Not cleaned: a null limit means "back to automatic".
+  Future<PoolsSummary> updatePoolShare(String poolId, Map<String, Object?> body) async => PoolsSummary(await client.putJson('$_base/pools/$poolId/share', body));
   /// [shared]: the connection's free models; [paid]: its paid ones. One left out stays as it was.
   Future<PoolsSummary> setAccountPoolShare(String poolId, String accountId, {bool? shared, bool? paid}) async => PoolsSummary(
     await client.putJson('$_base/pools/$poolId/accounts/$accountId/share', <String, Object>{if (shared != null) 'shared': shared, if (paid != null) 'paid': paid}),

@@ -204,7 +204,7 @@ class _Scene extends ChangeNotifier {
 /// Where everything sits for a given size: side by side when there is room,
 /// apps on top and providers below on a phone.
 class _Layout {
-  _Layout(this.size, int apps, int providers) {
+  _Layout(this.size, int apps, int providers, {this.poolIndex}) {
     vertical = size.width < 640;
     const pad = 16.0;
     if (!vertical) {
@@ -214,6 +214,8 @@ class _Layout {
       core = Offset(size.width / 2, size.height / 2);
       appPos = _column(apps, pad + nodeW / 2, 84);
       provPos = _column(providers, size.width - pad - nodeW / 2, 72);
+      // The pool card stands out of the column, nearer the router.
+      if (poolIndex != null && poolIndex! < provPos.length) provPos[poolIndex!] = provPos[poolIndex!].translate(-nodeW * 0.35, 8);
     } else {
       nodeH = 44;
       radius = (size.width * 0.13).clamp(34, 56).toDouble();
@@ -232,6 +234,7 @@ class _Layout {
   }
 
   final Size size;
+  final int? poolIndex;
   late final bool vertical;
   late double nodeW;
   late final double appW;
@@ -323,6 +326,8 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   List<String> _providers = <String>[];
   // Provider keys of the cards ("*": the rest), and which provider each account slug belongs to.
   List<String> _providerSlugs = <String>[];
+  // Where the pool sits among the providers, when this person is in a pool.
+  int? _poolIndex;
   Map<String, String> _slugToProvider = <String, String>{};
   final Map<String, int> _appRequests = <String, int>{};
   final Map<int, String> _lastModel = <int, String>{};
@@ -405,10 +410,18 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
       _providerSlugs.add('*');
       _providers.add(_otherLabel);
     }
+    // Pool partners share one card, set a little apart from the providers.
+    _poolIndex = null;
+    if (widget.controller.pools?.inPool ?? false) {
+      _poolIndex = _providers.length;
+      _providerSlugs.add(_poolSlug);
+      _providers.add(AppL10n.of(context).filterPool);
+    }
     _scene.resize(math.max(1, _apps.length), math.max(1, _providers.length));
   }
 
   String get _otherLabel => AppL10n.of(context).liveOther;
+  static const String _poolSlug = '#pool';
 
   Iterable<String> _slugsOf(RequestLog log) sync* {
     for (final step in log.trail) {
@@ -419,6 +432,8 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   }
 
   int _providerIndex(String slug) {
+    // Partner connections are named pool-<partner>; they all go to the pool card.
+    if (slug.startsWith('pool-') && _poolIndex != null) return _poolIndex!;
     final index = _providerSlugs.indexOf(_slugToProvider[slug] ?? slug);
     if (index >= 0) return index;
     return _providerSlugs.indexOf('*');
@@ -535,8 +550,8 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
                     // While loading, skeleton slots stand in for keys and connections.
                     final apps = _loaded || _apps.isNotEmpty ? math.max(1, _apps.length) : (compact ? 3 : 4);
                     final providers = _loaded || _providers.isNotEmpty ? math.max(1, _providers.length) : (compact ? 4 : 5);
-                    final layout = _Layout(Size(stage.maxWidth, stage.maxHeight), apps, providers);
-                    return _Stage(scene: _scene, layout: layout, apps: _apps, providers: _providers, appRequests: _appRequests, lastModel: _lastModel, empty: _history.isEmpty, loaded: _loaded);
+                    final layout = _Layout(Size(stage.maxWidth, stage.maxHeight), apps, providers, poolIndex: _poolIndex);
+                    return _Stage(scene: _scene, layout: layout, apps: _apps, providers: _providers, appRequests: _appRequests, lastModel: _lastModel, empty: _history.isEmpty, loaded: _loaded, poolIndex: _poolIndex);
                   },
                 ),
               ),
@@ -680,7 +695,7 @@ class _Footer extends StatelessWidget {
 /// The animated part: the painter underneath and the app and connection
 /// cards on top, both following the scene every frame.
 class _Stage extends StatelessWidget {
-  const _Stage({required this.scene, required this.layout, required this.apps, required this.providers, required this.appRequests, required this.lastModel, required this.empty, required this.loaded});
+  const _Stage({required this.scene, required this.layout, required this.apps, required this.providers, required this.appRequests, required this.lastModel, required this.empty, required this.loaded, this.poolIndex});
 
   final _Scene scene;
   final _Layout layout;
@@ -690,6 +705,7 @@ class _Stage extends StatelessWidget {
   final Map<int, String> lastModel;
   final bool empty;
   final bool loaded;
+  final int? poolIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -722,7 +738,7 @@ class _Stage extends StatelessWidget {
             children: <Widget>[
               Positioned.fill(
                 child: CustomPaint(
-                  painter: _TrafficPainter(scene: s, layout: layout, palette: palette, loading: !loaded),
+                  painter: _TrafficPainter(scene: s, layout: layout, palette: palette, loading: !loaded, poolIndex: poolIndex),
                 ),
               ),
               for (var i = 0; i < layout.appPos.length && i < appNames.length; i++)
@@ -748,6 +764,7 @@ class _Stage extends StatelessWidget {
                   shakeAt: j < s.provFail.length ? s.t - s.provFail[j] : 1e9,
                   dashed: providers.isEmpty,
                   width: layout.provW,
+                  tint: j == poolIndex ? palette.pool : null,
                 ),
               if (!loaded && apps.isEmpty)
                 for (var i = 0; i < layout.appPos.length; i++) _skeleton(palette, layout.appPos[i], layout.appW, s.t, i),
@@ -884,14 +901,18 @@ class _Stage extends StatelessWidget {
     double shakeAt = 1e9,
     bool dashed = false,
     required double width,
+    // The pool card: its own colour instead of the accent.
+    Color? tint,
   }) {
     final shake = fail > 0 ? math.sin(shakeAt / 28) * 4 * fail : 0.0;
+    final rest = tint == null ? palette.border : tint.withValues(alpha: 0.55);
+    final hot = tint ?? palette.accent;
     final border = fail > 0
-        ? Color.lerp(palette.border, palette.error, 0.4 + fail * 0.6)!
+        ? Color.lerp(rest, palette.error, 0.4 + fail * 0.6)!
         : glow > 0
-        ? Color.lerp(palette.border, palette.accent, 0.3 + glow * 0.7)!
-        : palette.border;
-    final shadow = fail > 0 ? palette.error.withValues(alpha: fail * 0.45) : palette.accent.withValues(alpha: glow * 0.3);
+        ? Color.lerp(rest, hot, 0.3 + glow * 0.7)!
+        : rest;
+    final shadow = fail > 0 ? palette.error.withValues(alpha: fail * 0.45) : hot.withValues(alpha: glow * 0.3);
     return Positioned(
       left: center.dx - width / 2 + shake,
       top: center.dy - layout.nodeH / 2,
@@ -900,7 +921,7 @@ class _Stage extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
-          color: palette.surfaceRaised,
+          color: tint == null ? palette.surfaceRaised : Color.alphaBlend(tint.withValues(alpha: 0.08), palette.surfaceRaised),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: dashed ? palette.borderStrong : border, width: dashed ? 1 : 1.2),
           boxShadow: <BoxShadow>[if (glow > 0 || fail > 0) BoxShadow(color: shadow, blurRadius: 18)],
@@ -930,12 +951,14 @@ class _Stage extends StatelessWidget {
 }
 
 class _TrafficPainter extends CustomPainter {
-  _TrafficPainter({required this.scene, required this.layout, required this.palette, this.loading = false});
+  _TrafficPainter({required this.scene, required this.layout, required this.palette, this.loading = false, this.poolIndex});
 
   final _Scene scene;
   final _Layout layout;
   final NeoRouterPalette palette;
   final bool loading;
+  // The pool's route is drawn in the pool colour.
+  final int? poolIndex;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -958,9 +981,10 @@ class _TrafficPainter extends CustomPainter {
     }
     for (var j = 0; j < layout.provPos.length; j++) {
       final path = _path(layout.provCurve(j));
-      canvas.drawPath(path, base);
+      final pool = j == poolIndex;
+      canvas.drawPath(path, pool ? (Paint.from(base)..color = palette.pool.withValues(alpha: 0.4)) : base);
       final glow = j < s.provGlow.length ? s.provGlow[j] : 0.0;
-      if (glow > 0.01) canvas.drawPath(path, hot..color = palette.accent.withValues(alpha: glow * 0.85));
+      if (glow > 0.01) canvas.drawPath(path, hot..color = (pool ? palette.pool : palette.accent).withValues(alpha: glow * 0.85));
     }
 
     if (loading) _loadingPulses(canvas);

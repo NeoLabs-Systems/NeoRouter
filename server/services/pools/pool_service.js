@@ -491,8 +491,13 @@ async function announceShared(userId, poolId) {
 async function updateShare(userId, poolId, input) {
   const pool = requirePool(userId, poolId);
   const next = { ...pool.share };
-  for (const field of Object.keys(sharePolicy.DEFAULT_SHARE)) if (input[field] !== undefined) next[field] = input[field];
-  store.updatePool(userId, poolId, { share: sharePolicy.shareSettings({ share: next }) });
+  // A number fixes that cap; null hands it back to the automatic share.
+  for (const field of sharePolicy.SHARE_FIELDS) {
+    if (input[field] === null) delete next[field];
+    else if (input[field] !== undefined) next[field] = input[field];
+  }
+  const settings = sharePolicy.shareSettings({ share: next });
+  store.updatePool(userId, poolId, { share: Object.fromEntries(Object.entries(settings).filter(([, value]) => value !== null)) });
   if (Array.isArray(input.sharedAccountIds)) setSharedAccounts(userId, poolId, input.sharedAccountIds, input.shareKinds);
   await announceShared(userId, poolId);
   return summary(userId);
@@ -540,6 +545,7 @@ function partnerView(userId, pool, member) {
       FROM provider_accounts a WHERE a.id = ?`).get(link.accountId)
     : null;
   const balance = link ? sharePolicy.balance(link.id) : null;
+  const caps = link ? sharePolicy.capsFor(link.id, sharePolicy.shareSettings(pool)) : null;
   const offline = !account || account.status === 'error' || reachability.isDown(link?.accountId);
   return {
     memberId: member.memberId,
@@ -552,6 +558,8 @@ function partnerView(userId, pool, member) {
     models: account?.models || 0,
     balance: balance ? { state: balance.state, factor: balance.factor, week: { given: balance.given, taken: balance.taken } } : null,
     today: link ? { given: traffic.today(link.id, 'given'), taken: traffic.today(link.id, 'taken') } : null,
+    // What this partner may use of ours today (automatic unless fixed).
+    caps: caps ? { requestsPerDay: caps.requests, tokensPerDay: caps.tokens, concurrent: caps.concurrent } : null,
   };
 }
 
@@ -578,7 +586,8 @@ function summary(userId, { canManage = true } = {}) {
     pools: store.pools(userId).map((pool) => poolView(userId, pool, { canManage })),
     privacy: peerPrivacy.getSettings(userId),
     shareable: canManage ? shareableAccounts(userId) : [],
-    defaults: sharePolicy.shareSettings(null),
+    // The automatic share and how the balance scales it.
+    defaults: { ...sharePolicy.AUTO_SHARE, balance: { floor: sharePolicy.BALANCE.floor, ceiling: sharePolicy.BALANCE.ceiling } },
     maxPools: MAX_POOLS,
   };
 }

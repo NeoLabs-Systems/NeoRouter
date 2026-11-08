@@ -187,13 +187,17 @@ async function execute(options) {
   // A partner's request: admitted within its share, and announced to the
   // partner's router as rate-limit headers.
   const share = sharePolicy.admit(key);
+  let served = false;
   try {
     res.set(share.headers);
-    return await run({ ...options, shareReserve: share.reserve, sharePoolId: share.poolId });
+    const result = await run({ ...options, shareReserve: share.reserve, sharePoolId: share.poolId });
+    served = true;
+    return result;
   } catch (error) {
     throw peerSafeError(error);
   } finally {
-    share.release();
+    // Only a request this side actually answered counts against the day's share.
+    share.release({ served });
   }
 }
 
@@ -521,6 +525,8 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
       lastError = error;
       trail.push(trailItem(attempt.entry, error.kind, { status: error.status, ms: Date.now() - attempt.started, message: String(error.message).slice(0, 200) }));
       const policy = learning.onFailure(attempt.entry, error, { estimatedTokens: inputTokens, maxTokens: canonical.max_tokens });
+      // A partner counts only the requests it answered, so a refused one does not use up our share of it here either.
+      if (isPeerEntry(attempt.entry)) quota.refundRequest(attempt.entry, inputTokens);
       if (isPeerEntry(attempt.entry)) reachability.noteFailure(attempt.entry.accountId, error.kind);
       plan.noteFailure(attempt.entry, error.kind);
       if (error.kind === KINDS.AUTH) accounts.validateAccount(attempt.entry.accountId).catch(() => {});

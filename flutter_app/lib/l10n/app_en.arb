@@ -2196,9 +2196,10 @@
       }
     }
   },
-  "poolLimitsLabel": "Per partner and day",
-  "poolLimitsValue": "{requests} requests · {tokens} tokens · {concurrent} at once · {reserve}% kept for you",
-  "@poolLimitsValue": {
+  "poolLimitsTitle": "Share per partner",
+  "poolLimitsAutoHint": "Automatic and fair: every partner gets the same share; one who gives you more gets up to three times as much, one who only takes half. Your own requests always come first.",
+  "poolPartnerCaps": "Today: {requests} requests · {tokens} tokens · {concurrent} at once",
+  "@poolPartnerCaps": {
     "placeholders": {
       "requests": {
         "type": "String"
@@ -2208,20 +2209,18 @@
       },
       "concurrent": {
         "type": "String"
-      },
-      "reserve": {
-        "type": "String"
       }
     }
   },
-  "poolLimitsChange": "Change",
-  "poolLimitsTitle": "Share per partner",
+  "poolLimitsNoPartners": "Limits show up here once someone joins.",
+  "poolLimitsAdvanced": "Fixed limits (advanced)",
+  "poolLimitsAdvancedHint": "Leave a field empty to keep it automatic. A value you set applies to every partner in this pool, whatever they give.",
+  "poolLimitAutomatic": "Automatic",
   "poolLimitRequests": "Requests per day",
   "poolLimitTokens": "Tokens per day",
   "poolLimitConcurrent": "Requests at once",
   "poolLimitReserve": "Kept for you (%)",
   "poolLimitReserveHint": "The part of each connection's allowance partners never use.",
-  "poolLimitsBalanceHint": "Partners who take far more than they give get a little less over time.",
   "poolLeave": "Leave pool",
   "poolClose": "Close pool",
   "poolLeaveConfirm": "Leave {name}? Partners lose access to your connections at once, and you to theirs.",

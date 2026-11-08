@@ -263,6 +263,11 @@ function recordRequest(entry, tokens, now = Date.now()) {
   for (const scope of scopesFor(entry)) addUsage(scope.key, 1, tokens, now);
 }
 
+// Takes back a request recorded when it was sent (a pool partner refused it, so it did not count there).
+function refundRequest(entry, tokens, now = Date.now()) {
+  for (const scope of scopesFor(entry)) addUsage(scope.key, -1, -(tokens || 0), now);
+}
+
 function recordTokens(entry, tokens, now = Date.now()) {
   if (!tokens) return;
   for (const scope of scopesFor(entry)) addUsage(scope.key, 0, tokens, now);
@@ -293,6 +298,7 @@ module.exports = { forgetObserved,
   usageOf,
   evaluate,
   recordRequest,
+  refundRequest,
   recordTokens,
   observeHeaders,
   learnLimit,

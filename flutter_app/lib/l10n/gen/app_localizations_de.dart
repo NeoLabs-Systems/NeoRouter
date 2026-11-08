@@ -3674,23 +3674,30 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
-  String get poolLimitsLabel => 'Pro Partner und Tag';
+  String get poolLimitsTitle => 'Anteil pro Partner';
 
   @override
-  String poolLimitsValue(
-    String requests,
-    String tokens,
-    String concurrent,
-    String reserve,
-  ) {
-    return '$requests Anfragen · $tokens Tokens · $concurrent gleichzeitig · $reserve % für dich reserviert';
+  String get poolLimitsAutoHint =>
+      'Automatisch und fair: Jeder Partner bekommt gleich viel; wer dir mehr gibt, bekommt bis zu dreimal so viel, wer nur nimmt, die Hälfte. Deine eigenen Anfragen gehen immer vor.';
+
+  @override
+  String poolPartnerCaps(String requests, String tokens, String concurrent) {
+    return 'Heute: $requests Anfragen · $tokens Tokens · $concurrent gleichzeitig';
   }
 
   @override
-  String get poolLimitsChange => 'Ändern';
+  String get poolLimitsNoPartners =>
+      'Die Limits erscheinen hier, sobald jemand beitritt.';
 
   @override
-  String get poolLimitsTitle => 'Anteil pro Partner';
+  String get poolLimitsAdvanced => 'Feste Limits (erweitert)';
+
+  @override
+  String get poolLimitsAdvancedHint =>
+      'Leer lassen heißt automatisch. Ein Wert, den du setzt, gilt für jeden Partner in diesem Pool, egal wie viel er gibt.';
+
+  @override
+  String get poolLimitAutomatic => 'Automatisch';
 
   @override
   String get poolLimitRequests => 'Anfragen pro Tag';
@@ -3707,10 +3714,6 @@ class AppL10nDe extends AppL10n {
   @override
   String get poolLimitReserveHint =>
       'Der Teil jedes Kontingents, den Partner nie nutzen.';
-
-  @override
-  String get poolLimitsBalanceHint =>
-      'Wer deutlich mehr nimmt als gibt, bekommt mit der Zeit etwas weniger.';
 
   @override
   String get poolLeave => 'Pool verlassen';

@@ -641,7 +641,7 @@ class _PoolOverviewState extends State<_PoolOverview> {
     final totalModels = math.max(1, members.fold<int>(0, (sum, member) => sum + member.models));
     final you = members.first;
     // How much of our own daily share is still free (what partners may still take from us).
-    final capacity = pool.share.requestsPerDay * math.max(1, pool.partners.length);
+    final capacity = math.max(1, pool.partners.fold<int>(0, (sum, partner) => sum + partner.capRequests));
     final level = pool.partners.isEmpty ? 1.0 : (1 - you.took / capacity).clamp(0.0, 1.0);
     final selected = members.where((member) => member.id == _selected).firstOrNull ?? you;
     final graph = PoolGraph(
@@ -970,15 +970,10 @@ class _SharingSectionState extends State<_SharingSection> {
     if (mounted) setState(() => _saving = false);
   }
 
-  Future<void> _editLimits() async {
-    final next = await showDialog<Map<String, Object?>>(context: context, builder: (_) => _LimitsDialog(share: widget.pool.share));
-    if (next != null && mounted) await _apply(context, widget.controller, () => widget.controller.api.updatePoolShare(widget.pool.id, next));
-  }
 
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    final share = widget.pool.share;
     final accounts = widget.controller.pools?.shareable ?? const <ShareableAccount>[];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1001,13 +996,13 @@ class _SharingSectionState extends State<_SharingSection> {
         ),
         SettingsGroup(
           title: t.poolLimitsTitle,
-          description: t.poolLimitsBalanceHint,
+          description: t.poolLimitsAutoHint,
           children: <Widget>[
-            SettingsRow(
-              label: t.poolLimitsLabel,
-              description: t.poolLimitsValue(formatCount(share.requestsPerDay), formatCount(share.tokensPerDay), '${share.concurrent}', '${(share.reserve * 100).round()}'),
-              control: OutlinedButton(onPressed: _editLimits, child: Text(t.poolLimitsChange)),
-            ),
+            if (widget.pool.partners.isEmpty) SettingsRow(label: t.poolLimitsNoPartners),
+            for (final partner in widget.pool.partners)
+              SettingsRow(label: partner.name, description: t.poolPartnerCaps(formatCount(partner.capRequests), formatCount(partner.capTokens), '${partner.capConcurrent}')),
+            // Rebuilt when the stored limits change, so the fields show what was saved.
+            _FixedLimits(key: ValueKey<String>('limits-${widget.pool.id}-${widget.pool.share.raw}'), controller: widget.controller, pool: widget.pool),
           ],
         ),
         InlineHint(message: t.poolTosNotice),
@@ -1586,20 +1581,28 @@ class _SharePoolsDialogState extends State<_SharePoolsDialog> {
   }
 }
 
-class _LimitsDialog extends StatefulWidget {
-  const _LimitsDialog({required this.share});
+/// Fixed limits for one pool, folded away by default: each field empty means
+/// automatic, a value replaces the automatic share for every partner.
+class _FixedLimits extends StatefulWidget {
+  const _FixedLimits({super.key, required this.controller, required this.pool});
 
-  final PoolShare share;
+  final NeoRouterController controller;
+  final PoolInfo pool;
 
   @override
-  State<_LimitsDialog> createState() => _LimitsDialogState();
+  State<_FixedLimits> createState() => _FixedLimitsState();
 }
 
-class _LimitsDialogState extends State<_LimitsDialog> {
-  late final TextEditingController _requests = TextEditingController(text: '${widget.share.requestsPerDay}');
-  late final TextEditingController _tokens = TextEditingController(text: '${widget.share.tokensPerDay}');
-  late final TextEditingController _concurrent = TextEditingController(text: '${widget.share.concurrent}');
-  late final TextEditingController _reserve = TextEditingController(text: '${(widget.share.reserve * 100).round()}');
+class _FixedLimitsState extends State<_FixedLimits> {
+  late final PoolShare _share = widget.pool.share;
+  late bool _open = _anyFixed;
+  late final TextEditingController _requests = TextEditingController(text: _share.requestsPerDay?.toString() ?? '');
+  late final TextEditingController _tokens = TextEditingController(text: _share.tokensPerDay?.toString() ?? '');
+  late final TextEditingController _concurrent = TextEditingController(text: _share.concurrent?.toString() ?? '');
+  late final TextEditingController _reserve = TextEditingController(text: _share.reserve == null ? '' : '${(_share.reserve! * 100).round()}');
+  bool _saving = false;
+
+  bool get _anyFixed => _share.requestsPerDay != null || _share.tokensPerDay != null || _share.concurrent != null || _share.reserve != null;
 
   @override
   void dispose() {
@@ -1609,51 +1612,93 @@ class _LimitsDialogState extends State<_LimitsDialog> {
     super.dispose();
   }
 
-  int? _value(TextEditingController field, int min, int max) {
-    final value = int.tryParse(field.text.trim());
-    return value != null && value >= min && value <= max ? value : null;
+  // Empty: automatic (null). Otherwise a whole number in bounds, or invalid.
+  ({bool valid, int? value}) _read(TextEditingController field, int min, int max) {
+    final text = field.text.trim();
+    if (text.isEmpty) return (valid: true, value: null);
+    final value = int.tryParse(text);
+    return (valid: value != null && value >= min && value <= max, value: value);
+  }
+
+  Future<void> _save(Map<String, Object?> body) async {
+    setState(() => _saving = true);
+    await _apply(context, widget.controller, () => widget.controller.api.updatePoolShare(widget.pool.id, body));
+    if (mounted) setState(() => _saving = false);
   }
 
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    final requests = _value(_requests, 1, 100000);
-    final tokens = _value(_tokens, 1000, 100000000);
-    final concurrent = _value(_concurrent, 1, 20);
-    final reserve = _value(_reserve, 0, 90);
-    final valid = requests != null && tokens != null && concurrent != null && reserve != null;
-    Widget field(TextEditingController controller, String label, {String? helper}) => Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: TextField(
-        controller: controller,
-        keyboardType: TextInputType.number,
-        inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
-        decoration: InputDecoration(labelText: label, helperText: helper, helperMaxLines: 2),
-        onChanged: (_) => setState(() {}),
-      ),
+    final requests = _read(_requests, 1, 100000);
+    final tokens = _read(_tokens, 1000, 100000000);
+    final concurrent = _read(_concurrent, 1, 20);
+    final reserve = _read(_reserve, 0, 90);
+    final valid = requests.valid && tokens.valid && concurrent.valid && reserve.valid;
+    Widget field(TextEditingController controller, String label, {String? helper}) => TextField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+      decoration: InputDecoration(labelText: label, hintText: t.poolLimitAutomatic, helperText: helper, helperMaxLines: 2, isDense: true),
+      onChanged: (_) => setState(() {}),
     );
-    return DialogFrame(
-      title: t.poolLimitsTitle,
-      maxWidth: 440,
-      body: Column(
-        mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 4, 16, 12),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          field(_requests, t.poolLimitRequests),
-          field(_tokens, t.poolLimitTokens),
-          field(_concurrent, t.poolLimitConcurrent),
-          field(_reserve, t.poolLimitReserve, helper: t.poolLimitReserveHint),
-          Text(t.poolLimitsBalanceHint, style: TextStyle(color: palette.textSoft, fontSize: 13, height: 1.4)),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => setState(() => _open = !_open),
+              icon: Icon(_open ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
+              label: Text(t.poolLimitsAdvanced),
+            ),
+          ),
+          if (_open) ...<Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 0, AppSpacing.md),
+              child: Text(t.poolLimitsAdvancedHint, style: TextStyle(color: palette.textSoft, fontSize: 12.5, height: 1.4)),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth >= 520 ? (constraints.maxWidth - AppSpacing.md) / 2 : constraints.maxWidth;
+                  return Wrap(
+                    spacing: AppSpacing.md,
+                    runSpacing: AppSpacing.md,
+                    children: <Widget>[
+                      SizedBox(width: width, child: field(_requests, t.poolLimitRequests)),
+                      SizedBox(width: width, child: field(_tokens, t.poolLimitTokens)),
+                      SizedBox(width: width, child: field(_concurrent, t.poolLimitConcurrent)),
+                      SizedBox(width: width, child: field(_reserve, t.poolLimitReserve, helper: t.poolLimitReserveHint)),
+                    ],
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: AppSpacing.sm,
+              children: <Widget>[
+                if (_anyFixed)
+                  TextButton(
+                    onPressed: _saving ? null : () => _save(<String, Object?>{'requestsPerDay': null, 'tokensPerDay': null, 'concurrent': null, 'reserve': null}),
+                    child: Text(t.poolLimitAutomatic),
+                  ),
+                FilledButton(
+                  onPressed: valid && !_saving
+                      ? () => _save(<String, Object?>{'requestsPerDay': requests.value, 'tokensPerDay': tokens.value, 'concurrent': concurrent.value, 'reserve': reserve.value == null ? null : reserve.value! / 100})
+                      : null,
+                  child: Text(t.save),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
-      actions: <Widget>[
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.cancel)),
-        FilledButton(
-          onPressed: valid ? () => Navigator.of(context).pop(<String, Object?>{'requestsPerDay': requests, 'tokensPerDay': tokens, 'concurrent': concurrent, 'reserve': reserve / 100}) : null,
-          child: Text(t.save),
-        ),
-      ],
     );
   }
 }

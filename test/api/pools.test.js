@@ -227,7 +227,10 @@ test('what is shared: unshared connections and used-up shares are refused', asyn
   assert.equal((await chat('alex', 'pool', model)).status, 200);
   const over = await chat('alex', 'pool', model);
   assert.notEqual(over.status, 200, 'the day’s share is used up');
-  await api('bea', 'put', `/pools/${poolId}/share`, { requestsPerDay: 300 });
+  // null hands the cap back to the automatic share.
+  const back = await api('bea', 'put', `/pools/${poolId}/share`, { requestsPerDay: null });
+  assert.equal(back.status, 200, JSON.stringify(back.body));
+  assert.equal((await summary('bea')).share.requestsPerDay, null);
 });
 
 test('each connection shares the kinds ticked for it; paid models only when ticked, at no cost to the partner', async () => {
@@ -284,6 +287,18 @@ test('the pool activity counts what partners used of ours and we of theirs', asy
   assert.equal(alex.days, 7, 'unknown ranges fall back to a week');
   assert.ok(alex.taken.byPartner.some((row) => row.name === 'bea'), JSON.stringify(alex.taken));
   assert.equal((await api('alex', 'get', '/pools/00000000-0000-0000-0000-000000000000/activity')).status, 404);
+});
+
+test('a request the partner cannot serve does not use up the day\'s share', async () => {
+  const model = await partnerModel('alex', 'bea', 'ok-bea');
+  const givenToAlex = async () => (await summary('bea')).partners.find((partner) => partner.name === 'alex').today.given.requests;
+  const before = await givenToAlex();
+  await api('bea', 'put', `/pools/${poolId}/accounts/${people.bea.account}/share`, { shared: false });
+  for (let attempt = 0; attempt < 3; attempt += 1) assert.notEqual((await chat('alex', 'pool', model)).status, 200);
+  assert.equal(await givenToAlex(), before, 'refused requests are not counted');
+  await api('bea', 'put', `/pools/${poolId}/accounts/${people.bea.account}/share`, { shared: true });
+  assert.equal((await chat('alex', 'pool', model)).status, 200);
+  assert.equal(await givenToAlex(), before + 1, 'a served one is');
 });
 
 test('the quick switch pauses giving and using, and turning it on restores everything', async () => {

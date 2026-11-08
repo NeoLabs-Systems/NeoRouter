@@ -359,6 +359,10 @@ class PoolPartner {
   String get balance => _map(raw['balance'])['state'] as String? ?? 'new';
   PoolTraffic get week => PoolTraffic(_map(_map(raw['balance'])['week']));
   PoolTraffic get today => PoolTraffic(_map(raw['today']));
+  /// What this partner may use of ours today (automatic unless fixed).
+  int get capRequests => _int(_map(raw['caps'])['requestsPerDay']) ?? 0;
+  int get capTokens => _int(_map(raw['caps'])['tokensPerDay']) ?? 0;
+  int get capConcurrent => _int(_map(raw['caps'])['concurrent']) ?? 0;
 }
 
 class ShareableAccount {
@@ -378,14 +382,15 @@ class ShareableAccount {
   bool get hasBalance => raw['hasBalance'] == true;
 }
 
+/// The limits the owner fixed for a pool; null means automatic.
 class PoolShare {
   PoolShare(this.raw);
   final Map<String, dynamic> raw;
 
-  int get requestsPerDay => _int(raw['requestsPerDay']) ?? 300;
-  int get tokensPerDay => _int(raw['tokensPerDay']) ?? 600000;
-  int get concurrent => _int(raw['concurrent']) ?? 2;
-  double get reserve => _double(raw['reserve']) ?? 0.3;
+  int? get requestsPerDay => _int(raw['requestsPerDay']);
+  int? get tokensPerDay => _int(raw['tokensPerDay']);
+  int? get concurrent => _int(raw['concurrent']);
+  double? get reserve => _double(raw['reserve']);
 }
 
 /// One pool this person is in.

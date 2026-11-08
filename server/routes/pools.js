@@ -61,7 +61,8 @@ pool.delete('/invites/:id', (req, res) => {
 
 const bounded = (field, integer = true) => {
   const [min, max] = SHARE_BOUNDS[field];
-  return (integer ? z.number().int() : z.number()).min(min).max(max).optional();
+  // null: back to automatic.
+  return (integer ? z.number().int() : z.number()).min(min).max(max).nullable().optional();
 };
 
 pool.put('/share', validate(z.object({

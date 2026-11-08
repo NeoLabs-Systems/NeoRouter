@@ -3652,23 +3652,29 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get poolLimitsLabel => 'Per partner and day';
+  String get poolLimitsTitle => 'Share per partner';
 
   @override
-  String poolLimitsValue(
-    String requests,
-    String tokens,
-    String concurrent,
-    String reserve,
-  ) {
-    return '$requests requests · $tokens tokens · $concurrent at once · $reserve% kept for you';
+  String get poolLimitsAutoHint =>
+      'Automatic and fair: every partner gets the same share; one who gives you more gets up to three times as much, one who only takes half. Your own requests always come first.';
+
+  @override
+  String poolPartnerCaps(String requests, String tokens, String concurrent) {
+    return 'Today: $requests requests · $tokens tokens · $concurrent at once';
   }
 
   @override
-  String get poolLimitsChange => 'Change';
+  String get poolLimitsNoPartners => 'Limits show up here once someone joins.';
 
   @override
-  String get poolLimitsTitle => 'Share per partner';
+  String get poolLimitsAdvanced => 'Fixed limits (advanced)';
+
+  @override
+  String get poolLimitsAdvancedHint =>
+      'Leave a field empty to keep it automatic. A value you set applies to every partner in this pool, whatever they give.';
+
+  @override
+  String get poolLimitAutomatic => 'Automatic';
 
   @override
   String get poolLimitRequests => 'Requests per day';
@@ -3685,10 +3691,6 @@ class AppL10nEn extends AppL10n {
   @override
   String get poolLimitReserveHint =>
       'The part of each connection\'s allowance partners never use.';
-
-  @override
-  String get poolLimitsBalanceHint =>
-      'Partners who take far more than they give get a little less over time.';
 
   @override
   String get poolLeave => 'Leave pool';

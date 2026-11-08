@@ -78,28 +78,35 @@ test('signed envelopes: tampering, wrong keys, old messages and replays are refu
   assert.equal(protocol.verifyObject(one.publicKey, { ...ticket, to: 'someone else' }, signature), false);
 });
 
-test('balance: a partner who takes far more than it gives gets gradually lower caps', () => {
+test('automatic caps are fair: the same base for everyone, more for partners who give, less for those who only take', () => {
   const db = getDatabase();
   db.prepare("INSERT INTO peer_links (id, user_id, pool_id, member_id, name, url, public_key) VALUES ('l1', 'u1', 'p1', 'm', 'P', 'https://p.example', 'k')").run();
+  db.prepare("INSERT INTO peer_links (id, user_id, pool_id, member_id, name, url, public_key) VALUES ('l2', 'u1', 'p1', 'm2', 'Q', 'https://q.example', 'k2')").run();
+  const auto = sharePolicy.shareSettings(null);
   assert.equal(sharePolicy.balance('l1').state, 'new');
-  traffic.add('l1', 'given', 90, 0);
-  traffic.add('l1', 'taken', 30, 0);
-  assert.equal(sharePolicy.balance('l1').factor, 1, 'below the minimum volume nothing changes');
-  traffic.add('l1', 'given', 210, 0);
-  const lopsided = sharePolicy.balance('l1');
-  assert.equal(lopsided.state, 'giving_more');
-  assert.equal(lopsided.factor, Number((3 / 10).toFixed(3)));
-  const caps = sharePolicy.capsFor('l1', sharePolicy.shareSettings(null));
-  assert.equal(caps.requests, Math.floor(sharePolicy.DEFAULT_SHARE.requestsPerDay * lopsided.factor));
-  traffic.add('l1', 'given', 100000, 0);
-  assert.equal(sharePolicy.balance('l1').factor, sharePolicy.BALANCE.floor, 'never below the floor');
+  assert.equal(sharePolicy.capsFor('l1', auto).requests, sharePolicy.AUTO_SHARE.requestsPerDay, 'a new partner gets the base share');
+  // l1 only takes from us: down to half, never lower.
+  traffic.add('l1', 'given', 5000, 0);
+  assert.equal(sharePolicy.balance('l1').factor, sharePolicy.BALANCE.floor);
+  assert.equal(sharePolicy.capsFor('l1', auto).requests, Math.floor(sharePolicy.AUTO_SHARE.requestsPerDay * sharePolicy.BALANCE.floor));
+  // l2 gives us far more than it takes: up to three times the base.
+  traffic.add('l2', 'taken', 900, 0);
+  traffic.add('l2', 'given', 100, 0);
+  assert.equal(sharePolicy.balance('l2').factor, sharePolicy.BALANCE.ceiling);
+  assert.equal(sharePolicy.capsFor('l2', auto).requests, sharePolicy.AUTO_SHARE.requestsPerDay * sharePolicy.BALANCE.ceiling);
+  // A value the owner sets replaces the automatic one, whatever the balance.
+  const fixed = sharePolicy.capsFor('l1', sharePolicy.shareSettings({ share: { requestsPerDay: 1000 } }));
+  assert.equal(fixed.requests, 1000);
+  assert.equal(fixed.auto.requestsPerDay, false);
+  assert.equal(fixed.auto.tokensPerDay, true);
 });
 
-test('share settings are clamped to safe bounds', () => {
+test('share settings: set values are clamped to safe bounds, missing ones stay automatic', () => {
   const settings = sharePolicy.shareSettings({ share: { requestsPerDay: -5, concurrent: 999, reserve: 'x' } });
   assert.equal(settings.requestsPerDay, 1);
   assert.equal(settings.concurrent, 20);
-  assert.equal(settings.reserve, sharePolicy.DEFAULT_SHARE.reserve);
+  assert.equal(settings.reserve, null);
+  assert.equal(settings.tokensPerDay, null);
 });
 
 test('the pool shield minimum: hidden secrets, placeholders for contact data, nothing else when the shield is off', () => {

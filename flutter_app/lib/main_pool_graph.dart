@@ -284,7 +284,8 @@ class _PoolPainter extends CustomPainter {
     final surface = center.dy + r - 2 * r * level.clamp(0.0, 1.0);
     final speed = active ? 1.0 : 0.0;
     _wave(canvas, center, r, surface + 4, t * 0.9 * speed + 1.3, (active ? PoolGraph.give : palette.textMuted).withValues(alpha: 0.18));
-    _wave(canvas, center, r, surface, t * 1.4 * speed, active ? const Color(0xFF3B5A47) : palette.border);
+    // The water: the theme's green over the card, so it reads in light and dark mode alike.
+    _wave(canvas, center, r, surface, t * 1.4 * speed, active ? Color.alphaBlend(palette.success.withValues(alpha: 0.32), palette.surfaceRaised) : palette.border);
     canvas.restore();
     canvas.drawCircle(center, r, Paint()
       ..style = PaintingStyle.stroke
