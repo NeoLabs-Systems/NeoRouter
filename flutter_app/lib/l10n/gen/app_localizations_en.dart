@@ -1233,6 +1233,71 @@ class AppL10nEn extends AppL10n {
   String get securityTitle => 'Security';
 
   @override
+  String get accountDataTitle => 'Your data';
+
+  @override
+  String get accountExportTitle => 'Export account data';
+
+  @override
+  String get accountExportHint =>
+      'Your profile, connections, settings, pools and usage history as one file. Passwords and API keys are not included.';
+
+  @override
+  String get accountExport => 'Export';
+
+  @override
+  String get accountKeysTitle => 'Export saved API keys';
+
+  @override
+  String get accountKeysHint =>
+      'The keys of your connections in plain text, as a separate file. Needs two-factor authentication.';
+
+  @override
+  String get accountKeysNeedTwoFactor =>
+      'Turn on two-factor authentication under Security first. The keys leave the server in plain text, so this needs more than your password.';
+
+  @override
+  String get accountKeysWarning =>
+      'Anyone with this file can use your providers on your bill. Keep it somewhere safe and delete it when you no longer need it.';
+
+  @override
+  String get accountDeleteTitle => 'Delete account';
+
+  @override
+  String get accountDeleteHint =>
+      'Deletes your account with all connections, keys, settings and history. Your pools are told you left. This cannot be undone.';
+
+  @override
+  String get accountDelete => 'Delete account';
+
+  @override
+  String get accountDeleteConfirm =>
+      'Everything in this account is deleted for good. Export your data first if you want to keep it.';
+
+  @override
+  String get accountDeleted => 'Your account was deleted.';
+
+  @override
+  String get accountConfirmPassword => 'Enter your password to continue.';
+
+  @override
+  String get accountConfirmPasswordCode =>
+      'Enter your password and a code from your authenticator app.';
+
+  @override
+  String get accountExported => 'Downloaded.';
+
+  @override
+  String get accountLastAdmin =>
+      'You are the only admin. Make someone else an admin first.';
+
+  @override
+  String get accountWrongPassword => 'The password is not correct.';
+
+  @override
+  String get accountWrongCode => 'The code is not valid.';
+
+  @override
   String get twoFactorTitle => 'Two-factor authentication';
 
   @override

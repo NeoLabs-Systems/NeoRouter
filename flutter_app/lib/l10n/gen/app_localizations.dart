@@ -2305,6 +2305,120 @@ abstract class AppL10n {
   /// **'Security'**
   String get securityTitle;
 
+  /// No description provided for @accountDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data'**
+  String get accountDataTitle;
+
+  /// No description provided for @accountExportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export account data'**
+  String get accountExportTitle;
+
+  /// No description provided for @accountExportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile, connections, settings, pools and usage history as one file. Passwords and API keys are not included.'**
+  String get accountExportHint;
+
+  /// No description provided for @accountExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get accountExport;
+
+  /// No description provided for @accountKeysTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export saved API keys'**
+  String get accountKeysTitle;
+
+  /// No description provided for @accountKeysHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The keys of your connections in plain text, as a separate file. Needs two-factor authentication.'**
+  String get accountKeysHint;
+
+  /// No description provided for @accountKeysNeedTwoFactor.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on two-factor authentication under Security first. The keys leave the server in plain text, so this needs more than your password.'**
+  String get accountKeysNeedTwoFactor;
+
+  /// No description provided for @accountKeysWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone with this file can use your providers on your bill. Keep it somewhere safe and delete it when you no longer need it.'**
+  String get accountKeysWarning;
+
+  /// No description provided for @accountDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get accountDeleteTitle;
+
+  /// No description provided for @accountDeleteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Deletes your account with all connections, keys, settings and history. Your pools are told you left. This cannot be undone.'**
+  String get accountDeleteHint;
+
+  /// No description provided for @accountDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get accountDelete;
+
+  /// No description provided for @accountDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything in this account is deleted for good. Export your data first if you want to keep it.'**
+  String get accountDeleteConfirm;
+
+  /// No description provided for @accountDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account was deleted.'**
+  String get accountDeleted;
+
+  /// No description provided for @accountConfirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password to continue.'**
+  String get accountConfirmPassword;
+
+  /// No description provided for @accountConfirmPasswordCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password and a code from your authenticator app.'**
+  String get accountConfirmPasswordCode;
+
+  /// No description provided for @accountExported.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded.'**
+  String get accountExported;
+
+  /// No description provided for @accountLastAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'You are the only admin. Make someone else an admin first.'**
+  String get accountLastAdmin;
+
+  /// No description provided for @accountWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'The password is not correct.'**
+  String get accountWrongPassword;
+
+  /// No description provided for @accountWrongCode.
+  ///
+  /// In en, this message translates to:
+  /// **'The code is not valid.'**
+  String get accountWrongCode;
+
   /// No description provided for @twoFactorTitle.
   ///
   /// In en, this message translates to:

@@ -43,6 +43,18 @@ function isEnabled(userId) {
   return row(userId)?.enabled === 1;
 }
 
+// A step that matters (turning 2FA off, exporting data, deleting the account)
+// asks for the password again, and for a code when 2FA is on. requireFactor:
+// refuses outright when 2FA is off.
+async function confirm(userId, { currentPassword, code }, { requireFactor = false } = {}) {
+  await assertPassword(userId, currentPassword);
+  if (!isEnabled(userId)) {
+    if (requireFactor) throw new HttpError(403, 'TWO_FACTOR_REQUIRED', 'Turn on two-factor authentication first.');
+    return;
+  }
+  if (!code || !(await verifyCode(userId, code))) throw new HttpError(401, 'INVALID_TWO_FACTOR', 'The code is not valid.');
+}
+
 async function assertPassword(userId, password) {
   const user = getDatabase().prepare('SELECT password_hash FROM users WHERE id = ?').get(userId);
   if (!user || !(await verifyPassword(String(password || ''), user.password_hash))) {
@@ -167,6 +179,7 @@ module.exports = {
   status,
   isEnabled,
   verifyCode,
+  confirm,
   beginSetup,
   enable,
   disable,

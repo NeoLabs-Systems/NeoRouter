@@ -1241,6 +1241,72 @@ class AppL10nDe extends AppL10n {
   String get securityTitle => 'Sicherheit';
 
   @override
+  String get accountDataTitle => 'Deine Daten';
+
+  @override
+  String get accountExportTitle => 'Kontodaten exportieren';
+
+  @override
+  String get accountExportHint =>
+      'Profil, Verbindungen, Einstellungen, Pools und Nutzungsverlauf als eine Datei. Passwörter und API-Schlüssel sind nicht enthalten.';
+
+  @override
+  String get accountExport => 'Exportieren';
+
+  @override
+  String get accountKeysTitle => 'Gespeicherte API-Schlüssel exportieren';
+
+  @override
+  String get accountKeysHint =>
+      'Die Schlüssel deiner Verbindungen im Klartext, als eigene Datei. Braucht die Zwei-Faktor-Anmeldung.';
+
+  @override
+  String get accountKeysNeedTwoFactor =>
+      'Schalte zuerst unter Sicherheit die Zwei-Faktor-Anmeldung ein. Die Schlüssel verlassen den Server im Klartext, darum braucht das mehr als dein Passwort.';
+
+  @override
+  String get accountKeysWarning =>
+      'Wer diese Datei hat, kann deine Anbieter auf deine Kosten nutzen. Bewahre sie sicher auf und lösche sie, wenn du sie nicht mehr brauchst.';
+
+  @override
+  String get accountDeleteTitle => 'Konto löschen';
+
+  @override
+  String get accountDeleteHint =>
+      'Löscht dein Konto mit allen Verbindungen, Schlüsseln, Einstellungen und dem Verlauf. Deine Pools erfahren, dass du gegangen bist. Das lässt sich nicht rückgängig machen.';
+
+  @override
+  String get accountDelete => 'Konto löschen';
+
+  @override
+  String get accountDeleteConfirm =>
+      'Alles in diesem Konto wird endgültig gelöscht. Exportiere vorher deine Daten, wenn du sie behalten willst.';
+
+  @override
+  String get accountDeleted => 'Dein Konto wurde gelöscht.';
+
+  @override
+  String get accountConfirmPassword =>
+      'Gib dein Passwort ein, um fortzufahren.';
+
+  @override
+  String get accountConfirmPasswordCode =>
+      'Gib dein Passwort und einen Code aus deiner Authenticator-App ein.';
+
+  @override
+  String get accountExported => 'Heruntergeladen.';
+
+  @override
+  String get accountLastAdmin =>
+      'Du bist der einzige Admin. Mach zuerst jemand anderen zum Admin.';
+
+  @override
+  String get accountWrongPassword => 'Das Passwort stimmt nicht.';
+
+  @override
+  String get accountWrongCode => 'Der Code ist ungültig.';
+
+  @override
   String get twoFactorTitle => 'Zwei-Faktor-Authentifizierung';
 
   @override
