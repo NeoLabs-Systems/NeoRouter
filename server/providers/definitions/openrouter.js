@@ -12,10 +12,12 @@ module.exports = {
   headers: { 'HTTP-Referer': 'https://github.com/NeoLabs-Systems/NeoRouter', 'X-Title': 'NeoRouter' },
   validate: { path: '/key' },
   // Embedding, image and video models live in their own listings.
-  // System One decision models (Jev) are listed under the decisions modality.
-  models: { extraPaths: ['/embeddings/models', '/images/models', '/videos/models', '/models?output_modalities=decisions'] },
+  // System One decision models (Jev) and text-to-speech models are listed under their output modality.
+  models: { extraPaths: ['/embeddings/models', '/images/models', '/videos/models', '/models?output_modalities=decisions', '/models?output_modalities=speech'] },
   media: { embed: '/embeddings', generateImage: '/images', speech: '/audio/speech', transcribe: '/audio/transcriptions', createVideo: '/videos', decide: '/systemone' },
-  quirks: { transcriptionJson: true, noImageResponseFormat: true },
+  // Speech: each model's voices are in the speech listing; the endpoint makes
+  // PCM (its default) or MP3, and some models only one of them.
+  quirks: { transcriptionJson: true, noImageResponseFormat: true, videoDuration: true, speechVoicesPath: '/models?output_modalities=speech', speechFormats: ['pcm', 'mp3'] },
   billing: {
     checkedAt: '2026-11-07',
     defaultMode: 'paid',

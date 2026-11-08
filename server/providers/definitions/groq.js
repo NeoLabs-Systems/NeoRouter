@@ -33,7 +33,14 @@ module.exports = {
   },
   media: { transcribe: '/audio/transcriptions', speech: '/audio/speech' },
   // Orpheus voices; the model refuses OpenAI voice names.
-  quirks: { defaultVoice: 'troy', voices: ['autumn', 'diana', 'hannah', 'austin', 'daniel', 'troy'], speechFormats: ['wav'] },
+  quirks: {
+    defaultVoice: 'troy',
+    voices: ['autumn', 'diana', 'hannah', 'austin', 'daniel', 'troy'],
+    modelVoices: [{ match: 'orpheus-arabic', voices: ['abdullah', 'fahad', 'sultan', 'lulwa', 'noura', 'aisha'], defaultVoice: 'fahad' }],
+    speechFormats: ['wav'],
+    // Orpheus takes at most 200 characters per request.
+    maxSpeechChars: 200,
+  },
   // Groq reports requests per day and tokens per minute in the plain headers.
   quota: { headerPeriods: { requests: 'day', tokens: 'minute' } },
 };

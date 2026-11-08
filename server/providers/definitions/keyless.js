@@ -35,6 +35,10 @@ module.exports = [
     website: 'https://endpoints.ai.cloud.ovh.net',
     adapter: 'openai_compatible',
     baseUrl: 'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1',
+    // Whisper is OpenAI-compatible; the text-to-speech models (nvr-tts-*) speak
+    // NVIDIA Riva over HTTP, each on a host of its own.
+    media: { transcribe: '/audio/transcriptions', speech: 'https://{model}.endpoints.kepler.ai.cloud.ovh.net/api/v1/tts/text_to_audio' },
+    quirks: { speechApi: 'riva' },
     keyOptional: true,
     // Whisper and speech models are listed at 0 but billed per second with a key.
     billing: { defaultMode: 'free_tier', freeTierAll: true, keylessOnly: true, trustListingFree: false, note: 'Free only without a key (anonymous, 2 requests a minute per model). With an API key usage is billed in EUR to your Public Cloud project, including Whisper per second of audio.', source: 'https://docs.ovhcloud.com/en/guides/public-cloud/ai-machine-learning/ai-endpoints-capabilities', checkedAt: '2026-11-07' },
@@ -43,7 +47,7 @@ module.exports = [
   {
     id: 'pollinations',
     label: 'Pollinations',
-    description: 'Community-funded free text generation.',
+    description: 'Community-funded free text, image and embedding models.',
     category: 'free',
     website: 'https://pollinations.ai',
     keyUrl: 'https://enter.pollinations.ai',
@@ -51,6 +55,9 @@ module.exports = [
     baseUrl: 'https://gen.pollinations.ai/v1',
     keyOptional: true,
     validate: { path: 'https://gen.pollinations.ai/account/key' },
+    // Image and embedding models have listings of their own (/v1/models repeats them today).
+    models: { extraPaths: ['https://gen.pollinations.ai/image/models', 'https://gen.pollinations.ai/embeddings/models'] },
+    media: { embed: '/embeddings', generateImage: '/images/generations' },
     billing: { defaultMode: 'free_tier', freeTierAll: true, note: 'Free models spend free Quest Pollen; models marked paid_only need purchased pollen and are never free. Choose paid if the account holds paid pollen.', source: 'https://github.com/pollinations/pollinations/blob/main/APIDOCS.md', checkedAt: '2026-11-07' },
   },
   {

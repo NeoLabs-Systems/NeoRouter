@@ -151,6 +151,15 @@ function adapterFor(runtime) {
   return registry.createAdapter(definitionOrThrow(runtime.definitionId), runtime);
 }
 
+// Whether this connection's adapter can do `method` (speech, embed, …): some
+// providers list a kind of model through an API NeoRouter does not speak.
+function canServe(accountId, method) {
+  const runtime = getRuntime(accountId);
+  if (!runtime) return false;
+  const adapter = adapterFor(runtime);
+  return typeof adapter[method] === 'function' && adapter.supports(method);
+}
+
 function validateInput(definition, { secret, baseUrl, options = {} }) {
   if (!definition.keyOptional && !secret) throw new HttpError(400, 'KEY_REQUIRED', `${definition.label} requires an API key.`);
   if (definition.editableBaseUrl && !baseUrl && !definition.baseUrl) {
@@ -350,6 +359,7 @@ module.exports = {
   getRow,
   getRuntime,
   adapterFor,
+  canServe,
   validateAccount,
   recordValidation,
   allEnabledIds,

@@ -102,9 +102,16 @@ function learnContextWindow(entry, estimatedTokens) {
 // budget comfortably above the one that was not enough.
 const TRUNCATED_HEADROOM = 2;
 
-function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, now = Date.now() } = {}) {
+// requestSpecific: the request carries its own options (a voice, size or
+// format) that one model may not offer, so a refusal of it is not the model's
+// fault: it is noted, but leaves no cooldown, penalty or breaker count.
+function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, requestSpecific = false, now = Date.now() } = {}) {
   const policy = policyFor(error);
   if (error.kind === KINDS.ABORTED) return policy;
+  if (requestSpecific && error.kind === KINDS.BAD_REQUEST) {
+    stats.recordFailure(entry.ref, { weight: 0, penalty: 0, message: `${error.kind}: ${error.message}`, countsForBreaker: false, cooldownUntil: 0, cooldownReason: null, escalate: false }, now);
+    return policy;
+  }
   if (TASK_FAILURES.has(error.kind)) experience.recordOutcome(entry.ref, entry.task, false, now);
   if (error.kind === KINDS.TRUNCATED && maxTokens) stats.raiseMinOutputTokens(entry.ref, Math.ceil(maxTokens * TRUNCATED_HEADROOM), now);
   if (error.kind === KINDS.CONTEXT_LENGTH) {

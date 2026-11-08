@@ -40,14 +40,24 @@ function gatewayErrorHandler(format) {
   };
 }
 
-const KINDS = new Set(require('../../core/capability_registry').list().map((item) => item.id));
+const capabilityRegistry = require('../../core/capability_registry');
+const KINDS = new Set(capabilityRegistry.list().map((item) => item.id));
 
 // A pool partner sees only what this pool is offered (sharePolicy.offers),
 // never another partner's (sharePolicy decides per request what is in reach).
 function modelsVisibleTo(key, capability = 'chat') {
   if (key.peer_link_id && !sharePolicy.sharingWith(key)) return [];
   const poolId = sharePolicy.poolOfKey(key);
+  // Only what routing can use: a model listed through an API the adapter does not speak is left out.
+  const method = capabilityRegistry.methodFor(capability);
+  const servable = new Map();
+  const canServe = (entry) => {
+    if (!method) return true;
+    if (!servable.has(entry.accountId)) servable.set(entry.accountId, accounts.canServe(entry.accountId, method));
+    return servable.get(entry.accountId);
+  };
   return catalog.listForUser(key.user_id, { capability })
+    .filter(canServe)
     .filter((entry) => entry.enabled && entry.accountEnabled && allowedByKey(entry, key) && (key.peer_link_id || !kindAllowed(entry, key)))
     .filter((entry) => (key.peer_link_id
       ? sharePolicy.offers(poolId, entry)

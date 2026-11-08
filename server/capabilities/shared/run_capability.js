@@ -92,10 +92,8 @@ async function runCapability({ req, res = null, key, capability, method, request
 
   // Only providers whose adapter speaks this kind are candidates.
   const supported = (entry) => {
-    const runtime = accounts.getRuntime(entry.accountId);
-    if (!runtime) return false;
-    const adapter = accounts.adapterFor(runtime);
-    return typeof adapter[method] === 'function' && adapter.supports(method) && (!filter || filter(entry, adapter));
+    if (!accounts.canServe(entry.accountId, method)) return false;
+    return !filter || filter(entry, accounts.adapterFor(accounts.getRuntime(entry.accountId)));
   };
 
   const config = getConfig();
@@ -161,7 +159,8 @@ async function runCapability({ req, res = null, key, capability, method, request
       if (error instanceof HttpError) throw error;
       lastError = error;
       trail.push(trailItem(entry, error.kind, { status: error.status, ms: Date.now() - attemptStarted, message: String(error.message).slice(0, 200) }));
-      const policy = learning.onFailure(entry, error, { estimatedTokens: inputTokens });
+      // Media requests bring their own voice, size or format: a refusal of those is about this request, not the model.
+      const policy = learning.onFailure(entry, error, { estimatedTokens: inputTokens, requestSpecific: true });
       plan.noteFailure(entry, error.kind);
       if (error.kind === KINDS.AUTH) accounts.validateAccount(entry.accountId).catch(() => {});
       badRequests = error.kind === KINDS.BAD_REQUEST ? badRequests + 1 : 0;
@@ -178,7 +177,7 @@ async function runCapability({ req, res = null, key, capability, method, request
       throw explained;
     }
   }
-  const rejected = plan.rejectionSummary();
+  const rejected = plan.rejectionSummary(Date.now(), supported);
   const reasons = Object.keys(rejected);
   if (!plan.parsed.auto && trail.length === 0 && reasons.length && reasons.every((reason) => KEY_POLICY_REJECTIONS.has(reason))) {
     const why = reasons.includes('not_free') ? 'is not free and this key only allows free models' : 'is not allowed for this key';

@@ -101,6 +101,19 @@ test('images come back as base64 or as a short-lived URL', async () => {
   assert.equal((await request(app).get('/v1/media/nope')).status, 404);
 });
 
+test('a voice the provider does not have gets its default voice, and leaves the model usable', async () => {
+  const binary = (res, done) => {
+    const chunks = [];
+    res.on('data', (chunk) => chunks.push(chunk));
+    res.on('end', () => done(null, Buffer.concat(chunks)));
+  };
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const response = await gateway('post', '/audio/speech').send({ input: 'Hello there', voice: 'Kore' }).buffer(true).parse(binary);
+    assert.equal(response.status, 200, String(response.body));
+    assert.match(response.body.toString(), /fake-mp3:alloy:Hello there/);
+  }
+});
+
 test('speech returns audio in the requested format', async () => {
   const response = await gateway('post', '/audio/speech').send({ input: 'Hello there', voice: 'alloy', response_format: 'mp3' }).buffer(true).parse((res, done) => {
     const chunks = [];

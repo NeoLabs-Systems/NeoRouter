@@ -309,11 +309,16 @@ function needsCredits(entry) {
 const REJECTION_GROUPS = [
   ['tokens', ['token_limit'], "are past this key's token limit until it resets"],
   ['credits', ['needs_credits'], 'need credits, and their connection is set to free'],
-  ['action', ['needs_action'], 'need something only you can do at the provider (a consent, a verification or a plan)'],
-  ['busy', ['scheduled_downtime', 'account_failing', 'account_resting', 'quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'held_for_priority', 'plan_used_up', 'not_available', 'kept_for_owner'], 'are used up, rate-limited or cooling down for now'],
+  ['action', ['needs_action'], 'need something only you can do at the provider (accepting terms, a consent, a verification or a plan)'],
+  ['payment', ['payment_required', 'no_free_quota'], 'were refused by the provider for payment or plan reasons'],
+  ['auth', ['auth_failed'], 'have a key the provider rejects'],
+  ['missing', ['not_available'], 'are listed but not served by the provider right now'],
+  ['busy', ['scheduled_downtime', 'account_failing', 'account_resting', 'quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'held_for_priority', 'plan_used_up', 'kept_for_owner'], 'are used up, rate-limited or cooling down for now'],
   ['fit', ['no_tools', 'no_vision', 'context_too_small', 'context_unknown', 'needs_more_tokens', 'incompatible'], 'cannot handle this request (tools, images or its size)'],
+  ['unsupported', ['unsupported'], 'cannot be used for this through NeoRouter yet (the provider speaks a different API for it)'],
   ['profile', ['below_min_intelligence', 'too_expensive', 'too_slow', 'provider_not_included', 'provider_excluded', 'model_excluded', 'kind_not_in_style'], "are left out by the routing style"],
-  ['key', ['not_free', 'not_allowed_for_key', 'other_kind', 'price_unknown', 'budget_exhausted', 'key_too_expensive', 'not_in_pool', 'not_shared', 'peer_no_forward'], 'are not allowed for this key'],
+  ['budget', ['price_unknown', 'budget_exhausted', 'key_too_expensive'], "have no known price or would go past this key's budget or price limit"],
+  ['key', ['not_free', 'not_allowed_for_key', 'other_kind', 'not_in_pool', 'not_shared', 'peer_no_forward'], 'are not allowed for this key'],
   ['private', ['kept_private'], 'are pool partners, and this request holds very sensitive data that stays on your own connections'],
 ];
 
@@ -611,10 +616,13 @@ class RoutingPlan {
     this.stopWaiting = null;
   }
 
-  rejectionSummary(now = Date.now()) {
+  // filter: what the caller can actually use (for media, adapters that speak
+  // the kind); the rest are counted as "unsupported", so none go unexplained.
+  rejectionSummary(now = Date.now(), filter = null) {
     const counts = {};
     for (const item of this.rank({ includeRejected: true, sample: false, now })) {
-      if (item.rejected) counts[item.rejected] = (counts[item.rejected] || 0) + 1;
+      const reason = item.rejected || (filter && !filter(item.entry) ? 'unsupported' : null);
+      if (reason) counts[reason] = (counts[reason] || 0) + 1;
     }
     return counts;
   }

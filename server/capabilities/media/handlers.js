@@ -7,6 +7,7 @@
 const crypto = require('node:crypto');
 const { z } = require('zod');
 const { HttpError } = require('../../middleware/error_handler');
+const { ProviderError, KINDS } = require('../../providers/provider_error');
 const { runCapability } = require('../shared/run_capability');
 const { tokenCost, unitCost, estimateAudioMinutes } = require('./pricing');
 const systemOne = require('./system_one');
@@ -159,7 +160,17 @@ async function speech({ req, res, key, body, freeOnly = false, asJson = false })
   await runCapability({
     req, res, key, capability: 'speech', method: 'speech', requestedModel: input.model, freeOnly, inputTokens: estimateTokens([input.input]), units: chars,
     estimateCost: (entry) => priced(unitCost(entry, 'mchar', chars), tokenCost(entry, estimateTokens([input.input]))),
-    invoke: ({ adapter, entry, signal, timeoutMs }) => adapter.speech({ input: input.input, voice: input.voice, format: input.response_format, speed: input.speed }, { modelId: entry.modelId, signal, timeoutMs }),
+    invoke: async ({ adapter, entry, signal, timeoutMs }) => {
+      const say = (voice) => adapter.speech({ input: input.input, voice, format: input.response_format, speed: input.speed }, { modelId: entry.modelId, signal, timeoutMs });
+      if (!input.voice) return say(undefined);
+      try {
+        return await say(input.voice);
+      } catch (error) {
+        // A voice this provider does not have (voice names differ per provider): its default voice rather than no audio.
+        if (error instanceof ProviderError && error.kind === KINDS.BAD_REQUEST) return say(undefined);
+        throw error;
+      }
+    },
     costOf: (entry) => priced(unitCost(entry, 'mchar', chars), tokenCost(entry, estimateTokens([input.input]))) || 0,
     respond: async (result, entry) => {
       const converted = await transcode.toFormat(result.audio, result.mime, input.response_format);

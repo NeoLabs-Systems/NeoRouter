@@ -7,6 +7,8 @@
 // the OpenAI response shape, so providers with other dialects (Gemini,
 // Cloudflare) can return the same shapes.
 const { ProviderError, KINDS } = require('../provider_error');
+const { joinWav, pcmToWav } = require('./wav');
+const { rivaSpeech, rivaVoices } = require('./riva_speech');
 
 const DEFAULT_PATHS = Object.freeze({
   embed: '/embeddings',
@@ -45,7 +47,7 @@ const methods = {
   // input: string[] → one vector per input, in order.
   async embed({ input, dimensions, inputType }, { modelId, signal, timeoutMs }) {
     const body = { model: modelId, input, encoding_format: 'float' };
-    if (dimensions) body.dimensions = dimensions;
+    if (dimensions) body[this.definition.quirks?.embeddingDimensionsField || 'dimensions'] = dimensions;
     // NVIDIA's retrieval embedders need to know whether they embed a query or a passage.
     if (this.definition.quirks?.embeddingInputType) body.input_type = inputType || 'query';
     const { data, headers } = await this.http(mediaPath(this, 'embed'), { method: 'POST', body, signal, timeoutMs });
@@ -76,23 +78,42 @@ const methods = {
     return { images, headers };
   },
 
-  // The voices this provider speaks: its own list, or OpenAI's names.
-  async voices() {
-    return voiceList(this.definition.quirks?.voices || OPENAI_VOICES);
+  // The voices this provider speaks for a model: listed by the provider, its
+  // own fixed list, or OpenAI's names.
+  async voices({ modelId } = {}) {
+    if (this.definition.quirks?.speechApi === 'riva') return voiceList(rivaVoices(modelId));
+    const { voices } = await speechVoices(this, modelId);
+    return voiceList(voices || (this.definition.quirks?.speechVoicesPath ? [] : OPENAI_VOICES));
   },
 
   async speech({ input, voice, format = 'mp3', speed }, { modelId, signal, timeoutMs }) {
     const quirks = this.definition.quirks || {};
-    // Providers with their own voices fall back to their default voice, and
-    // to a format they can produce (the gateway converts when it can).
-    const chosenVoice = quirks.voices && !quirks.voices.includes(voice) ? quirks.defaultVoice || quirks.voices[0] : voice || quirks.defaultVoice || 'alloy';
-    const chosenFormat = quirks.speechFormats && !quirks.speechFormats.includes(format) ? quirks.speechFormats[0] : format;
-    const body = { model: modelId, input, voice: chosenVoice, response_format: chosenFormat };
-    if (speed) body.speed = speed;
-    const response = await this.request(this.url(mediaPath(this, 'speech')), { method: 'POST', headers: this.headers(), body, signal, timeoutMs, raw: true });
-    const audio = await binary(response);
-    if (!audio.data.length) throw new ProviderError(KINDS.EMPTY, 'The provider returned no audio.');
-    return { audio: audio.data, mime: audio.mime, headers: audio.headers };
+    const path = mediaPath(this, 'speech', modelId);
+    if (quirks.speechApi === 'riva') return rivaSpeech(this, this.url(path), { input, voice }, { modelId, signal, timeoutMs });
+    // A voice the model does not have becomes its default voice. A model whose
+    // listing names no voices keeps the requested voice (or none), never an
+    // OpenAI name the provider may not know.
+    const { voices, defaultVoice } = await speechVoices(this, modelId);
+    const known = voices?.find((name) => name.toLowerCase() === String(voice || '').toLowerCase());
+    const chosenVoice = voices?.length ? known || defaultVoice || voices[0] : voice || defaultVoice || (quirks.speechVoicesPath ? undefined : 'alloy');
+    // A format the provider can produce (the gateway converts when it can).
+    const formats = quirks.speechFormats;
+    const chosenFormat = formats && !formats.includes(format) ? formats[0] : format;
+    // Hosts that cap the text of one request get it in sentence-sized parts.
+    const pieces = quirks.maxSpeechChars && input.length > quirks.maxSpeechChars ? speechChunks(input, quirks.maxSpeechChars) : [input];
+    const parts = [];
+    for (const piece of pieces) {
+      parts.push(await synthesize(this, path, { input: piece, voice: chosenVoice, speed }, chosenFormat, { modelId, signal, timeoutMs }));
+    }
+    const [first] = parts;
+    if (isRawPcm(first)) {
+      // Raw PCM (OpenRouter's default) has no header: wrapped into WAV unless PCM was asked for.
+      const pcm = Buffer.concat(parts.map((part) => part.audio));
+      if (format === 'pcm') return { audio: pcm, mime: first.mime, headers: first.headers };
+      return { audio: pcmToWav(pcm, pcmRate(first.mime)), mime: 'audio/wav', headers: first.headers };
+    }
+    if (parts.length === 1) return { audio: first.audio, mime: first.mime, headers: first.headers };
+    return { audio: joinWav(parts.map((part) => part.audio)), mime: 'audio/wav', headers: first.headers };
   },
 
   async transcribe({ file, filename, mime, language, prompt, translate = false }, { modelId, signal, timeoutMs }) {
@@ -135,7 +156,8 @@ const methods = {
   // Videos are jobs: create returns an id that only this provider knows.
   async createVideo({ prompt, seconds, size }, { modelId, signal, timeoutMs }) {
     const body = { model: modelId, prompt };
-    if (seconds) body.seconds = String(seconds);
+    if (seconds && this.definition.quirks?.videoDuration) body.duration = Math.round(Number(seconds));
+    else if (seconds) body.seconds = String(seconds);
     if (size) body.size = size;
     const { data, headers } = await this.http(mediaPath(this, 'createVideo'), { method: 'POST', body, signal, timeoutMs });
     if (!data?.id) throw new ProviderError(KINDS.INVALID_OUTPUT, 'The provider returned no video job id.');
@@ -152,6 +174,101 @@ const methods = {
     return { response };
   },
 };
+
+// One speech request. A host that can produce several formats but refuses
+// the chosen one for this model (OpenRouter: HeyGen only PCM, MiniMax only
+// MP3) is asked once more for its other format.
+async function synthesize(adapter, path, { input, voice, speed }, format, { modelId, signal, timeoutMs }) {
+  const send = async (responseFormat) => {
+    const body = { model: modelId, input, response_format: responseFormat };
+    if (voice) body.voice = voice;
+    if (speed) body.speed = speed;
+    const response = await adapter.request(adapter.url(path), { method: 'POST', headers: adapter.headers(), body, signal, timeoutMs, raw: true });
+    const audio = await binary(response);
+    if (!audio.data.length) throw new ProviderError(KINDS.EMPTY, 'The provider returned no audio.');
+    return { audio: audio.data, mime: audio.mime, headers: audio.headers, format: responseFormat };
+  };
+  const other = (adapter.definition.quirks?.speechFormats || []).find((item) => item !== format);
+  try {
+    return await send(format);
+  } catch (error) {
+    if (!other || !(error instanceof ProviderError) || error.kind !== KINDS.BAD_REQUEST) throw error;
+    return send(other);
+  }
+}
+
+// PCM as OpenAI and OpenRouter send it: 16-bit mono at 24 kHz unless the content type names a rate.
+const PCM_RATE = 24000;
+const isRawPcm = (part) => /pcm|l16/i.test(part.mime) || (part.format === 'pcm' && !/wav|mpeg|mp3|ogg|opus|aac|flac/i.test(part.mime));
+const pcmRate = (mime) => Number(/rate=(\d+)/i.exec(mime || '')?.[1]) || PCM_RATE;
+
+// Voices from a provider's model listing (OpenRouter's `supported_voices`),
+// cached per listing URL. A listing that cannot be read is retried sooner.
+const LISTED_VOICES_MS = 60 * 60 * 1000;
+const LISTED_VOICES_RETRY_MS = 60 * 1000;
+const listedVoiceCache = new Map();
+
+async function listedVoices(adapter, path) {
+  const url = adapter.url(path);
+  const cached = listedVoiceCache.get(url);
+  if (cached && cached.until > Date.now()) return cached.byModel;
+  try {
+    const { data } = await adapter.http(path, { timeoutMs: 30_000 });
+    const byModel = new Map((Array.isArray(data?.data) ? data.data : [])
+      .filter((entry) => entry?.id && Array.isArray(entry.supported_voices))
+      .map((entry) => [entry.id, entry.supported_voices.map(String)]));
+    listedVoiceCache.set(url, { until: Date.now() + LISTED_VOICES_MS, byModel });
+    return byModel;
+  } catch {
+    const byModel = new Map();
+    listedVoiceCache.set(url, { until: Date.now() + LISTED_VOICES_RETRY_MS, byModel });
+    return byModel;
+  }
+}
+
+// A model's voices and default voice (null: the first one): from the
+// provider's listing, the definition's per-model voices or its fixed list.
+async function speechVoices(adapter, modelId) {
+  const quirks = adapter.definition.quirks || {};
+  if (quirks.speechVoicesPath) {
+    const byModel = await listedVoices(adapter, quirks.speechVoicesPath);
+    const voices = byModel.get(modelId) || byModel.get(String(modelId || '').replace(/:free$/, '')) || null;
+    return { voices: voices?.length ? voices : null, defaultVoice: null };
+  }
+  const forModel = quirks.modelVoices?.find((item) => new RegExp(item.match, 'i').test(modelId));
+  return { voices: forModel?.voices || quirks.voices || null, defaultVoice: forModel?.defaultVoice || quirks.defaultVoice || null };
+}
+
+// Sentence-sized pieces of at most `max` characters. Sentences are packed
+// together while they fit (fewer requests); a longer sentence is split
+// between words, and a longer word wherever it must.
+function speechChunks(text, max) {
+  const units = [];
+  for (const sentence of String(text).trim().split(/(?<=[.!?…;:])\s+/)) {
+    if (sentence.length <= max) {
+      units.push(sentence);
+      continue;
+    }
+    let current = '';
+    for (const word of sentence.split(/\s+/)) {
+      for (const part of word.length > max ? word.match(new RegExp(`.{1,${max}}`, 'gu')) : [word]) {
+        if (current && current.length + 1 + part.length > max) {
+          units.push(current);
+          current = '';
+        }
+        current = current ? `${current} ${part}` : part;
+      }
+    }
+    if (current) units.push(current);
+  }
+  const chunks = [];
+  for (const unit of units.filter(Boolean)) {
+    const last = chunks.length - 1;
+    if (last >= 0 && chunks[last].length + 1 + unit.length <= max) chunks[last] = `${chunks[last]} ${unit}`;
+    else chunks.push(unit);
+  }
+  return chunks;
+}
 
 function imageItem(value, revisedPrompt = null) {
   const text = String(value || '');
@@ -176,9 +293,11 @@ function audioFormat(filename, mime) {
   return String(mime || '').split('/')[1]?.replace('mpeg', 'mp3').replace('x-wav', 'wav') || 'wav';
 }
 
-// NVIDIA's genai host: one image per call, base64 JPEG in artifacts[].
-async function nvidiaGenai(adapter, path, { prompt, n = 1, size }, { signal, timeoutMs }) {
-  const [width, height] = (/^(\d+)x(\d+)$/.exec(String(size || '')) || [null, 1024, 1024]).slice(1).map(Number);
+// NVIDIA's genai host: one image per call, base64 JPEG in artifacts[]. Its
+// FLUX.2 models only make 1024x1024 images and refuse any other size, so the
+// requested size is not passed on.
+async function nvidiaGenai(adapter, path, { prompt, n = 1 }, { signal, timeoutMs }) {
+  const [width, height] = [1024, 1024];
   const images = [];
   let headers = null;
   for (let index = 0; index < Math.min(n, 4); index += 1) {
@@ -206,4 +325,4 @@ function installOpenAIMedia(AdapterClass) {
   }
 }
 
-module.exports = { installOpenAIMedia, OPENAI_VOICES, voiceList, mediaPath, normalizeVideoStatus, aspectRatio, imageItem, DEFAULT_PATHS };
+module.exports = { installOpenAIMedia, OPENAI_VOICES, voiceList, mediaPath, normalizeVideoStatus, aspectRatio, imageItem, speechChunks, DEFAULT_PATHS };

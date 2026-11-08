@@ -152,8 +152,21 @@ const definitionSchema = z.object({
     noImageResponseFormat: z.boolean().optional(),
     defaultVoice: z.string().optional(),
     voices: z.array(z.string()).optional(),
+    // Voices per model where models differ (Groq's English and Arabic Orpheus); the first match wins over `voices`.
+    modelVoices: z.array(z.object({ match: z.string(), voices: z.array(z.string()), defaultVoice: z.string() })).optional(),
+    // The formats the speech endpoint produces, preferred first; a format the model refuses is retried with the next.
     speechFormats: z.array(z.string()).optional(),
+    // A listing whose models name their voices in `supported_voices` (OpenRouter).
+    speechVoicesPath: z.string().optional(),
+    // The most text one speech request takes (Groq's Orpheus: 200); longer input is spoken in parts and joined.
+    maxSpeechChars: z.number().int().positive().optional(),
+    // Speech in NVIDIA Riva's HTTP dialect instead of OpenAI's (OVHcloud's nvr-tts models).
+    speechApi: z.enum(['openai', 'riva']).optional(),
     transcriptionJson: z.boolean().optional(),
+    // The field that asks an embedder for fewer dimensions (Mistral: output_dimension).
+    embeddingDimensionsField: z.string().optional(),
+    // Video length as a whole-number `duration` instead of OpenAI's `seconds` string (OpenRouter).
+    videoDuration: z.boolean().optional(),
   }).default({}),
 });
 

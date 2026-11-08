@@ -115,7 +115,9 @@ function createMockProvider({ models, prices = {}, port = 0, failSearch = false,
     res.json({ created: 1, data: Array.from({ length: req.body.n || 1 }, () => ({ b64_json: PNG })) });
   });
   app.post('/v1/audio/speech', media('speech'), (req, res) => {
-    res.set('content-type', 'audio/mpeg').send(Buffer.from(`ID3fake-mp3:${req.body.voice}:${req.body.input}`));
+    // A voice this provider does not have, as real providers refuse them.
+    if (req.body.voice === 'Kore') return res.status(400).json({ error: { message: 'Unknown voice: Kore' } });
+    return res.set('content-type', 'audio/mpeg').send(Buffer.from(`ID3fake-mp3:${req.body.voice}:${req.body.input}`));
   });
   app.post('/v1/audio/transcriptions', express.raw({ type: 'multipart/form-data', limit: '30mb' }), async (req, res) => {
     const form = await new Request('http://x/', { method: 'POST', headers: { 'content-type': req.get('content-type') }, body: req.body }).formData();

@@ -28,8 +28,10 @@ const NON_CHAT_PATTERNS = [
 ];
 
 function detectKind(id, raw = {}) {
-  const declared = String(raw.type || raw.object_type || raw.task || '').toLowerCase();
+  // `category` is Pollinations' kind field (text, image, video, embedding, audio, …).
+  const declared = String(raw.type || raw.object_type || raw.task || raw.category || '').toLowerCase();
   if (/embed/.test(declared)) return 'embedding';
+  if (declared === 'video') return 'video';
   if (declared === 'search') return 'search';
   if (declared === 'weather') return 'weather';
   if (declared === 'live') return 'live';
@@ -41,7 +43,8 @@ function detectKind(id, raw = {}) {
     if (outputs.includes('video')) return 'video';
     // Decision models answer typed questions: a System One kind.
     if (outputs.includes('decisions')) return 'moderation';
-    return outputs.includes('image') ? 'image' : outputs.includes('audio') ? 'speech' : 'other';
+    // OpenRouter names text-to-speech output "speech", other listings "audio".
+    return outputs.includes('image') ? 'image' : outputs.includes('audio') || outputs.includes('speech') ? 'speech' : 'other';
   }
   for (const [kind, pattern] of NON_CHAT_PATTERNS) {
     if (pattern.test(id)) return kind;
