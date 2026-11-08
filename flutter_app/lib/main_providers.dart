@@ -1173,8 +1173,10 @@ class _ProviderFormState extends State<_ProviderForm> {
             const SizedBox(height: AppSpacing.xs),
             Text(t.billingAlwaysFreeNote, style: TextStyle(color: palette.textSoft, fontSize: 12.5, height: 1.45)),
           ],
+          // Overrides the automatic free/paid result for all its models (a pool
+          // partner's models are always free for us, so not there).
+          if (definition.category != 'pool') ...<Widget>[
           const SizedBox(height: AppSpacing.lg),
-          // Overrides the automatic free/paid result for all its models.
           Row(
             children: <Widget>[
               Expanded(child: Text(t.classificationTitle, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text))),
@@ -1195,6 +1197,7 @@ class _ProviderFormState extends State<_ProviderForm> {
             _classification == 'free' ? t.classificationFreeWarning : t.classificationHint,
             style: TextStyle(color: _classification == 'free' ? palette.warning : palette.textSoft, fontSize: 12.5, height: 1.45),
           ),
+          ],
           const SizedBox(height: AppSpacing.md),
           Align(
             alignment: Alignment.centerLeft,

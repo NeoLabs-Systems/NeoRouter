@@ -449,3 +449,10 @@ test('Artificial Analysis media lists use the new paths', async () => {
     aa.resetForTests();
   }
 });
+
+test('a pool partner’s model stays free whatever is overridden', () => {
+  const definition = registry.get('neorouter_peer');
+  for (const extra of [{ overrides: { free: false } }, { accountOverride: 'paid' }, { overrides: { billedAt: Date.now() } }]) {
+    assert.equal(classify({ definition, billingMode: 'free_tier', modelId: 'x', ...extra }).isFree, true, JSON.stringify(extra));
+  }
+});

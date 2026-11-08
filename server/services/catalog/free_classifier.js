@@ -57,6 +57,9 @@ function isPrivateUrl(url) {
 // a model's own manual override still wins, and so does real evidence of billing.
 function classify({ definition, billingMode, billingState = 'unknown', modelId, listing = {}, overrides = {}, accountOverride = null, baseUrl = null, hasSecret = false }) {
   const billing = definition.billing;
+  // A pool partner's model never costs us anything (the partner pays), so no
+  // override can make it paid.
+  if (definition.category === 'pool') return { isFree: true, reason: REASONS.PROVIDER_FREE_MODEL };
   if (overrides.free === true) return { isFree: true, reason: REASONS.MANUAL_FREE };
   if (overrides.free === false) return { isFree: false, reason: REASONS.MANUAL_PAID };
   if (accountOverride === 'paid') return { isFree: false, reason: REASONS.MANUAL_PAID };

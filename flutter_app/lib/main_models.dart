@@ -585,7 +585,7 @@ class _ModelDialogState extends State<_ModelDialog> {
       final updated = await widget.controller.api.updateModel(
         widget.model.ref,
         overrides: <String, Object?>{
-          'free': _free == 'auto' ? null : _free == 'free',
+          'free': _free == 'auto' || widget.model.fromPool ? null : _free == 'free',
           'priceIn': _number(_priceIn),
           'priceOut': _number(_priceOut),
           'intelligence': _number(_intelligence),
@@ -647,21 +647,26 @@ class _ModelDialogState extends State<_ModelDialog> {
                 ),
               if (model.lastError != null) ...<Widget>[const SizedBox(height: 4), InlineHint(message: model.lastError!, icon: Icons.warning_amber_rounded)],
               const SizedBox(height: AppSpacing.md),
-              Text(
-                t.overrideFree,
-                style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              SegmentedButton<String>(
-                showSelectedIcon: false,
-                segments: <ButtonSegment<String>>[
-                  ButtonSegment<String>(value: 'auto', label: Text(t.overrideAuto)),
-                  ButtonSegment<String>(value: 'free', label: Text(t.overrideForceFree)),
-                  ButtonSegment<String>(value: 'paid', label: Text(t.overrideForcePaid)),
-                ],
-                selected: <String>{_free},
-                onSelectionChanged: (value) => setState(() => _free = value.first),
-              ),
+              // A partner's model is always free for us: nothing to choose.
+              if (model.fromPool)
+                InlineHint(message: t.modelsPoolHint)
+              else ...<Widget>[
+                Text(
+                  t.overrideFree,
+                  style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                SegmentedButton<String>(
+                  showSelectedIcon: false,
+                  segments: <ButtonSegment<String>>[
+                    ButtonSegment<String>(value: 'auto', label: Text(t.overrideAuto)),
+                    ButtonSegment<String>(value: 'free', label: Text(t.overrideForceFree)),
+                    ButtonSegment<String>(value: 'paid', label: Text(t.overrideForcePaid)),
+                  ],
+                  selected: <String>{_free},
+                  onSelectionChanged: (value) => setState(() => _free = value.first),
+                ),
+              ],
               const SizedBox(height: AppSpacing.sm),
               Align(
                 alignment: Alignment.centerLeft,
