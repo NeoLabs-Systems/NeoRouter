@@ -36,8 +36,6 @@ permissions:
   contents: read
   packages: write
 
-env:
-  IMAGE: ghcr.io/${{ github.repository }}
 
 concurrency:
   group: docker-${{ github.ref }}
@@ -66,6 +64,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Registry names must be lowercase; the repository name is not.
+      - name: Image name
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
       # The image downloads the dashboard that the Web Client workflow builds
       # from the same push; wait for it so the image never ships the previous one.
       - name: Wait for this commit's web client
@@ -83,6 +85,9 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          # The image with the downloaded dashboard. Without a target Docker
+          # builds the last stage, runtime-from-source, which compiles Flutter.
+          target: runtime
           load: true
           tags: neorouter:ci
           # The dashboard matches the branch: main is stable, beta is beta.
@@ -132,6 +137,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          target: runtime
           platforms: linux/${{ matrix.arch }}
           build-args: |
             NEOROUTER_CHANNEL=${{ github.ref_name == 'beta' && 'beta' || 'stable' }}
@@ -163,6 +169,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Image name
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
