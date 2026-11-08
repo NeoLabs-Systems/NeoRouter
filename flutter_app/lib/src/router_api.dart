@@ -180,6 +180,8 @@ class RouterApi {
   /// Counts by connection, model and partner for one pool over [days] (7 or 30).
   Future<Map<String, dynamic>> poolActivity(String poolId, int days) => client.get('$_base/pools/$poolId/activity?days=$days');
   Future<PoolsSummary> setPoolPaused(String poolId, bool paused) async => PoolsSummary(await client.putJson('$_base/pools/$poolId/paused', <String, Object>{'paused': paused}));
+  /// The host's switch: pass traffic for members without a public address.
+  Future<PoolsSummary> setPoolRelay(String poolId, bool enabled) async => PoolsSummary(await client.putJson('$_base/pools/$poolId/relay', <String, Object>{'enabled': enabled}));
   Future<PoolsSummary> setPartnerPaused(String linkId, bool paused) async =>
       PoolsSummary(await client.putJson('$_base/pools/partners/$linkId/paused', <String, Object>{'paused': paused}));
   Future<PoolsSummary> removePoolMember(String poolId, String memberId) async => PoolsSummary(await client.deleteJson('$_base/pools/$poolId/members/$memberId'));

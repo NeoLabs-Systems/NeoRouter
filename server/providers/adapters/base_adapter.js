@@ -58,7 +58,7 @@ class BaseAdapter {
   // Every upstream call of an account goes through here, so accounts of
   // non-admin owners stay on public hosts.
   request(url, options = {}) {
-    return request(url, { ...options, publicOnly: Boolean(this.account.publicOnly) });
+    return request(url, { ...options, publicOnly: Boolean(this.account.publicOnly), owner: this.account.userId || null });
   }
 
   async http(pathname, options = {}) {

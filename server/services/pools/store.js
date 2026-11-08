@@ -20,6 +20,9 @@ const poolRow = (row) => (row ? {
   selfName: row.self_name,
   share: JSON.parse(row.share_json || '{}'),
   paused: row.paused === 1,
+  // Host side: this pool's traffic may pass through us. Members' side: our host offers that.
+  relayEnabled: row.relay_enabled !== 0,
+  hostRelay: row.host_relay === 1,
   joinedAt: row.joined_at,
   lastSyncAt: row.last_sync_at,
 } : null);
@@ -32,17 +35,23 @@ function pools(userId) {
   return db().prepare('SELECT * FROM pools WHERE user_id = ? ORDER BY joined_at, rowid').all(userId).map(poolRow);
 }
 
+// The pool this instance hosts with that id (relay connections name only the pool).
+function hostedPool(poolId) {
+  return poolRow(db().prepare('SELECT * FROM pools WHERE pool_id = ? AND is_host = 1').get(String(poolId || '')));
+}
+
 function insertPool(value) {
-  db().prepare(`INSERT INTO pools (user_id, pool_id, name, is_host, host_member_id, host_public_key, host_url, self_url, self_name, share_json)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .run(value.userId, value.poolId, value.name, value.isHost ? 1 : 0, value.hostMemberId, value.hostPublicKey, value.hostUrl, value.selfUrl, value.selfName, JSON.stringify(value.share || {}));
+  db().prepare(`INSERT INTO pools (user_id, pool_id, name, is_host, host_member_id, host_public_key, host_url, self_url, self_name, share_json, host_relay)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(value.userId, value.poolId, value.name, value.isHost ? 1 : 0, value.hostMemberId, value.hostPublicKey, value.hostUrl, value.selfUrl, value.selfName, JSON.stringify(value.share || {}), value.hostRelay ? 1 : 0);
 }
 
 function updatePool(userId, poolId, fields) {
-  const columns = { name: 'name', selfName: 'self_name', selfUrl: 'self_url', share: 'share_json', lastSyncAt: 'last_sync_at', paused: 'paused' };
+  const columns = { name: 'name', selfName: 'self_name', selfUrl: 'self_url', share: 'share_json', lastSyncAt: 'last_sync_at', paused: 'paused', relayEnabled: 'relay_enabled', hostRelay: 'host_relay' };
+  const flags = new Set(['paused', 'relayEnabled', 'hostRelay']);
   for (const [field, column] of Object.entries(columns)) {
     if (fields[field] === undefined) continue;
-    const value = field === 'share' ? JSON.stringify(fields[field]) : field === 'paused' ? (fields[field] ? 1 : 0) : fields[field];
+    const value = field === 'share' ? JSON.stringify(fields[field]) : flags.has(field) ? (fields[field] ? 1 : 0) : fields[field];
     db().prepare(`UPDATE pools SET ${column} = ? WHERE user_id = ? AND pool_id = ?`).run(value, userId, poolId);
   }
 }
@@ -53,7 +62,16 @@ function deletePool(userId, poolId) {
   }
 }
 
-const memberRow = (row) => ({ memberId: row.member_id, name: row.name, url: row.url, publicKey: row.public_key, joinedAt: row.joined_at });
+const memberRow = (row) => ({
+  memberId: row.member_id,
+  name: row.name,
+  url: row.url,
+  publicKey: row.public_key,
+  joinedAt: row.joined_at,
+  boxKey: row.box_key || null,
+  boxSig: row.box_sig || null,
+  features: JSON.parse(row.features_json || '[]'),
+});
 
 function members(userId, poolId) {
   return db().prepare('SELECT * FROM pool_members WHERE user_id = ? AND pool_id = ? ORDER BY joined_at, rowid').all(userId, poolId).map(memberRow);
@@ -64,10 +82,13 @@ function member(userId, poolId, memberId) {
   return row ? memberRow(row) : null;
 }
 
-function upsertMember(userId, poolId, { memberId, name, url, publicKey }) {
-  db().prepare(`INSERT INTO pool_members (user_id, pool_id, member_id, name, url, public_key) VALUES (?, ?, ?, ?, ?, ?)
-    ON CONFLICT (user_id, pool_id, member_id) DO UPDATE SET name = excluded.name, url = excluded.url`)
-    .run(userId, poolId, memberId, name, url, publicKey);
+// The public key is fixed at first sight; the sealing key only comes with a
+// valid signature (checked by the caller) and is kept when an update has none.
+function upsertMember(userId, poolId, { memberId, name, url, publicKey, boxKey = null, boxSig = null, features = [] }) {
+  db().prepare(`INSERT INTO pool_members (user_id, pool_id, member_id, name, url, public_key, box_key, box_sig, features_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT (user_id, pool_id, member_id) DO UPDATE SET name = excluded.name, url = excluded.url, features_json = excluded.features_json,
+      box_key = COALESCE(excluded.box_key, box_key), box_sig = COALESCE(excluded.box_sig, box_sig)`)
+    .run(userId, poolId, memberId, name, url, publicKey, boxKey, boxSig, JSON.stringify(features));
 }
 
 function removeMember(userId, poolId, memberId) {
@@ -196,7 +217,7 @@ function poolMemberships() {
 }
 
 module.exports = {
-  pool, pools, insertPool, updatePool, deletePool,
+  pool, pools, hostedPool, insertPool, updatePool, deletePool,
   members, member, upsertMember, removeMember,
   links, link, linkById, linkToMember, linkForAccount, insertLink, updateLink, deleteLink,
   invites, insertInvite, inviteByHash, useInvite, revokeInvite, activeInviteCount,

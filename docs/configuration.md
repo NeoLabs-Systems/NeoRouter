@@ -9,7 +9,7 @@ process environment. Change values with `neorouter env set KEY value`.
 | --- | --- | --- |
 | `NEOROUTER_HOST` | `127.0.0.1` | Bind address. Use `0.0.0.0` behind a reverse proxy. |
 | `NEOROUTER_PORT` | `4600` | HTTP port for `/`, `/app`, `/api/v1` and `/v1`. |
-| `NEOROUTER_PUBLIC_URL` | – | External URL; used for the endpoint shown in the app and OAuth callbacks. |
+| `NEOROUTER_PUBLIC_URL` | – | External URL; used for the endpoint shown in the app, OAuth callbacks, and the address pool partners reach. Without one, a NeoRouter can still join a pool: it takes part through the pool's host. |
 | `NEOROUTER_HOME` | `~/.neorouter` | Data, logs, backups and `secret.key`. `/data` in the container image. |
 | `NEOROUTER_CONTAINER` | auto | Forces the container behaviour (no service install, foreground start). Detected from `/.dockerenv` and Kubernetes env otherwise. See [docker.md](docker.md). |
 | `NEOROUTER_TRUST_PROXY` | `false` | Trust `X-Forwarded-*` from a reverse proxy. |

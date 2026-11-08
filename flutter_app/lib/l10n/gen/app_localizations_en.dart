@@ -4023,6 +4023,31 @@ class AppL10nEn extends AppL10n {
   String get poolTabOverview => 'Overview';
 
   @override
+  String get poolViaHost => 'Via the host';
+
+  @override
+  String get poolRelayDown =>
+      'Not connected to the host right now; it reconnects by itself.';
+
+  @override
+  String get poolRelayLabel => 'Connect partners through me';
+
+  @override
+  String get poolRelayHint =>
+      'Members without a public address take part through your NeoRouter. Their requests pass through your internet connection, sealed end to end, so you cannot read them.';
+
+  @override
+  String get poolRelaySelfLabel => 'How you take part';
+
+  @override
+  String get poolRelaySelfVia =>
+      'Through the host: your NeoRouter needs no public address. Requests pass through the host sealed, so the host cannot read them.';
+
+  @override
+  String get poolRelaySelfDirect =>
+      'Directly, at your NeoRouter’s own address.';
+
+  @override
   String get poolLeaveHint =>
       'Partners lose access to your connections at once, and you to theirs.';
 

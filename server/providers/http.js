@@ -27,9 +27,28 @@ async function readBody(response) {
 
 const MAX_REDIRECTS = 5;
 
+// Addresses that are not reached over the internet directly (a pool partner
+// behind its host: relay://), handled by the module that registered them.
+// handler(url, init, { owner }) resolves with a fetch Response.
+const transports = new Map();
+
+function registerTransport(protocol, handler) {
+  transports.set(protocol, handler);
+}
+
+function transportFor(url) {
+  try {
+    return transports.get(new URL(url).protocol) || null;
+  } catch {
+    return null;
+  }
+}
+
 // With publicOnly, every hop (the URL and each redirect) must resolve to a
 // public address, so an account cannot reach the server's own network.
-async function send(url, init, publicOnly) {
+async function send(url, init, publicOnly, owner) {
+  const transport = transportFor(url);
+  if (transport) return transport(url, init, { owner });
   if (!publicOnly) return fetch(url, { ...init, redirect: 'follow' });
   let current = url;
   let options = init;
@@ -50,7 +69,8 @@ async function send(url, init, publicOnly) {
 
 // Performs one upstream HTTP call. Non-2xx responses become classified
 // ProviderErrors; network failures and timeouts are classified too.
-async function request(url, { method = 'GET', headers = {}, body, signal, timeoutMs, raw = false, publicOnly = false } = {}) {
+// owner: the person the call is made for (a relayed pool partner needs it).
+async function request(url, { method = 'GET', headers = {}, body, signal, timeoutMs, raw = false, publicOnly = false, owner = null } = {}) {
   let response;
   try {
     response = await send(url, {
@@ -59,7 +79,7 @@ async function request(url, { method = 'GET', headers = {}, body, signal, timeou
       headers: body !== undefined && !isRawBody(body) ? { 'Content-Type': 'application/json', ...headers } : headers,
       body: body === undefined ? undefined : isRawBody(body) ? body : JSON.stringify(body),
       signal: combineSignals(signal, timeoutMs),
-    }, publicOnly);
+    }, publicOnly, owner);
   } catch (error) {
     if (error instanceof ProviderError) throw error;
     throw fromNetworkError(error);
@@ -127,4 +147,4 @@ function emptyResponseError() {
   return new ProviderError(KINDS.EMPTY, 'The provider returned an empty response.');
 }
 
-module.exports = { request, readSse, assertNoEmbeddedError, emptyResponseError, combineSignals };
+module.exports = { request, readSse, assertNoEmbeddedError, emptyResponseError, combineSignals, registerTransport };

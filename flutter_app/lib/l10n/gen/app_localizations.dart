@@ -7093,6 +7093,48 @@ abstract class AppL10n {
   /// **'Overview'**
   String get poolTabOverview;
 
+  /// No description provided for @poolViaHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Via the host'**
+  String get poolViaHost;
+
+  /// No description provided for @poolRelayDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected to the host right now; it reconnects by itself.'**
+  String get poolRelayDown;
+
+  /// No description provided for @poolRelayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect partners through me'**
+  String get poolRelayLabel;
+
+  /// No description provided for @poolRelayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Members without a public address take part through your NeoRouter. Their requests pass through your internet connection, sealed end to end, so you cannot read them.'**
+  String get poolRelayHint;
+
+  /// No description provided for @poolRelaySelfLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'How you take part'**
+  String get poolRelaySelfLabel;
+
+  /// No description provided for @poolRelaySelfVia.
+  ///
+  /// In en, this message translates to:
+  /// **'Through the host: your NeoRouter needs no public address. Requests pass through the host sealed, so the host cannot read them.'**
+  String get poolRelaySelfVia;
+
+  /// No description provided for @poolRelaySelfDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Directly, at your NeoRouter’s own address.'**
+  String get poolRelaySelfDirect;
+
   /// No description provided for @poolLeaveHint.
   ///
   /// In en, this message translates to:

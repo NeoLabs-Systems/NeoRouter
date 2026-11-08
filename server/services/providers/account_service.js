@@ -168,7 +168,7 @@ function validateInput(definition, { secret, baseUrl, options = {} }) {
   if (baseUrl) {
     let parsed;
     try { parsed = new URL(baseUrl); } catch { throw new HttpError(400, 'INVALID_BASE_URL', 'The base URL is not a valid URL.'); }
-    if (!/^https?:$/.test(parsed.protocol)) throw new HttpError(400, 'INVALID_BASE_URL', 'The base URL must use http or https.');
+    if (!definition.baseUrlSchemes.includes(parsed.protocol.replace(/:$/, ''))) throw new HttpError(400, 'INVALID_BASE_URL', `The base URL must use ${definition.baseUrlSchemes.join(' or ')}.`);
   }
   // A full URL here would send the key to another host than the base URL.
   if (options.modelsPath && !/^\/(?!\/)/.test(options.modelsPath)) {
@@ -219,7 +219,8 @@ async function create(userId, input, createdBy = userId, actor = null) {
 
   const restricted = publicOnly(userId, actor);
   await assertDestination(baseUrl, restricted);
-  const probe = { secret: input.secret || null, baseUrl, options, publicOnly: restricted };
+  // userId: some addresses (a pool partner behind its host) are reached on the owner's behalf.
+  const probe = { userId, secret: input.secret || null, baseUrl, options, publicOnly: restricted };
   const result = await registry.createAdapter(definition, probe).validate();
   if (result.status === 'invalid') {
     throw new HttpError(422, 'KEY_REJECTED', `${definition.label} rejected this key: ${result.message}`);

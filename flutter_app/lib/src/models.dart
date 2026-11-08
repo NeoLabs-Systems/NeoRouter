@@ -354,6 +354,9 @@ class PoolPartner {
   /// connecting, online, offline or paused.
   String get state => raw['state'] as String? ?? 'connecting';
   String? get problem => raw['problem'] as String?;
+  /// Reached through the pool's host (it has no public address); relayDown: not connected to the host now.
+  bool get viaHost => raw['viaHost'] == true;
+  bool get relayDown => raw['relayDown'] == true;
   int get models => _int(raw['models']) ?? 0;
   /// new, balanced, giving_more or taking_more.
   String get balance => _map(raw['balance'])['state'] as String? ?? 'new';
@@ -403,6 +406,11 @@ class PoolInfo {
   bool get isHost => raw['isHost'] == true;
   bool get paused => raw['paused'] == true;
   String get selfName => raw['selfName'] as String? ?? '';
+  /// Host: passes traffic for members without a public address. Member: our host offers that.
+  bool get relayOffered => _map(raw['relay'])['offered'] == true;
+  /// We take part through the host (no public address of our own), and whether that connection is up.
+  bool get viaHost => _map(raw['relay'])['viaHost'] == true;
+  bool get relayConnected => _map(raw['relay'])['connected'] == true;
   List<PoolPartner> get partners => (raw['partners'] as List? ?? const <Object>[]).map((item) => PoolPartner(_map(item))).toList();
   int get onlinePartners => partners.where((partner) => partner.state == 'online').length;
   List<String> get sharedAccountIds => _strings(raw['sharedAccountIds']);

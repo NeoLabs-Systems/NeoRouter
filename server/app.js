@@ -56,6 +56,8 @@ function createApp() {
   app.use(require('./routes/connect').router);
   // Pools: what other NeoRouters call to join and keep a pool in order.
   app.use('/federation/v1', require('./routes/federation'));
+  // Requests that reach a pool member through its host are answered by this same app.
+  require('./services/pools/relay').setApp(app);
   // The page a pool invite link opens: it sends the invited person to their own NeoRouter.
   app.get('/pool/join', require('./routes/pool_join').poolJoinPage);
   // Gateway reference for agents (Markdown).

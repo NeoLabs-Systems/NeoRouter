@@ -29,8 +29,14 @@ const server = app.listen(config.port, config.host, () => {
   const status = require('./public_status');
   status.history.start(status.buildPublicStatus, server);
 });
-// Live voice sessions arrive as WebSocket upgrades.
+// Live voice sessions and pool members connected through their host arrive as WebSocket upgrades.
 require('./capabilities/live/gateway').attach(server);
+require('./services/pools/relay').hub.attach(server);
+// Last: an upgrade no handler claimed is closed.
+server.on('upgrade', (request, socket) => {
+  if (!request.upgradeClaimed) socket.destroy();
+});
+require('./services/pools/pool_service').startRelays();
 server.requestTimeout = 0;
 server.headersTimeout = 65_000;
 scheduler.start();

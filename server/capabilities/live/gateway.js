@@ -311,7 +311,9 @@ function attach(server) {
   server.on('upgrade', (request, socket, head) => {
     const url = new URL(request.url, 'http://local');
     const dialect = dialectFor(url.pathname);
-    if (!dialect) return socket.destroy();
+    // Other paths belong to other handlers (the pool relay); unclaimed ones are closed in index.js.
+    if (!dialect) return undefined;
+    request.upgradeClaimed = true;
     const key = routerKeys.authenticate(tokenOf(request, url));
     if (!key) return reject(socket, 401, 'A valid NeoRouter key (nrt_…) is required.');
     // Pool partners reach chat only.

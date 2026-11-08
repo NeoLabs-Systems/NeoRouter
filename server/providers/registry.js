@@ -71,6 +71,8 @@ const definitionSchema = z.object({
   live: z.array(z.enum(['openai_live', 'openai_realtime', 'gemini_live'])).default([]),
   baseUrl: z.string().default(''),
   editableBaseUrl: z.boolean().default(false),
+  // Address schemes a base URL may use; relay:// only for pool partners behind their host.
+  baseUrlSchemes: z.array(z.enum(['http', 'https', 'relay'])).default(['http', 'https']),
   auth: z.object({
     type: z.enum(['bearer', 'header', 'none']).default('bearer'),
     header: z.string().optional(),

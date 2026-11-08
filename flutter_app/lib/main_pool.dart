@@ -834,7 +834,15 @@ class _MemberPanel extends StatelessWidget {
                   children: <Widget>[
                     Text(member.isYou ? t.poolMemberYou(member.name) : member.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: palette.text)),
                     const SizedBox(height: 4),
-                    StatusLabel(label: poolStateLabel(t, state), tone: poolStateTone(state)),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: <Widget>[
+                        StatusLabel(label: poolStateLabel(t, state), tone: poolStateTone(state)),
+                        if (partner?.viaHost ?? false) MetaPill(label: t.poolViaHost, icon: Icons.swap_horiz_rounded),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -845,9 +853,9 @@ class _MemberPanel extends StatelessWidget {
             member.isYou ? t.panelSharesYou('${member.connections ?? 0}', '${member.models}', '$percent') : t.panelSharesPartner('${member.models}', '$percent'),
             style: TextStyle(fontSize: 13.5, color: palette.textSoft, height: 1.5),
           ),
-          if (partner != null && partner.state == 'offline' && partner.problem != null) ...<Widget>[
+          if (partner != null && partner.state == 'offline' && (partner.problem != null || partner.relayDown)) ...<Widget>[
             const SizedBox(height: 8),
-            Text(partner.problem!, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: palette.warning, height: 1.4)),
+            Text(partner.relayDown ? t.poolRelayDown : partner.problem!, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: palette.warning, height: 1.4)),
           ],
           const SizedBox(height: 16),
           bar(t.panelGave, member.gave, PoolGraph.give),
@@ -1221,6 +1229,18 @@ class _PoolSettingsSection extends StatelessWidget {
     return SettingsCardList(
       children: <Widget>[
         SettingsRow(label: t.poolSelfNameLabel, description: t.poolSelfNameHint, control: Text(pool.selfName, style: TextStyle(color: palette.text, fontWeight: FontWeight.w600))),
+        if (pool.isHost)
+          SettingsRow(
+            label: t.poolRelayLabel,
+            description: t.poolRelayHint,
+            control: Switch(value: pool.relayOffered, onChanged: (on) => _apply(context, controller, () => controller.api.setPoolRelay(pool.id, on))),
+          )
+        else
+          SettingsRow(
+            label: t.poolRelaySelfLabel,
+            description: pool.viaHost ? (pool.relayConnected ? t.poolRelaySelfVia : t.poolRelayDown) : t.poolRelaySelfDirect,
+            control: pool.viaHost ? MetaPill(label: t.poolViaHost, icon: Icons.swap_horiz_rounded) : null,
+          ),
         SettingsRow(
           label: closing ? t.poolClose : t.poolLeave,
           description: closing ? t.poolCloseHint : t.poolLeaveHint,

@@ -88,6 +88,9 @@ pool.get('/activity', (req, res) => {
 // The quick switch: this pool on or off for now.
 pool.put('/paused', validate(z.object({ paused: z.boolean() })), asyncRoute(async (req, res) => res.json(await pools.setPoolPaused(owner(req), poolId(req), req.body.paused))));
 
+// The host's switch: pass traffic for members without a public address.
+pool.put('/relay', validate(z.object({ enabled: z.boolean() })), (req, res) => res.json(pools.setRelayEnabled(owner(req), poolId(req), req.body.enabled)));
+
 pool.delete('/members/:memberId', asyncRoute(async (req, res) => {
   await pools.removeMember(owner(req), poolId(req), req.params.memberId);
   res.json(pools.summary(owner(req)));

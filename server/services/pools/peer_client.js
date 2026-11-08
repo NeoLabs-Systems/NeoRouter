@@ -4,15 +4,21 @@
 // partners: HTTPS on the public internet; plain HTTP and private or local
 // networks only where the instance allows private provider addresses (the
 // admin's own LAN). Redirects are followed by hand and checked at each hop.
+// A member without a public address has a relay address instead; calls to it
+// go through the pool's host (relay/), sealed for that member.
 const { request } = require('../../providers/http');
 const { isPrivateDestination } = require('../../providers/net_guard');
 const accounts = require('../providers/account_service');
 const { HttpError } = require('../../middleware/error_handler');
+const relay = require('./relay');
 
 const TIMEOUT_MS = 15_000;
 
-// The origin of a NeoRouter ("https://router.example.com"), from any URL on it.
+// The origin of a NeoRouter ("https://router.example.com"), from any URL on
+// it, or a member's relay address as it is.
 function originOf(value) {
+  const relayed = relay.address.parse(value);
+  if (relayed) return relay.address.format(relayed.poolId, relayed.memberId);
   let url;
   try { url = new URL(String(value || '').trim()); } catch { return null; }
   if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) return null;
@@ -20,6 +26,10 @@ function originOf(value) {
 }
 
 async function assertReachable(userId, origin) {
+  if (relay.address.isRelay(origin)) {
+    if (!relay.canUse(userId, origin)) throw new HttpError(400, 'POOL_RELAY_UNAVAILABLE', 'This partner has no public address, and the pool’s host does not pass traffic along.');
+    return;
+  }
   const restricted = accounts.publicOnly(userId);
   const isPrivate = await isPrivateDestination(origin);
   if (isPrivate && restricted) throw new HttpError(400, 'POOL_PRIVATE_ADDRESS', 'This NeoRouter is on a local or private network. Only the instance admin can join pools there.');
@@ -36,6 +46,7 @@ async function post(userId, origin, path, body) {
       body,
       timeoutMs: TIMEOUT_MS,
       publicOnly: accounts.publicOnly(userId),
+      owner: userId,
       headers: { 'User-Agent': 'NeoRouter-Pool' },
     });
     return data;

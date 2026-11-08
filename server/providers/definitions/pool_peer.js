@@ -10,6 +10,8 @@
 //   and no conversation id is forwarded (no sessionHeader).
 // - X-NeoRouter-Hop marks the request as coming from a partner, so it is
 //   never passed on to a third instance.
+// - A partner without a public address has a relay:// base URL: requests go
+//   through the pool's host, sealed for that partner (services/pools/relay).
 module.exports = {
   id: 'neorouter_peer',
   label: 'Pool partner',
@@ -17,6 +19,7 @@ module.exports = {
   category: 'pool',
   adapter: 'openai_compatible',
   editableBaseUrl: true,
+  baseUrlSchemes: ['http', 'https', 'relay'],
   headers: { 'X-NeoRouter-Hop': '1' },
   billing: {
     defaultMode: 'free_tier',
