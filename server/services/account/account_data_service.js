@@ -84,13 +84,21 @@ async function exportData(userId, credentials) {
 async function exportKeys(userId, credentials) {
   await twoFactor.confirm(userId, credentials, { requireFactor: true });
   userRow(userId);
-  const keys = ownAccounts(userId).filter((row) => row.secret_encrypted).map((row) => ({
-    provider: providerName(row.definition_id),
-    definitionId: row.definition_id,
-    label: row.label,
-    baseUrl: row.base_url,
-    secret: decryptString(row.secret_encrypted),
-  }));
+  // Everything needed to add the connection again (Connections → import).
+  const keys = ownAccounts(userId).filter((row) => row.secret_encrypted).map((row) => {
+    const { headers, ...options } = json(row.options_json, {});
+    return {
+      provider: providerName(row.definition_id),
+      definitionId: row.definition_id,
+      label: row.label,
+      baseUrl: row.base_url,
+      secret: decryptString(row.secret_encrypted),
+      billingMode: row.prepaid === 2 ? 'plan_paid' : row.prepaid ? 'plan' : row.billing_mode,
+      classification: row.classification || 'auto',
+      ...(Object.keys(options).length ? { options } : {}),
+      ...(headers ? { headers } : {}),
+    };
+  });
   audit.record('account.keys_exported', { actorUserId: userId, subjectUserId: userId, detail: { count: keys.length } });
   logger.info('Saved keys exported', { userId, count: keys.length });
   return { format: FORMAT, kind: 'neorouter-keys', exportedAt: new Date().toISOString(), keys };

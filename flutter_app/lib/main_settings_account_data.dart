@@ -75,6 +75,43 @@ class AccountDataSection extends StatelessWidget {
     showSnack(context, t.accountExported);
   }
 
+  // A key file from "export saved API keys": shown, confirmed, then each key
+  // is checked with its provider on the server.
+  Future<void> _importKeys(BuildContext context) async {
+    final t = AppL10n.of(context);
+    final picked = await pickFile(accept: '.json,application/json');
+    if (picked == null || !context.mounted) return;
+    Map<String, dynamic>? file;
+    try {
+      final decoded = jsonDecode(utf8.decode(picked.bytes));
+      if (decoded is Map<String, dynamic> && decoded['kind'] == 'neorouter-keys' && decoded['keys'] is List && (decoded['keys'] as List).isNotEmpty) file = decoded;
+    } on FormatException {
+      file = null;
+    }
+    if (file == null) {
+      showSnack(context, t.accountImportNotAFile);
+      return;
+    }
+    final keys = (file['keys'] as List).whereType<Map>().toList();
+    final names = keys.map((key) => '${key['label'] ?? key['provider'] ?? key['definitionId']}').join(', ');
+    final confirmed = await confirmAction(
+      context,
+      title: t.accountImportTitle,
+      message: t.accountImportConfirm('${keys.length}', names),
+      confirmLabel: t.accountImport,
+      cancelLabel: t.cancel,
+      destructive: false,
+    );
+    if (!confirmed || !context.mounted) return;
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _ImportProgressDialog(run: () => controller.api.importKeys(file!)),
+    );
+    if (result == null || !context.mounted) return;
+    await showDialog<void>(context: context, builder: (_) => _ImportResultDialog(result: result));
+  }
+
   Future<void> _delete(BuildContext context) async {
     final t = AppL10n.of(context);
     final twoFactor = await _guard(context, _twoFactorOn);
@@ -141,6 +178,11 @@ class AccountDataSection extends StatelessWidget {
           label: t.accountKeysTitle,
           description: t.accountKeysHint,
           control: OutlinedButton(onPressed: () => _exportKeys(context), child: Text(t.accountExport)),
+        ),
+        SettingsRow(
+          label: t.accountImportTitle,
+          description: t.accountImportHint,
+          control: OutlinedButton(onPressed: () => _importKeys(context), child: Text(t.accountImport)),
         ),
         SettingsRow(
           label: t.accountDeleteTitle,
@@ -269,6 +311,93 @@ class _ConfirmIdentityDialogState<T> extends State<_ConfirmIdentityDialog<T>> {
               : Text(widget.confirmLabel),
         ),
       ],
+    );
+  }
+}
+
+/// Runs the import while saying what is happening; closes with the result,
+/// or with nothing after showing why it failed.
+class _ImportProgressDialog extends StatefulWidget {
+  const _ImportProgressDialog({required this.run});
+
+  final Future<Map<String, dynamic>> Function() run;
+
+  @override
+  State<_ImportProgressDialog> createState() => _ImportProgressDialogState();
+}
+
+class _ImportProgressDialogState extends State<_ImportProgressDialog> {
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.run().then((result) {
+      if (mounted) Navigator.of(context).pop(result);
+    }, onError: (Object error) {
+      if (mounted) setState(() => _error = error is ApiException ? error.message : '$error');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    return AlertDialog(
+      title: Text(t.accountImportTitle),
+      content: SizedBox(
+        width: 400,
+        child: _error != null
+            ? InlineError(message: _error!)
+            : Row(
+                children: <Widget>[
+                  const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(child: Text(t.accountImportWorking, style: TextStyle(color: palette.textSoft, height: 1.45))),
+                ],
+              ),
+      ),
+      actions: <Widget>[if (_error != null) FilledButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.close))],
+    );
+  }
+}
+
+/// What was added, what was there already, and what failed with the reason.
+class _ImportResultDialog extends StatelessWidget {
+  const _ImportResultDialog({required this.result});
+
+  final Map<String, dynamic> result;
+
+  List<Map> _list(String key) => ((result[key] as List?) ?? const <Object>[]).whereType<Map>().toList();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final text = TextStyle(color: palette.textSoft, height: 1.45);
+    final imported = _list('imported');
+    final skipped = _list('skipped');
+    final failed = _list('failed');
+    String names(List<Map> items) => items.map((item) => '${item['label']}').join(', ');
+    return AlertDialog(
+      title: Text(t.accountImportDone),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            if (imported.isNotEmpty) InlineSuccess(message: t.accountImportImported(names(imported))) else Text(t.accountImportNothing, style: text),
+            if (skipped.isNotEmpty) ...<Widget>[const SizedBox(height: AppSpacing.sm), Text(t.accountImportSkipped(names(skipped)), style: text)],
+            if (failed.isNotEmpty) ...<Widget>[
+              const SizedBox(height: AppSpacing.sm),
+              Text(t.accountImportFailed, style: text),
+              for (final item in failed) Padding(padding: const EdgeInsets.only(top: 4), child: InlineError(message: '${item['label']}: ${item['message']}')),
+            ],
+          ],
+        ),
+      ),
+      actions: <Widget>[FilledButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.close))],
     );
   }
 }

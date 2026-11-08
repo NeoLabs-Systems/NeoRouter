@@ -39,6 +39,7 @@ test.before(async () => {
   await register('admin');
   await as('admin', 'patch', '/admin/settings', { registrationOpen: true });
   await register('ada');
+  await register('bob');
   const created = await as('ada', 'post', '/providers/accounts', { definitionId: 'custom_openai', label: 'My mock', baseUrl: mock.url, secret: 'good-key', billingMode: 'free_tier' });
   assert.equal(created.status, 201, JSON.stringify(created.body));
   await as('ada', 'post', '/keys', { name: 'laptop' });
@@ -73,6 +74,29 @@ test('the key export needs two-factor, the password and a code', async () => {
   assert.equal(response.status, 200, JSON.stringify(response.body));
   assert.equal(response.body.kind, 'neorouter-keys');
   assert.deepEqual(response.body.keys.map((key) => [key.label, key.secret]), [['My mock', 'good-key']]);
+  assert.equal(response.body.keys[0].billingMode, 'free_tier');
+  assert.equal(response.body.keys[0].baseUrl, mock.url);
+  people.ada.keyFile = response.body;
+});
+
+test('a key file adds the connections to another account, once', async () => {
+  const file = people.ada.keyFile;
+  const first = await as('bob', 'post', '/providers/accounts/import', file);
+  assert.equal(first.status, 200, JSON.stringify(first.body));
+  assert.deepEqual(first.body.imported.map((item) => item.label), ['My mock']);
+  const connections = (await as('bob', 'get', '/providers/accounts')).body.accounts;
+  assert.equal(connections.length, 1);
+  assert.equal(connections[0].billingMode, 'free_tier');
+  const again = await as('bob', 'post', '/providers/accounts/import', file);
+  assert.deepEqual(again.body.skipped.map((item) => item.label), ['My mock'], 'the same key is not added twice');
+  assert.equal(again.body.imported.length, 0);
+  const odd = await as('bob', 'post', '/providers/accounts/import', { kind: 'neorouter-keys', keys: [
+    { definitionId: 'not-a-provider', label: 'Nope', secret: 'x' },
+    { definitionId: 'neorouter_peer', label: 'Partner', secret: 'x' },
+    { definitionId: 'custom_openai', label: 'Bad key', baseUrl: mock.url, secret: 'bad-key' },
+  ] });
+  assert.deepEqual(odd.body.failed.map((item) => [item.label, item.code]), [['Nope', 'UNKNOWN_PROVIDER'], ['Partner', 'UNKNOWN_PROVIDER'], ['Bad key', 'KEY_REJECTED']]);
+  assert.equal((await as('bob', 'post', '/providers/accounts/import', { kind: 'something-else', keys: [] })).status, 400);
 });
 
 test('with two-factor on, the data export needs a code too', async () => {

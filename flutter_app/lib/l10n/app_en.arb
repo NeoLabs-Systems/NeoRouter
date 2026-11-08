@@ -678,6 +678,41 @@
   "accountKeysHint": "The keys of your connections in plain text, as a separate file. Needs two-factor authentication.",
   "accountKeysNeedTwoFactor": "Turn on two-factor authentication under Security first. The keys leave the server in plain text, so this needs more than your password.",
   "accountKeysWarning": "Anyone with this file can use your providers on your bill. Keep it somewhere safe and delete it when you no longer need it.",
+  "accountImportTitle": "Import API keys",
+  "accountImportHint": "Adds the connections from a key file exported from NeoRouter. Each key is checked with its provider; keys you already have are skipped.",
+  "accountImport": "Import",
+  "accountImportConfirm": "{count} keys found: {names}",
+  "@accountImportConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "accountImportNotAFile": "This is not a NeoRouter key file.",
+  "accountImportWorking": "Checking the keys with their providers …",
+  "accountImportDone": "Import finished",
+  "accountImportImported": "Added: {names}",
+  "@accountImportImported": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "accountImportSkipped": "Already there: {names}",
+  "@accountImportSkipped": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "accountImportFailed": "Not added:",
+  "accountImportNothing": "Nothing was added.",
   "accountDeleteTitle": "Delete account",
   "accountDeleteHint": "Deletes your account with all connections, keys, settings and history. Your pools are told you left. This cannot be undone.",
   "accountDelete": "Delete account",

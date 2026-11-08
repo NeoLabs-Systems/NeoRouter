@@ -31,6 +31,8 @@ class RouterApi {
       <String, Object>{'currentPassword': password, if (code != null && code.isNotEmpty) 'code': code};
   Future<Map<String, dynamic>> exportAccountData(String password, String? code) => client.post('$_base/auth/account/export', _confirmation(password, code));
   Future<Map<String, dynamic>> exportSavedKeys(String password, String code) => client.post('$_base/auth/account/export-keys', _confirmation(password, code));
+  /// Adds connections from a key file exported from NeoRouter; returns imported, skipped and failed.
+  Future<Map<String, dynamic>> importKeys(Map<String, dynamic> file) => client.post('$_base/providers/accounts/import', file);
   Future<void> deleteMyAccount(String password, String? code) => client.post('$_base/auth/account/delete', _confirmation(password, code));
   Future<AppUser> me() async => AppUser(Map<String, dynamic>.from((await client.get('$_base/auth/me'))['user'] as Map));
   Future<void> logout() => client.post('$_base/auth/logout');

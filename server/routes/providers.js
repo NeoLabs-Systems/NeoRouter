@@ -5,6 +5,9 @@ const { z } = require('zod');
 const registry = require('../providers/registry');
 const billing = require('../services/providers/billing_check');
 const accounts = require('../services/providers/account_service');
+const { finishSetup } = require('../services/providers/account_setup');
+const keyImport = require('../services/providers/key_import');
+const { slidingWindow } = require('../middleware/rate_limit');
 const { markAccountFixed } = require('../services/routing/fixed');
 const accountLimits = require('../services/quota/account_limits');
 const codexOAuth = require('../services/providers/codex_oauth');
@@ -143,18 +146,17 @@ router.post('/accounts', requirePermission('providers.manage'), validate(account
     throw new HttpError(403, 'LOCAL_MODELS_NOT_SHARED', 'An admin has not shared this server’s local models with you.');
   }
   const { account, validation } = await accounts.create(req.space.ownerId, req.body, req.space.actorId, actorOf(req));
-  let sync = null;
-  try {
-    sync = await catalog.syncAccount(account.id);
-  } catch (error) {
-    sync = { error: error.message };
-    logger.warn('Initial model sync failed', { accountId: account.id, error: error.message });
-  }
-  await billing.verifyAccount(account.id);
-  // A plan's allowance should be known before the first request.
-  await accounts.probeQuota(account.id).catch(() => {});
+  const sync = await finishSetup(account.id);
   res.status(201).json({ account: accounts.get(req.space.ownerId, account.id), validation, sync });
 }));
+
+// A key file exported from NeoRouter (Settings → export saved API keys).
+const importedKey = accountInput.pick({ definitionId: true, label: true, baseUrl: true, options: true, headers: true, billingMode: true, classification: true })
+  .extend({ secret: z.string().min(1).max(4096) });
+router.post('/accounts/import', requirePermission('providers.manage'), slidingWindow({ windowMs: 60_000, limit: 5 }), validate(z.object({
+  kind: z.literal(keyImport.KIND),
+  keys: z.array(importedKey.passthrough()).min(1).max(keyImport.MAX_KEYS),
+}).passthrough()), asyncRoute(async (req, res) => res.json(await keyImport.importKeys(req.space.ownerId, req.space.actorId, actorOf(req), req.body))));
 
 router.patch('/accounts/:id', requirePermission('providers.manage'), validate(accountInput.omit({ definitionId: true }).extend({ enabled: z.boolean().optional() })), asyncRoute(async (req, res) => {
   const account = await accounts.update(req.space.ownerId, req.params.id, req.body, actorOf(req));

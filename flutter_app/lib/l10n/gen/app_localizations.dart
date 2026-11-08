@@ -2353,6 +2353,72 @@ abstract class AppL10n {
   /// **'Anyone with this file can use your providers on your bill. Keep it somewhere safe and delete it when you no longer need it.'**
   String get accountKeysWarning;
 
+  /// No description provided for @accountImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import API keys'**
+  String get accountImportTitle;
+
+  /// No description provided for @accountImportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds the connections from a key file exported from NeoRouter. Each key is checked with its provider; keys you already have are skipped.'**
+  String get accountImportHint;
+
+  /// No description provided for @accountImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get accountImport;
+
+  /// No description provided for @accountImportConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} keys found: {names}'**
+  String accountImportConfirm(String count, String names);
+
+  /// No description provided for @accountImportNotAFile.
+  ///
+  /// In en, this message translates to:
+  /// **'This is not a NeoRouter key file.'**
+  String get accountImportNotAFile;
+
+  /// No description provided for @accountImportWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the keys with their providers …'**
+  String get accountImportWorking;
+
+  /// No description provided for @accountImportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Import finished'**
+  String get accountImportDone;
+
+  /// No description provided for @accountImportImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Added: {names}'**
+  String accountImportImported(String names);
+
+  /// No description provided for @accountImportSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Already there: {names}'**
+  String accountImportSkipped(String names);
+
+  /// No description provided for @accountImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not added:'**
+  String get accountImportFailed;
+
+  /// No description provided for @accountImportNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing was added.'**
+  String get accountImportNothing;
+
   /// No description provided for @accountDeleteTitle.
   ///
   /// In en, this message translates to:

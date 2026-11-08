@@ -1261,6 +1261,46 @@ class AppL10nEn extends AppL10n {
       'Anyone with this file can use your providers on your bill. Keep it somewhere safe and delete it when you no longer need it.';
 
   @override
+  String get accountImportTitle => 'Import API keys';
+
+  @override
+  String get accountImportHint =>
+      'Adds the connections from a key file exported from NeoRouter. Each key is checked with its provider; keys you already have are skipped.';
+
+  @override
+  String get accountImport => 'Import';
+
+  @override
+  String accountImportConfirm(String count, String names) {
+    return '$count keys found: $names';
+  }
+
+  @override
+  String get accountImportNotAFile => 'This is not a NeoRouter key file.';
+
+  @override
+  String get accountImportWorking => 'Checking the keys with their providers …';
+
+  @override
+  String get accountImportDone => 'Import finished';
+
+  @override
+  String accountImportImported(String names) {
+    return 'Added: $names';
+  }
+
+  @override
+  String accountImportSkipped(String names) {
+    return 'Already there: $names';
+  }
+
+  @override
+  String get accountImportFailed => 'Not added:';
+
+  @override
+  String get accountImportNothing => 'Nothing was added.';
+
+  @override
   String get accountDeleteTitle => 'Delete account';
 
   @override

@@ -1269,6 +1269,47 @@ class AppL10nDe extends AppL10n {
       'Wer diese Datei hat, kann deine Anbieter auf deine Kosten nutzen. Bewahre sie sicher auf und lösche sie, wenn du sie nicht mehr brauchst.';
 
   @override
+  String get accountImportTitle => 'API-Schlüssel importieren';
+
+  @override
+  String get accountImportHint =>
+      'Fügt die Verbindungen aus einer von NeoRouter exportierten Schlüsseldatei hinzu. Jeder Schlüssel wird beim Anbieter geprüft; vorhandene werden übersprungen.';
+
+  @override
+  String get accountImport => 'Importieren';
+
+  @override
+  String accountImportConfirm(String count, String names) {
+    return '$count Schlüssel gefunden: $names';
+  }
+
+  @override
+  String get accountImportNotAFile => 'Das ist keine NeoRouter-Schlüsseldatei.';
+
+  @override
+  String get accountImportWorking =>
+      'Prüft die Schlüssel bei ihren Anbietern …';
+
+  @override
+  String get accountImportDone => 'Import abgeschlossen';
+
+  @override
+  String accountImportImported(String names) {
+    return 'Hinzugefügt: $names';
+  }
+
+  @override
+  String accountImportSkipped(String names) {
+    return 'Schon vorhanden: $names';
+  }
+
+  @override
+  String get accountImportFailed => 'Nicht hinzugefügt:';
+
+  @override
+  String get accountImportNothing => 'Es wurde nichts hinzugefügt.';
+
+  @override
   String get accountDeleteTitle => 'Konto löschen';
 
   @override
