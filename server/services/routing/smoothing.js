@@ -46,12 +46,20 @@ function cached(cache, userId, now, compute) {
   return value;
 }
 
-// Models whose allowance NeoRouter knows: a daily limit or a plan window.
+// Only free and plan models have an allowance to spread; paid ones are
+// billed per use and pool partners keep their own limits.
+const paceable = (entry) => (entry.isFree || entry.isPlan) && entry.definitionId !== PEER_DEFINITION;
+
+// Whether NeoRouter knows how this model's allowance behaves: a daily limit
+// or plan window it can pace, or only per-minute limits, which cannot run
+// out over a day and so need no pacing. Unknown: no limit learned at all.
 function limitKnown(entry, now) {
   if (entry.isPlan && plans.schedule(entry, now)) return true;
   return quota.scopesFor(entry).some((scope) => {
     const daily = quota.dailyLimits(scope, now);
-    return daily.rpd !== null || daily.tpd !== null;
+    if (daily.rpd !== null || daily.tpd !== null) return true;
+    const known = quota.effectiveLimits(scope);
+    return Boolean(known.rpm || known.tpm);
   });
 }
 
@@ -61,7 +69,9 @@ function computeReadiness(userId, now) {
   const days = first ? Math.floor((now - first) / DAY_MS) : 0;
   const recent = db.prepare(`SELECT COUNT(*) requests, COUNT(DISTINCT CAST(created_at / ${DAY_MS} AS INTEGER)) active
     FROM requests WHERE user_id = ? AND created_at >= ? AND status = 'success'`).get(userId, now - 14 * DAY_MS);
-  // Which of last week's answers went to a model whose limit is known.
+  // Of last week's chat answers on free and plan models (the ones with an
+  // allowance to spread), how many went to a model whose limits are known.
+  // Paid models, other capabilities and pool partners do not count either way.
   const byModel = db.prepare(`SELECT model_ref, COUNT(*) count FROM requests WHERE user_id = ? AND created_at >= ? AND status = 'success' AND model_ref IS NOT NULL
     GROUP BY model_ref`).all(userId, now - 7 * DAY_MS);
   const catalog = require('../catalog/catalog_service');
@@ -69,9 +79,10 @@ function computeReadiness(userId, now) {
   let total = 0;
   let known = 0;
   for (const row of byModel) {
-    total += row.count;
     const entry = entries.get(row.model_ref);
-    if (entry && limitKnown(entry, now)) known += row.count;
+    if (!entry || !paceable(entry)) continue;
+    total += row.count;
+    if (limitKnown(entry, now)) known += row.count;
   }
   const coverage = total ? known / total : 0;
   const status = { days, activeDays: recent.active, requests: recent.requests, coverage: Math.round(coverage * 100) / 100 };
@@ -119,7 +130,7 @@ function setEnabled(userId, value, now = Date.now()) {
  * should wait for another. Only free and plan models are paced.
  */
 function held(entry, { userId, inputTokens = 0, priority = 'normal', now = Date.now() }) {
-  if (priority === 'high' || (!entry.isFree && !entry.isPlan) || entry.definitionId === PEER_DEFINITION) return false;
+  if (priority === 'high' || !paceable(entry)) return false;
   if (entry.isPlan) {
     const plan = plans.schedule(entry, now);
     if (plan && plan.usedShare > plan.elapsedShare + PLAN_CUSHION) return true;

@@ -46,6 +46,25 @@ test('not ready without a week of history, enough requests and known limits', ()
   assert.equal(unknownLimits.ready, false, 'limits must be known for the traffic');
 });
 
+test('known limits are counted over free traffic only; a per-minute limit counts as known', () => {
+  const db = getDatabase();
+  const now = Date.now();
+  db.prepare("INSERT INTO users (id, username, email, password_hash, role) VALUES ('u3', 'three', 'three@example.test', 'x', 'user')").run();
+  db.prepare(`INSERT INTO provider_accounts (id, user_id, definition_id, slug, label, billing_mode, enabled, status)
+    VALUES ('acc3', 'u3', 'custom_openai', 'mine', 'Mine', 'free_tier', 1, 'healthy')`).run();
+  const model = db.prepare("INSERT INTO models (account_id, model_id, canonical_id, capability, is_free, enabled, available) VALUES ('acc3', ?, ?, 'chat', ?, 1, 1)");
+  const refs = {};
+  for (const [name, free] of [['daily', 1], ['minute', 1], ['unknown', 1], ['paid', 0]]) refs[name] = Number(model.run(`model-${name}`, `model-${name}`, free).lastInsertRowid);
+  quota.setLimit(`m:${refs.daily}`, 'rpd', 1000, 'manual');
+  quota.setLimit(`m:${refs.minute}`, 'rpm', 30, 'manual');
+  const insert = db.prepare("INSERT INTO requests (id, user_id, created_at, api_format, requested_model, model_ref, status) VALUES (?, 'u3', ?, 'chat', 'auto', ?, 'success')");
+  // 30 daily-limited, 30 per-minute only, 20 unknown, 200 paid (left out).
+  const counts = { daily: 30, minute: 30, unknown: 20, paid: 200 };
+  for (const [name, count] of Object.entries(counts)) for (let i = 0; i < count; i += 1) insert.run(`${name}-${i}`, now - (i % 6) * DAY - HOUR, refs[name]);
+  const readiness = smoothing.readiness('u3', now);
+  assert.equal(readiness.coverage, 0.75, '60 of the 80 free answers have known limits; paid ones do not count');
+});
+
 test('a daily limit is spread over the day: an hour gets its share, with room for peaks', () => {
   const now = Date.now();
   const entry = free('m1');

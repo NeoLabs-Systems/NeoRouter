@@ -2272,7 +2272,7 @@ abstract class AppL10n {
   /// No description provided for @smoothNeedCoverage.
   ///
   /// In en, this message translates to:
-  /// **'Requests on connections with a known limit (last 7 days)'**
+  /// **'Free and plan requests on connections with known limits (last 7 days)'**
   String get smoothNeedCoverage;
 
   /// No description provided for @smoothProgress.

@@ -395,7 +395,7 @@ S = {
   'smoothNeedDays': ('Days of history', 'Tage Verlauf'),
   'smoothNeedActiveDays': ('Days with requests (last 14)', 'Tage mit Anfragen (letzte 14)'),
   'smoothNeedRequests': ('Answered requests (last 14 days)', 'Beantwortete Anfragen (letzte 14 Tage)'),
-  'smoothNeedCoverage': ('Requests on connections with a known limit (last 7 days)', 'Anfragen über Verbindungen mit bekanntem Limit (letzte 7 Tage)'),
+  'smoothNeedCoverage': ('Free and plan requests on connections with known limits (last 7 days)', 'Gratis- und Abo-Anfragen über Verbindungen mit bekannten Limits (letzte 7 Tage)'),
   'smoothProgress': ('{have} of {need}', '{have} von {need}'),
   'smoothHowTitle': ('How it works', 'So funktioniert es'),
   'smoothHowDaily': ('Daily limits: each hour gets its share of the day, more at the times you usually send requests.', 'Tageslimits: Jede Stunde bekommt ihren Anteil am Tag, mehr zu den Zeiten, in denen du meist Anfragen schickst.'),

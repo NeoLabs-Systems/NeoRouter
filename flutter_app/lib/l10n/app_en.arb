@@ -664,7 +664,7 @@
   "smoothNeedDays": "Days of history",
   "smoothNeedActiveDays": "Days with requests (last 14)",
   "smoothNeedRequests": "Answered requests (last 14 days)",
-  "smoothNeedCoverage": "Requests on connections with a known limit (last 7 days)",
+  "smoothNeedCoverage": "Free and plan requests on connections with known limits (last 7 days)",
   "smoothProgress": "{have} of {need}",
   "@smoothProgress": {
     "placeholders": {

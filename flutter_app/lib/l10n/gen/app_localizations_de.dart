@@ -1226,7 +1226,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get smoothNeedCoverage =>
-      'Anfragen über Verbindungen mit bekanntem Limit (letzte 7 Tage)';
+      'Gratis- und Abo-Anfragen über Verbindungen mit bekannten Limits (letzte 7 Tage)';
 
   @override
   String smoothProgress(String have, String need) {

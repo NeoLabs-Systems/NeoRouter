@@ -362,7 +362,7 @@
   "smoothNeedDays": "Tage Verlauf",
   "smoothNeedActiveDays": "Tage mit Anfragen (letzte 14)",
   "smoothNeedRequests": "Beantwortete Anfragen (letzte 14 Tage)",
-  "smoothNeedCoverage": "Anfragen über Verbindungen mit bekanntem Limit (letzte 7 Tage)",
+  "smoothNeedCoverage": "Gratis- und Abo-Anfragen über Verbindungen mit bekannten Limits (letzte 7 Tage)",
   "smoothProgress": "{have} von {need}",
   "smoothHowTitle": "So funktioniert es",
   "smoothHowDaily": "Tageslimits: Jede Stunde bekommt ihren Anteil am Tag, mehr zu den Zeiten, in denen du meist Anfragen schickst.",
