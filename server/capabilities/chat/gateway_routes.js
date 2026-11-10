@@ -11,6 +11,7 @@ const { allowedByKey, routeAllowedByKey, kindAllowed, modelKind, MODEL_KINDS } =
 const profiles = require('../../services/routing/profiles');
 const sharePolicy = require('../../services/pools/share_policy');
 const { isPeerEntry } = require('../../services/pools/links');
+const keyActivity = require('../../services/apps/key_activity');
 const { createLogger } = require('../../utils/logger');
 
 const logger = createLogger('gateway');
@@ -25,6 +26,8 @@ function gatewayErrorHandler(format) {
     const status = error.status || 500;
     if (status >= 500 && !error.code) logger.error('Gateway request failed', { requestId: req.id, error });
     const message = status >= 500 && !error.code ? 'An internal error occurred.' : error.message;
+    // For "waiting for your app": why a request with a valid key failed early.
+    if (req.routerKey) keyActivity.recordFailure(req.routerKey.id, { status, code: error.code, message, model: req.body?.model });
     if (res.headersSent) return res.end();
     if (format === 'anthropic_messages') {
       return res.status(status).json({ type: 'error', error: { type: ANTHROPIC_ERROR_TYPES[status] || 'api_error', message }, request_id: req.id });

@@ -680,7 +680,180 @@
   "smoothHowDaily": "Daily limits: each hour gets its share of the day, more at the times you usually send requests.",
   "smoothHowPlans": "Plans (5 hours, a week, a month): never used much faster than the time that has passed.",
   "smoothHowPriority": "Keys with a high priority always get through, and paid models are not affected.",
-  "settingsConnectDescription": "Ready-to-paste setup for your SDKs and tools.",
+  "caIntro": "Pick your app and NeoRouter gives you exactly what to paste, then checks that it works.",
+  "caStepApp": "App",
+  "caStepPlace": "Where it runs",
+  "caStepSetup": "Set up",
+  "caSearch": "Search apps",
+  "caGroupAll": "All",
+  "caGroupCoding": "Coding",
+  "caGroupChat": "Chat",
+  "caGroupAutomation": "Automation",
+  "caGroupDeveloper": "Your own code",
+  "caNoApps": "No app matches. \"Other app (OpenAI-compatible)\" works with almost any app.",
+  "caWhereTitle": "Where does {app} run?",
+  "@caWhereTitle": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caPlaceLocal": "On this computer",
+  "caPlaceLocalHint": "Installed on the same computer as NeoRouter.",
+  "caPlaceDocker": "In Docker on this computer",
+  "caPlaceDockerHint": "In a container on the same computer as NeoRouter.",
+  "caPlaceNetwork": "On another device at home",
+  "caPlaceNetworkHint": "Another computer, phone or server in the same network.",
+  "caPlaceInternet": "Somewhere on the internet",
+  "caPlaceInternetHint": "A cloud service, or an app that calls through its own servers.",
+  "caUsual": "Usual for this app",
+  "caReachable": "Works",
+  "caNotReachable": "Not reachable yet",
+  "caCloudOnly": "{app} sends requests through its own servers, so only an internet address works.",
+  "@caCloudOnly": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caOpenTitle": "NeoRouter only lets this computer in",
+  "caOpenHint": "Containers and other devices cannot reach it yet. Opening it lets them in; every request still needs a NeoRouter key.",
+  "caOpenButton": "Let containers and devices in",
+  "caOpenAskAdmin": "Ask an admin of this NeoRouter to let containers and devices in (Settings → Connect your apps).",
+  "caRestarting": "NeoRouter is restarting to apply this …",
+  "caRestartBack": "Done: containers and devices can reach NeoRouter now.",
+  "caRestartManual": "Saved. Restart NeoRouter once to apply it:",
+  "caPublicUrlHint": "NeoRouter has no internet address yet. Put it behind a domain (for example with a reverse proxy or a tunnel) and set NEOROUTER_PUBLIC_URL to it.",
+  "caDockerLinuxHint": "On Linux, the app’s container also needs this, so the address works:",
+  "caNoLanAddress": "No network address found on this computer.",
+  "caContinue": "Continue",
+  "caBack": "Back",
+  "caKeyTitle": "Key for {app}",
+  "@caKeyTitle": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caKeyCreate": "Create a key for {app}",
+  "@caKeyCreate": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caKeyCreateHint": "Its own key, so you can see its usage and switch it off on its own.",
+  "caKeyCreated": "Created. It is shown only now; it is already filled in below.",
+  "caKeyExisting": "Use a key I already have",
+  "caKeyExistingHint": "Put your nrt_ key where it says nrt_… below.",
+  "caModelTitle": "Model",
+  "caModelAuto": "auto: NeoRouter picks the best model for each request",
+  "caModelChange": "Change",
+  "caModelAutoRoute": "Automatic",
+  "caInApp": "In {app}",
+  "@caInApp": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caDownload": "Download",
+  "caWaiting": "Waiting for the first request from {app} …",
+  "@caWaiting": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caWaitingHint": "Send a message in {app}; this updates by itself.",
+  "@caWaitingHint": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caConnected": "{app} is connected",
+  "@caConnected": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caConnectedDetail": "Last answer from {model}{time}.",
+  "@caConnectedDetail": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "caSeen": "{app} reached NeoRouter",
+  "@caSeen": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caSeenHint": "The key works. Send a message in {app} to try a real answer.",
+  "@caSeenHint": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caFailed": "{app} got through, but the request failed",
+  "@caFailed": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caUnknownModel": "{app} asked for the model \"{model}\", which does not exist here.",
+  "@caUnknownModel": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      },
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "caDidYouMean": "Did you mean one of these? Copy it into {app}, or use \"auto\".",
+  "@caDidYouMean": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caNothingYet": "Nothing has arrived yet. Check that:",
+  "caCheckAddress": "the address is exactly the one above, including /v1",
+  "caCheckKey": "the key was copied completely (it starts with nrt_)",
+  "caCheckDocker": "if {app} runs in Docker, you picked \"In Docker on this computer\"",
+  "@caCheckDocker": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caAnother": "Connect another app",
+  "settingsConnectDescription": "Connect any app step by step, with a check that it works.",
   "settingsServerDescription": "Sign-ups, people and model metadata. Only admins see this page.",
   "settingsAppliesInstantly": "Changes apply instantly",
   "serverTitle": "Server",

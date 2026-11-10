@@ -1249,8 +1249,242 @@ class AppL10nDe extends AppL10n {
       'Keys mit hoher Priorität kommen immer durch, und bezahlte Modelle sind nicht betroffen.';
 
   @override
+  String get caIntro =>
+      'Wähl deine App, und NeoRouter zeigt dir genau, was du einfügen musst, und prüft dann, ob es klappt.';
+
+  @override
+  String get caStepApp => 'App';
+
+  @override
+  String get caStepPlace => 'Wo sie läuft';
+
+  @override
+  String get caStepSetup => 'Einrichten';
+
+  @override
+  String get caSearch => 'Apps suchen';
+
+  @override
+  String get caGroupAll => 'Alle';
+
+  @override
+  String get caGroupCoding => 'Coding';
+
+  @override
+  String get caGroupChat => 'Chat';
+
+  @override
+  String get caGroupAutomation => 'Automatisierung';
+
+  @override
+  String get caGroupDeveloper => 'Eigener Code';
+
+  @override
+  String get caNoApps =>
+      'Keine App passt. „Other app (OpenAI-compatible)“ funktioniert mit fast jeder App.';
+
+  @override
+  String caWhereTitle(String app) {
+    return 'Wo läuft $app?';
+  }
+
+  @override
+  String get caPlaceLocal => 'Auf diesem Computer';
+
+  @override
+  String get caPlaceLocalHint =>
+      'Auf demselben Computer installiert wie NeoRouter.';
+
+  @override
+  String get caPlaceDocker => 'In Docker auf diesem Computer';
+
+  @override
+  String get caPlaceDockerHint =>
+      'In einem Container auf demselben Computer wie NeoRouter.';
+
+  @override
+  String get caPlaceNetwork => 'Auf einem anderen Gerät zu Hause';
+
+  @override
+  String get caPlaceNetworkHint =>
+      'Ein anderer Computer, ein Handy oder ein Server im selben Netzwerk.';
+
+  @override
+  String get caPlaceInternet => 'Irgendwo im Internet';
+
+  @override
+  String get caPlaceInternetHint =>
+      'Ein Cloud-Dienst oder eine App, die über eigene Server anfragt.';
+
+  @override
+  String get caUsual => 'Üblich für diese App';
+
+  @override
+  String get caReachable => 'Funktioniert';
+
+  @override
+  String get caNotReachable => 'Noch nicht erreichbar';
+
+  @override
+  String caCloudOnly(String app) {
+    return '$app schickt Anfragen über eigene Server, darum funktioniert nur eine Internetadresse.';
+  }
+
+  @override
+  String get caOpenTitle => 'NeoRouter lässt nur diesen Computer herein';
+
+  @override
+  String get caOpenHint =>
+      'Container und andere Geräte erreichen es noch nicht. Wenn du es öffnest, kommen sie herein; jede Anfrage braucht weiterhin einen NeoRouter-Key.';
+
+  @override
+  String get caOpenButton => 'Container und Geräte hereinlassen';
+
+  @override
+  String get caOpenAskAdmin =>
+      'Bitte einen Admin dieses NeoRouters, Container und Geräte hereinzulassen (Einstellungen → Apps verbinden).';
+
+  @override
+  String get caRestarting => 'NeoRouter startet neu, um das zu übernehmen …';
+
+  @override
+  String get caRestartBack =>
+      'Fertig: Container und Geräte erreichen NeoRouter jetzt.';
+
+  @override
+  String get caRestartManual =>
+      'Gespeichert. Starte NeoRouter einmal neu, um es zu übernehmen:';
+
+  @override
+  String get caPublicUrlHint =>
+      'NeoRouter hat noch keine Internetadresse. Stell es hinter eine Domain (zum Beispiel mit einem Reverse Proxy oder Tunnel) und setze NEOROUTER_PUBLIC_URL darauf.';
+
+  @override
+  String get caDockerLinuxHint =>
+      'Unter Linux braucht der Container der App zusätzlich das hier, damit die Adresse funktioniert:';
+
+  @override
+  String get caNoLanAddress =>
+      'Auf diesem Computer wurde keine Netzwerkadresse gefunden.';
+
+  @override
+  String get caContinue => 'Weiter';
+
+  @override
+  String get caBack => 'Zurück';
+
+  @override
+  String caKeyTitle(String app) {
+    return 'Key für $app';
+  }
+
+  @override
+  String caKeyCreate(String app) {
+    return 'Key für $app erstellen';
+  }
+
+  @override
+  String get caKeyCreateHint =>
+      'Ein eigener Key, damit du seine Nutzung siehst und ihn einzeln abschalten kannst.';
+
+  @override
+  String get caKeyCreated =>
+      'Erstellt. Er wird nur jetzt angezeigt und ist unten schon eingetragen.';
+
+  @override
+  String get caKeyExisting => 'Einen vorhandenen Key nutzen';
+
+  @override
+  String get caKeyExistingHint =>
+      'Setz deinen nrt_-Key unten dort ein, wo nrt_… steht.';
+
+  @override
+  String get caModelTitle => 'Modell';
+
+  @override
+  String get caModelAuto =>
+      'auto: NeoRouter wählt für jede Anfrage das beste Modell';
+
+  @override
+  String get caModelChange => 'Ändern';
+
+  @override
+  String get caModelAutoRoute => 'Automatisch';
+
+  @override
+  String caInApp(String app) {
+    return 'In $app';
+  }
+
+  @override
+  String get caDownload => 'Herunterladen';
+
+  @override
+  String caWaiting(String app) {
+    return 'Warte auf die erste Anfrage von $app …';
+  }
+
+  @override
+  String caWaitingHint(String app) {
+    return 'Schick in $app eine Nachricht; das hier aktualisiert sich von selbst.';
+  }
+
+  @override
+  String caConnected(String app) {
+    return '$app ist verbunden';
+  }
+
+  @override
+  String caConnectedDetail(String model, String time) {
+    return 'Letzte Antwort von $model$time.';
+  }
+
+  @override
+  String caSeen(String app) {
+    return '$app hat NeoRouter erreicht';
+  }
+
+  @override
+  String caSeenHint(String app) {
+    return 'Der Key funktioniert. Schick in $app eine Nachricht, um eine echte Antwort zu testen.';
+  }
+
+  @override
+  String caFailed(String app) {
+    return '$app kommt durch, aber die Anfrage schlug fehl';
+  }
+
+  @override
+  String caUnknownModel(String app, String model) {
+    return '$app hat nach dem Modell „$model“ gefragt, das es hier nicht gibt.';
+  }
+
+  @override
+  String caDidYouMean(String app) {
+    return 'Meintest du eines davon? Kopier es in $app oder nimm „auto“.';
+  }
+
+  @override
+  String get caNothingYet => 'Noch nichts angekommen. Prüfe:';
+
+  @override
+  String get caCheckAddress => 'die Adresse genau die von oben ist, mit /v1';
+
+  @override
+  String get caCheckKey =>
+      'der Key vollständig kopiert wurde (er beginnt mit nrt_)';
+
+  @override
+  String caCheckDocker(String app) {
+    return 'du „In Docker auf diesem Computer“ gewählt hast, falls $app in Docker läuft';
+  }
+
+  @override
+  String get caAnother => 'Weitere App verbinden';
+
+  @override
   String get settingsConnectDescription =>
-      'Fertige Einrichtung für deine SDKs und Tools.';
+      'Jede App Schritt für Schritt verbinden, mit Prüfung, ob es klappt.';
 
   @override
   String get settingsServerDescription =>

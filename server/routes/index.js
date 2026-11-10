@@ -26,6 +26,7 @@ router.use('/pools', require('./pools'));
 router.use('/providers', require('./providers'));
 router.use('/models', require('./models'));
 router.use('/keys', require('./keys'));
+router.use('/apps', require('./apps'));
 router.use('/routing', require('./routing'));
 router.use('/usage', require('./usage'));
 router.use('/playground', require('./playground'));

@@ -1239,8 +1239,240 @@ class AppL10nEn extends AppL10n {
       'Keys with a high priority always get through, and paid models are not affected.';
 
   @override
+  String get caIntro =>
+      'Pick your app and NeoRouter gives you exactly what to paste, then checks that it works.';
+
+  @override
+  String get caStepApp => 'App';
+
+  @override
+  String get caStepPlace => 'Where it runs';
+
+  @override
+  String get caStepSetup => 'Set up';
+
+  @override
+  String get caSearch => 'Search apps';
+
+  @override
+  String get caGroupAll => 'All';
+
+  @override
+  String get caGroupCoding => 'Coding';
+
+  @override
+  String get caGroupChat => 'Chat';
+
+  @override
+  String get caGroupAutomation => 'Automation';
+
+  @override
+  String get caGroupDeveloper => 'Your own code';
+
+  @override
+  String get caNoApps =>
+      'No app matches. \"Other app (OpenAI-compatible)\" works with almost any app.';
+
+  @override
+  String caWhereTitle(String app) {
+    return 'Where does $app run?';
+  }
+
+  @override
+  String get caPlaceLocal => 'On this computer';
+
+  @override
+  String get caPlaceLocalHint => 'Installed on the same computer as NeoRouter.';
+
+  @override
+  String get caPlaceDocker => 'In Docker on this computer';
+
+  @override
+  String get caPlaceDockerHint =>
+      'In a container on the same computer as NeoRouter.';
+
+  @override
+  String get caPlaceNetwork => 'On another device at home';
+
+  @override
+  String get caPlaceNetworkHint =>
+      'Another computer, phone or server in the same network.';
+
+  @override
+  String get caPlaceInternet => 'Somewhere on the internet';
+
+  @override
+  String get caPlaceInternetHint =>
+      'A cloud service, or an app that calls through its own servers.';
+
+  @override
+  String get caUsual => 'Usual for this app';
+
+  @override
+  String get caReachable => 'Works';
+
+  @override
+  String get caNotReachable => 'Not reachable yet';
+
+  @override
+  String caCloudOnly(String app) {
+    return '$app sends requests through its own servers, so only an internet address works.';
+  }
+
+  @override
+  String get caOpenTitle => 'NeoRouter only lets this computer in';
+
+  @override
+  String get caOpenHint =>
+      'Containers and other devices cannot reach it yet. Opening it lets them in; every request still needs a NeoRouter key.';
+
+  @override
+  String get caOpenButton => 'Let containers and devices in';
+
+  @override
+  String get caOpenAskAdmin =>
+      'Ask an admin of this NeoRouter to let containers and devices in (Settings → Connect your apps).';
+
+  @override
+  String get caRestarting => 'NeoRouter is restarting to apply this …';
+
+  @override
+  String get caRestartBack =>
+      'Done: containers and devices can reach NeoRouter now.';
+
+  @override
+  String get caRestartManual => 'Saved. Restart NeoRouter once to apply it:';
+
+  @override
+  String get caPublicUrlHint =>
+      'NeoRouter has no internet address yet. Put it behind a domain (for example with a reverse proxy or a tunnel) and set NEOROUTER_PUBLIC_URL to it.';
+
+  @override
+  String get caDockerLinuxHint =>
+      'On Linux, the app’s container also needs this, so the address works:';
+
+  @override
+  String get caNoLanAddress => 'No network address found on this computer.';
+
+  @override
+  String get caContinue => 'Continue';
+
+  @override
+  String get caBack => 'Back';
+
+  @override
+  String caKeyTitle(String app) {
+    return 'Key for $app';
+  }
+
+  @override
+  String caKeyCreate(String app) {
+    return 'Create a key for $app';
+  }
+
+  @override
+  String get caKeyCreateHint =>
+      'Its own key, so you can see its usage and switch it off on its own.';
+
+  @override
+  String get caKeyCreated =>
+      'Created. It is shown only now; it is already filled in below.';
+
+  @override
+  String get caKeyExisting => 'Use a key I already have';
+
+  @override
+  String get caKeyExistingHint =>
+      'Put your nrt_ key where it says nrt_… below.';
+
+  @override
+  String get caModelTitle => 'Model';
+
+  @override
+  String get caModelAuto =>
+      'auto: NeoRouter picks the best model for each request';
+
+  @override
+  String get caModelChange => 'Change';
+
+  @override
+  String get caModelAutoRoute => 'Automatic';
+
+  @override
+  String caInApp(String app) {
+    return 'In $app';
+  }
+
+  @override
+  String get caDownload => 'Download';
+
+  @override
+  String caWaiting(String app) {
+    return 'Waiting for the first request from $app …';
+  }
+
+  @override
+  String caWaitingHint(String app) {
+    return 'Send a message in $app; this updates by itself.';
+  }
+
+  @override
+  String caConnected(String app) {
+    return '$app is connected';
+  }
+
+  @override
+  String caConnectedDetail(String model, String time) {
+    return 'Last answer from $model$time.';
+  }
+
+  @override
+  String caSeen(String app) {
+    return '$app reached NeoRouter';
+  }
+
+  @override
+  String caSeenHint(String app) {
+    return 'The key works. Send a message in $app to try a real answer.';
+  }
+
+  @override
+  String caFailed(String app) {
+    return '$app got through, but the request failed';
+  }
+
+  @override
+  String caUnknownModel(String app, String model) {
+    return '$app asked for the model \"$model\", which does not exist here.';
+  }
+
+  @override
+  String caDidYouMean(String app) {
+    return 'Did you mean one of these? Copy it into $app, or use \"auto\".';
+  }
+
+  @override
+  String get caNothingYet => 'Nothing has arrived yet. Check that:';
+
+  @override
+  String get caCheckAddress =>
+      'the address is exactly the one above, including /v1';
+
+  @override
+  String get caCheckKey =>
+      'the key was copied completely (it starts with nrt_)';
+
+  @override
+  String caCheckDocker(String app) {
+    return 'if $app runs in Docker, you picked \"In Docker on this computer\"';
+  }
+
+  @override
+  String get caAnother => 'Connect another app';
+
+  @override
   String get settingsConnectDescription =>
-      'Ready-to-paste setup for your SDKs and tools.';
+      'Connect any app step by step, with a check that it works.';
 
   @override
   String get settingsServerDescription =>

@@ -360,6 +360,39 @@ function resetLongShotsForTests() {
 }
 const MINUTE_MS = 60_000;
 
+// Model names close to one that does not exist: a shortened name
+// ("spark/qwen3.8"), another provider prefix or a small typo. Up to three.
+function closestModels(requested, entries) {
+  const wanted = String(requested).toLowerCase();
+  const tail = wanted.includes('/') ? wanted.slice(wanted.lastIndexOf('/') + 1) : wanted;
+  const scored = [];
+  for (const entry of entries) {
+    const id = entry.id.toLowerCase();
+    const model = String(entry.modelId).toLowerCase();
+    let score = null;
+    if (tail && (model.startsWith(tail) || id.startsWith(wanted))) score = 0;
+    else if (tail.length >= 4 && model.includes(tail)) score = 1;
+    else {
+      const distance = editDistance(tail, model);
+      if (distance <= Math.max(2, Math.floor(tail.length / 5))) score = 1 + distance;
+    }
+    if (score !== null) scored.push({ id: entry.id, score, length: entry.id.length });
+  }
+  scored.sort((a, b) => a.score - b.score || a.length - b.length);
+  return [...new Set(scored.map((item) => item.id))].slice(0, 3);
+}
+
+function editDistance(a, b) {
+  if (Math.abs(a.length - b.length) > 6) return Infinity;
+  let previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i += 1) {
+    const current = [i];
+    for (let j = 1; j <= b.length; j += 1) current[j] = Math.min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    previous = current;
+  }
+  return previous[b.length];
+}
+
 class RoutingPlan {
   // taskHint: a task kind the client named (X-NeoRouter-Task).
   // keepPrivate: very sensitive content, kept off pool partners.
@@ -428,7 +461,12 @@ class RoutingPlan {
     const canonical = primary[0]?.canonicalId || canonicalId(modelPart);
     const sameModel = this.entries.filter((entry) => entry.canonicalId === canonical);
     if (!primary.length && !sameModel.length) {
-      throw new HttpError(404, 'MODEL_NOT_FOUND', `The model "${requested}" is not a ${this.capability} model in your catalog. Use GET /v1/models or "auto".`);
+      const close = closestModels(requested, this.entries);
+      const hint = close.length ? ` Did you mean ${close.map((id) => `"${id}"`).join(' or ')}?` : '';
+      throw Object.assign(
+        new HttpError(404, 'MODEL_NOT_FOUND', `The model "${requested}" is not a ${this.capability} model in your catalog.${hint} Use GET /v1/models or "auto".`),
+        { details: close.length ? { suggestions: close } : undefined },
+      );
     }
     for (const entry of primary) this.primaryRefs.add(entry.ref);
     const refs = new Set([...primary, ...sameModel].map((entry) => entry.ref));

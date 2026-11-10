@@ -2305,10 +2305,382 @@ abstract class AppL10n {
   /// **'Keys with a high priority always get through, and paid models are not affected.'**
   String get smoothHowPriority;
 
+  /// No description provided for @caIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your app and NeoRouter gives you exactly what to paste, then checks that it works.'**
+  String get caIntro;
+
+  /// No description provided for @caStepApp.
+  ///
+  /// In en, this message translates to:
+  /// **'App'**
+  String get caStepApp;
+
+  /// No description provided for @caStepPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Where it runs'**
+  String get caStepPlace;
+
+  /// No description provided for @caStepSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up'**
+  String get caStepSetup;
+
+  /// No description provided for @caSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search apps'**
+  String get caSearch;
+
+  /// No description provided for @caGroupAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get caGroupAll;
+
+  /// No description provided for @caGroupCoding.
+  ///
+  /// In en, this message translates to:
+  /// **'Coding'**
+  String get caGroupCoding;
+
+  /// No description provided for @caGroupChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get caGroupChat;
+
+  /// No description provided for @caGroupAutomation.
+  ///
+  /// In en, this message translates to:
+  /// **'Automation'**
+  String get caGroupAutomation;
+
+  /// No description provided for @caGroupDeveloper.
+  ///
+  /// In en, this message translates to:
+  /// **'Your own code'**
+  String get caGroupDeveloper;
+
+  /// No description provided for @caNoApps.
+  ///
+  /// In en, this message translates to:
+  /// **'No app matches. \"Other app (OpenAI-compatible)\" works with almost any app.'**
+  String get caNoApps;
+
+  /// No description provided for @caWhereTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Where does {app} run?'**
+  String caWhereTitle(String app);
+
+  /// No description provided for @caPlaceLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'On this computer'**
+  String get caPlaceLocal;
+
+  /// No description provided for @caPlaceLocalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed on the same computer as NeoRouter.'**
+  String get caPlaceLocalHint;
+
+  /// No description provided for @caPlaceDocker.
+  ///
+  /// In en, this message translates to:
+  /// **'In Docker on this computer'**
+  String get caPlaceDocker;
+
+  /// No description provided for @caPlaceDockerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'In a container on the same computer as NeoRouter.'**
+  String get caPlaceDockerHint;
+
+  /// No description provided for @caPlaceNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'On another device at home'**
+  String get caPlaceNetwork;
+
+  /// No description provided for @caPlaceNetworkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Another computer, phone or server in the same network.'**
+  String get caPlaceNetworkHint;
+
+  /// No description provided for @caPlaceInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'Somewhere on the internet'**
+  String get caPlaceInternet;
+
+  /// No description provided for @caPlaceInternetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A cloud service, or an app that calls through its own servers.'**
+  String get caPlaceInternetHint;
+
+  /// No description provided for @caUsual.
+  ///
+  /// In en, this message translates to:
+  /// **'Usual for this app'**
+  String get caUsual;
+
+  /// No description provided for @caReachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Works'**
+  String get caReachable;
+
+  /// No description provided for @caNotReachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not reachable yet'**
+  String get caNotReachable;
+
+  /// No description provided for @caCloudOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'{app} sends requests through its own servers, so only an internet address works.'**
+  String caCloudOnly(String app);
+
+  /// No description provided for @caOpenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter only lets this computer in'**
+  String get caOpenTitle;
+
+  /// No description provided for @caOpenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Containers and other devices cannot reach it yet. Opening it lets them in; every request still needs a NeoRouter key.'**
+  String get caOpenHint;
+
+  /// No description provided for @caOpenButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Let containers and devices in'**
+  String get caOpenButton;
+
+  /// No description provided for @caOpenAskAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask an admin of this NeoRouter to let containers and devices in (Settings → Connect your apps).'**
+  String get caOpenAskAdmin;
+
+  /// No description provided for @caRestarting.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter is restarting to apply this …'**
+  String get caRestarting;
+
+  /// No description provided for @caRestartBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Done: containers and devices can reach NeoRouter now.'**
+  String get caRestartBack;
+
+  /// No description provided for @caRestartManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved. Restart NeoRouter once to apply it:'**
+  String get caRestartManual;
+
+  /// No description provided for @caPublicUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter has no internet address yet. Put it behind a domain (for example with a reverse proxy or a tunnel) and set NEOROUTER_PUBLIC_URL to it.'**
+  String get caPublicUrlHint;
+
+  /// No description provided for @caDockerLinuxHint.
+  ///
+  /// In en, this message translates to:
+  /// **'On Linux, the app’s container also needs this, so the address works:'**
+  String get caDockerLinuxHint;
+
+  /// No description provided for @caNoLanAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'No network address found on this computer.'**
+  String get caNoLanAddress;
+
+  /// No description provided for @caContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get caContinue;
+
+  /// No description provided for @caBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get caBack;
+
+  /// No description provided for @caKeyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Key for {app}'**
+  String caKeyTitle(String app);
+
+  /// No description provided for @caKeyCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a key for {app}'**
+  String caKeyCreate(String app);
+
+  /// No description provided for @caKeyCreateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Its own key, so you can see its usage and switch it off on its own.'**
+  String get caKeyCreateHint;
+
+  /// No description provided for @caKeyCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created. It is shown only now; it is already filled in below.'**
+  String get caKeyCreated;
+
+  /// No description provided for @caKeyExisting.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a key I already have'**
+  String get caKeyExisting;
+
+  /// No description provided for @caKeyExistingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Put your nrt_ key where it says nrt_… below.'**
+  String get caKeyExistingHint;
+
+  /// No description provided for @caModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get caModelTitle;
+
+  /// No description provided for @caModelAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'auto: NeoRouter picks the best model for each request'**
+  String get caModelAuto;
+
+  /// No description provided for @caModelChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get caModelChange;
+
+  /// No description provided for @caModelAutoRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get caModelAutoRoute;
+
+  /// No description provided for @caInApp.
+  ///
+  /// In en, this message translates to:
+  /// **'In {app}'**
+  String caInApp(String app);
+
+  /// No description provided for @caDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get caDownload;
+
+  /// No description provided for @caWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the first request from {app} …'**
+  String caWaiting(String app);
+
+  /// No description provided for @caWaitingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a message in {app}; this updates by itself.'**
+  String caWaitingHint(String app);
+
+  /// No description provided for @caConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'{app} is connected'**
+  String caConnected(String app);
+
+  /// No description provided for @caConnectedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Last answer from {model}{time}.'**
+  String caConnectedDetail(String model, String time);
+
+  /// No description provided for @caSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'{app} reached NeoRouter'**
+  String caSeen(String app);
+
+  /// No description provided for @caSeenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The key works. Send a message in {app} to try a real answer.'**
+  String caSeenHint(String app);
+
+  /// No description provided for @caFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{app} got through, but the request failed'**
+  String caFailed(String app);
+
+  /// No description provided for @caUnknownModel.
+  ///
+  /// In en, this message translates to:
+  /// **'{app} asked for the model \"{model}\", which does not exist here.'**
+  String caUnknownModel(String app, String model);
+
+  /// No description provided for @caDidYouMean.
+  ///
+  /// In en, this message translates to:
+  /// **'Did you mean one of these? Copy it into {app}, or use \"auto\".'**
+  String caDidYouMean(String app);
+
+  /// No description provided for @caNothingYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing has arrived yet. Check that:'**
+  String get caNothingYet;
+
+  /// No description provided for @caCheckAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'the address is exactly the one above, including /v1'**
+  String get caCheckAddress;
+
+  /// No description provided for @caCheckKey.
+  ///
+  /// In en, this message translates to:
+  /// **'the key was copied completely (it starts with nrt_)'**
+  String get caCheckKey;
+
+  /// No description provided for @caCheckDocker.
+  ///
+  /// In en, this message translates to:
+  /// **'if {app} runs in Docker, you picked \"In Docker on this computer\"'**
+  String caCheckDocker(String app);
+
+  /// No description provided for @caAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect another app'**
+  String get caAnother;
+
   /// No description provided for @settingsConnectDescription.
   ///
   /// In en, this message translates to:
-  /// **'Ready-to-paste setup for your SDKs and tools.'**
+  /// **'Connect any app step by step, with a check that it works.'**
   String get settingsConnectDescription;
 
   /// No description provided for @settingsServerDescription.

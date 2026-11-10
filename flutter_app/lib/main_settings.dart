@@ -5,6 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
+import 'main_connect_apps.dart';
 import 'main_settings_account_data.dart';
 import 'main_settings_smoothing.dart';
 import 'main_shared.dart';
@@ -12,12 +13,12 @@ import 'main_spacing.dart';
 import 'main_theme.dart';
 import 'src/backend_client.dart';
 
-enum _SettingsPage { account, usage, appearance, connect }
+enum _SettingsPage { account, usage, connect, appearance }
 
 enum _SettingsScope { you, app }
 
 extension on _SettingsPage {
-  _SettingsScope get scope => this == _SettingsPage.account || this == _SettingsPage.usage ? _SettingsScope.you : _SettingsScope.app;
+  _SettingsScope get scope => this == _SettingsPage.appearance ? _SettingsScope.app : _SettingsScope.you;
 
   IconData get icon => switch (this) {
         _SettingsPage.account => Icons.person_outline,
@@ -296,7 +297,7 @@ class _SettingsPageView extends StatelessWidget {
                   _SettingsPage.account => _AccountPage(controller: controller),
                   _SettingsPage.usage => SmoothingSection(controller: controller),
                   _SettingsPage.appearance => _AppearancePage(controller: controller),
-                  _SettingsPage.connect => _ConnectPage(controller: controller),
+                  _SettingsPage.connect => ConnectAppsPage(controller: controller),
                 },
                 const SizedBox(height: AppSpacing.xl),
               ],
@@ -950,32 +951,6 @@ class _TwoFactorSectionState extends State<_TwoFactorSection> {
   }
 }
 
-class _ConnectPage extends StatelessWidget {
-  const _ConnectPage({required this.controller});
-
-  final NeoRouterController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppL10n.of(context);
-    final endpoint = controller.endpoint ?? 'http://127.0.0.1:4600/v1';
-    final base = endpoint.replaceFirst(RegExp(r'/v1$'), '');
-    final snippets = <(String, String)>[
-      ('OpenAI SDK (Python)', 'from openai import OpenAI\nclient = OpenAI(base_url="$endpoint", api_key="nrt_…")\nclient.chat.completions.create(model="auto", messages=[{"role": "user", "content": "Hi"}])'),
-      ('Anthropic SDK (Python)', 'from anthropic import Anthropic\nclient = Anthropic(base_url="$base", api_key="nrt_…")\nclient.messages.create(model="auto:smart", max_tokens=512, messages=[{"role": "user", "content": "Hi"}])'),
-      ('curl', 'curl $endpoint/chat/completions \\\n  -H "Authorization: Bearer nrt_…" -H "Content-Type: application/json" \\\n  -d \'{"model":"auto:fast","messages":[{"role":"user","content":"Hi"}]}\''),
-      ('Claude Code', 'ANTHROPIC_BASE_URL=$base ANTHROPIC_AUTH_TOKEN=nrt_… claude'),
-    ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SettingsHeading(title: t.connectApps, description: t.connectAppsHint),
-        SettingsCardList(children: <Widget>[for (final (label, code) in snippets) _Snippet(label: label, code: code)]),
-      ],
-    );
-  }
-}
-
 /// A one-of-a-few choice, styled like NeoAgent's.
 class _SettingsChoice<T extends Object> extends StatelessWidget {
   const _SettingsChoice({required this.value, required this.options, required this.onChanged});
@@ -997,42 +972,3 @@ class _SettingsChoice<T extends Object> extends StatelessWidget {
   }
 }
 
-class _Snippet extends StatelessWidget {
-  const _Snippet({required this.label, required this.code});
-
-  final String label;
-  final String code;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = neoRouterPaletteOf(context);
-    final t = AppL10n.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 8, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(child: Text(label, style: TextStyle(color: palette.text, fontSize: 14, fontWeight: FontWeight.w600))),
-              IconButton(
-                tooltip: t.copy,
-                icon: const Icon(Icons.copy_rounded, size: 16),
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: code));
-                  showSnack(context, t.copied);
-                },
-              ),
-            ],
-          ),
-          Container(
-            margin: const EdgeInsets.only(right: 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: palette.surfaceRaised, borderRadius: BorderRadius.circular(AppRadius.tag)),
-            child: SelectableText(code, style: GoogleFonts.geistMono(fontSize: 12.5, height: 1.55, color: palette.textSoft)),
-          ),
-        ],
-      ),
-    );
-  }
-}

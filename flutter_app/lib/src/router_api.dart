@@ -118,6 +118,12 @@ class RouterApi {
   /// Settings → Usage → even out usage: { enabled, active, readiness }.
   Future<Map<String, dynamic>> smoothing() => client.get('$_base/routing/smoothing');
   Future<Map<String, dynamic>> setSmoothing(bool enabled) => client.putJson('$_base/routing/smoothing', <String, Object>{'enabled': enabled});
+  /// Settings → Connect your apps: { apps, places, network }.
+  Future<Map<String, dynamic>> connectApps() => client.get('$_base/apps');
+  /// What last happened with a key: { lastUsedAt, request }.
+  Future<Map<String, dynamic>> keyActivity(String keyId) => client.get('$_base/apps/keys/$keyId/activity');
+  /// Admins: 'local' or 'network'; returns { restarting, restartNeeded, places, ... }.
+  Future<Map<String, dynamic>> setNetworkScope(String scope) => client.putJson('$_base/apps/network', <String, Object>{'scope': scope});
   Future<List<RoutingProfile>> profiles() async => _list(await client.get('$_base/routing/profiles'), 'profiles', RoutingProfile.new);
   Future<RoutingProfile> createProfile(String name, RoutingWeights weights, Map<String, Object?> constraints) async => RoutingProfile(
     Map<String, dynamic>.from(
