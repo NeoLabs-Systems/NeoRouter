@@ -46,7 +46,7 @@ router.get('/quotas', (req, res) => {
   // Every kind counts against a provider's allowance, not only chat.
   const entries = capabilities.list().flatMap((kind) => catalog.listForUser(req.space.ownerId, { capability: kind.id }));
   const byAccount = new Map(accounts.list(req.space.ownerId).map((account) => [account.id, {
-    account, pool: [], models: [], probes: quota.accountState(account.id),
+    account, pool: [], models: [], probes: quota.accountStateNow(account.id),
     concurrency: concurrency.limitFor({ accountId: account.id, definitionId: account.definitionId }),
   }]));
   for (const entry of entries) {

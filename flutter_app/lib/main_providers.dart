@@ -1785,6 +1785,8 @@ class _WindowRow extends StatelessWidget {
     final detail = <String>[
       limit == null ? formatCount(used) : t.usedOf(formatCount(used), formatCount(limit)),
       if (resetAt != null) t.limitResets(formatTime(DateTime.fromMillisecondsSinceEpoch(resetAt.toInt()))),
+      // Its reset time has passed: full again until the provider reports the next window.
+      if (window['renewed'] == true) t.limitRenewed,
     ].join(' · ');
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),

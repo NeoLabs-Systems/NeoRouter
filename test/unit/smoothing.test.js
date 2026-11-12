@@ -91,3 +91,15 @@ test('a plan may run only a little ahead of the time that has passed', () => {
   assert.equal(smoothing.held(plan, { userId: 'u2', now }), true, '40 % used at 14 % of the week');
   assert.equal(smoothing.held(plan, { userId: 'u2', now: now + 4 * DAY }), false, 'by day five, 40 % is behind schedule');
 });
+
+test('a plan window whose reset time has passed is shown renewed', () => {
+  const now = Date.now();
+  quota.setState('a:acc-shown', 'plan_week', { limit: 100, remaining: 7, resetAt: now - 3600_000 }, 'headers', now - 2 * DAY);
+  quota.setState('a:acc-shown', 'plan_5h', { limit: 100, remaining: 99, resetAt: now + 3600_000 }, 'headers', now);
+  const shown = Object.fromEntries(quota.accountStateNow('acc-shown', now).map((state) => [state.metric, state]));
+  assert.equal(shown.plan_week.remaining, 100, 'full again');
+  assert.equal(shown.plan_week.resetAt, null, 'the next reset is not known yet');
+  assert.equal(shown.plan_week.renewed, true);
+  assert.equal(shown.plan_5h.remaining, 99, 'a running window stays as reported');
+  assert.equal(shown.plan_5h.renewed, undefined);
+});

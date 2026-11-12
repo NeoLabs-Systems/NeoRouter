@@ -806,6 +806,7 @@
   "testConnection": "Verbindung testen",
   "probeOk": "Der Key funktioniert – {count} Modelle gefunden.",
   "limitsDescription": "Die Limits jedes Anbieters und was vom heutigen Kontingent übrig ist. Sie stammen aus der Dokumentation und den Antworten des Anbieters; NeoRouter weicht ihnen von selbst aus.",
+  "limitRenewed": "erneuert, zählt ab der nächsten Anfrage neu",
   "limitResets": "zurückgesetzt {time}",
   "limitConcurrent": "Gleichzeitige Anfragen",
   "limitConcurrentValue": "bis {count}, aus den Antworten gelernt",

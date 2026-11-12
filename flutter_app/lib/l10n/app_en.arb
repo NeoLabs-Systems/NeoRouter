@@ -1713,6 +1713,7 @@
     }
   },
   "limitsDescription": "Each provider's limits and what is left of today's allowance. Limits come from the provider's documentation and answers; NeoRouter routes around them on its own.",
+  "limitRenewed": "renewed, counts again from the next request",
   "limitResets": "resets {time}",
   "@limitResets": {
     "placeholders": {

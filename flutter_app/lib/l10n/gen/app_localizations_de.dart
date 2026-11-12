@@ -2805,6 +2805,9 @@ class AppL10nDe extends AppL10n {
       'Die Limits jedes Anbieters und was vom heutigen Kontingent übrig ist. Sie stammen aus der Dokumentation und den Antworten des Anbieters; NeoRouter weicht ihnen von selbst aus.';
 
   @override
+  String get limitRenewed => 'erneuert, zählt ab der nächsten Anfrage neu';
+
+  @override
   String limitResets(String time) {
     return 'zurückgesetzt $time';
   }

@@ -2782,6 +2782,9 @@ class AppL10nEn extends AppL10n {
       'Each provider\'s limits and what is left of today\'s allowance. Limits come from the provider\'s documentation and answers; NeoRouter routes around them on its own.';
 
   @override
+  String get limitRenewed => 'renewed, counts again from the next request';
+
+  @override
   String limitResets(String time) {
     return 'resets $time';
   }

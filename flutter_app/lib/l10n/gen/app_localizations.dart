@@ -4933,6 +4933,12 @@ abstract class AppL10n {
   /// **'Each provider\'s limits and what is left of today\'s allowance. Limits come from the provider\'s documentation and answers; NeoRouter routes around them on its own.'**
   String get limitsDescription;
 
+  /// No description provided for @limitRenewed.
+  ///
+  /// In en, this message translates to:
+  /// **'renewed, counts again from the next request'**
+  String get limitRenewed;
+
   /// No description provided for @limitResets.
   ///
   /// In en, this message translates to:

@@ -306,6 +306,17 @@ function accountState(accountId) {
   return result;
 }
 
+/**
+ * accountState() for people to read: a window whose reset time has passed
+ * is shown renewed (nothing used) until the provider reports again, since
+ * the next reset only starts counting with the next use.
+ */
+function accountStateNow(accountId, now = Date.now()) {
+  return accountState(accountId).map((state) => (state.resetAt && state.resetAt <= now && state.limit
+    ? { ...state, remaining: state.limit, resetAt: null, renewed: true }
+    : state));
+}
+
 function resetForTests() {
   buckets.clear();
   dirty.clear();
@@ -333,6 +344,7 @@ module.exports = { forgetObserved,
   clearLimit,
   setState,
   accountState,
+  accountStateNow,
   flush,
   resetForTests,
   METRICS,

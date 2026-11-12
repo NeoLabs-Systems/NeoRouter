@@ -849,6 +849,7 @@ S = {
   'testConnection': ('Test connection', 'Verbindung testen'),
   'probeOk': ('The key works – {count} models found.', 'Der Key funktioniert – {count} Modelle gefunden.'),
   'limitsDescription': ("Each provider's limits and what is left of today's allowance. Limits come from the provider's documentation and answers; NeoRouter routes around them on its own.", 'Die Limits jedes Anbieters und was vom heutigen Kontingent übrig ist. Sie stammen aus der Dokumentation und den Antworten des Anbieters; NeoRouter weicht ihnen von selbst aus.'),
+  'limitRenewed': ('renewed, counts again from the next request', 'erneuert, zählt ab der nächsten Anfrage neu'),
   'limitResets': ('resets {time}', 'zurückgesetzt {time}'),
   'limitConcurrent': ('Requests at once', 'Gleichzeitige Anfragen'),
   'limitConcurrentValue': ('up to {count}, learned from its answers', 'bis {count}, aus den Antworten gelernt'),
