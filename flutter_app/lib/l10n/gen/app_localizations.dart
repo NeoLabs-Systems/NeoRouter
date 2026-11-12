@@ -2995,6 +2995,12 @@ abstract class AppL10n {
   /// **'The password is not correct.'**
   String get accountWrongPassword;
 
+  /// No description provided for @accountTooManyTries.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many wrong tries. Wait a few minutes and try again.'**
+  String get accountTooManyTries;
+
   /// No description provided for @accountWrongCode.
   ///
   /// In en, this message translates to:

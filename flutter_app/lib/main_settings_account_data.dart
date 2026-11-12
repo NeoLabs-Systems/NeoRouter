@@ -239,6 +239,7 @@ class _ConfirmIdentityDialogState<T> extends State<_ConfirmIdentityDialog<T>> {
   String _errorText(AppL10n t, ApiException error) => switch (error.code) {
     'INVALID_PASSWORD' => t.accountWrongPassword,
     'INVALID_TWO_FACTOR' => t.accountWrongCode,
+    'CONFIRM_LOCKED' => t.accountTooManyTries,
     'LAST_ADMIN' => t.accountLastAdmin,
     'TWO_FACTOR_REQUIRED' => t.accountKeysNeedTwoFactor,
     _ => error.message,

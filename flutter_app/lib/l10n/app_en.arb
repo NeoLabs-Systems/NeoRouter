@@ -930,6 +930,7 @@
   "accountExported": "Downloaded.",
   "accountLastAdmin": "You are the only admin. Make someone else an admin first.",
   "accountWrongPassword": "The password is not correct.",
+  "accountTooManyTries": "Too many wrong tries. Wait a few minutes and try again.",
   "accountWrongCode": "The code is not valid.",
   "twoFactorTitle": "Two-factor authentication",
   "twoFactorOn": "2FA on",

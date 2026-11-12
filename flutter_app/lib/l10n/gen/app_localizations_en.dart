@@ -1650,6 +1650,10 @@ class AppL10nEn extends AppL10n {
   String get accountWrongPassword => 'The password is not correct.';
 
   @override
+  String get accountTooManyTries =>
+      'Too many wrong tries. Wait a few minutes and try again.';
+
+  @override
   String get accountWrongCode => 'The code is not valid.';
 
   @override

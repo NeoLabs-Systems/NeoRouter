@@ -1664,6 +1664,10 @@ class AppL10nDe extends AppL10n {
   String get accountWrongPassword => 'Das Passwort stimmt nicht.';
 
   @override
+  String get accountTooManyTries =>
+      'Zu viele falsche Versuche. Warte ein paar Minuten und versuche es dann noch einmal.';
+
+  @override
   String get accountWrongCode => 'Der Code ist ungültig.';
 
   @override

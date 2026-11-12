@@ -483,6 +483,7 @@
   "accountExported": "Heruntergeladen.",
   "accountLastAdmin": "Du bist der einzige Admin. Mach zuerst jemand anderen zum Admin.",
   "accountWrongPassword": "Das Passwort stimmt nicht.",
+  "accountTooManyTries": "Zu viele falsche Versuche. Warte ein paar Minuten und versuche es dann noch einmal.",
   "accountWrongCode": "Der Code ist ungültig.",
   "twoFactorTitle": "Zwei-Faktor-Authentifizierung",
   "twoFactorOn": "2FA aktiv",

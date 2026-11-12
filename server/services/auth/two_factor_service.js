@@ -6,6 +6,7 @@ const { generateSecret, generateURI, verifySync } = require('otplib');
 const { getDatabase } = require('../../db/database');
 const { HttpError } = require('../../middleware/error_handler');
 const { encryptString, decryptString, verifyPassword } = require('../../utils/crypto');
+const throttle = require('./confirm_throttle');
 
 // TOTP two-factor authentication, following NeoAgent: an authenticator app
 // code (6 digits, 30 s, one step of clock drift) or a one-time recovery code.
@@ -52,13 +53,25 @@ async function confirm(userId, { currentPassword, code }, { requireFactor = fals
     if (requireFactor) throw new HttpError(403, 'TWO_FACTOR_REQUIRED', 'Turn on two-factor authentication first.');
     return;
   }
-  if (!code || !(await verifyCode(userId, code))) throw new HttpError(401, 'INVALID_TWO_FACTOR', 'The code is not valid.');
+  await assertCode(userId, code);
 }
 
+// The signed-in account's password, asked again. Wrong tries count per
+// account (confirm_throttle), apart from sign-in.
 async function assertPassword(userId, password) {
-  const user = getDatabase().prepare('SELECT password_hash FROM users WHERE id = ?').get(userId);
-  if (!user || !(await verifyPassword(String(password || ''), user.password_hash))) {
-    throw new HttpError(401, 'INVALID_PASSWORD', 'The current password is incorrect.');
+  const right = await throttle.guard(userId, 'password', async () => {
+    const user = getDatabase().prepare('SELECT password_hash FROM users WHERE id = ?').get(userId);
+    return Boolean(user) && verifyPassword(String(password || ''), user.password_hash);
+  });
+  if (!right) throw new HttpError(401, 'INVALID_PASSWORD', 'The current password is incorrect.');
+}
+
+// A code asked of a signed-in account, counted like its password and apart
+// from the sign-in code lockout, so a stolen session can't lock sign-in.
+async function assertCode(userId, code) {
+  if (!String(code || '').trim()) throw new HttpError(401, 'INVALID_TWO_FACTOR', 'The code is not valid.');
+  if (!(await throttle.guard(userId, 'code', () => matchCode(userId, code)))) {
+    throw new HttpError(401, 'INVALID_TWO_FACTOR', 'The code is not valid.');
   }
 }
 
@@ -93,14 +106,21 @@ async function consumeRecoveryCode(userId, code) {
   return false;
 }
 
-// Checks an authenticator or recovery code, with a short lockout after
-// repeated failures so codes cannot be brute-forced.
+// An authenticator code, or a recovery code (which it then uses up).
+async function matchCode(userId, code) {
+  const factor = row(userId);
+  if (!factor || factor.enabled !== 1) return true;
+  return verifyTotp(decryptString(factor.secret_encrypted), code) || consumeRecoveryCode(userId, code);
+}
+
+// The sign-in code step: checks an authenticator or recovery code, with a
+// short lockout after repeated failures so codes cannot be brute-forced.
 async function verifyCode(userId, code, now = Date.now()) {
   const factor = row(userId);
   if (!factor || factor.enabled !== 1) return true;
   if (factor.locked_until > now) throw new HttpError(429, 'TWO_FACTOR_LOCKED', 'Too many wrong codes. Try again in a few minutes.');
   const db = getDatabase();
-  const valid = verifyTotp(decryptString(factor.secret_encrypted), code) || await consumeRecoveryCode(userId, code);
+  const valid = await matchCode(userId, code);
   if (valid) {
     db.prepare('UPDATE user_two_factor SET failed_attempts = 0, locked_until = 0 WHERE user_id = ?').run(userId);
     return true;
@@ -139,7 +159,7 @@ async function enable(userId, code) {
 async function disable(userId, { currentPassword, code }) {
   await assertPassword(userId, currentPassword);
   if (!isEnabled(userId)) return { status: status(userId) };
-  if (!(await verifyCode(userId, code))) throw new HttpError(401, 'INVALID_TWO_FACTOR', 'The code is not valid.');
+  await assertCode(userId, code);
   const db = getDatabase();
   db.transaction(() => {
     db.prepare('DELETE FROM user_two_factor WHERE user_id = ?').run(userId);
@@ -151,7 +171,7 @@ async function disable(userId, { currentPassword, code }) {
 async function regenerateRecoveryCodes(userId, { currentPassword, code }) {
   await assertPassword(userId, currentPassword);
   if (!isEnabled(userId)) throw new HttpError(400, 'TWO_FACTOR_DISABLED', 'Two-factor authentication is not enabled.');
-  if (!(await verifyCode(userId, code))) throw new HttpError(401, 'INVALID_TWO_FACTOR', 'The code is not valid.');
+  await assertCode(userId, code);
   return { recoveryCodes: await storeRecoveryCodes(userId), status: status(userId) };
 }
 
@@ -180,6 +200,7 @@ module.exports = {
   isEnabled,
   verifyCode,
   confirm,
+  assertPassword,
   beginSetup,
   enable,
   disable,

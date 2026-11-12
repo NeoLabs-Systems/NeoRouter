@@ -516,6 +516,7 @@ S = {
   'accountExported': ('Downloaded.', 'Heruntergeladen.'),
   'accountLastAdmin': ('You are the only admin. Make someone else an admin first.', 'Du bist der einzige Admin. Mach zuerst jemand anderen zum Admin.'),
   'accountWrongPassword': ('The password is not correct.', 'Das Passwort stimmt nicht.'),
+  'accountTooManyTries': ('Too many wrong tries. Wait a few minutes and try again.', 'Zu viele falsche Versuche. Warte ein paar Minuten und versuche es dann noch einmal.'),
   'accountWrongCode': ('The code is not valid.', 'Der Code ist ungültig.'),
   'twoFactorTitle': ('Two-factor authentication', 'Zwei-Faktor-Authentifizierung'),
   'twoFactorOn': ('2FA on', '2FA aktiv'),
