@@ -2225,8 +2225,12 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String get homeStatusIssue =>
+      '1 connection needs your attention. Requests use the others meanwhile.';
+
+  @override
   String homeStatusIssues(String count) {
-    return '$count connection needs your attention. Requests use the others meanwhile.';
+    return '$count connections need your attention. Requests use the others meanwhile.';
   }
 
   @override

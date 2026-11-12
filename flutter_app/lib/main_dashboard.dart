@@ -86,8 +86,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // What needs attention: connections whose key is refused or that keep
   // failing, and too little capacity. Shown under the live view and in the
   // dialog the status line opens.
-  List<Widget> _notices(AppL10n t, List<ProviderAccount> problems, List<Map> failing, {required VoidCallback onFix}) => <Widget>[
-        for (final account in problems) ...<Widget>[_ProblemNotice(account: account, onFix: onFix), const SizedBox(height: AppSpacing.sm)],
+  // onFix gets the connection to open, or null for the Connections page as a whole.
+  List<Widget> _notices(AppL10n t, List<ProviderAccount> problems, List<Map> failing, {required void Function(String? accountId) onFix}) => <Widget>[
+        for (final account in problems) ...<Widget>[_ProblemNotice(account: account, onFix: () => onFix(account.id)), const SizedBox(height: AppSpacing.sm)],
         if (_health?['shortOfCapacity'] == true) ...<Widget>[
           _TrafficNotice(title: t.problemCapacityTitle, message: t.problemCapacity(formatCount(_health!['failed'] as num), formatCount(_health!['requests'] as num))),
           const SizedBox(height: AppSpacing.sm),
@@ -96,20 +97,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _TrafficNotice(
             title: t.problemFailingTitle('${item['label']}'),
             message: <String>[t.problemFailing(formatCount(item['successes'] as num), formatCount(item['attempts'] as num)), if (item['lastProblem'] != null) '${item['lastProblem']}'].join(' '),
-            onFix: onFix,
+            onFix: () => onFix(item['accountId'] as String?),
           ),
           const SizedBox(height: AppSpacing.sm),
         ],
       ];
+
+  void _openConnection(String? accountId) =>
+      accountId == null ? widget.controller.go(AppPage.providers) : widget.controller.openConnection(accountId);
 
   void _showAttention(List<ProviderAccount> problems, List<Map> failing) {
     showDialog<void>(
       context: context,
       builder: (dialogContext) {
         final t = AppL10n.of(dialogContext);
-        void fix() {
+        void fix([String? accountId]) {
           Navigator.of(dialogContext).pop();
-          widget.controller.go(AppPage.providers);
+          _openConnection(accountId);
         }
 
         return DialogFrame(
@@ -118,7 +122,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           body: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: _notices(t, problems, failing, onFix: fix)),
           actions: <Widget>[
             TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(t.close)),
-            FilledButton(onPressed: fix, child: Text(t.homeAttentionOpen)),
+            FilledButton(onPressed: () => fix(), child: Text(t.homeAttentionOpen)),
           ],
         );
       },
@@ -150,6 +154,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ? t.problemCapacityTitle
         : problems.isEmpty && failing.isEmpty
         ? t.homeStatusOk('$working')
+        : problems.length + failing.length == 1
+        ? t.homeStatusIssue
         : t.homeStatusIssues('${problems.length + failing.length}');
     final padding = pagePadding(context);
     // The live view fills the window; everything else waits below it.
@@ -186,7 +192,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    ..._notices(t, problems, failing, onFix: () => controller.go(AppPage.providers)),
+                    ..._notices(t, problems, failing, onFix: _openConnection),
                     if (problems.isNotEmpty) const SizedBox(height: AppSpacing.sm),
                     if (!setupDone) ...<Widget>[_SetupChecklist(controller: controller, providers: _accounts.length, keys: _keys.length, requests: _logs.length), const SizedBox(height: 28)],
                     if (_logs.isNotEmpty) ...<Widget>[SettingsHeading(title: t.homeLast7Days), _WeekStrip(totals: _totals), const SizedBox(height: 28)],

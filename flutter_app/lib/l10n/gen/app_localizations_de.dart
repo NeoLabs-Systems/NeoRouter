@@ -2247,8 +2247,12 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
+  String get homeStatusIssue =>
+      '1 Verbindung braucht deine Aufmerksamkeit. Anfragen laufen solange über die anderen.';
+
+  @override
   String homeStatusIssues(String count) {
-    return '$count Verbindung braucht deine Aufmerksamkeit. Anfragen laufen solange über die anderen.';
+    return '$count Verbindungen brauchen deine Aufmerksamkeit. Anfragen laufen solange über die anderen.';
   }
 
   @override

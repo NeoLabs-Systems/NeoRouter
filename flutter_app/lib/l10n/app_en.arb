@@ -1245,7 +1245,8 @@
       }
     }
   },
-  "homeStatusIssues": "{count} connection needs your attention. Requests use the others meanwhile.",
+  "homeStatusIssue": "1 connection needs your attention. Requests use the others meanwhile.",
+  "homeStatusIssues": "{count} connections need your attention. Requests use the others meanwhile.",
   "@homeStatusIssues": {
     "placeholders": {
       "count": {

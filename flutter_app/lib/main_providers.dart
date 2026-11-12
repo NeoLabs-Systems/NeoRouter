@@ -49,12 +49,40 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
   bool _loading = true;
   String? _error;
   late _ProvidersTab _tab = widget.controller.savedTab('providers', _ProvidersTab.values, _ProvidersTab.connected);
+  // Opened for one connection ("Fix" on the home screen): shown, marked, and its key form opened if the key was refused.
+  String? _focus;
+  String? _highlight;
+  final Map<String, GlobalKey> _rowKeys = <String, GlobalKey>{};
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _focus = widget.controller.takeFocusAccount();
+    if (_focus != null) _tab = _ProvidersTab.connected;
+    _load().then((_) => _showFocus());
     WidgetsBinding.instance.addPostFrameCallback((_) => _showOAuthResult());
+  }
+
+  // Scrolls to the connection, marks it for a moment and, when its key was
+  // refused, opens the form to replace it.
+  void _showFocus() {
+    final id = _focus;
+    if (id == null || !mounted) return;
+    final account = _accounts.where((item) => item.id == id).firstOrNull;
+    _focus = null;
+    if (account == null) return;
+    setState(() => _highlight = id);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final target = _rowKeys[id]?.currentContext;
+      if (target != null && target.mounted) {
+        await Scrollable.ensureVisible(target, alignment: 0.3, duration: const Duration(milliseconds: 400), curve: Curves.easeOutCubic);
+      }
+      if (!mounted) return;
+      if (account.status == 'invalid' && widget.controller.can('providers.manage')) await _edit(account);
+      Timer(const Duration(milliseconds: 2600), () {
+        if (mounted && _highlight == id) setState(() => _highlight = null);
+      });
+    });
   }
 
   void _showOAuthResult() {
@@ -103,7 +131,13 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
     return groups.values.toList();
   }
 
-  Widget _row(ProviderAccount account, bool canManage) => _AccountRow(
+  Widget _row(ProviderAccount account, bool canManage) => _Highlight(
+    key: _rowKeys.putIfAbsent(account.id, GlobalKey.new),
+    on: _highlight == account.id,
+    child: _accountRow(account, canManage),
+  );
+
+  Widget _accountRow(ProviderAccount account, bool canManage) => _AccountRow(
     account: account,
     busy: _busy.contains(account.id),
     showCreator: widget.controller.showCreators,
@@ -259,6 +293,8 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
                         else
                           _ProviderGroup(
                             accounts: group,
+                            // Open when the connection being shown is in it.
+                            open: group.any((account) => account.id == _highlight),
                             canManage: canManage,
                             busy: group.any((account) => _busy.contains(account.id)),
                             onToggleAll: (enabled) async {
@@ -284,12 +320,35 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
 
 enum _AccountAction { check, sync, balance, fixed, edit, another, poolShare, remove }
 
+/// Marks a row for a moment: the connection "Fix" was pressed for.
+class _Highlight extends StatelessWidget {
+  const _Highlight({super.key, required this.on, required this.child});
+
+  final bool on;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = neoRouterPaletteOf(context);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        color: on ? palette.accent.withValues(alpha: 0.1) : Colors.transparent,
+        border: Border(left: BorderSide(color: on ? palette.accent : Colors.transparent, width: 3)),
+      ),
+      child: child,
+    );
+  }
+}
+
 /// A provider connected with several accounts: one row for the provider, its
 /// accounts in a dropdown under it.
 class _ProviderGroup extends StatefulWidget {
-  const _ProviderGroup({required this.accounts, required this.rows, required this.canManage, required this.busy, required this.onToggleAll, required this.onAddAnother});
+  const _ProviderGroup({required this.accounts, this.open = false, required this.rows, required this.canManage, required this.busy, required this.onToggleAll, required this.onAddAnother});
 
   final List<ProviderAccount> accounts;
+  final bool open;
   final List<Widget> rows;
   final bool canManage;
   final bool busy;
@@ -301,7 +360,13 @@ class _ProviderGroup extends StatefulWidget {
 }
 
 class _ProviderGroupState extends State<_ProviderGroup> {
-  bool _open = false;
+  late bool _open = widget.open;
+
+  @override
+  void didUpdateWidget(_ProviderGroup oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.open && !oldWidget.open) _open = true;
+  }
 
   @override
   Widget build(BuildContext context) {

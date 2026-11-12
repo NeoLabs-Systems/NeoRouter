@@ -370,6 +370,21 @@ class NeoRouterController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// A connection to show when the Connections page opens ("Fix" on the home screen).
+  String? _focusAccountId;
+
+  void openConnection(String accountId) {
+    _focusAccountId = accountId;
+    go(AppPage.providers);
+  }
+
+  /// The connection to show, once: the Connections page takes it when it loads.
+  String? takeFocusAccount() {
+    final id = _focusAccountId;
+    _focusAccountId = null;
+    return id;
+  }
+
   void go(AppPage next) {
     page = canOpen(next) ? next : _firstOpenPage();
     _prefs?.setString(_pageKey, page.name);

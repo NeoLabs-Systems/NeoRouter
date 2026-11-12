@@ -4009,10 +4009,16 @@ abstract class AppL10n {
   /// **'Everything is running. {count} connections are working.'**
   String homeStatusOk(String count);
 
+  /// No description provided for @homeStatusIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'1 connection needs your attention. Requests use the others meanwhile.'**
+  String get homeStatusIssue;
+
   /// No description provided for @homeStatusIssues.
   ///
   /// In en, this message translates to:
-  /// **'{count} connection needs your attention. Requests use the others meanwhile.'**
+  /// **'{count} connections need your attention. Requests use the others meanwhile.'**
   String homeStatusIssues(String count);
 
   /// No description provided for @homeStatusEmpty.
