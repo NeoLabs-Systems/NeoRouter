@@ -1400,7 +1400,7 @@
   "keyKindsNone": "Wähle mindestens eine Art.",
   "pickModelAllKinds": "Alle Arten",
   "liveNow": "Live",
-  "liveReplay": "Letzte Anfragen im Rückblick",
+  "liveQuiet": "Gerade kein Verkehr",
   "liveWaiting": "Warte auf die erste Anfrage",
   "liveWaitingChip": "wartet auf ein freies Modell",
   "liveQueued": "{count} warten auf ein freies Modell",

@@ -8497,11 +8497,11 @@ abstract class AppL10n {
   /// **'Live'**
   String get liveNow;
 
-  /// No description provided for @liveReplay.
+  /// No description provided for @liveQuiet.
   ///
   /// In en, this message translates to:
-  /// **'Replaying recent requests'**
-  String get liveReplay;
+  /// **'No traffic right now'**
+  String get liveQuiet;
 
   /// No description provided for @liveWaiting.
   ///

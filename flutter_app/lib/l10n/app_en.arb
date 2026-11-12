@@ -3032,7 +3032,7 @@
   "keyKindsNone": "Pick at least one kind.",
   "pickModelAllKinds": "All kinds",
   "liveNow": "Live",
-  "liveReplay": "Replaying recent requests",
+  "liveQuiet": "No traffic right now",
   "liveWaiting": "Waiting for the first request",
   "liveWaitingChip": "waiting for a free model",
   "liveQueued": "{count} waiting for a free model",

@@ -4885,7 +4885,7 @@ class AppL10nDe extends AppL10n {
   String get liveNow => 'Live';
 
   @override
-  String get liveReplay => 'Letzte Anfragen im Rückblick';
+  String get liveQuiet => 'Gerade kein Verkehr';
 
   @override
   String get liveWaiting => 'Warte auf die erste Anfrage';

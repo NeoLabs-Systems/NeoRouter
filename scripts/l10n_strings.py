@@ -1457,7 +1457,7 @@ S = {
   'keyKindsNone': ('Pick at least one kind.', 'Wähle mindestens eine Art.'),
   'pickModelAllKinds': ('All kinds', 'Alle Arten'),
   'liveNow': ('Live', 'Live'),
-  'liveReplay': ('Replaying recent requests', 'Letzte Anfragen im Rückblick'),
+  'liveQuiet': ('No traffic right now', 'Gerade kein Verkehr'),
   'liveWaiting': ('Waiting for the first request', 'Warte auf die erste Anfrage'),
   'liveWaitingChip': ('waiting for a free model', 'wartet auf ein freies Modell'),
   'liveQueued': ('{count} waiting for a free model', '{count} warten auf ein freies Modell'),

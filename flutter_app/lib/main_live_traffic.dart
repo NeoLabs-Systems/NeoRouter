@@ -16,8 +16,8 @@ import 'src/models.dart';
 /// router. Requests from the request log travel from the key that sent them
 /// into the router, circle it while it decides, fly to the provider that
 /// answered (bouncing back from the ones that failed first) and return as
-/// answers. New requests play as they arrive; in between, recent ones are
-/// replayed at an easy pace, and the view says which it is showing.
+/// answers. Only real traffic plays, as it arrives; with none, the view
+/// stays quiet and says so.
 class LiveTrafficHero extends StatefulWidget {
   const LiveTrafficHero({super.key, required this.controller, required this.accounts, required this.keys, required this.ready, required this.title, required this.status, this.action, this.onMore});
 
@@ -353,7 +353,6 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   final List<RequestLog> _history = <RequestLog>[];
   final List<RequestLog> _queue = <RequestLog>[];
   double _sinceSpawn = 0;
-  double _nextReplay = 600;
   double _lastLive = -1e9;
   bool _warmed = false;
 
@@ -405,12 +404,12 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
       _history
         ..insertAll(0, fresh)
         ..length = math.min(_history.length, _historySize);
-      // The first load is history to replay; later arrivals play live.
+      // The first load is history (only its last seconds play); later arrivals play live.
       if (!first) _queue.addAll(fresh.reversed.take(30));
       _arrange();
       if (first && !_warmed && widget.ready) _warmUp();
     } catch (_) {
-      // The next poll tries again; the scene keeps replaying meanwhile.
+      // The next poll tries again.
     }
   }
 
@@ -533,18 +532,13 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
 
   // Starts mid-traffic, so the very first frame already has requests moving.
   // What arrived in the last seconds plays as live, each request where it
-  // would be by now; with nothing that recent, recent history is replayed.
+  // would be by now; with nothing that recent, the view starts quiet.
   void _warmUp() {
     _warmed = true;
     final now = DateTime.now();
     final start = now.subtract(_backfill);
     final recent = _history.where((log) => log.createdAt.isAfter(start)).toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
-    if (recent.isEmpty) {
-      for (var i = 0; i < 300; i++) {
-        _step(16);
-      }
-      return;
-    }
+    if (recent.isEmpty) return;
     const frame = 16.0;
     var clock = 0.0;
     for (final log in recent) {
@@ -581,10 +575,6 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
     if (_queue.isNotEmpty && _sinceSpawn > 260) {
       _sinceSpawn = 0;
       _spawn(_queue.removeAt(0), live: true);
-    } else if (_queue.isEmpty && _history.isNotEmpty && _sinceSpawn > _nextReplay && _scene.packets.length < 24) {
-      _sinceSpawn = 0;
-      _nextReplay = 700 + _scene.random.nextDouble() * 1300;
-      _spawn(_history[_scene.random.nextInt(_history.length)], live: false);
     }
     _scene.advance(dt);
   }
@@ -658,7 +648,7 @@ class _Header extends StatelessWidget {
           animation: scene,
           builder: (context, _) {
             final live = scene.t - liveSince() < 30000;
-            final label = !loaded() ? t.liveLoading : !hasTraffic() ? t.liveWaiting : live ? t.liveNow : t.liveReplay;
+            final label = !loaded() ? t.liveLoading : !hasTraffic() ? t.liveWaiting : live ? t.liveNow : t.liveQuiet;
             final color = live ? palette.success : palette.textMuted;
             final blink = live ? 0.35 + 0.65 * (0.5 + 0.5 * math.sin(scene.t / 260)) : 1.0;
             return Container(

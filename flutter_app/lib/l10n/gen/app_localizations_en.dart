@@ -4854,7 +4854,7 @@ class AppL10nEn extends AppL10n {
   String get liveNow => 'Live';
 
   @override
-  String get liveReplay => 'Replaying recent requests';
+  String get liveQuiet => 'No traffic right now';
 
   @override
   String get liveWaiting => 'Waiting for the first request';
