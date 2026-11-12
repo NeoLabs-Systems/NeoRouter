@@ -60,3 +60,27 @@ test('learning: needs-action and announced outages get their own cooldowns', () 
   assert.equal(downtime.until, now + 10 * 60_000);
   assert.equal(learning.cooldownFor(classifyHttpError(503, { error: { message: 'boom' } }), row, now), null, 'an outage without an end keeps the breaker in charge');
 });
+
+test('a search plan used up is a used-up allowance with a readable message, not a broken connection', async () => {
+  const { classifyHttpError, KINDS: kinds } = require('../../server/providers/provider_error');
+  // Tavily: HTTP 432 and { detail: { error } }.
+  const tavily = classifyHttpError(432, { detail: { error: "This request exceeds your plan's set usage limit. Please upgrade your plan or contact support@tavily.com" } }, new Headers());
+  assert.equal(tavily.kind, kinds.QUOTA_EXHAUSTED);
+  assert.match(tavily.message, /^This request exceeds your plan's set usage limit/);
+  // Brave: 429 and { type, error: { detail, meta } }.
+  const brave = classifyHttpError(429, { type: 'ErrorResponse', error: { id: 'x', status: 429, detail: 'Request quota limit exceeded for plan.', meta: { plan: 'Free', quota_limit: 2000, quota_current: 2001 } } }, new Headers());
+  assert.equal(brave.kind, kinds.QUOTA_EXHAUSTED);
+  assert.equal(brave.message, 'Request quota limit exceeded for plan.');
+
+  // The health check keeps such a connection healthy.
+  const { SearchAdapter } = require('../../server/providers/adapters/search_engines');
+  for (const error of [tavily, brave]) {
+    const adapter = Object.create(SearchAdapter.prototype);
+    adapter.search = async () => { throw error; };
+    assert.deepEqual(await adapter.validate(), { status: 'healthy', message: null });
+  }
+  // A refused key still is a problem.
+  const refused = Object.create(SearchAdapter.prototype);
+  refused.search = async () => { throw classifyHttpError(401, { detail: { error: 'Unauthorized: missing or invalid API key.' } }, new Headers()); };
+  assert.equal((await refused.validate()).status, 'invalid');
+});

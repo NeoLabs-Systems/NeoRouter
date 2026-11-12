@@ -38,6 +38,7 @@ class ProviderError extends Error {
 const QUOTA_PATTERNS = [
   /per.?day/i, /daily/i, /quota/i, /exhaust/i, /\brpd\b/i, /\btpd\b/i, /monthly/i, /(per|\/) ?month\b/i, /insufficient.?(credit|balance|quota)/i,
 ];
+const USAGE_LIMIT = /exceeds? your plan'?s (set )?usage limit|(usage|quota|credit) limit (exceeded|reached)|out of (search )?credits/i;
 const CONTEXT_PATTERNS = [
   /context.?(length|window)/i, /maximum.?context/i, /too many tokens/i, /prompt is too long/i,
   /reduce the length/i, /input.{0,20}too long/i, /exceeds.{0,30}(token|context)/i,
@@ -60,8 +61,10 @@ function parseRetryAfter(headers) {
 function extractMessage(body) {
   if (!body) return '';
   if (typeof body === 'string') return body.slice(0, 2000);
-  // Cloudflare: { errors: [{ message }] }; ElevenLabs: { detail: { message } }.
-  const candidate = body.error?.message || body.error?.msg || body.message || body.detail?.message || body.detail || body.errors?.[0]?.message || body.error;
+  // Cloudflare: { errors: [{ message }] }; ElevenLabs: { detail: { message } };
+  // Brave: { error: { detail } }; Tavily: { detail: { error } }.
+  const candidate = body.error?.message || body.error?.msg || (typeof body.error?.detail === 'string' && body.error.detail) || body.message
+    || body.detail?.message || body.detail?.error || body.detail || body.errors?.[0]?.message || body.error;
   if (typeof candidate === 'string') return candidate.slice(0, 2000);
   return JSON.stringify(body).slice(0, 2000);
 }
@@ -128,6 +131,10 @@ function classifyHttpError(status, body, headers) {
     return new ProviderError(KINDS.AUTH, message, options);
   }
   if (status === 402) return new ProviderError(KINDS.PAYMENT, message, options);
+  // The plan's allowance is used up until it renews (Tavily answers 432 for
+  // its plan limit and 433 for a pay-as-you-go cap): nothing wrong with the key.
+  // A 429 is read below: "usage limit reached" there is often a short window.
+  if (status === 432 || status === 433 || (status !== 429 && USAGE_LIMIT.test(message))) return new ProviderError(KINDS.QUOTA_EXHAUSTED, message, options);
   if (status === 404) return new ProviderError(KINDS.NOT_FOUND, message, options);
   if (status === 408) return new ProviderError(KINDS.TIMEOUT, message, options);
   if (status === 429) {
