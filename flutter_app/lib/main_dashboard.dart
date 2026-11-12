@@ -83,6 +83,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  // What needs attention: connections whose key is refused or that keep
+  // failing, and too little capacity. Shown under the live view and in the
+  // dialog the status line opens.
+  List<Widget> _notices(AppL10n t, List<ProviderAccount> problems, List<Map> failing, {required VoidCallback onFix}) => <Widget>[
+        for (final account in problems) ...<Widget>[_ProblemNotice(account: account, onFix: onFix), const SizedBox(height: AppSpacing.sm)],
+        if (_health?['shortOfCapacity'] == true) ...<Widget>[
+          _TrafficNotice(title: t.problemCapacityTitle, message: t.problemCapacity(formatCount(_health!['failed'] as num), formatCount(_health!['requests'] as num))),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+        for (final item in failing) ...<Widget>[
+          _TrafficNotice(
+            title: t.problemFailingTitle('${item['label']}'),
+            message: <String>[t.problemFailing(formatCount(item['successes'] as num), formatCount(item['attempts'] as num)), if (item['lastProblem'] != null) '${item['lastProblem']}'].join(' '),
+            onFix: onFix,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+      ];
+
+  void _showAttention(List<ProviderAccount> problems, List<Map> failing) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final t = AppL10n.of(dialogContext);
+        void fix() {
+          Navigator.of(dialogContext).pop();
+          widget.controller.go(AppPage.providers);
+        }
+
+        return DialogFrame(
+          title: t.homeAttentionTitle,
+          subtitle: Text(t.homeAttentionHint, style: TextStyle(color: neoRouterPaletteOf(dialogContext).textSoft, height: 1.4)),
+          body: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: _notices(t, problems, failing, onFix: fix)),
+          actions: <Widget>[
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(t.close)),
+            FilledButton(onPressed: fix, child: Text(t.homeAttentionOpen)),
+          ],
+        );
+      },
+    );
+  }
+
   String _greeting(AppL10n t) {
     final name = widget.controller.user?.displayName ?? '';
     final hour = DateTime.now().hour;
@@ -125,6 +167,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ready: !_loading,
             title: _greeting(t),
             status: status,
+            // "2 connections need your attention": opens which ones and why.
+            onStatusTap: problems.isEmpty && failing.isEmpty ? null : () => _showAttention(problems, failing),
             action: setupDone ? FilledButton(onPressed: () => controller.go(AppPage.playground), child: Text(t.homeOpenPlayground)) : null,
             onMore: _showDetails,
           ),
@@ -142,19 +186,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    for (final account in problems) ...<Widget>[_ProblemNotice(account: account, onFix: () => controller.go(AppPage.providers)), const SizedBox(height: AppSpacing.sm)],
-                    if (_health?['shortOfCapacity'] == true) ...<Widget>[
-                      _TrafficNotice(title: t.problemCapacityTitle, message: t.problemCapacity(formatCount(_health!['failed'] as num), formatCount(_health!['requests'] as num))),
-                      const SizedBox(height: AppSpacing.sm),
-                    ],
-                    for (final item in failing) ...<Widget>[
-                      _TrafficNotice(
-                        title: t.problemFailingTitle('${item['label']}'),
-                        message: <String>[t.problemFailing(formatCount(item['successes'] as num), formatCount(item['attempts'] as num)), if (item['lastProblem'] != null) '${item['lastProblem']}'].join(' '),
-                        onFix: () => controller.go(AppPage.providers),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                    ],
+                    ..._notices(t, problems, failing, onFix: () => controller.go(AppPage.providers)),
                     if (problems.isNotEmpty) const SizedBox(height: AppSpacing.sm),
                     if (!setupDone) ...<Widget>[_SetupChecklist(controller: controller, providers: _accounts.length, keys: _keys.length, requests: _logs.length), const SizedBox(height: 28)],
                     if (_logs.isNotEmpty) ...<Widget>[SettingsHeading(title: t.homeLast7Days), _WeekStrip(totals: _totals), const SizedBox(height: 28)],

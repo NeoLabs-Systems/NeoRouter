@@ -266,6 +266,16 @@ class AppL10nEn extends AppL10n {
   String get homeFix => 'Fix';
 
   @override
+  String get homeAttentionTitle => 'Needs your attention';
+
+  @override
+  String get homeAttentionHint =>
+      'These connections are giving trouble. Requests use the others meanwhile.';
+
+  @override
+  String get homeAttentionOpen => 'Go to connections';
+
+  @override
   String get homeConnectTitle => 'Connect your app';
 
   @override

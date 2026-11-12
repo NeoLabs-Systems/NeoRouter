@@ -19,7 +19,7 @@ import 'src/models.dart';
 /// answers. Only real traffic plays, as it arrives; with none, the view
 /// stays quiet and says so.
 class LiveTrafficHero extends StatefulWidget {
-  const LiveTrafficHero({super.key, required this.controller, required this.accounts, required this.keys, required this.ready, required this.title, required this.status, this.action, this.onMore});
+  const LiveTrafficHero({super.key, required this.controller, required this.accounts, required this.keys, required this.ready, required this.title, required this.status, this.action, this.onMore, this.onStatusTap});
 
   final NeoRouterController controller;
 
@@ -31,6 +31,9 @@ class LiveTrafficHero extends StatefulWidget {
   final String status;
   final Widget? action;
   final VoidCallback? onMore;
+
+  /// Set when the status line reports a problem: opens the details.
+  final VoidCallback? onStatusTap;
 
   @override
   State<LiveTrafficHero> createState() => _LiveTrafficHeroState();
@@ -597,7 +600,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _Header(title: widget.title, status: widget.status, action: widget.action, scene: _scene, liveSince: () => _lastLive, hasTraffic: () => _history.isNotEmpty, loaded: () => _ready, compact: compact),
+              _Header(title: widget.title, status: widget.status, onStatusTap: widget.onStatusTap, action: widget.action, scene: _scene, liveSince: () => _lastLive, hasTraffic: () => _history.isNotEmpty, loaded: () => _ready, compact: compact),
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, stage) {
@@ -623,10 +626,11 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.title, required this.status, required this.action, required this.scene, required this.liveSince, required this.hasTraffic, required this.loaded, required this.compact});
+  const _Header({required this.title, required this.status, this.onStatusTap, required this.action, required this.scene, required this.liveSince, required this.hasTraffic, required this.loaded, required this.compact});
 
   final String title;
   final String status;
+  final VoidCallback? onStatusTap;
   final Widget? action;
   final _Scene scene;
   final double Function() liveSince;
@@ -674,7 +678,32 @@ class _Header extends StatelessWidget {
         Text(title, style: displayTitleStyle(palette, size: compact ? 22 : 28)),
         if (status.isNotEmpty) ...<Widget>[
           const SizedBox(height: 4),
-          Text(status, style: TextStyle(color: palette.textSoft, height: 1.4)),
+          if (onStatusTap == null)
+            Text(status, style: TextStyle(color: palette.textSoft, height: 1.4))
+          else
+            // A problem: the line itself opens which connections and why.
+            InkWell(
+              onTap: onStatusTap,
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Container(width: 7, height: 7, decoration: BoxDecoration(color: palette.warning, shape: BoxShape.circle)),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        status,
+                        style: TextStyle(color: palette.text, height: 1.4, decoration: TextDecoration.underline, decorationColor: palette.textMuted),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.chevron_right_rounded, size: 18, color: palette.textSoft),
+                  ],
+                ),
+              ),
+            ),
         ],
       ],
     );

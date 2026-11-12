@@ -267,6 +267,16 @@ class AppL10nDe extends AppL10n {
   String get homeFix => 'Beheben';
 
   @override
+  String get homeAttentionTitle => 'Braucht deine Aufmerksamkeit';
+
+  @override
+  String get homeAttentionHint =>
+      'Diese Verbindungen machen gerade Probleme. Anfragen laufen solange über die anderen.';
+
+  @override
+  String get homeAttentionOpen => 'Zu den Verbindungen';
+
+  @override
   String get homeConnectTitle => 'App verbinden';
 
   @override

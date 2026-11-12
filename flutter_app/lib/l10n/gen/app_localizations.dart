@@ -583,6 +583,24 @@ abstract class AppL10n {
   /// **'Fix'**
   String get homeFix;
 
+  /// No description provided for @homeAttentionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs your attention'**
+  String get homeAttentionTitle;
+
+  /// No description provided for @homeAttentionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'These connections are giving trouble. Requests use the others meanwhile.'**
+  String get homeAttentionHint;
+
+  /// No description provided for @homeAttentionOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to connections'**
+  String get homeAttentionOpen;
+
   /// No description provided for @homeConnectTitle.
   ///
   /// In en, this message translates to:
