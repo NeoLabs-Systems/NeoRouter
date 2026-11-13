@@ -100,7 +100,7 @@ function hedgeDelay(entry, stream) {
 }
 
 function trailItem(entry, outcome, extra = {}) {
-  return { model: entry.id, ref: entry.ref, outcome, ...(entry.tryingLuck ? { luck: true } : {}), ...extra };
+  return { model: entry.id, ref: entry.ref, outcome, ...(entry.tryingLuck ? { luck: true } : {}), ...(entry.lastResort ? { lastResort: true } : {}), ...extra };
 }
 
 // Wraps the remaining upstream iterator so idle gaps abort the attempt.
@@ -477,6 +477,8 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
         freesUpAt = plan.freesUpAt(now);
         if (freesUpAt === null || freesUpAt > waitUntil) {
           // Better to try what may work again than to answer "no model available".
+          // A slow or weaker model that works comes before connections known to refuse.
+          if (plan.enableLastResort({ now })) continue;
           if (plan.enableLongShots({ now })) continue;
           return false;
         }

@@ -176,10 +176,10 @@ function rejection(entry, ctx, now) {
   if (constraints.includeProviders?.length && !constraints.includeProviders.includes(entry.providerSlug) && !constraints.includeProviders.includes(entry.definitionId)) return 'provider_not_included';
   if (constraints.excludeProviders?.includes(entry.providerSlug) || constraints.excludeProviders?.includes(entry.definitionId)) return 'provider_excluded';
   if (constraints.excludeModels?.some((pattern) => globToRegExp(pattern).test(entry.id))) return 'model_excluded';
-  if (constraints.minIntelligence !== null && constraints.minIntelligence !== undefined && (entry.intelligence ?? 0) < constraints.minIntelligence) return 'below_min_intelligence';
+  if (!ctx.lastResort && constraints.minIntelligence !== null && constraints.minIntelligence !== undefined && (entry.intelligence ?? 0) < constraints.minIntelligence) return 'below_min_intelligence';
   if (constraints.maxPriceOut !== null && constraints.maxPriceOut !== undefined && !entry.isFree && !entry.isPlan && (entry.priceOut === null || entry.priceOut > constraints.maxPriceOut)) return 'too_expensive';
   if (key.max_price_per_million !== null && key.max_price_per_million !== undefined && !entry.isFree && !entry.isPlan && (entry.priceOut === null || entry.priceOut > key.max_price_per_million)) return 'key_too_expensive';
-  if (constraints.maxTtftMs && entry.stats.ttftMs && entry.stats.ttftMs > constraints.maxTtftMs) return 'too_slow';
+  if (!ctx.lastResort && constraints.maxTtftMs && entry.stats.ttftMs && entry.stats.ttftMs > constraints.maxTtftMs) return 'too_slow';
   if (!entry.isFree && !entry.isPlan) {
     const hasBudget = key.budget_usd !== null && key.budget_usd !== undefined;
     const maxCost = ctx.estimateCost ? ctx.estimateCost(entry) : budget.estimateMaxCost(entry, inputTokens, maxOutputFor(request, entry));
@@ -199,7 +199,7 @@ function rejection(entry, ctx, now) {
   const quotaState = quota.evaluate(entry, inputTokens, now);
   if (quotaState.blocked) return `quota_${quotaState.blocked.metric}`;
   if (priority.heldBack(entry, key.priority)) return 'held_for_priority';
-  if (ctx.smoothing && smoothing.held(entry, { userId: ctx.userId, inputTokens, priority: key.priority, now })) return 'paced';
+  if (ctx.smoothing && !ctx.lastResort && smoothing.held(entry, { userId: ctx.userId, inputTokens, priority: key.priority, now })) return 'paced';
   return null;
 }
 
@@ -354,6 +354,11 @@ const MAX_LONG_SHOTS = 3;
 // knows are refusing (once, that was most of all attempts).
 const LONG_SHOT_GAP_MS = 10 * 60_000;
 const lastLongShot = new Map();
+// Held back only by a preference, not because it cannot answer: a style's
+// speed or intelligence floor, or evening out usage. When nothing else can
+// take the request, a slow or weaker model that works beats failing, and
+// beats retrying connections known to be refusing (long shots).
+const PREFERENCE_REASONS = new Set(['too_slow', 'below_min_intelligence', 'paced']);
 const longShotDue = (ref, now = Date.now()) => now - (lastLongShot.get(ref) || 0) >= LONG_SHOT_GAP_MS;
 function resetLongShotsForTests() {
   lastLongShot.clear();
@@ -445,6 +450,7 @@ class RoutingPlan {
     this.accountFailures = new Map();
     this.longShot = false;
     this.longShotsLeft = MAX_LONG_SHOTS;
+    this.lastResort = false;
     if (!this.parsed.auto) this.scopeToRequestedModel();
   }
 
@@ -474,7 +480,7 @@ class RoutingPlan {
   }
 
   context() {
-    return { keepPrivate: this.keepPrivate, shareReserve: this.shareReserve, sharePoolId: this.sharePoolId, longShot: this.longShot, accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost, smoothing: this.smoothing, userId: this.userId };
+    return { keepPrivate: this.keepPrivate, shareReserve: this.shareReserve, sharePoolId: this.sharePoolId, longShot: this.longShot, lastResort: this.lastResort, accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost, smoothing: this.smoothing, userId: this.userId };
   }
 
   rank({ includeRejected = false, sample = true, now = Date.now() } = {}) {
@@ -588,6 +594,7 @@ class RoutingPlan {
       }
     }
     this.tried.add(choice.entry.ref);
+    if (this.lastResort && PREFERENCE_REASONS.has(rejection(choice.entry, { ...this.context(), lastResort: false, longShot: false }, now))) choice.entry.lastResort = true;
     if (this.longShot && this.heldBack(choice.entry, now)) {
       choice.entry.tryingLuck = true;
       if (lastLongShot.size > 5000) lastLongShot.clear();
@@ -601,6 +608,17 @@ class RoutingPlan {
   // Held back only by its health record (not by a limit, a policy or a request it cannot serve).
   heldBack(entry, now = Date.now()) {
     return LONG_SHOT_REASONS.has(rejection(entry, { ...this.context(), longShot: false }, now));
+  }
+
+  // Nothing else can serve: drop the preferences that held working models
+  // back (PREFERENCE_REASONS). False when that adds no candidate.
+  enableLastResort({ filter = null, now = Date.now() } = {}) {
+    if (this.lastResort) return false;
+    const ctx = { ...this.context(), lastResort: true };
+    const strict = { ...this.context(), longShot: false };
+    this.lastResort = this.entries.some((entry) => !this.tried.has(entry.ref) && (!filter || filter(entry))
+      && PREFERENCE_REASONS.has(rejection(entry, strict, now)) && !rejection(entry, ctx, now));
+    return this.lastResort;
   }
 
   // Nothing else can serve: allow a few tries of connections held back only

@@ -27,7 +27,7 @@ const QUEUE_MIN_POLL_MS = 200;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function trailItem(entry, outcome, extra = {}) {
-  return { model: entry.id, outcome, ...(entry.tryingLuck ? { luck: true } : {}), ...extra };
+  return { model: entry.id, outcome, ...(entry.tryingLuck ? { luck: true } : {}), ...(entry.lastResort ? { lastResort: true } : {}), ...extra };
 }
 
 /**
@@ -111,6 +111,8 @@ async function runCapability({ req, res = null, key, capability, method, request
         freesUpAt = plan.freesUpAt(now, supported);
         if (freesUpAt === null || freesUpAt > waitUntil) {
           // Better to try what may work again than to answer "no model available".
+          // A slow or weaker model that works comes before connections known to refuse.
+          if (plan.enableLastResort({ filter: supported, now })) continue;
           if (plan.enableLongShots({ filter: supported, now })) continue;
           return null;
         }
