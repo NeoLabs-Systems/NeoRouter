@@ -187,8 +187,8 @@ function rejection(entry, ctx, now) {
     if (hasBudget && maxCost > budget.remaining(key, now)) return 'budget_exhausted';
   }
   // Reasoning models that already ran out of budget at this size are skipped.
-  const minOutput = stats.snapshot(entry.ref, now).min_output_tokens;
-  if (request.max_tokens && minOutput && request.max_tokens < minOutput && !ctx.primaryRefs.has(entry.ref)) return 'needs_more_tokens';
+  const minOutput = stats.outputFloor(entry.ref, now);
+  if (request.max_tokens && minOutput && request.max_tokens < minOutput && !ctx.primaryRefs.has(entry.ref) && !ctx.lastResort) return 'needs_more_tokens';
   const available = stats.availability(entry.ref, now);
   if (!available.available && !(ctx.longShot && LONG_SHOT_REASONS.has(available.reason) && longShotDue(entry.ref, now))) return available.reason;
   const planReason = plans.rejection(entry, now);
@@ -355,10 +355,11 @@ const MAX_LONG_SHOTS = 3;
 const LONG_SHOT_GAP_MS = 10 * 60_000;
 const lastLongShot = new Map();
 // Held back only by a preference, not because it cannot answer: a style's
-// speed or intelligence floor, or evening out usage. When nothing else can
+// speed or intelligence floor, evening out usage, or a reasoning model that
+// once ran out of room at this many output tokens (it may well fit this time). When nothing else can
 // take the request, a slow or weaker model that works beats failing, and
 // beats retrying connections known to be refusing (long shots).
-const PREFERENCE_REASONS = new Set(['too_slow', 'below_min_intelligence', 'paced']);
+const PREFERENCE_REASONS = new Set(['too_slow', 'below_min_intelligence', 'paced', 'needs_more_tokens']);
 const longShotDue = (ref, now = Date.now()) => now - (lastLongShot.get(ref) || 0) >= LONG_SHOT_GAP_MS;
 function resetLongShotsForTests() {
   lastLongShot.clear();

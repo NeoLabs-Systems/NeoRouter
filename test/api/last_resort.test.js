@@ -47,3 +47,13 @@ test('a slow model that works answers when the fast one is rate-limited', async 
   assert.equal(JSON.parse(row.trail_json).at(-1).lastResort, true, 'marked as a last resort');
 });
 
+
+test('a model that once needed more output room still answers when nothing else can', async () => {
+  const { id } = getDatabase().prepare("SELECT id FROM models WHERE model_id = 'ok-slow'").get();
+  stats.raiseMinOutputTokens(id, 16000);
+  const secret = (await api('post', '/keys').send({ name: 'plain', mode: 'free_only' })).body.secret;
+  const response = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${secret}`)
+    .send({ model: 'auto', max_tokens: 4096, messages: [{ role: 'user', content: 'hi' }] });
+  assert.equal(response.status, 200, JSON.stringify(response.body));
+  assert.match(response.headers['x-neorouter-model'], /ok-slow/);
+});

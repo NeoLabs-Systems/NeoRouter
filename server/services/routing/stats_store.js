@@ -19,7 +19,7 @@ function blank(ref) {
   return {
     model_ref: ref, successes: 0, failures: 0, decayed_at: Date.now(), latency_ms: null, ttft_ms: null, tps: null, samples: 0,
     penalty: 0, penalty_at: Date.now(), cooldown_until: 0, cooldown_reason: null, cooldown_level: 0, recent_failures_json: '[]',
-    breaker_open_until: 0, last_error: null, last_success_at: null, last_failure_at: null, min_output_tokens: 0,
+    breaker_open_until: 0, last_error: null, last_success_at: null, last_failure_at: null, min_output_tokens: 0, min_output_at: 0,
   };
 }
 
@@ -45,17 +45,17 @@ function save(row) {
   try {
     getDatabase().prepare(`INSERT INTO model_stats (model_ref, successes, failures, decayed_at, latency_ms, ttft_ms, tps, samples,
       penalty, penalty_at, cooldown_until, cooldown_reason, cooldown_level, recent_failures_json, breaker_open_until, last_error,
-      last_success_at, last_failure_at, min_output_tokens)
+      last_success_at, last_failure_at, min_output_tokens, min_output_at)
     VALUES (@model_ref, @successes, @failures, @decayed_at, @latency_ms, @ttft_ms, @tps, @samples, @penalty, @penalty_at,
       @cooldown_until, @cooldown_reason, @cooldown_level, @recent_failures_json, @breaker_open_until, @last_error,
-      @last_success_at, @last_failure_at, @min_output_tokens)
+      @last_success_at, @last_failure_at, @min_output_tokens, @min_output_at)
     ON CONFLICT(model_ref) DO UPDATE SET successes = excluded.successes, failures = excluded.failures, decayed_at = excluded.decayed_at,
       latency_ms = excluded.latency_ms, ttft_ms = excluded.ttft_ms, tps = excluded.tps, samples = excluded.samples,
       penalty = excluded.penalty, penalty_at = excluded.penalty_at, cooldown_until = excluded.cooldown_until,
       cooldown_reason = excluded.cooldown_reason, cooldown_level = excluded.cooldown_level,
       recent_failures_json = excluded.recent_failures_json, breaker_open_until = excluded.breaker_open_until,
       last_error = excluded.last_error, last_success_at = excluded.last_success_at, last_failure_at = excluded.last_failure_at,
-      min_output_tokens = excluded.min_output_tokens`)
+      min_output_tokens = excluded.min_output_tokens, min_output_at = excluded.min_output_at`)
       .run(row);
   } catch (error) {
     // The model was removed while a request to it was still running (its
@@ -132,10 +132,28 @@ function recordFailure(ref, { weight = 1, penalty = 1, message = null, countsFor
   }, now);
 }
 
+// A learned output-room floor is a judgement from one moment: the model or
+// its settings may change. It holds for OUTPUT_FLOOR_RECHECK_MS, then the
+// model is tried without it again; running out of room again sets it anew.
+const OUTPUT_FLOOR_RECHECK_MS = 6 * 60 * 60 * 1000;
+
 function raiseMinOutputTokens(ref, tokens, now = Date.now()) {
   return update(ref, (row) => {
-    row.min_output_tokens = Math.max(row.min_output_tokens || 0, tokens);
+    // A floor past its recheck is stale: the new evidence replaces it.
+    const current = outputFloorOf(row, now);
+    row.min_output_tokens = Math.max(current, tokens);
+    row.min_output_at = now;
   }, now);
+}
+
+function outputFloorOf(row, now) {
+  if (!row.min_output_tokens) return 0;
+  return now - (row.min_output_at || 0) < OUTPUT_FLOOR_RECHECK_MS ? row.min_output_tokens : 0;
+}
+
+/** The output tokens a model needs at least, or 0 (none, or due for a retry without it). */
+function outputFloor(ref, now = Date.now()) {
+  return outputFloorOf(get(ref), now);
 }
 
 function clearCooldown(ref) {
@@ -176,4 +194,4 @@ function resetForTests() {
   cache.clear();
 }
 
-module.exports = { snapshot, recordSuccess, recordSlow, recordFailure, raiseMinOutputTokens, clearCooldown, forgive, availability, resetForTests, MAX_PENALTY };
+module.exports = { snapshot, outputFloor, OUTPUT_FLOOR_RECHECK_MS, recordSuccess, recordSlow, recordFailure, raiseMinOutputTokens, clearCooldown, forgive, availability, resetForTests, MAX_PENALTY };

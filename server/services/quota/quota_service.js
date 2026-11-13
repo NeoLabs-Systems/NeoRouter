@@ -149,17 +149,24 @@ function effectiveLimits(scope) {
   const stated = scope.kind === 'pool' ? accountLimits.get(scope.key.slice(2)) : {};
   for (const metric of METRICS) {
     if (stated[metric]) { result[metric] = { value: stated[metric], source: 'manual' }; continue; }
-    const stored = limits.get(`${scope.key}|${metric}`);
+    const stored = fresh(limits.get(`${scope.key}|${metric}`));
     if (stored) result[metric] = { value: stored.value, source: stored.source };
     else if (scope.curated[metric]) result[metric] = { value: scope.curated[metric], source: 'curated' };
   }
   return result;
 }
 
+// A limit learned from one refusal is a judgement from one moment: providers
+// raise limits and change plans. After a week without new evidence it is
+// dropped, so the account is used at full speed again and re-learns it if
+// the limit still holds. Header and manual limits are not affected.
+const LEARNED_LIMIT_TTL_MS = 7 * 86_400_000;
+const fresh = (record, now = Date.now()) => (record && record.source === 'learned' && now - (record.updatedAt || 0) > LEARNED_LIMIT_TTL_MS ? null : record);
+
 function setLimit(scopeKey, metric, value, source) {
   load();
   const key = `${scopeKey}|${metric}`;
-  const existing = limits.get(key);
+  const existing = fresh(limits.get(key));
   // Learned limits only ever tighten; a fresher header or manual value wins.
   if (existing && source === 'learned' && existing.value <= value) return;
   if (existing && LIMIT_SOURCES_RANK[existing.source] > LIMIT_SOURCES_RANK[source]) return;

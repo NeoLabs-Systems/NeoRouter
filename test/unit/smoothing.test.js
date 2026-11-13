@@ -103,3 +103,32 @@ test('a plan window whose reset time has passed is shown renewed', () => {
   assert.equal(shown.plan_5h.remaining, 99, 'a running window stays as reported');
   assert.equal(shown.plan_5h.renewed, undefined);
 });
+
+test('a learned output-room floor is rechecked after a while', () => {
+  const stats = require('../../server/services/routing/stats_store');
+  const ref = 990001;
+  const now = Date.now();
+  stats.raiseMinOutputTokens(ref, 16000, now);
+  assert.equal(stats.outputFloor(ref, now + 60_000), 16000);
+  assert.equal(stats.outputFloor(ref, now + stats.OUTPUT_FLOOR_RECHECK_MS + 1), 0, 'tried without it again');
+  // Running out of room again sets the floor anew, not on top of the stale one.
+  const later = now + stats.OUTPUT_FLOOR_RECHECK_MS + 1;
+  stats.raiseMinOutputTokens(ref, 4000, later);
+  assert.equal(stats.outputFloor(ref, later + 1), 4000);
+});
+
+test('a limit learned from a refusal fades after a week without new evidence', () => {
+  const scope = { key: 'p:fade-test', kind: 'pool', curated: {} };
+  quota.setLimit(scope.key, 'rpd', 5, 'learned');
+  assert.equal(quota.effectiveLimits(scope).rpd.value, 5);
+  const realNow = Date.now;
+  Date.now = () => realNow() + 8 * 86_400_000;
+  try {
+    assert.equal(quota.effectiveLimits(scope).rpd, undefined, 'used at full speed again');
+    // and learned afresh, even looser than before
+    quota.setLimit(scope.key, 'rpd', 50, 'learned');
+    assert.equal(quota.effectiveLimits(scope).rpd.value, 50);
+  } finally {
+    Date.now = realNow;
+  }
+});
