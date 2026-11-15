@@ -44,6 +44,19 @@ function limitFor(entry, now = Date.now()) {
 
 const isConcurrencyError = (error) => CONCURRENCY_PATTERN.test(String(error?.message || ''));
 
+// The limit when the provider names it ("concurrency limit: 4 in-flight
+// requests", "max 4 concurrent requests"): exact, unlike a guess from how
+// many were running here (other clients may share the key).
+const NAMED_LIMIT = [/concurren\w*\s+limit\D{0,12}(\d{1,4})/i, /(\d{1,4})\s+(?:in.?flight|concurrent|parallel|simultaneous)/i];
+function namedLimit(error) {
+  const text = String(error?.message || '');
+  for (const pattern of NAMED_LIMIT) {
+    const value = Number(text.match(pattern)?.[1]);
+    if (value >= 1) return value;
+  }
+  return null;
+}
+
 /**
  * After a rate-limit error. `running` counts the account's requests in
  * flight, the failed one included. Returns true when it looked like a
@@ -54,6 +67,11 @@ function onRateLimited(entry, error, { running = loadTracker.inflight(entry).acc
   if (accountLimits.get(entry.accountId).concurrent) return explicit;
   if (!explicit && running < 2) return false;
   const item = current(entry.accountId, now);
+  const named = namedLimit(error);
+  if (named) {
+    learned.set(entry.accountId, { limit: named, at: now, successes: 0 });
+    return explicit;
+  }
   const limit = Math.max(1, running - 1);
   if (!item || limit < item.limit || explicit) learned.set(entry.accountId, { limit: Math.min(limit, item?.limit ?? limit), at: now, successes: 0 });
   else item.at = now;
@@ -82,4 +100,4 @@ function resetForTests() {
   accountLimits.resetForTests();
 }
 
-module.exports = { forget, limitFor, onRateLimited, onSuccess, isConcurrencyError, resetForTests };
+module.exports = { namedLimit, forget, limitFor, onRateLimited, onSuccess, isConcurrencyError, resetForTests };

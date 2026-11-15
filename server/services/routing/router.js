@@ -656,6 +656,13 @@ class RoutingPlan {
     return soonest;
   }
 
+  // True when a model that can take this request is only at its account's
+  // limit of requests at once: a slot frees as soon as one of those answers.
+  waitingOnBusy(now = Date.now(), filter = null) {
+    const ctx = this.context();
+    return this.entries.some((entry) => !this.tried.has(entry.ref) && (!filter || filter(entry)) && rejection(entry, ctx, now) === 'account_busy');
+  }
+
   // While this request waits for capacity, requests of a lower priority leave
   // what it waits for alone. Called on every pass, as candidates free up or
   // block; leaveQueue() ends it.

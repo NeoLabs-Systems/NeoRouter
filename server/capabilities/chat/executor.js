@@ -469,13 +469,17 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
   const ensureRunning = async () => {
     const queueMs = peer ? PEER_QUEUE_MS : capacity.queueWaitMs(key, config.routing.queueWaitMs);
     const waitUntil = Math.min(Date.now() + queueMs, startedAt + config.routing.totalBudgetMs);
+    // A model that works and is only full right now is worth the full wait
+    // even when requests are short of capacity: its slots free as it answers.
+    const busyUntil = peer ? waitUntil : Math.min(Date.now() + config.routing.queueWaitMs, startedAt + config.routing.totalBudgetMs);
     try {
       while (!running.size) {
         if (startNext()) return true;
         if (clientAbort.signal.aborted || attemptsStarted >= config.routing.maxAttempts) return false;
         const now = Date.now();
         freesUpAt = plan.freesUpAt(now);
-        if (freesUpAt === null || freesUpAt > waitUntil) {
+        const until = busyUntil > waitUntil && plan.waitingOnBusy(now) ? busyUntil : waitUntil;
+        if (freesUpAt === null || freesUpAt > until) {
           // Better to try what may work again than to answer "no model available".
           // A slow or weaker model that works comes before connections known to refuse.
           if (plan.enableLastResort({ now })) continue;
@@ -483,7 +487,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
           return false;
         }
         plan.joinQueue(now);
-        const pause = Math.min(waitUntil - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random()));
+        const pause = Math.min(until - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random()));
         await sleep(pause);
         queuedMs += Date.now() - now;
       }

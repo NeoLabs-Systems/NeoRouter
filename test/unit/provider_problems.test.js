@@ -93,3 +93,17 @@ test('Ollama Cloud with its included usage used up is a limit, not a broken conn
   // A real payment problem stays one.
   assert.equal(classifyHttpError(402, { error: 'Insufficient balance' }, new Headers()).kind, 'payment');
 });
+
+test('a concurrency limit the provider names is learned exactly', () => {
+  const concurrency = require('../../server/services/routing/concurrency');
+  assert.equal(concurrency.namedLimit({ message: 'rate_limit: concurrency limit: 4 in-flight requests' }), 4);
+  assert.equal(concurrency.namedLimit({ message: 'Too many requests: max 3 concurrent requests per key' }), 3);
+  assert.equal(concurrency.namedLimit({ message: 'Rate limit reached: 30 requests per minute' }), null);
+  const { migrate } = require('../../server/db/migrate');
+  migrate(require('../../server/db/database').getDatabase(), { quiet: true });
+  concurrency.resetForTests();
+  const entry = { accountId: 'named-limit', definitionId: 'custom_openai' };
+  // Two running here, but the provider says 4: other clients share the key.
+  concurrency.onRateLimited(entry, { message: 'concurrency limit: 4 in-flight requests' }, { running: 2 });
+  assert.equal(concurrency.limitFor(entry).limit, 4);
+});
