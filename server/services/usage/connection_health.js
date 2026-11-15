@@ -1,6 +1,7 @@
 'use strict';
 
 const { getDatabase } = require('../../db/database');
+const { allowanceUsedUp } = require('../../providers/provider_error');
 
 // How each connection really does, from the last day's attempts. Its stored
 // status only says the key was accepted; a connection can pass that check and
@@ -37,7 +38,8 @@ function compute(userId, now) {
       // was expected to fail; limits, a request the model cannot take (too
       // long, an unsupported option, too few output tokens) or a lost race
       // say nothing about the connection.
-      if (step.luck || NOT_THE_CONNECTION.has(step.outcome)) continue;
+      // A used-up plan allowance (recorded before it was read that way) is a limit too.
+      if (step.luck || NOT_THE_CONNECTION.has(step.outcome) || allowanceUsedUp(step.message)) continue;
       const item = bySlug.get(String(step.model).split('/')[0]);
       if (!item) continue;
       item.attempts += 1;

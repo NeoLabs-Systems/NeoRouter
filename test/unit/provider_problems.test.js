@@ -84,3 +84,12 @@ test('a search plan used up is a used-up allowance with a readable message, not 
   refused.search = async () => { throw classifyHttpError(401, { detail: { error: 'Unauthorized: missing or invalid API key.' } }, new Headers()); };
   assert.equal((await refused.validate()).status, 'invalid');
 });
+
+test('Ollama Cloud with its included usage used up is a limit, not a broken connection', () => {
+  const message = 'Add usage credits or subscribe and save up to 66%: https://ollama.com/plans (ref: eae75f6f)';
+  for (const status of [402, 429, 403]) {
+    assert.equal(classifyHttpError(status, { error: message }, new Headers()).kind, 'quota_exhausted', `HTTP ${status}`);
+  }
+  // A real payment problem stays one.
+  assert.equal(classifyHttpError(402, { error: 'Insufficient balance' }, new Headers()).kind, 'payment');
+});

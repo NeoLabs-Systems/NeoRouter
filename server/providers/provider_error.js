@@ -102,6 +102,17 @@ function announcedReturn(message, now = Date.now()) {
 }
 // The account cannot pay: no balance, or no subscription behind the key. The
 // status is not reliable here (OpenCode Go says 403 for it).
+// A plan's included usage is used up and comes back when the window renews;
+// the provider offers credits or a bigger plan meanwhile (Ollama Cloud's
+// free plan: "Add usage credits or subscribe and save up to 66%"). Not a
+// broken connection, and not something to fix at once.
+const ALLOWANCE_USED_UP = /add (usage )?credits or (subscribe|upgrade)|(session|hourly|daily|weekly|monthly) usage limit/i;
+
+/** True when a provider's error text says only that the plan's included usage is used up. */
+function allowanceUsedUp(message) {
+  return ALLOWANCE_USED_UP.test(String(message || ''));
+}
+
 const NEEDS_PAYMENT = /(active|valid).{0,40}subscription is required|insufficient (account )?(funds|balance|credits?)/i;
 
 function classifyHttpError(status, body, headers) {
@@ -111,6 +122,7 @@ function classifyHttpError(status, body, headers) {
   if (CONTEXT_PATTERNS.some((pattern) => pattern.test(message)) && (status === 400 || status === 413 || status === 422)) {
     return new ProviderError(KINDS.CONTEXT_LENGTH, message, options);
   }
+  if ((status === 402 || status === 429 || status === 403) && allowanceUsedUp(message)) return new ProviderError(KINDS.QUOTA_EXHAUSTED, message, options);
   // A model this account may not use yet (Groq: "requires terms acceptance")
   // will keep failing the same way: treat it as unavailable, not as a bad request.
   if ((status === 400 || status === 403) && /terms acceptance|accept the terms|requires? (you to )?accept/i.test(message)) {
@@ -153,4 +165,4 @@ function fromNetworkError(error) {
   return new ProviderError(KINDS.NETWORK, `Network error${cause ? ` (${cause})` : ''}: ${error?.message || error}`);
 }
 
-module.exports = { KINDS, ProviderError, classifyHttpError, fromNetworkError, parseRetryAfter, extractMessage, learnFromMessage, announcedReturn };
+module.exports = { allowanceUsedUp, KINDS, ProviderError, classifyHttpError, fromNetworkError, parseRetryAfter, extractMessage, learnFromMessage, announcedReturn };
