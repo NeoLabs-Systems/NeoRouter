@@ -18,6 +18,8 @@ function get(accountId) {
 /** patch: { rpm: 20, concurrent: 4, rpd: null }. A number sets, null clears, absent keeps. */
 function set(accountId, patch, now = Date.now()) {
   const db = getDatabase();
+  const utilization = require('../routing/slot_utilization');
+  utilization.watch(accountId, now);
   db.transaction(() => {
     for (const metric of METRICS) {
       if (!(metric in patch)) continue;
@@ -28,6 +30,7 @@ function set(accountId, patch, now = Date.now()) {
     }
   })();
   cache.delete(accountId);
+  utilization.watch(accountId, now);
   return get(accountId);
 }
 

@@ -37,6 +37,44 @@ pattern is required. The list includes current plan usage per member account;
 unknown usage is shown as unknown. Activity records and `X-NeoRouter-Group` identify
 the group that actually served a request, including a fallback.
 
+## Flat-rate concurrency plans
+
+Choose **Flat rate / concurrency slots** for a connection with a paid subscription
+that charges nothing per request. This is a plan, not a free tier: keys must allow
+plans, and request cost is zero. Kourier is a known provider using its authenticated
+`/v1/models` listing. Starter/Pro slot counts come from its provider definition;
+select the subscribed plan and override the concurrent limit for account bonuses.
+Custom OpenAI/Anthropic endpoints can use the same billing kind and stated limits.
+Model routing never relies on a fixed Kourier model name.
+
+With flat-rate capacity in automatic routing, source preference within each style's
+kind tier is: available flat-rate slot, allowance ahead of its renewal pace, other
+prepaid allowance, free tier, paid usage. Health, capabilities, model permissions
+and other hard filters still apply. Explicit model requests keep their existing
+model-first behavior. Allowance pacing and concurrency remain learned from provider
+responses; a stated concurrency limit continues to override learned/curated limits.
+
+Each flat-rate account has an overflow policy:
+
+- `auto`: overflow when a comparable genuinely free model can serve; otherwise wait.
+- `overflow`: try another available source immediately when all slots are busy.
+- `queue`: wait for a slot first, then overflow when the maximum wait expires.
+
+The wait starts when routing starts and is bounded by `slotWaitMs` and the overall
+request deadline. Its default is `NEOROUTER_SLOT_QUEUE_WAIT_MS`. Configure
+`billingMode: "flat_rate"`, `concurrent`, `overflowPolicy` and `slotWaitMs` through
+the provider account API or connection form. Kourier's plan selection is
+`options.slotPlan`; concurrent overrides cover bonuses without changing a definition.
+The Limits dialog can change both the concurrency limit and overflow policy.
+
+The Limits page shows current, time-weighted average and peak busy slots, idle
+capacity and a minute-by-minute usage chart for the last 24 hours. These are
+router-observed counts, persisted as time integrals; downtime is excluded from
+observed time. Unknown slot capacity yields unknown idle share. Allowance plans
+also show pace relative to renewal (above 1 means ahead of schedule). Extra keys
+from the same subscription should not be added as independent accounts because
+the upstream shares their capacity.
+
 ## Provider cache awareness
 
 Chat routing remembers the last successful account and model for a conversation,
@@ -80,6 +118,30 @@ a local response cache.
    Adaptive profiles shift weight to intelligence for complex requests.
 5. **Selection** — softmax draw among the top-k (exploration temperature),
    so bursts spread out; in-flight leases lower scores immediately.
+
+## Spreading metered allowances until reset
+
+When enabled in Settings → Usage, pacing combines observed remaining balances
+with a recency-weighted hour-of-week demand profile. Requests and tokens learn
+separate traffic shapes, and token forecasts include learned output sizes and
+in-flight output reservations. Failed attempts do not teach a false demand peak.
+
+Daily limits with an upstream reset use cumulative consumption since that reset;
+yesterday's buckets do not block the renewed window. Unknown daily reset times
+use a rolling window, its remaining balance and upcoming bucket expirations.
+Provider observations retain their local-consumption baseline so sends between
+observations are deducted, including concurrent sends within one minute.
+
+Percentage plan windows learn units consumed per request from balance changes and
+reserve that measured consumption between updates. The router shifts work toward
+allowances with room before they exceed pace, then queues paced work until its
+calculated release time. Last-resort routing preserves enabled pacing. If no
+eligible source can serve within the request's queue budget, the response includes
+a retry time; a sustained demand above total allowance cannot be solved by pacing.
+Initial enablement requires sufficient history; adding unknown models does not
+silently switch protection off for known allowances. High-priority keys bypass
+pacing, while hard limits and key budgets still apply.
+Flat-rate slots and pay-per-use sources are not metered allowances.
 
 ## Learning (`learning.js`, `stats_store.js`)
 

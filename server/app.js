@@ -19,6 +19,7 @@ function hasBundledWebClient(dir) {
 
 function createApp() {
   migrate();
+  require('./services/routing/slot_utilization').initialize();
   const app = express();
   const config = getConfig();
   if (config.trustProxy) app.set('trust proxy', 1);

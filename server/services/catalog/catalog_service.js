@@ -1,5 +1,7 @@
 'use strict';
 
+const { FLAT_RATE } = require('../providers/billing_modes');
+
 const { getDatabase } = require('../../db/database');
 const { HttpError } = require('../../middleware/error_handler');
 const registry = require('../../providers/registry');
@@ -81,7 +83,7 @@ async function syncAccount(accountId) {
 // recomputed whenever either changes, not only on sync.
 function reclassifyAccount(accountId) {
   const db = getDatabase();
-  const account = db.prepare('SELECT definition_id, billing_mode, billing_state, base_url, secret_encrypted, classification FROM provider_accounts WHERE id = ?').get(accountId);
+  const account = db.prepare('SELECT definition_id, billing_mode, billing_state, base_url, secret_encrypted, classification, prepaid FROM provider_accounts WHERE id = ?').get(accountId);
   if (!account) return;
   const definition = registry.get(account.definition_id);
   const rows = db.prepare('SELECT id, model_id, raw_json, overrides_json, price_in, price_out, price_source FROM models WHERE account_id = ?').all(accountId);
@@ -90,7 +92,7 @@ function reclassifyAccount(accountId) {
     for (const row of rows) {
       const listing = JSON.parse(row.raw_json || '{}');
       const overrides = JSON.parse(row.overrides_json || '{}');
-      const result = classify({
+      const result = account.prepaid === FLAT_RATE ? { isFree: false, reason: 'flat_rate_plan' } : classify({
         definition,
         billingMode: account.billing_mode,
         billingState: account.billing_state,
@@ -166,7 +168,7 @@ function bulkSetEnabled(userId, { accountId, enabled, onlyFree }) {
 
 // One row per model with everything routing needs. Overrides win over
 // provider data; provider data wins over canonical metadata.
-const SELECT_ENTRY = `SELECT m.*, a.slug, a.user_id, a.definition_id, a.label account_label, a.base_url account_base_url, a.billing_mode, a.enabled account_enabled, a.status account_status, a.prepaid account_prepaid,
+const SELECT_ENTRY = `SELECT m.*, a.slug, a.user_id, a.definition_id, a.label account_label, a.base_url account_base_url, a.billing_mode, a.enabled account_enabled, a.status account_status, a.prepaid account_prepaid, a.options_json account_options, a.overflow_policy, a.slot_wait_ms,
     md.intelligence, md.intelligence_source, md.intelligence_confidence, md.speed_tps, md.context_window md_context,
     md.supports_tools md_tools, md.supports_vision md_vision, md.supports_reasoning md_reasoning, md.release_date, md.params_b, md.skills_json,
     s.successes, s.failures, s.decayed_at, s.latency_ms, s.ttft_ms, s.tps, s.samples, s.penalty, s.penalty_at,
@@ -195,6 +197,10 @@ function toEntry(row) {
     // name. Custom endpoints are one provider per address.
     ...providerIdentity({ definitionId: row.definition_id, slug: row.slug, label: row.account_label, baseUrl: row.account_base_url }),
     billingMode: row.billing_mode,
+    isFlatRate: row.account_prepaid === FLAT_RATE,
+    slotPlan: JSON.parse(row.account_options || '{}').slotPlan || null,
+    overflowPolicy: row.overflow_policy || 'auto',
+    slotWaitMs: row.slot_wait_ms,
     enabled: Boolean(row.enabled),
     available: Boolean(row.available),
     accountEnabled: Boolean(row.account_enabled),
@@ -214,11 +220,11 @@ function toEntry(row) {
     // million characters (speech).
     priceUnit: pick(overrides.priceUnit, row.price_unit, null),
     unitPrice: pick(overrides.unitPrice, row.price_per_unit, null),
-    isFree: Boolean(row.is_free),
+    isFree: row.account_prepaid === FLAT_RATE ? false : Boolean(row.is_free),
     // Answers typed questions (decision model) rather than classifying text.
     decision: row.capability === 'moderation' && JSON.parse(row.raw_json || '{}').decision === true,
     // Included in a prepaid plan: no extra cost per request.
-    isPlan: !row.is_free && Boolean(row.account_prepaid),
+    isPlan: row.account_prepaid === FLAT_RATE || (!row.is_free && Boolean(row.account_prepaid)),
     // After the plan is used up: billed per use (true) or unavailable.
     planOverflow: row.account_prepaid === 2,
     freeReason: row.free_reason,

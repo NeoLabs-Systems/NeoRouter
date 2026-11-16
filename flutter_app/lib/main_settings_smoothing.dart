@@ -77,7 +77,7 @@ class _SmoothingSectionState extends State<SmoothingSection> {
         : !ready
         ? (t.smoothStatusLearning, PillTone.neutral)
         : (t.smoothStatusOff, PillTone.neutral);
-    final description = active ? t.smoothOn : enabled ? t.smoothPausedLearning : ready ? t.smoothOff : t.smoothLearning;
+    final description = active ? t.smoothOn : ready ? t.smoothOff : t.smoothLearning;
     num value(String key) => (readiness[key] as num?) ?? 0;
     num need(String key) => (needed[key] as num?) ?? 1;
     final hint = TextStyle(color: palette.textSoft, fontSize: 13, height: 1.45);
@@ -99,7 +99,7 @@ class _SmoothingSectionState extends State<SmoothingSection> {
                   : Switch(value: enabled, onChanged: canToggle ? _set : null),
             ),
             // What is still missing, as progress toward each threshold.
-            if (!ready)
+            if (!ready && !active)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
                 child: Column(

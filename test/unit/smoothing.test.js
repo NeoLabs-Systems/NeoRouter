@@ -132,3 +132,41 @@ test('a limit learned from a refusal fades after a week without new evidence', (
     Date.now = realNow;
   }
 });
+
+test('pacing uses the provider balance and actual reset, including sends after an observation', () => {
+  const now = Date.UTC(2026, 10, 16, 12);
+  const settings = require('../../server/services/settings/settings_service');
+  settings.setUserSetting('u2', smoothing.SETTING, true);
+  assert.equal(smoothing.active('u2', now), true, 'a previously enabled policy stays active when coverage changes');
+  settings.setUserSetting('u2', smoothing.SETTING, false);
+  const entry = { ...free('balance'), enabled: true, available: true, accountEnabled: true, stats: {} };
+  quota.setLimit('m:balance', 'rpd', 240, 'manual');
+  quota.setState('m:balance', 'rpd', { limit: 240, remaining: 20, resetAt: now + 12 * HOUR }, 'header', now);
+  assert.equal(smoothing.held(entry, { userId: 'u2', now }), true, 'an empty recent hour does not hide a nearly spent daily allowance');
+  const wake = smoothing.nextAt(entry, { userId: 'u2', now });
+  assert.ok(wake > now && wake <= now + 12 * HOUR);
+  quota.recordRequest(entry, 10, now + 1);
+  assert.equal(quota.evaluate(entry, 0, now + 2).details.find((item) => item.metric === 'rpd').remaining, 19);
+  const router = require('../../server/services/routing/router');
+  const context = { key: { id: 'k', user_id: 'u2', allowed_models_json: '[]' }, userId: 'u2', request: {}, needs: {}, inputTokens: 0, constraints: {}, primaryRefs: new Set(), smoothing: true, lastResort: true };
+  assert.equal(router.rejection(entry, context, now + 2), 'paced', 'last resort must not silently consume the reserved allowance');
+  const renewed = quota.evaluate(entry, 0, now + 12 * HOUR + 1).details.find((item) => item.metric === 'rpd');
+  assert.equal(renewed.remaining, 240, 'previous-day buckets do not block a known fixed reset');
+  assert.equal(smoothing.held(entry, { userId: 'u2', now: now + 12 * HOUR + 1 }), false);
+});
+
+test('percentage plan burn is learned and reserved between upstream observations', () => {
+  const plans = require('../../server/services/routing/plans');
+  const now = Date.now();
+  const plan = { ...free('learned-plan'), isFree: false, isPlan: true };
+  const resetAt = now + 4 * HOUR;
+  quota.setState('a:acc-learned-plan', 'plan_5h', { limit: 100, remaining: 90, resetAt }, 'headers', now);
+  plans.onSent(plan, now + 1);
+  quota.setState('a:acc-learned-plan', 'plan_5h', { limit: 100, remaining: 85, resetAt }, 'headers', now + 2);
+  assert.equal(plans.room(plan, now + 2).share, 0.85);
+  plans.onSent(plan, now + 3);
+  plans.onSent(plan, now + 4);
+  assert.equal(plans.room(plan, now + 4).share, 0.75, 'later in-flight requests reserve measured plan units');
+  assert.equal(smoothing.held(plan, { userId: 'u2', now: now + 4 }), true);
+  assert.equal(smoothing.held({ ...plan, isFlatRate: true }, { userId: 'u2', now: now + 4 }), false, 'paid slots have no metered allowance to spread');
+});

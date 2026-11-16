@@ -2218,7 +2218,7 @@ abstract class AppL10n {
   /// No description provided for @smoothHint.
   ///
   /// In en, this message translates to:
-  /// **'Without this, NeoRouter answers at full speed until a limit is used up, and then turns requests away until it resets. With it, free and plan limits are spread so they last the whole period: a little more waiting at busy times, far fewer rejections later.'**
+  /// **'Free and metered plan allowances follow observed balances, reset times and your learned demand. When every eligible source needs to save allowance, requests wait or return a retry time.'**
   String get smoothHint;
 
   /// No description provided for @smoothSwitch.
@@ -2308,19 +2308,19 @@ abstract class AppL10n {
   /// No description provided for @smoothHowDaily.
   ///
   /// In en, this message translates to:
-  /// **'Daily limits: each hour gets its share of the day, more at the times you usually send requests.'**
+  /// **'Daily limits: track the remaining balance and real reset time, reserving room for the hours when you usually need it. Token estimates include learned output sizes.'**
   String get smoothHowDaily;
 
   /// No description provided for @smoothHowPlans.
   ///
   /// In en, this message translates to:
-  /// **'Plans (5 hours, a week, a month): never used much faster than the time that has passed.'**
+  /// **'Metered plans: learn how much requests spend and reserve that allowance between provider updates. Paid concurrency slots have no allowance to spread.'**
   String get smoothHowPlans;
 
   /// No description provided for @smoothHowPriority.
   ///
   /// In en, this message translates to:
-  /// **'Keys with a high priority always get through, and paid models are not affected.'**
+  /// **'High-priority keys bypass pacing. Pay-per-use models and flat-rate slots are unaffected; provider limits and key budgets still apply.'**
   String get smoothHowPriority;
 
   /// No description provided for @caIntro.
@@ -9756,6 +9756,90 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Plan usage'**
   String get planUsage;
+
+  /// No description provided for @flatRateBilling.
+  ///
+  /// In en, this message translates to:
+  /// **'Flat rate / concurrency slots'**
+  String get flatRateBilling;
+
+  /// No description provided for @flatRateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A paid subscription with no incremental charge. Fill available slots before using other sources.'**
+  String get flatRateHint;
+
+  /// No description provided for @slotPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription plan'**
+  String get slotPlan;
+
+  /// No description provided for @slotOverflowPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'When slots are busy'**
+  String get slotOverflowPolicy;
+
+  /// No description provided for @slotOverflowAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic: overflow to a comparable free source, otherwise wait'**
+  String get slotOverflowAuto;
+
+  /// No description provided for @slotOverflowNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Overflow immediately'**
+  String get slotOverflowNow;
+
+  /// No description provided for @slotOverflowQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait for a slot first'**
+  String get slotOverflowQueue;
+
+  /// No description provided for @slotMaxWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum slot wait (seconds)'**
+  String get slotMaxWait;
+
+  /// No description provided for @slotCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Busy slots now'**
+  String get slotCurrent;
+
+  /// No description provided for @slotAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Average busy slots'**
+  String get slotAverage;
+
+  /// No description provided for @slotPeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak busy slots'**
+  String get slotPeak;
+
+  /// No description provided for @slotIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle capacity'**
+  String get slotIdle;
+
+  /// No description provided for @slotObserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Observed slot usage over the last 24 hours'**
+  String get slotObserved;
+
+  /// No description provided for @allowancePace.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowance pace (above 1 means ahead of schedule)'**
+  String get allowancePace;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

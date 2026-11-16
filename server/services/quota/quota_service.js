@@ -37,11 +37,11 @@ function load() {
     limits.set(`${row.scope_key}|${row.metric}`, { value: row.value, source: row.source, updatedAt: row.updated_at });
   }
   for (const row of db.prepare('SELECT * FROM quota_state').all()) {
-    states.set(`${row.scope_key}|${row.metric}`, { limit: row.limit_value, remaining: row.remaining, resetAt: row.reset_at, source: row.source, observedAt: row.observed_at });
+    states.set(`${row.scope_key}|${row.metric}`, { limit: row.limit_value, remaining: row.remaining, resetAt: row.reset_at, source: row.source, observedAt: row.observed_at, localUsed: row.local_used, requestCost: row.request_cost });
   }
 }
 
-function flush() {
+function flush({ prune = true } = {}) {
   if (!loaded || dirty.size === 0) return;
   const db = getDatabase();
   const upsert = db.prepare(`INSERT INTO quota_buckets (scope_key, minute, requests, tokens) VALUES (?, ?, ?, ?)
@@ -54,6 +54,7 @@ function flush() {
     }
   })();
   dirty.clear();
+  if (!prune) return;
   const cutoff = minuteOf(Date.now()) - DAY_MINUTES - 1;
   for (const map of buckets.values()) for (const minute of map.keys()) if (minute < cutoff) map.delete(minute);
 }
@@ -127,7 +128,7 @@ function usageInLast(scopeKey, minutes, now = Date.now()) {
   if (!map) return result;
   const from = minuteOf(now) - minutes + 1;
   for (const [minute, bucket] of map) {
-    if (minute >= from) {
+    if (minute >= from && minute <= minuteOf(now)) {
       result.requests += bucket.requests;
       result.tokens += bucket.tokens;
     }
@@ -140,6 +141,45 @@ function dailyLimits(scope, now = Date.now()) {
   const known = effectiveLimits(scope);
   const daily = (metric) => known[metric]?.value ?? liveState(scope.key, metric, now)?.limit ?? null;
   return { rpd: daily('rpd'), tpd: daily('tpd') };
+}
+
+// Explicit daily reset anchors keep yesterday's usage out of a renewed
+// allowance. Without an anchor the daily window remains a rolling 24 hours.
+function dailyBounds(scopeKey, metric, now, observation = null) {
+  const state = observation || states.get(`${scopeKey}|${metric}`);
+  const day = DAY_MINUTES * MINUTE;
+  if (state?.resetAt && state.source !== 'error' && state.resetAt - state.observedAt <= day) {
+    const resetAt = state.resetAt > now ? state.resetAt : state.resetAt + (Math.floor((now - state.resetAt) / day) + 1) * day;
+    return { startAt: resetAt - day, resetAt, rolling: false };
+  }
+  return { startAt: now - day, resetAt: null, rolling: true };
+}
+function usageInRange(scopeKey, startAt, endAt) {
+  load();
+  const result = { requests: 0, tokens: 0 };
+  for (const [minute, bucket] of buckets.get(scopeKey) || []) {
+    if (minute < minuteOf(startAt) || minute > minuteOf(endAt)) continue;
+    result.requests += bucket.requests;
+    result.tokens += bucket.tokens;
+  }
+  return result;
+}
+function dailyWindow(scope, metric, now = Date.now()) {
+  load();
+  const bounds = dailyBounds(scope.key, metric, now);
+  const state = liveState(scope.key, metric, now);
+  const limit = effectiveLimits(scope)[metric]?.value ?? state?.limit ?? null;
+  if (!(limit > 0)) return null;
+  const field = metric === 'rpd' ? 'requests' : 'tokens';
+  const local = usageInRange(scope.key, bounds.startAt, now)[field];
+  const afterObservation = state?.localUsed != null ? Math.max(0, local - state.localUsed) : 0;
+  const remoteRemaining = state?.remaining != null ? Math.max(0, state.remaining - afterObservation) : null;
+  const remaining = Math.max(0, Math.min(limit - local, remoteRemaining ?? Infinity));
+  return { ...bounds, metric, scope: scope.key, limit, used: limit - remaining, remaining,
+    source: effectiveLimits(scope)[metric]?.source || state?.source,
+    recent: usageInLast(scope.key, 60, now)[field],
+    // Actual bucket expirations are additional capacity in a rolling window.
+    expiring: bounds.rolling ? usageInRange(scope.key, now - DAY_MINUTES * MINUTE, now - (DAY_MINUTES - 60) * MINUTE)[field] : 0 };
 }
 
 function effectiveLimits(scope) {
@@ -185,12 +225,25 @@ function clearLimit(scopeKey, metric) {
 
 function setState(scopeKey, metric, { limit = null, remaining = null, resetAt = null }, source, now = Date.now()) {
   load();
-  const record = { limit, remaining, resetAt, source, observedAt: now };
+  const bounds = dailyBounds(scopeKey, metric, now, { resetAt, source, observedAt: now });
+  const isPlan = metric.startsWith('plan_');
+  const localUsed = isPlan ? usageInLast(scopeKey, DAY_MINUTES, now).requests : metric.endsWith('d') ? usageInRange(scopeKey, bounds.startAt, now)[metric.startsWith('r') ? 'requests' : 'tokens'] : null;
+  const previous = states.get(`${scopeKey}|${metric}`);
+  let requestCost = isPlan ? previous?.requestCost ?? null : null;
+  const count = localUsed - (previous?.localUsed ?? localUsed);
+  const spent = (previous?.remaining ?? remaining) - remaining;
+  if (isPlan && previous?.resetAt === resetAt && count > 0 && spent > 0 && remaining != null) {
+    const sample = spent / count;
+    const alpha = require('../routing/pacing_policy').planRateAlpha;
+    requestCost = requestCost == null ? sample : requestCost * (1 - alpha) + sample * alpha;
+  }
+  const record = { limit, remaining, resetAt, source, observedAt: now, localUsed, requestCost };
+  flush({ prune: false });
   states.set(`${scopeKey}|${metric}`, record);
-  getDatabase().prepare(`INSERT INTO quota_state (scope_key, metric, limit_value, remaining, reset_at, source, observed_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(scope_key, metric) DO UPDATE SET limit_value = excluded.limit_value,
-    remaining = excluded.remaining, reset_at = excluded.reset_at, source = excluded.source, observed_at = excluded.observed_at`)
-    .run(scopeKey, metric, limit, remaining, resetAt, source, now);
+  getDatabase().prepare(`INSERT INTO quota_state (scope_key, metric, limit_value, remaining, reset_at, source, observed_at, local_used, request_cost)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(scope_key, metric) DO UPDATE SET limit_value = excluded.limit_value,
+    remaining = excluded.remaining, reset_at = excluded.reset_at, source = excluded.source, observed_at = excluded.observed_at, local_used = excluded.local_used, request_cost = excluded.request_cost`)
+    .run(scopeKey, metric, limit, remaining, resetAt, source, now, localUsed, requestCost);
 }
 
 function liveState(scopeKey, metric, now = Date.now()) {
@@ -228,8 +281,14 @@ function learnLimit(entry, learned) {
 
 // Marks the scope as exhausted until the reset (used for 429/quota errors).
 function markExhausted(entry, metric, resetAt, now = Date.now()) {
-  const scope = scopesFor(entry)[0];
-  setState(scope.key, metric, { limit: null, remaining: 0, resetAt }, 'error', now);
+  const scopes = scopesFor(entry);
+  const definition = registry.get(entry.definitionId);
+  const scope = scopes.find((item) => item.kind === 'pool' && definition?.limits.pool === 'account') || scopes[0];
+  load();
+  const known = liveState(scope.key, metric, now);
+  // Preserve an upstream reset instead of replacing it with a retry timer.
+  const precise = known?.resetAt && known.source !== 'error';
+  setState(scope.key, metric, { limit: known?.limit ?? null, remaining: 0, resetAt: precise ? known.resetAt : resetAt }, precise ? known.source : 'error', now);
 }
 
 // Drops the "used up until later" marks that refusals left on an account and its models.
@@ -276,13 +335,14 @@ function evaluate(entry, estimatedTokens = 0, now = Date.now()) {
     for (const metric of METRICS) {
       const state = liveState(scope.key, metric, now);
       const limit = scopeLimits[metric]?.value ?? state?.limit ?? null;
-      let remaining = limit !== null ? limit - used[metric] : null;
-      if (state && state.remaining !== null) remaining = remaining === null ? state.remaining : Math.min(remaining, state.remaining);
+      const daily = metric.endsWith('d') ? dailyWindow(scope, metric, now) : null;
+      let remaining = daily ? daily.remaining : limit !== null ? limit - used[metric] : null;
+      if (!daily && state && state.remaining !== null) remaining = remaining === null ? state.remaining : Math.min(remaining, state.remaining);
       if (remaining === null) continue;
       const need = metric.startsWith('r') ? 1 : estimatedTokens;
-      if (remaining < need && !blocked) blocked = { metric, scope: scope.key, resetAt: state?.resetAt || null };
+      if (remaining < need && !blocked) blocked = { metric, scope: scope.key, resetAt: daily?.resetAt || state?.resetAt || null };
       if (limit) headroom = Math.min(headroom, Math.max(0, remaining) / limit);
-      details.push({ scope: scope.key, kind: scope.kind, metric, limit, used: Math.round(used[metric]), remaining: Math.max(0, Math.round(remaining)), source: scopeLimits[metric]?.source || state?.source, resetAt: state?.resetAt || null });
+      details.push({ scope: scope.key, kind: scope.kind, metric, limit, used: Math.round(daily?.used ?? used[metric]), remaining: Math.max(0, Math.round(remaining)), source: scopeLimits[metric]?.source || state?.source, resetAt: daily?.resetAt || state?.resetAt || null });
     }
   }
   const factor = headroom >= HEADROOM_THRESHOLD ? 1 : HEADROOM_FLOOR + (1 - HEADROOM_FLOOR) * (headroom / HEADROOM_THRESHOLD);
@@ -339,7 +399,15 @@ module.exports = { forgetObserved,
   usageOf,
   usageInLast,
   dailyLimits,
+  dailyWindow,
+  usageInRange,
+  nextReleaseAt: (scope, minutes, now = Date.now()) => {
+    load();
+    const releases = [...(buckets.get(scope)?.keys() || [])].map((minute) => (minute + minutes) * MINUTE).filter((at) => at > now);
+    return releases.length ? Math.min(...releases) : null;
+  },
   evaluate,
+  recordPlanRequest: (accountId, now = Date.now()) => addUsage(`a:${accountId}`, 1, 0, now),
   recordRequest,
   refundRequest,
   recordTokens,

@@ -19,7 +19,18 @@ const CONCURRENCY_PATTERN = /concurren|parallel requests|simultaneous|in.?flight
 const learned = new Map();
 
 function documented(entry) {
-  return registry.get(entry.definitionId)?.limits?.account?.concurrent || null;
+  const definition = registry.get(entry.definitionId);
+  const billing = definition?.billing.flatRate;
+  if (billing) {
+    let selected = entry.slotPlan;
+    if (!selected) {
+      const row = require('../../db/database').getDatabase().prepare('SELECT options_json FROM provider_accounts WHERE id = ?').get(entry.accountId);
+      selected = JSON.parse(row?.options_json || '{}').slotPlan || billing.defaultPlan;
+    }
+    const plan = billing.plans.find((item) => item.id === selected);
+    if (plan) return plan.concurrent;
+  }
+  return definition?.limits?.account?.concurrent || null;
 }
 
 function current(accountId, now) {

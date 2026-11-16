@@ -52,6 +52,8 @@ router.get('/quotas', (req, res) => {
   for (const entry of entries) {
     const group = byAccount.get(entry.accountId);
     if (!group) continue;
+    if (entry.isFlatRate && !group.slots) group.slots = require('../services/routing/slot_utilization').snapshot(entry.accountId);
+    if (entry.isPlan && !entry.isFlatRate && group.allowancePace == null) group.allowancePace = require('../services/routing/plans').pace(entry);
     const { details } = quota.evaluate(entry, 0);
     const pool = details.filter((item) => item.kind === 'pool');
     const own = details.filter((item) => item.kind === 'model');

@@ -101,7 +101,7 @@ async function runCapability({ req, res = null, key, capability, method, request
   let badRequests = 0;
   // Like chat: when every candidate is only blocked for a moment, wait for
   // the first one to free up instead of failing.
-  const waitUntil = Math.min(startedAt + capacity.queueWaitMs(key, config.routing.queueWaitMs), startedAt + config.routing.totalBudgetMs);
+  const waitUntil = Math.min(startedAt + capacity.queueWaitMs(key, plan.queueWaitMs(config.routing.queueWaitMs)), startedAt + config.routing.totalBudgetMs);
   const nextChoice = async () => {
     try {
       for (;;) {

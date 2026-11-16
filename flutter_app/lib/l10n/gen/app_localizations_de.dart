@@ -1195,7 +1195,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get smoothHint =>
-      'Ohne diese Einstellung antwortet NeoRouter mit voller Geschwindigkeit, bis ein Limit aufgebraucht ist, und lehnt danach ab, bis es zurückgesetzt wird. Mit ihr werden Gratis- und Abo-Limits so verteilt, dass sie den ganzen Zeitraum reichen: zu Spitzenzeiten etwas mehr Warten, später viel weniger Ablehnungen.';
+      'Gratis- und gemessene Abo-Kontingente folgen beobachteten Restmengen, Reset-Zeiten und deinem erlernten Bedarf. Müssen alle passenden Quellen Kontingent sparen, warten Anfragen oder erhalten eine Wiederholungszeit.';
 
   @override
   String get smoothSwitch => 'Limits bis zum Zurücksetzen verteilen';
@@ -1248,15 +1248,15 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get smoothHowDaily =>
-      'Tageslimits: Jede Stunde bekommt ihren Anteil am Tag, mehr zu den Zeiten, in denen du meist Anfragen schickst.';
+      'Tageslimits: Restmenge und echte Reset-Zeit berücksichtigen und Kapazität für deine üblichen Nutzungszeiten reservieren. Token-Schätzungen enthalten erlernte Ausgabelängen.';
 
   @override
   String get smoothHowPlans =>
-      'Abos (5 Stunden, eine Woche, ein Monat): nie viel schneller verbraucht, als Zeit vergangen ist.';
+      'Gemessene Abos: Verbrauch pro Anfrage lernen und zwischen Anbieter-Updates reservieren. Bezahlte Parallel-Slots haben kein zu verteilendes Kontingent.';
 
   @override
   String get smoothHowPriority =>
-      'Keys mit hoher Priorität kommen immer durch, und bezahlte Modelle sind nicht betroffen.';
+      'Keys mit hoher Priorität umgehen die Verteilung. Modelle mit Abrechnung pro Nutzung und Flatrate-Slots bleiben unbeeinflusst; Anbieter-Limits und Key-Budgets gelten weiterhin.';
 
   @override
   String get caIntro =>
@@ -5616,4 +5616,48 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get planUsage => 'Plannutzung';
+
+  @override
+  String get flatRateBilling => 'Flatrate / parallele Slots';
+
+  @override
+  String get flatRateHint =>
+      'Ein bezahltes Abo ohne Mehrkosten je Anfrage. Freie Slots werden vor anderen Quellen genutzt.';
+
+  @override
+  String get slotPlan => 'Abo-Tarif';
+
+  @override
+  String get slotOverflowPolicy => 'Wenn alle Slots belegt sind';
+
+  @override
+  String get slotOverflowAuto =>
+      'Automatisch: vergleichbare kostenlose Quelle nutzen, sonst warten';
+
+  @override
+  String get slotOverflowNow => 'Sofort andere Quelle nutzen';
+
+  @override
+  String get slotOverflowQueue => 'Zuerst auf einen Slot warten';
+
+  @override
+  String get slotMaxWait => 'Maximale Slot-Wartezeit (Sekunden)';
+
+  @override
+  String get slotCurrent => 'Aktuell belegte Slots';
+
+  @override
+  String get slotAverage => 'Durchschnittlich belegte Slots';
+
+  @override
+  String get slotPeak => 'Maximal belegte Slots';
+
+  @override
+  String get slotIdle => 'Ungenutzte Kapazität';
+
+  @override
+  String get slotObserved => 'Beobachtete Slot-Nutzung der letzten 24 Stunden';
+
+  @override
+  String get allowancePace => 'Kontingenttempo (über 1 bedeutet Reserve)';
 }

@@ -11,6 +11,7 @@ import 'main_controller.dart';
 import 'main_dashboard.dart';
 import 'main_pool.dart';
 import 'main_shared.dart';
+import 'main_slot_plans.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
 import 'src/backend_client.dart';
@@ -482,7 +483,9 @@ class _AccountRow extends StatelessWidget {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final (statusText, tone) = accountStatus(t, account);
-    final billing = account.billingMode == 'plan'
+    final billing = account.billingMode == 'flat_rate'
+        ? t.flatRateBilling
+        : account.billingMode == 'plan'
         ? t.accountPrepaidPlan
         : account.billingMode == 'plan_paid'
         ? t.accountPlanThenPaid
@@ -868,6 +871,10 @@ class _ProviderFormState extends State<_ProviderForm> {
   late final TextEditingController _headers = TextEditingController(
     text: ((_savedOptions['headers'] as Map?) ?? const <String, Object>{}).entries.map((entry) => '${entry.key}: ${entry.value}').join('\n'),
   );
+  late String _slotPlan = (_savedOptions['slotPlan'] as String?) ?? (widget.definition.billing['flatRate'] as Map?)?['defaultPlan'] as String? ?? '';
+  late String _overflow = widget.account?.raw['overflowPolicy'] as String? ?? 'auto';
+  late final _slotWait = TextEditingController(text: '${((widget.account?.raw['slotWaitMs'] ?? widget.definition.billing['slotWaitMs']) as num) / 1000}');
+  late final _concurrent = TextEditingController(text: (widget.account?.raw['limits'] as Map?)?['concurrent']?.toString() ?? '');
   late String _billing = widget.account?.billingMode ?? widget.definition.defaultBillingMode;
   late String _classification = widget.account?.classification ?? 'auto';
   bool _saving = false;
@@ -967,6 +974,7 @@ class _ProviderFormState extends State<_ProviderForm> {
       for (final entry in _fields.entries)
         if (entry.value.text.trim().isNotEmpty) entry.key: entry.value.text.trim(),
     };
+    if (_slotPlan.isNotEmpty) options['slotPlan'] = _slotPlan;
     if (_custom) {
       final manual = _manualModels.text.split(RegExp(r'[\n,]')).map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
       if (manual.isNotEmpty) options['manualModels'] = manual;
@@ -1025,6 +1033,12 @@ class _ProviderFormState extends State<_ProviderForm> {
     }
   }
 
+  Map<String, Object?> _slotBody() => <String, Object?>{
+    'concurrent': _concurrent.text.trim().isEmpty ? null : int.parse(_concurrent.text.trim()),
+    'overflowPolicy': _overflow,
+    'slotWaitMs': _slotWait.text.trim().isEmpty ? null : (double.parse(_slotWait.text.trim()) * 1000).round(),
+  };
+
   Future<void> _submit() async {
     final t = AppL10n.of(context);
     setState(() {
@@ -1034,6 +1048,14 @@ class _ProviderFormState extends State<_ProviderForm> {
     final options = _options();
     final headers = _headerMap();
     try {
+      if (_billing == 'flat_rate') {
+        final count = _concurrent.text.trim().isEmpty ? null : int.tryParse(_concurrent.text.trim());
+        final seconds = _slotWait.text.trim().isEmpty ? null : double.tryParse(_slotWait.text.trim());
+        if ((_concurrent.text.trim().isNotEmpty && (count == null || count < 1)) || (_slotWait.text.trim().isNotEmpty && (seconds == null || seconds < 0 || seconds * 1000 > (widget.definition.billing['slotMaxWaitMs'] as num)))) {
+          setState(() => _error = t.limitsInvalid);
+          return;
+        }
+      }
       if (_editing) {
         await widget.controller.api.updateAccount(widget.account!.id, <String, Object?>{
           'label': _label.text.trim(),
@@ -1043,7 +1065,8 @@ class _ProviderFormState extends State<_ProviderForm> {
           'options': options,
           'headers': headers,
           'billingMode': _billing,
-          'classification': _classification,
+          if (_billing == 'flat_rate') ..._slotBody(),
+          'classification': _billing == 'flat_rate' ? 'auto' : _classification,
         });
         if (mounted) Navigator.of(context).pop(t.saved);
         return;
@@ -1059,7 +1082,8 @@ class _ProviderFormState extends State<_ProviderForm> {
         if (options.isNotEmpty) 'options': options,
         'headers': headers,
         'billingMode': _billing,
-        if (_classification != 'auto') 'classification': _classification,
+        if (_billing == 'flat_rate') ..._slotBody(),
+        if (_classification != 'auto' && _billing != 'flat_rate') 'classification': _classification,
       });
       final validation = Map<String, dynamic>.from(result['validation'] as Map);
       final sync = result['sync'] as Map?;
@@ -1229,9 +1253,20 @@ class _ProviderFormState extends State<_ProviderForm> {
               ('free_tier', t.billingOptionFreeModels, t.billingOptionFreeModelsHint),
             if (definition.planAvailable) ('plan', t.billingOptionPlan, definition.planNote ?? t.billingOptionPlanHint),
             if (definition.planAvailable) ('plan_paid', t.billingOptionPlanPaid, t.billingOptionPlanPaidHint),
+            ('flat_rate', t.flatRateBilling, t.flatRateHint),
             ('paid', t.billingOptionPaid, t.billingOptionPaidHint),
           ])
             OptionCard(title: title, description: hint, selected: _billing == mode, onTap: () => setState(() => _billing = mode)),
+          if (_billing == 'flat_rate') ...<Widget>[
+            if ((definition.billing['flatRate'] as Map?)?['plans'] is List) DropdownButtonFormField<String>(
+              initialValue: _slotPlan,
+              decoration: InputDecoration(labelText: t.slotPlan),
+              items: <DropdownMenuItem<String>>[for (final plan in ((definition.billing['flatRate'] as Map)['plans'] as List).cast<Map>()) DropdownMenuItem(value: plan['id'] as String, child: Text('${plan['label']} · ${plan['concurrent']}'))],
+              onChanged: (value) => setState(() => _slotPlan = value ?? _slotPlan),
+            ),
+            TextField(controller: _concurrent, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: t.limitConcurrent, helperText: t.limitAutomatic)),
+            SlotOverflowControls(policy: _overflow, onChanged: (value) => setState(() => _overflow = value), wait: _slotWait),
+          ],
           if (_billing == 'free_tier' && definition.freeTierAvailable && !definition.freeTierPartial) ...<Widget>[
             const SizedBox(height: AppSpacing.xs),
             Text(t.billingFreeWarning, style: TextStyle(color: palette.textSoft, fontSize: 12.5, height: 1.45)),
@@ -1287,7 +1322,7 @@ class _ProviderFormState extends State<_ProviderForm> {
             ],
             // Overrides the automatic free/paid result for all its models (a pool
             // partner's models are always free for us, so not there).
-            if (definition.category != 'pool') ...<Widget>[
+            if (definition.category != 'pool' && _billing != 'flat_rate') ...<Widget>[
             gap,
             Row(
               children: <Widget>[
@@ -1500,6 +1535,8 @@ class _AccountLimits extends StatelessWidget {
     low.sort((a, b) => b.fraction.compareTo(a.fraction));
     final limits = (group['limits'] as List? ?? const <dynamic>[]).cast<Map>();
     final rows = <Widget>[
+      if (group['slots'] is Map) SlotUsage(usage: group['slots'] as Map),
+      if (group['allowancePace'] is num) SettingsRow(label: t.allowancePace, control: Text((group['allowancePace'] as num).toStringAsFixed(2))),
       for (final limit in limits) _LimitRow(limit: limit),
       // Plan windows get a usage bar; other probes (balances) stay plain values.
       for (final probe in probes.where((item) => '${item['metric']}'.startsWith('plan_') && item['limit'] != null))
@@ -1666,6 +1703,9 @@ class _LimitsDialog extends StatefulWidget {
 class _LimitsDialogState extends State<_LimitsDialog> {
   late final Map<String, TextEditingController> _fields;
   late final Map<String, num> _before;
+  late String _overflow = widget.account['overflowPolicy'] as String? ?? 'auto';
+  late final _slotWait = TextEditingController(text: widget.account['slotWaitMs'] == null ? '' : '${(widget.account['slotWaitMs'] as num) / 1000}');
+  bool get _flatRate => widget.account['billingMode'] == 'flat_rate';
   String? _error;
   bool _saving = false;
 
@@ -1682,6 +1722,7 @@ class _LimitsDialogState extends State<_LimitsDialog> {
 
   @override
   void dispose() {
+    _slotWait.dispose();
     for (final field in _fields.values) {
       field.dispose();
     }
@@ -1704,7 +1745,7 @@ class _LimitsDialogState extends State<_LimitsDialog> {
       }
       if (_before[metric]?.toInt() != value) body[metric] = value;
     }
-    if (body.isEmpty) {
+    if (body.isEmpty && !_flatRate) {
       Navigator.of(context).pop(false);
       return;
     }
@@ -1713,7 +1754,15 @@ class _LimitsDialogState extends State<_LimitsDialog> {
       _error = null;
     });
     try {
-      await widget.controller.api.setAccountLimits('${widget.account['id']}', body);
+      if (_flatRate) {
+        final seconds = double.tryParse(_slotWait.text.trim());
+        if (seconds == null || seconds < 0 || seconds * 1000 > (widget.account['slotMaxWaitMs'] as num)) {
+          setState(() => _error = t.limitsInvalid);
+          return;
+        }
+        await widget.controller.api.updateAccount('${widget.account['id']}', <String, Object?>{'overflowPolicy': _overflow, 'slotWaitMs': (seconds * 1000).round()});
+      }
+      if (body.isNotEmpty) await widget.controller.api.setAccountLimits('${widget.account['id']}', body);
       if (mounted) Navigator.of(context).pop(true);
     } on ApiException catch (error) {
       setState(() => _error = error.message);
@@ -1755,6 +1804,7 @@ class _LimitsDialogState extends State<_LimitsDialog> {
                 ),
                 const SizedBox(height: AppSpacing.sm),
               ],
+              if (_flatRate) SlotOverflowControls(policy: _overflow, onChanged: (value) => setState(() => _overflow = value), wait: _slotWait),
               if (_error != null) Text(_error!, style: TextStyle(color: palette.error, fontSize: 13)),
             ],
           ),

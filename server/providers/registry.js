@@ -102,9 +102,13 @@ const definitionSchema = z.object({
   // probeModels: the cheap models to try for it first.
   validate: z.union([z.literal(false), z.object({ path: z.string().optional(), chatProbe: z.boolean().optional(), probeModels: z.array(z.string()).optional() })]).optional(),
   billing: z.object({
-    defaultMode: z.enum(['free_tier', 'paid', 'plan', 'plan_paid']),
+    defaultMode: z.enum(['free_tier', 'paid', 'plan', 'plan_paid', 'flat_rate']),
     // A subscription with an included allowance this provider sells for API use.
     plan: z.object({ note: z.string() }).optional(),
+    flatRate: z.object({
+      defaultPlan: z.string(),
+      plans: z.array(z.object({ id: z.string(), label: z.string(), concurrent: z.number().int().positive() })).min(1),
+    }).optional(),
     // With billing_mode=free_tier the account has no payment method, so
     // nothing it can call is ever charged. freeTierAll covers every model;
     // freeTierModels (patterns) only the models the free tier includes.
@@ -238,6 +242,9 @@ function publicDefinition(definition) {
       source: definition.billing.source || null,
       checkedAt: definition.billing.checkedAt || null,
       // Prepaid plans: offered by the provider, or possible on any custom endpoint.
+      flatRate: definition.billing.flatRate || null,
+      slotWaitMs: require('../config/env').getConfig().routing.slotQueueWaitMs,
+      slotMaxWaitMs: require('../config/env').getConfig().routing.slotMaxWaitMs,
       planAvailable: Boolean(definition.billing.plan) || definition.editableBaseUrl,
       planNote: definition.billing.plan?.note || null,
     },

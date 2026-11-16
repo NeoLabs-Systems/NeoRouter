@@ -62,6 +62,9 @@ async function importKeys(ownerId, actorId, actor, file) {
         secret: key.secret,
         billingMode: key.billingMode,
         classification: key.classification,
+        concurrent: key.concurrent,
+        overflowPolicy: key.overflowPolicy,
+        slotWaitMs: key.slotWaitMs,
         options: key.options,
         headers: key.headers,
       }, actorId, actor);

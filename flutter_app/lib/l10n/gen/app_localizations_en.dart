@@ -1187,7 +1187,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get smoothHint =>
-      'Without this, NeoRouter answers at full speed until a limit is used up, and then turns requests away until it resets. With it, free and plan limits are spread so they last the whole period: a little more waiting at busy times, far fewer rejections later.';
+      'Free and metered plan allowances follow observed balances, reset times and your learned demand. When every eligible source needs to save allowance, requests wait or return a retry time.';
 
   @override
   String get smoothSwitch => 'Spread limits until they reset';
@@ -1238,15 +1238,15 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get smoothHowDaily =>
-      'Daily limits: each hour gets its share of the day, more at the times you usually send requests.';
+      'Daily limits: track the remaining balance and real reset time, reserving room for the hours when you usually need it. Token estimates include learned output sizes.';
 
   @override
   String get smoothHowPlans =>
-      'Plans (5 hours, a week, a month): never used much faster than the time that has passed.';
+      'Metered plans: learn how much requests spend and reserve that allowance between provider updates. Paid concurrency slots have no allowance to spread.';
 
   @override
   String get smoothHowPriority =>
-      'Keys with a high priority always get through, and paid models are not affected.';
+      'High-priority keys bypass pacing. Pay-per-use models and flat-rate slots are unaffected; provider limits and key budgets still apply.';
 
   @override
   String get caIntro =>
@@ -5578,4 +5578,49 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get planUsage => 'Plan usage';
+
+  @override
+  String get flatRateBilling => 'Flat rate / concurrency slots';
+
+  @override
+  String get flatRateHint =>
+      'A paid subscription with no incremental charge. Fill available slots before using other sources.';
+
+  @override
+  String get slotPlan => 'Subscription plan';
+
+  @override
+  String get slotOverflowPolicy => 'When slots are busy';
+
+  @override
+  String get slotOverflowAuto =>
+      'Automatic: overflow to a comparable free source, otherwise wait';
+
+  @override
+  String get slotOverflowNow => 'Overflow immediately';
+
+  @override
+  String get slotOverflowQueue => 'Wait for a slot first';
+
+  @override
+  String get slotMaxWait => 'Maximum slot wait (seconds)';
+
+  @override
+  String get slotCurrent => 'Busy slots now';
+
+  @override
+  String get slotAverage => 'Average busy slots';
+
+  @override
+  String get slotPeak => 'Peak busy slots';
+
+  @override
+  String get slotIdle => 'Idle capacity';
+
+  @override
+  String get slotObserved => 'Observed slot usage over the last 24 hours';
+
+  @override
+  String get allowancePace =>
+      'Allowance pace (above 1 means ahead of schedule)';
 }

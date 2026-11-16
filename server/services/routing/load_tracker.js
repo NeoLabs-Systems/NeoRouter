@@ -15,12 +15,14 @@ function increment(map, key, delta) {
 function lease(entry) {
   increment(byModel, entry.ref, 1);
   increment(byAccount, entry.accountId, 1);
+  require('./slot_utilization').transition(entry, byAccount.get(entry.accountId) || 0);
   let released = false;
   return () => {
     if (released) return;
     released = true;
     increment(byModel, entry.ref, -1);
     increment(byAccount, entry.accountId, -1);
+    require('./slot_utilization').transition(entry, byAccount.get(entry.accountId) || 0);
   };
 }
 

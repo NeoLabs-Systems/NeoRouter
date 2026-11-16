@@ -11,6 +11,7 @@ const accountHealth = require('./account_health');
 const profiles = require('./profiles');
 const groups = require('./groups');
 const cacheAffinity = require('./cache_affinity');
+const slotPlans = require('./slot_plans');
 const budget = require('../budget/budget_service');
 const pacing = require('../budget/pacing');
 const plans = require('./plans');
@@ -201,11 +202,11 @@ function rejection(entry, ctx, now) {
   if (planReason) return planReason;
   // An account at its (learned or documented) concurrency limit takes no more work right now.
   const parallel = concurrency.limitFor(entry, now);
-  if (parallel && loadTracker.inflight(entry).account >= parallel.limit) return 'account_busy';
+  if (parallel && loadTracker.inflight(entry).account >= parallel.limit) return slotPlans.busyReason(entry, ctx.startedAt, now);
   const quotaState = quota.evaluate(entry, inputTokens, now);
   if (quotaState.blocked) return `quota_${quotaState.blocked.metric}`;
   if (priority.heldBack(entry, key.priority)) return 'held_for_priority';
-  if (ctx.smoothing && !ctx.lastResort && smoothing.held(entry, { userId: ctx.userId, inputTokens, priority: key.priority, now })) return 'paced';
+  if (ctx.smoothing && smoothing.held(entry, { userId: ctx.userId, inputTokens, maxOutput: request.max_tokens, priority: key.priority, now })) return 'paced';
   return null;
 }
 
@@ -323,7 +324,7 @@ const REJECTION_GROUPS = [
   ['payment', ['payment_required', 'no_free_quota'], 'were refused by the provider for payment or plan reasons'],
   ['auth', ['auth_failed'], 'have a key the provider rejects'],
   ['missing', ['not_available'], 'are listed but not served by the provider right now'],
-  ['busy', ['scheduled_downtime', 'account_failing', 'account_resting', 'quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'held_for_priority', 'plan_used_up', 'kept_for_owner'], 'are used up, rate-limited or cooling down for now'],
+  ['busy', ['slot_overflow', 'scheduled_downtime', 'account_failing', 'account_resting', 'quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'held_for_priority', 'plan_used_up', 'kept_for_owner'], 'are used up, rate-limited or cooling down for now'],
   ['fit', ['no_tools', 'no_vision', 'context_too_small', 'context_unknown', 'needs_more_tokens', 'incompatible'], 'cannot handle this request (tools, images or its size)'],
   ['unsupported', ['unsupported'], 'cannot be used for this through NeoRouter yet (the provider speaks a different API for it)'],
   ['profile', ['outside_routing_group', 'below_min_intelligence', 'too_expensive', 'too_slow', 'provider_not_included', 'provider_excluded', 'model_excluded', 'kind_not_in_style'], "are left out by the routing style"],
@@ -365,7 +366,7 @@ const lastLongShot = new Map();
 // once ran out of room at this many output tokens (it may well fit this time). When nothing else can
 // take the request, a slow or weaker model that works beats failing, and
 // beats retrying connections known to be refusing (long shots).
-const PREFERENCE_REASONS = new Set(['outside_routing_group', 'too_slow', 'below_min_intelligence', 'paced', 'needs_more_tokens']);
+const PREFERENCE_REASONS = new Set(['outside_routing_group', 'too_slow', 'below_min_intelligence', 'needs_more_tokens']);
 const longShotDue = (ref, now = Date.now()) => now - (lastLongShot.get(ref) || 0) >= LONG_SHOT_GAP_MS;
 function resetLongShotsForTests() {
   lastLongShot.clear();
@@ -410,6 +411,8 @@ class RoutingPlan {
   // keepPrivate: very sensitive content, kept off pool partners.
   // shareReserve: for a partner's request, the share of capacity kept for the owner.
   constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null, taskHint = null, keepPrivate = false, shareReserve = null, sharePoolId = null, routingGroup = null, sessionId = null }) {
+    this.startedAt = Date.now();
+    this.slotWaitUntil = null;
     this.capability = capability;
     this.keepPrivate = keepPrivate;
     this.shareReserve = shareReserve;
@@ -497,11 +500,12 @@ class RoutingPlan {
   }
 
   context() {
-    return { group: this.group, keepPrivate: this.keepPrivate, shareReserve: this.shareReserve, sharePoolId: this.sharePoolId, longShot: this.longShot, lastResort: this.lastResort, accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost, smoothing: this.smoothing, userId: this.userId };
+    return { startedAt: this.startedAt, group: this.group, keepPrivate: this.keepPrivate, shareReserve: this.shareReserve, sharePoolId: this.sharePoolId, longShot: this.longShot, lastResort: this.lastResort, accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost, smoothing: this.smoothing, userId: this.userId };
   }
 
   rank({ includeRejected = false, sample = true, now = Date.now() } = {}) {
     const ctx = this.context();
+    const slotPriority = this.parsed.auto && this.entries.some((entry) => entry.isFlatRate && (!this.group || groups.contains(this.group, entry)));
     const ranked = [];
     for (const entry of this.entries) {
       if (this.tried.has(entry.ref)) continue;
@@ -555,11 +559,15 @@ class RoutingPlan {
       let value = base * quotaFactor * penalty * load;
       if (qualityProfile && features.intelligence < bestIntelligence - QUALITY_GAP) value *= QUALITY_GATE_FACTOR;
       value *= plans.factor(item.entry);
+
       if (isPeerEntry(item.entry)) value *= PEER_FACTOR;
       // Far too weak for this task: taken only when nothing better can serve.
       if (this.task && item.details.capability < weakBelow(this.need)) value *= WEAK_FOR_TASK_FACTOR;
       // A custom style's preference between free, subscription and paid models.
       item.tier = this.profile.constraints.kinds ? kindTier(this.profile.constraints.kinds, item.entry) : 0;
+      // Explicit style kind tiers still win; within each tier, use paid-for
+      // slots and expiring allowances before consuming other sources.
+      if (slotPriority) item.tier = item.tier * slotPlans.SOURCE_TIERS + slotPlans.sourceTier(item.entry, now);
       // A partner's request uses shared subscription models only when no free one can serve, and paid ones last.
       if (this.key.peer_link_id) item.tier += PARTNER_KIND_TIER[modelKind(item.entry)];
       if ((this.needs.tools && item.entry.tools === null) || (this.needs.json && item.entry.json === false)) value *= UNKNOWN_CAPABILITY_FACTOR;
@@ -573,6 +581,15 @@ class RoutingPlan {
     }
     const kinds = this.profile.constraints.kinds;
     spreadAcrossAccounts(scored);
+    // Account spreading normalizes sibling scores; apply pacing afterward
+    // so an account with little sustainable allowance keeps its penalty.
+    for (const item of scored) {
+      if (this.smoothing) {
+        const factor = smoothing.factor(item.entry, { userId: this.userId, inputTokens: this.inputTokens, maxOutput: this.request.max_tokens, priority: this.key.priority, now });
+        item.score *= factor;
+        item.details.factors.pacing = factor;
+      }
+    }
     preferCheaperEquals(scored, kinds ? (entry) => kindWeight(kinds, entry) : undefined);
     for (const item of scored) if (item.entry.ref === this.affinityRef) {
       const bonus = cacheAffinity.bonus(item.entry, this.cacheRates.get(item.entry.ref), this.inputTokens);
@@ -593,7 +610,11 @@ class RoutingPlan {
       this.setGroup(this.initialGroup);
       this.visitedGroups = new Set([this.initialGroup.name]);
     }
-    const candidates = this.rank({ now }).filter((item) => !filter || filter(item.entry));
+    const all = this.rank({ includeRejected: true, now }).filter((item) => !filter || filter(item.entry));
+    const candidates = all.filter((item) => !item.rejected);
+    const busy = all.filter((item) => item.entry.isFlatRate && (this.parsed.auto || this.primaryRefs.has(item.entry.ref)) && item.rejected === 'account_busy').map((item) => item.entry);
+    this.slotWaitUntil = slotPlans.waitUntil(busy, candidates, this.startedAt, now);
+    if (this.slotWaitUntil !== null) return null;
     if (!candidates.length) {
       if (this.advanceGroup()) return this.next({ filter, now, advancing: true });
       return null;
@@ -653,6 +674,11 @@ class RoutingPlan {
     this.need = this.profile.constraints.adaptive !== false ? neededIntelligence(this.complexity) : null;
   }
 
+  queueWaitMs(fallback) {
+    const windows = this.entries.filter((entry) => entry.isFlatRate && entry.overflowPolicy !== 'overflow').map(slotPlans.waitMs);
+    return windows.length ? Math.max(fallback, ...windows) : fallback;
+  }
+
   // A slot on any configured group can wake the request; the next draw starts
   // with the preferred group again, including after a fallback was busy.
   queueContexts() {
@@ -703,13 +729,13 @@ class RoutingPlan {
   // again, or null when none will without outside help (a daily limit, a
   // key policy, a model that cannot handle the request).
   freesUpAt(now = Date.now(), filter = null) {
-    let soonest = null;
+    let soonest = this.slotWaitUntil && this.slotWaitUntil > now ? Math.min(this.slotWaitUntil, now + BUSY_RECHECK_MS) : null;
     for (const ctx of this.queueContexts()) for (const entry of this.entries) {
       if (this.tried.has(entry.ref) || (filter && !filter(entry))) continue;
       const reason = rejection(entry, ctx, now);
       let at = null;
       if (reason === 'account_busy' || reason === 'held_for_priority') at = now + BUSY_RECHECK_MS;
-      else if (reason === 'paced') at = now + PACED_RECHECK_MS;
+      else if (reason === 'paced') at = smoothing.nextAt(entry, { userId: this.userId, inputTokens: this.inputTokens, maxOutput: this.request.max_tokens, priority: this.key.priority, now }) || now + PACED_RECHECK_MS;
       else if (SHORT_COOLDOWNS.has(reason)) at = stats.availability(entry.ref, now).until || now + BUSY_RECHECK_MS;
       else if (reason && reason.startsWith('quota_')) {
         const blocked = quota.evaluate(entry, this.inputTokens, now).blocked;

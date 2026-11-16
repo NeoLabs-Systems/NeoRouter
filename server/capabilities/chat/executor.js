@@ -477,11 +477,12 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
   // It only waits when a candidate frees up within the window: a model out
   // for the day is no reason to keep the client hanging.
   const ensureRunning = async () => {
-    const queueMs = peer ? PEER_QUEUE_MS : capacity.queueWaitMs(key, config.routing.queueWaitMs);
+    const configuredQueueMs = plan.queueWaitMs(config.routing.queueWaitMs);
+    const queueMs = peer ? PEER_QUEUE_MS : capacity.queueWaitMs(key, configuredQueueMs);
     const waitUntil = Math.min(Date.now() + queueMs, startedAt + config.routing.totalBudgetMs);
     // A model that works and is only full right now is worth the full wait
     // even when requests are short of capacity: its slots free as it answers.
-    const busyUntil = peer ? waitUntil : Math.min(Date.now() + config.routing.queueWaitMs, startedAt + config.routing.totalBudgetMs);
+    const busyUntil = peer ? waitUntil : Math.min(Date.now() + configuredQueueMs, startedAt + config.routing.totalBudgetMs);
     try {
       while (!running.size) {
         if (startNext()) return true;

@@ -33,6 +33,12 @@ function getConfig() {
     maxBodyBytes: integer('NEOROUTER_MAX_BODY_BYTES', 32 * 1024 * 1024, { min: 1024 }),
     upstreamTimeoutMs: integer('NEOROUTER_UPSTREAM_TIMEOUT_MS', 120_000, { min: 1000 }),
     routing: Object.freeze({
+      slotOverflowReserveMs: integer('NEOROUTER_SLOT_OVERFLOW_RESERVE_MS', 1000, { min: 0 }),
+      slotMaxWaitMs: 300000,
+      slotQueueWaitMs: integer('NEOROUTER_SLOT_QUEUE_WAIT_MS', 45000, { min: 0, max: 300000 }),
+      slotComparableGap: 0.1,
+      slotUsageBucketMs: 60000,
+      slotUsageWindowMs: 86400000,
       maxAttempts: integer('NEOROUTER_ROUTING_MAX_ATTEMPTS', 8, { min: 1, max: 30 }),
       totalBudgetMs: integer('NEOROUTER_ROUTING_TOTAL_BUDGET_MS', 300_000, { min: 1000 }),
       cacheAffinityTtlMs: integer('NEOROUTER_CACHE_AFFINITY_TTL_MS', 30 * 60_000, { min: 1000 }),

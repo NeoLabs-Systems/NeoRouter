@@ -94,8 +94,10 @@ async function exportKeys(userId, credentials) {
       label: row.label,
       baseUrl: row.base_url,
       secret: decryptString(row.secret_encrypted),
-      billingMode: row.prepaid === 2 ? 'plan_paid' : row.prepaid ? 'plan' : row.billing_mode,
+      billingMode: require('../providers/billing_modes').publicBilling(row),
       classification: row.classification || 'auto',
+      overflowPolicy: row.overflow_policy, slotWaitMs: row.slot_wait_ms,
+      concurrent: require('../quota/account_limits').get(row.id).concurrent ?? null,
       ...(Object.keys(options).length ? { options } : {}),
       ...(headers ? { headers } : {}),
     };

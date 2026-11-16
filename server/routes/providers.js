@@ -51,9 +51,12 @@ const accountInput = z.object({
   }).catchall(z.string().max(512)).optional(),
   headers: z.record(z.string().max(2048)).optional(),
   // 'plan': a prepaid subscription; 'plan_paid': the plan, then pay per use.
-  billingMode: z.enum(['free_tier', 'paid', 'plan', 'plan_paid']).optional(),
+  billingMode: z.enum(['free_tier', 'paid', 'plan', 'plan_paid', 'flat_rate']).optional(),
   // Overrides what NeoRouter worked out for all its models.
   classification: z.enum(['auto', 'free', 'paid']).optional(),
+  overflowPolicy: z.enum(['auto', 'overflow', 'queue']).optional(),
+  slotWaitMs: z.number().int().min(0).max(require('../config/env').getConfig().routing.slotMaxWaitMs).nullable().optional(),
+  concurrent: z.number().int().positive().nullable().optional(),
 });
 
 // ChatGPT (Codex) sign-in with a device code: start, then poll until the
@@ -151,7 +154,7 @@ router.post('/accounts', requirePermission('providers.manage'), validate(account
 }));
 
 // A key file exported from NeoRouter (Settings → export saved API keys).
-const importedKey = accountInput.pick({ definitionId: true, label: true, baseUrl: true, options: true, headers: true, billingMode: true, classification: true })
+const importedKey = accountInput.pick({ definitionId: true, label: true, baseUrl: true, options: true, headers: true, billingMode: true, classification: true, concurrent: true, overflowPolicy: true, slotWaitMs: true })
   .extend({ secret: z.string().min(1).max(4096) });
 router.post('/accounts/import', requirePermission('providers.manage'), slidingWindow({ windowMs: 60_000, limit: 5 }), validate(z.object({
   kind: z.literal(keyImport.KIND),
