@@ -8071,6 +8071,12 @@ abstract class AppL10n {
   /// **'{models} more free models publish no limit and are not counted.'**
   String homeCapacityUnknown(String models);
 
+  /// No description provided for @homeCapacityObserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Actually used: {best} on your busiest free day, {average} on an average day (last 30 days).'**
+  String homeCapacityObserved(String best, String average);
+
   /// No description provided for @homeCapacityNone.
   ///
   /// In en, this message translates to:

@@ -4615,6 +4615,11 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String homeCapacityObserved(String best, String average) {
+    return 'Actually used: $best on your busiest free day, $average on an average day (last 30 days).';
+  }
+
+  @override
   String get homeCapacityNone =>
       'None of your free models has a known daily limit yet, so there is no daily total.';
 

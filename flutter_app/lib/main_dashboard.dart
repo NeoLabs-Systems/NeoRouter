@@ -466,6 +466,9 @@ class _CapacityCard extends StatelessWidget {
     final providers = (capacity['providersCounted'] as num?)?.toInt() ?? 0;
     final uncounted = (capacity['modelsWithoutLimit'] as num?)?.toInt() ?? 0;
     final perMinute = (capacity['tokensPerMinuteOnly'] as num?)?.toInt() ?? 0;
+    final observed = capacity['observed'] as Map? ?? const {};
+    final bestDay = (observed['bestDay'] as num?)?.toInt() ?? 0;
+    final averageDay = (observed['averageDay'] as num?)?.toInt() ?? 0;
     return AppCard(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -491,6 +494,7 @@ class _CapacityCard extends StatelessWidget {
                   Text(t.homeCapacityCaption(formatCount(perHour), '$providers'), style: TextStyle(color: palette.textSoft, height: 1.45)),
                 ],
                 if (perMinute > 0) ...<Widget>[const SizedBox(height: 4), Text(t.homeCapacityPerMinute(formatCount(perMinute)), style: TextStyle(color: palette.textSoft, fontSize: 13, height: 1.4))],
+                if (bestDay > 0) ...<Widget>[const SizedBox(height: 8), Text(t.homeCapacityObserved(formatCount(bestDay), formatCount(averageDay)), style: TextStyle(color: palette.text, fontSize: 13, height: 1.4))],
                 if (uncounted > 0) ...<Widget>[const SizedBox(height: 4), Text(t.homeCapacityUnknown('$uncounted'), style: TextStyle(color: palette.textMuted, fontSize: 12.5))],
               ],
             ),

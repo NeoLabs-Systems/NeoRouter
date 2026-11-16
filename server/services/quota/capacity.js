@@ -18,17 +18,34 @@ function tokensPerRequest(userId) {
 // A scope's known limits per day and per minute, in requests and in tokens.
 // A published token limit wins; otherwise requests are turned into tokens.
 function limitsOf(scope, perRequest) {
-  const limits = quota.effectiveLimits(scope);
+  const limits = { ...quota.effectiveLimits(scope) };
+  // Some providers (Cerebras on paid keys) report a "daily" limit that is just
+  // the minute limit times 1440. That is no cap at all, and adding it as one
+  // made the total reach hundreds of millions of tokens; treat it as per minute.
+  const stretched = (day, minute) => limits[day] && limits[minute] && limits[day].value >= limits[minute].value * 1440 * 0.9;
+  if (stretched('rpd', 'rpm')) delete limits.rpd;
+  if (stretched('tpd', 'tpm')) delete limits.tpd;
   const tokens = (tokenLimit, requestLimit) => {
     if (tokenLimit !== undefined) return requestLimit === undefined ? tokenLimit.value : Math.min(tokenLimit.value, requestLimit.value * perRequest);
     return requestLimit === undefined ? null : requestLimit.value * perRequest;
   };
-  return {
-    perDay: limits.rpd?.value ?? null,
-    perMinute: limits.rpm?.value ?? null,
-    tokensPerDay: limits.rpd || limits.tpd ? tokens(limits.tpd, limits.rpd) : null,
-    tokensPerMinute: limits.rpm || limits.tpm ? tokens(limits.tpm, limits.rpm) : null,
-  };
+  const tokensPerMinute = limits.rpm || limits.tpm ? tokens(limits.tpm, limits.rpm) : null;
+  let tokensPerDay = limits.rpd || limits.tpd ? tokens(limits.tpd, limits.rpd) : null;
+  // A day can never hold more than the minute limit allows all day long:
+  // Gemma's 14,400 requests a day at 15,000 tokens a minute is 21.6M, not 44M.
+  if (tokensPerDay !== null && tokensPerMinute !== null) tokensPerDay = Math.min(tokensPerDay, tokensPerMinute * 1440);
+  let perDay = limits.rpd?.value ?? null;
+  if (perDay !== null && limits.rpm) perDay = Math.min(perDay, limits.rpm.value * 1440);
+  return { perDay, perMinute: limits.rpm?.value ?? null, tokensPerDay, tokensPerMinute };
+}
+
+// Learned from real traffic: the most free tokens actually answered in one
+// day over the last month, and the average over the active days.
+function observedFree(userId) {
+  const row = getDatabase().prepare(`SELECT MAX(tokens) best, AVG(tokens) average, COUNT(*) days FROM (
+      SELECT date(created_at / 1000, 'unixepoch') day, SUM(input_tokens + output_tokens) tokens FROM requests
+      WHERE user_id = ? AND created_at >= ? AND status = 'success' AND is_free = 1 GROUP BY day)`).get(userId, Date.now() - HISTORY_MS);
+  return { bestDay: Math.round(row?.best || 0), averageDay: Math.round(row?.average || 0), days: row?.days || 0 };
 }
 
 /**
@@ -94,7 +111,9 @@ function freeCapacity(userId) {
     // Free models whose provider publishes no limit we know of: not counted.
     modelsWithoutLimit: unlimitedModels,
     providersWithoutLimit: unknown.size,
+    // What the free models really delivered, next to what the limits allow.
+    observed: observedFree(userId),
   };
 }
 
-module.exports = { freeCapacity };
+module.exports = { freeCapacity, limitsOf };

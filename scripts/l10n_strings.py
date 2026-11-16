@@ -1379,6 +1379,7 @@ S = {
   'homeCapacityCaption': ('What your free models could handle if used non-stop: about {hour} tokens an hour, from the usage limits of {providers} providers.', 'So viel könnten deine Gratis-Modelle im Dauerbetrieb verarbeiten: etwa {hour} Tokens pro Stunde, nach den Nutzungslimits von {providers} Anbietern.'),
   'homeCapacityPerMinute': ('Plus up to {count} tokens a minute from providers that only publish a per-minute limit.', 'Dazu bis zu {count} Tokens pro Minute von Anbietern, die nur ein Minutenlimit nennen.'),
   'homeCapacityUnknown': ('{models} more free models publish no limit and are not counted.', '{models} weitere Gratis-Modelle nennen kein Limit und sind nicht mitgezählt.'),
+  'homeCapacityObserved': ('Actually used: {best} on your busiest free day, {average} on an average day (last 30 days).', 'Tatsächlich genutzt: {best} am stärksten Gratis-Tag, {average} an einem durchschnittlichen Tag (letzte 30 Tage).'),
   'homeCapacityNone': ('None of your free models has a known daily limit yet, so there is no daily total.', 'Für keines deiner Gratis-Modelle ist bisher ein Tageslimit bekannt, daher gibt es keine Tagessumme.'),
 
   # key limits

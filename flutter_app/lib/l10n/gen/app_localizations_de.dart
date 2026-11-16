@@ -4643,6 +4643,11 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
+  String homeCapacityObserved(String best, String average) {
+    return 'Tatsächlich genutzt: $best am stärksten Gratis-Tag, $average an einem durchschnittlichen Tag (letzte 30 Tage).';
+  }
+
+  @override
   String get homeCapacityNone =>
       'Für keines deiner Gratis-Modelle ist bisher ein Tageslimit bekannt, daher gibt es keine Tagessumme.';
 

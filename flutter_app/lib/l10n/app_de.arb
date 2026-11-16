@@ -1329,6 +1329,7 @@
   "homeCapacityCaption": "So viel könnten deine Gratis-Modelle im Dauerbetrieb verarbeiten: etwa {hour} Tokens pro Stunde, nach den Nutzungslimits von {providers} Anbietern.",
   "homeCapacityPerMinute": "Dazu bis zu {count} Tokens pro Minute von Anbietern, die nur ein Minutenlimit nennen.",
   "homeCapacityUnknown": "{models} weitere Gratis-Modelle nennen kein Limit und sind nicht mitgezählt.",
+  "homeCapacityObserved": "Tatsächlich genutzt: {best} am stärksten Gratis-Tag, {average} an einem durchschnittlichen Tag (letzte 30 Tage).",
   "homeCapacityNone": "Für keines deiner Gratis-Modelle ist bisher ein Tageslimit bekannt, daher gibt es keine Tagessumme.",
   "keyLimitsTitle": "Limits",
   "keyNoLimitHint": "Lass ein Feld leer für kein Limit.",
