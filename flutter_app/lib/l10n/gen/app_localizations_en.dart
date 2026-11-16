@@ -5568,6 +5568,37 @@ class AppL10nEn extends AppL10n {
   String get routingGroupNone => 'None';
 
   @override
+  String get routingGroupEdit => 'Edit group';
+
+  @override
+  String get routingGroupsEmpty =>
+      'No groups yet. A group sends one kind of work, such as an agent\'s helpers, to the plans you choose.';
+
+  @override
+  String get routingGroupNameHint =>
+      'Lowercase letters, digits, - and _. Cannot be changed later.';
+
+  @override
+  String get routingGroupNameInvalid =>
+      'Use lowercase letters, digits, - and _ only, starting with a letter or digit.';
+
+  @override
+  String get routingGroupMinimumInvalid =>
+      'Enter a number from 0 to 1, or leave it empty.';
+
+  @override
+  String get routingGroupMembersMissing =>
+      'Choose at least one account or model pattern.';
+
+  @override
+  String get routingGroupDeleteTitle => 'Delete this group?';
+
+  @override
+  String routingGroupDeleteMessage(String name) {
+    return 'Keys and apps that use pool:$name will route normally again.';
+  }
+
+  @override
   String get cachedInputTokens => 'Cached input tokens';
 
   @override

@@ -9733,6 +9733,54 @@ abstract class AppL10n {
   /// **'None'**
   String get routingGroupNone;
 
+  /// No description provided for @routingGroupEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit group'**
+  String get routingGroupEdit;
+
+  /// No description provided for @routingGroupsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups yet. A group sends one kind of work, such as an agent\'s helpers, to the plans you choose.'**
+  String get routingGroupsEmpty;
+
+  /// No description provided for @routingGroupNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowercase letters, digits, - and _. Cannot be changed later.'**
+  String get routingGroupNameHint;
+
+  /// No description provided for @routingGroupNameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Use lowercase letters, digits, - and _ only, starting with a letter or digit.'**
+  String get routingGroupNameInvalid;
+
+  /// No description provided for @routingGroupMinimumInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a number from 0 to 1, or leave it empty.'**
+  String get routingGroupMinimumInvalid;
+
+  /// No description provided for @routingGroupMembersMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one account or model pattern.'**
+  String get routingGroupMembersMissing;
+
+  /// No description provided for @routingGroupDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this group?'**
+  String get routingGroupDeleteTitle;
+
+  /// No description provided for @routingGroupDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Keys and apps that use pool:{name} will route normally again.'**
+  String routingGroupDeleteMessage(String name);
+
   /// No description provided for @cachedInputTokens.
   ///
   /// In en, this message translates to:

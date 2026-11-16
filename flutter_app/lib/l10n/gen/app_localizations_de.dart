@@ -5606,6 +5606,37 @@ class AppL10nDe extends AppL10n {
   String get routingGroupNone => 'Keine';
 
   @override
+  String get routingGroupEdit => 'Gruppe bearbeiten';
+
+  @override
+  String get routingGroupsEmpty =>
+      'Noch keine Gruppen. Eine Gruppe schickt eine Art von Arbeit, etwa die Helfer eines Agenten, an die Tarife deiner Wahl.';
+
+  @override
+  String get routingGroupNameHint =>
+      'Kleinbuchstaben, Ziffern, - und _. Lässt sich später nicht ändern.';
+
+  @override
+  String get routingGroupNameInvalid =>
+      'Nur Kleinbuchstaben, Ziffern, - und _, beginnend mit Buchstabe oder Ziffer.';
+
+  @override
+  String get routingGroupMinimumInvalid =>
+      'Gib eine Zahl von 0 bis 1 ein oder lass das Feld leer.';
+
+  @override
+  String get routingGroupMembersMissing =>
+      'Wähle mindestens ein Konto oder Modellmuster.';
+
+  @override
+  String get routingGroupDeleteTitle => 'Diese Gruppe löschen?';
+
+  @override
+  String routingGroupDeleteMessage(String name) {
+    return 'Schlüssel und Apps, die pool:$name nutzen, werden wieder normal geroutet.';
+  }
+
+  @override
   String get cachedInputTokens => 'Eingabetokens aus dem Cache';
 
   @override

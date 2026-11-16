@@ -110,3 +110,21 @@ test('Anthropic cache breakpoints and usage survive JSON and streaming translati
   for await (const chunk of anthropic.streamToCanonical(events(), 'm')) chunks.push(chunk);
   assert.deepEqual(chunks.at(-1).usage, completion.usage);
 });
+
+test('full paid slots with nothing free in the group fall through to the fallback group before waiting', () => {
+  const load = require('../../server/services/routing/load_tracker');
+  const limits = require('../../server/services/quota/account_limits');
+  db.prepare("INSERT INTO provider_accounts (id, user_id, definition_id, slug, label, billing_mode) VALUES ('flat', 'u', 'openai', 'flat', 'flat', 'paid'), ('spare', 'u', 'openai', 'spare', 'spare', 'paid')").run();
+  for (const id of ['flat', 'spare']) db.prepare("INSERT INTO models (account_id, model_id, canonical_id, price_in, price_out, available) VALUES (?, 'm', 'm', 1, 2, 1)").run(id);
+  groups.save('u', { name: 'spill', accounts: ['spare'] });
+  groups.save('u', { name: 'slots', accounts: ['flat'], fallback: 'spill' });
+  limits.set('flat', { concurrent: 1 });
+  const plan = makePlan('pool:slots');
+  const flat = plan.entries.find((entry) => entry.accountId === 'flat');
+  for (const entry of plan.entries) if (entry.accountId === 'flat') { entry.isFlatRate = true; entry.overflowPolicy = 'auto'; }
+  const release = load.lease(flat);
+  try {
+    const choice = plan.next();
+    assert.equal(choice?.entry.accountId, 'spare');
+  } finally { release(); limits.set('flat', { concurrent: null }); }
+});

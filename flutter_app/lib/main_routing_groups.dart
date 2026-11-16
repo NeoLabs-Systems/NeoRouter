@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
 import 'main_shared.dart';
+import 'main_theme.dart';
 import 'src/models.dart';
 
 class RoutingGroups extends StatefulWidget {
@@ -15,6 +16,8 @@ class RoutingGroups extends StatefulWidget {
 
 class _RoutingGroupsState extends State<RoutingGroups> {
   List<Map<String, dynamic>> _groups = [];
+  Map<String, String> _profileNames = {};
+  bool _loaded = false;
   String? _error;
 
   @override
@@ -26,9 +29,14 @@ class _RoutingGroupsState extends State<RoutingGroups> {
   Future<void> _load() async {
     try {
       final groups = await widget.controller.api.routingGroups();
+      final profiles = await widget.controller.api.profiles();
       if (mounted) {
         setState(() {
           _groups = groups;
+          _profileNames = {
+            for (final profile in profiles) profile.id: profile.name,
+          };
+          _loaded = true;
           _error = null;
         });
       }
@@ -59,25 +67,39 @@ class _RoutingGroupsState extends State<RoutingGroups> {
         Text(t.routingGroupsHint),
         if (_error != null) InlineError(message: _error!),
         const SizedBox(height: 12),
-        SettingsCardList(
-          children: [
-            for (final group in _groups)
-              ListTile(
-                title: Text('pool:${group['name']}'),
-                subtitle: Text(
-                  [
-                    if (group['profile'] != null) '${group['profile']}',
-                    if (group['fallback'] != null) '→ ${group['fallback']}',
-                    for (final plan in (group['plans'] as List? ?? []))
-                      '${plan['name']}: ${plan['usedShare'] == null ? t.planUsageUnknown : '${((plan['usedShare'] as num) * 100).round()} % ${t.planUsage}'}',
-                  ].join(' · '),
+        if (_loaded && _groups.isEmpty && _error == null)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              t.routingGroupsEmpty,
+              style: TextStyle(color: neoRouterPaletteOf(context).textSoft),
+            ),
+          ),
+        if (_groups.isNotEmpty)
+          SettingsCardList(
+            children: [
+              for (final group in _groups)
+                ListTile(
+                  title: Text('pool:${group['name']}'),
+                  subtitle: Text(
+                    [
+                      if (group['profile'] != null)
+                        _profileNames[group['profile']] ??
+                            '${group['profile']}',
+                      if (group['fallback'] != null) '→ ${group['fallback']}',
+                      for (final plan in (group['plans'] as List? ?? []))
+                        '${plan['name']}: ${plan['usedShare'] == null ? t.planUsageUnknown : '${t.planUsage} ${((plan['usedShare'] as num) * 100).round()} %'}',
+                    ].join(' · '),
+                  ),
+                  trailing: widget.controller.can('routing.edit')
+                      ? const Icon(Icons.chevron_right)
+                      : null,
+                  onTap: widget.controller.can('routing.edit')
+                      ? () => _edit(group)
+                      : null,
                 ),
-                onTap: widget.controller.can('routing.edit')
-                    ? () => _edit(group)
-                    : null,
-              ),
-          ],
-        ),
+            ],
+          ),
         if (widget.controller.can('routing.edit'))
           Align(
             alignment: Alignment.centerLeft,
@@ -155,7 +177,44 @@ class _GroupEditorState extends State<_GroupEditor> {
     super.dispose();
   }
 
+  static final _namePattern = RegExp(r'^[a-z0-9][a-z0-9_-]{0,79}$');
+
+  String? _validate(AppL10n t) {
+    if (widget.group == null && !_namePattern.hasMatch(_name.text.trim())) {
+      return t.routingGroupNameInvalid;
+    }
+    final minimum = _minimum.text.trim().replaceAll(',', '.');
+    if (minimum.isNotEmpty) {
+      final value = double.tryParse(minimum);
+      if (value == null || value < 0 || value > 1) {
+        return t.routingGroupMinimumInvalid;
+      }
+    }
+    final hasModels = _models.text
+        .split('\n')
+        .any((line) => line.trim().isNotEmpty);
+    if (_selected.isEmpty && !hasModels) return t.routingGroupMembersMissing;
+    return null;
+  }
+
   Future<void> _save({bool remove = false}) async {
+    final t = AppL10n.of(context);
+    if (remove) {
+      final confirmed = await confirmAction(
+        context,
+        title: t.routingGroupDeleteTitle,
+        message: t.routingGroupDeleteMessage('${widget.group!['name']}'),
+        confirmLabel: t.delete,
+        cancelLabel: t.cancel,
+      );
+      if (!confirmed || !mounted) return;
+    } else {
+      final invalid = _validate(t);
+      if (invalid != null) {
+        setState(() => _error = invalid);
+        return;
+      }
+    }
     setState(() {
       _saving = true;
       _error = null;
@@ -178,7 +237,7 @@ class _GroupEditorState extends State<_GroupEditor> {
           'fallback': _fallback.isEmpty ? null : _fallback,
           'minIntelligence': _minimum.text.trim().isEmpty
               ? null
-              : double.parse(_minimum.text.trim()),
+              : double.parse(_minimum.text.trim().replaceAll(',', '.')),
         }, id: widget.group?['id'] as String?);
       }
       if (mounted) Navigator.of(context).pop();
@@ -196,7 +255,9 @@ class _GroupEditorState extends State<_GroupEditor> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     return AlertDialog(
-      title: Text(t.routingGroups),
+      title: Text(
+        widget.group == null ? t.createRoutingGroup : t.routingGroupEdit,
+      ),
       content: SizedBox(
         width: 520,
         child: SingleChildScrollView(
@@ -208,7 +269,14 @@ class _GroupEditorState extends State<_GroupEditor> {
               TextField(
                 controller: _name,
                 enabled: widget.group == null,
-                decoration: InputDecoration(labelText: t.routingGroupName),
+                decoration: InputDecoration(
+                  labelText: t.routingGroupName,
+                  prefixText: 'pool:',
+                  helperText: widget.group == null
+                      ? t.routingGroupNameHint
+                      : null,
+                  helperMaxLines: 2,
+                ),
               ),
               const SizedBox(height: 12),
               Text(t.routingGroupAccounts),
@@ -259,7 +327,14 @@ class _GroupEditorState extends State<_GroupEditor> {
                   onChanged: (value) => setState(() => _profile = value ?? ''),
                 ),
               DropdownButtonFormField<String>(
-                initialValue: _fallback,
+                initialValue:
+                    widget.groups.any(
+                      (group) =>
+                          group['name'] == _fallback &&
+                          group['id'] != widget.group?['id'],
+                    )
+                    ? _fallback
+                    : '',
                 decoration: InputDecoration(labelText: t.routingGroupFallback),
                 items: [
                   DropdownMenuItem(value: '', child: Text(t.routingGroupNone)),

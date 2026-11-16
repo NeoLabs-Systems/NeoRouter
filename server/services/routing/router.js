@@ -614,7 +614,17 @@ class RoutingPlan {
     const candidates = all.filter((item) => !item.rejected);
     const busy = all.filter((item) => item.entry.isFlatRate && (this.parsed.auto || this.primaryRefs.has(item.entry.ref)) && item.rejected === 'account_busy').map((item) => item.entry);
     this.slotWaitUntil = slotPlans.waitUntil(busy, candidates, this.startedAt, now);
-    if (this.slotWaitUntil !== null) return null;
+    if (this.slotWaitUntil !== null) {
+      // Full paid slots and nothing free in this group: a fallback group that
+      // can answer now comes before waiting, unless a plan is set to queue.
+      const waitUntil = this.slotWaitUntil;
+      if (!candidates.length && !busy.some((entry) => entry.overflowPolicy === 'queue') && this.advanceGroup()) {
+        const choice = this.next({ filter, now, advancing: true });
+        if (choice) return choice;
+      }
+      this.slotWaitUntil = waitUntil;
+      return null;
+    }
     if (!candidates.length) {
       if (this.advanceGroup()) return this.next({ filter, now, advancing: true });
       return null;

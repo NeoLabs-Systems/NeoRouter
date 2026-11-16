@@ -48,7 +48,10 @@ class SlotOverflowControls extends StatelessWidget {
           TextField(
             controller: wait,
             keyboardType: TextInputType.number,
-            decoration: InputDecoration(labelText: t.slotMaxWait),
+            decoration: InputDecoration(
+              labelText: t.slotMaxWait,
+              suffixText: 's',
+            ),
           ),
       ],
     );
@@ -65,7 +68,7 @@ class SlotUsage extends StatelessWidget {
     final palette = neoRouterPaletteOf(context);
     final series = (usage['series'] as List? ?? []).cast<Map>();
     String value(Object? number) =>
-        number is num ? number.toStringAsFixed(2) : '—';
+        number is num ? number.toStringAsFixed(1) : '—';
     final peak = (usage['peakBusy'] as num? ?? 0).toDouble();
     final limit = (usage['limit'] as num?)?.toDouble();
     final origin = series.isEmpty
@@ -82,7 +85,7 @@ class SlotUsage extends StatelessWidget {
           label: t.slotAverage,
           control: Text(value(usage['averageBusy'])),
         ),
-        SettingsRow(label: t.slotPeak, control: Text('$peak')),
+        SettingsRow(label: t.slotPeak, control: Text('${peak.round()}')),
         SettingsRow(
           label: t.slotIdle,
           control: Text(
