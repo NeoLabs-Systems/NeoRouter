@@ -5765,4 +5765,68 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get allowancePace => 'Kontingenttempo (über 1 bedeutet Reserve)';
+
+  @override
+  String get keyExpiryTitle => 'Gültigkeitsdauer';
+
+  @override
+  String get keyExpiryHint =>
+      'Ab dem gewählten Zeitpunkt nimmt dieser Key keine neuen Anfragen mehr an. Zeiten werden in deiner lokalen Zeitzone angezeigt.';
+
+  @override
+  String get keyExpiryNever => 'Kein Ablaufdatum';
+
+  @override
+  String keyExpiryDays(String days) {
+    return 'In $days Tagen';
+  }
+
+  @override
+  String get keyExpiryCustom => 'Datum und Uhrzeit wählen';
+
+  @override
+  String get keyExpiryChange => 'Datum und Uhrzeit ändern';
+
+  @override
+  String keyExpiryAt(String date) {
+    return 'Läuft am $date ab';
+  }
+
+  @override
+  String keyExpiredAt(String date) {
+    return 'Am $date abgelaufen';
+  }
+
+  @override
+  String get keyExpired => 'Abgelaufen';
+
+  @override
+  String get keyExpiringSoon => 'Läuft bald ab';
+
+  @override
+  String get keyExpiryInvalid =>
+      'Wähle ein Datum und eine Uhrzeit in der Zukunft.';
+
+  @override
+  String get keyExpiryRenewHint =>
+      'Wähle ein zukünftiges Ablaufdatum oder keinen Ablauf, um diesen Key wieder zu verwenden. Sein Geheimnis bleibt gleich.';
+
+  @override
+  String get keyExpiryRenewSave =>
+      'Speichern aktiviert den bestehenden Key wieder.';
+
+  @override
+  String expiredKeys(String count) {
+    return 'Abgelaufene Keys ($count)';
+  }
+
+  @override
+  String get keyRenewEdit => 'Verlängern / bearbeiten';
+
+  @override
+  String get noActiveKeysTitle => 'Keine aktiven API-Keys';
+
+  @override
+  String get noActiveKeysHint =>
+      'Erstelle einen Key oder verlängere unten einen abgelaufenen Key.';
 }

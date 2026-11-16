@@ -5726,4 +5726,66 @@ class AppL10nEn extends AppL10n {
   @override
   String get allowancePace =>
       'Allowance pace (above 1 means ahead of schedule)';
+
+  @override
+  String get keyExpiryTitle => 'Expiration';
+
+  @override
+  String get keyExpiryHint =>
+      'This key stops accepting new requests at the selected time. Times are shown in your local time zone.';
+
+  @override
+  String get keyExpiryNever => 'No expiration';
+
+  @override
+  String keyExpiryDays(String days) {
+    return '$days days from now';
+  }
+
+  @override
+  String get keyExpiryCustom => 'Custom date and time';
+
+  @override
+  String get keyExpiryChange => 'Change date and time';
+
+  @override
+  String keyExpiryAt(String date) {
+    return 'Expires $date';
+  }
+
+  @override
+  String keyExpiredAt(String date) {
+    return 'Expired $date';
+  }
+
+  @override
+  String get keyExpired => 'Expired';
+
+  @override
+  String get keyExpiringSoon => 'Expires soon';
+
+  @override
+  String get keyExpiryInvalid => 'Choose a date and time in the future.';
+
+  @override
+  String get keyExpiryRenewHint =>
+      'Choose a future expiry or no expiration to use this key again. Its secret stays the same.';
+
+  @override
+  String get keyExpiryRenewSave =>
+      'Saving this change reactivates the existing key.';
+
+  @override
+  String expiredKeys(String count) {
+    return 'Expired keys ($count)';
+  }
+
+  @override
+  String get keyRenewEdit => 'Renew / edit';
+
+  @override
+  String get noActiveKeysTitle => 'No active API keys';
+
+  @override
+  String get noActiveKeysHint => 'Create a key or renew an expired key below.';
 }

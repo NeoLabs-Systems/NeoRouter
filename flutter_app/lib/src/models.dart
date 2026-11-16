@@ -244,6 +244,7 @@ class RouterKey {
   List<String> get allowedModels => _strings(raw['allowedModels']);
   String get profile => raw['profile'] as String? ?? 'balanced';
   String? get expiresAt => raw['expiresAt'] as String?;
+  bool get expired => raw['expired'] == true || (expiresAt != null && !(DateTime.tryParse(expiresAt!)?.isAfter(DateTime.now()) ?? true));
   bool get revoked => raw['revoked'] == true;
   String? get lastUsedAt => raw['lastUsedAt'] as String?;
   TeamUser? get createdBy => TeamUser.from(raw['createdBy']);

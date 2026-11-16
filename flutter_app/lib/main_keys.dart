@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
 import 'main_model_picker.dart';
+import 'main_key_expiry.dart';
 import 'main_routing.dart';
 import 'main_shared.dart';
 import 'main_pool.dart';
@@ -33,38 +36,50 @@ class _KeysScreenState extends State<KeysScreen> {
   bool _loading = true;
   String? _error;
   bool _showRevoked = false;
+  bool _showExpired = false;
+  Timer? _expiryRefresh;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _expiryRefresh = Timer.periodic(const Duration(minutes: 1), (_) { if (mounted) setState(() {}); });
+  }
+
+  @override
+  void dispose() {
+    _expiryRefresh?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
+    if (!mounted) return;
     setState(() => _error = null);
     try {
       final results = await Future.wait(<Future<Object>>[widget.controller.api.keys(), widget.controller.api.profiles()]);
+      if (!mounted) return;
       setState(() {
         _keys = results[0] as List<RouterKey>;
         _profiles = results[1] as List<RoutingProfile>;
       });
     } catch (error) {
-      setState(() => _error = '$error');
+      if (mounted) setState(() => _error = '$error');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _open([RouterKey? key]) async {
-    final secret = await showDialog<String>(
+    final created = await showDialog<({RouterKey key, String secret})>(
       context: context,
       builder: (_) => _KeyForm(controller: widget.controller, profiles: _profiles, existing: key),
     );
+    if (!mounted) return;
     await _load();
-    if (secret != null && mounted) await _showSecret(secret);
+    if (created != null && mounted) await _showSecret(created.secret, created.key.expiresAt);
   }
 
-  Future<void> _showSecret(String secret) async {
+  Future<void> _showSecret(String secret, String? expiresAt) async {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     await showDialog<void>(
@@ -78,6 +93,8 @@ class _KeysScreenState extends State<KeysScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              KeyExpiryStatus(expiresAt: expiresAt == null ? null : DateTime.tryParse(expiresAt)),
+              const SizedBox(height: AppSpacing.sm),
               Text(t.keySecretBody, style: TextStyle(color: palette.textSoft, height: 1.45)),
               const SizedBox(height: AppSpacing.md),
               Container(
@@ -136,8 +153,9 @@ class _KeysScreenState extends State<KeysScreen> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    final active = _keys.where((key) => !key.revoked && !key.isConnectedApp).toList();
-    final apps = _keys.where((key) => !key.revoked && key.isConnectedApp).toList();
+    final active = _keys.where((key) => !key.revoked && !key.expired && !key.isConnectedApp).toList();
+    final apps = _keys.where((key) => !key.revoked && !key.expired && key.isConnectedApp).toList();
+    final expired = _keys.where((key) => !key.revoked && key.expired).toList();
     final revoked = _keys.where((key) => key.revoked).toList();
     final controller = widget.controller;
     final canCreate = controller.can('keys.create');
@@ -182,8 +200,8 @@ class _KeysScreenState extends State<KeysScreen> {
                 AppCard(
                   child: EmptyState(
                     icon: Icons.key_outlined,
-                    title: t.noKeysTitle,
-                    message: t.noKeysMessage,
+                    title: expired.isNotEmpty ? t.noActiveKeysTitle : t.noKeysTitle,
+                    message: expired.isNotEmpty ? t.noActiveKeysHint : t.noKeysMessage,
                     action: canCreate
                         ? FilledButton.icon(onPressed: () => _open(), icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.createKey))
                         : null,
@@ -191,6 +209,15 @@ class _KeysScreenState extends State<KeysScreen> {
                 )
               else
                 SettingsCardList(children: <Widget>[for (final key in active) row(key)]),
+              if (expired.isNotEmpty) ...<Widget>[
+                const SizedBox(height: AppSpacing.md),
+                Align(alignment: Alignment.centerLeft, child: TextButton.icon(
+                  onPressed: () => setState(() => _showExpired = !_showExpired),
+                  icon: Icon(_showExpired ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
+                  label: Text(t.expiredKeys('${expired.length}')),
+                )),
+                if (_showExpired) SettingsCardList(children: <Widget>[for (final key in expired) row(key)]),
+              ],
               if (revoked.isNotEmpty) ...<Widget>[
                 const SizedBox(height: AppSpacing.md),
                 Align(
@@ -244,7 +271,7 @@ class _KeyRow extends StatelessWidget {
       if (key.isConnectedApp) key.appOrigin == null ? t.connectedApp : t.connectedVia(key.appOrigin!),
       used, if (showCreator) createdByLabel(t, key.createdBy)].join(' · ');
     final actions = <PopupMenuEntry<String>>[
-      if (!key.revoked && canEdit) PopupMenuItem<String>(value: 'edit', child: Text(t.edit)),
+      if (!key.revoked && canEdit) PopupMenuItem<String>(value: 'edit', child: Text(key.expired ? t.keyRenewEdit : t.edit)),
       if (!key.revoked && canEdit) PopupMenuItem<String>(value: 'revoke', child: Text(t.revoke)),
       if (canDelete)
         PopupMenuItem<String>(
@@ -292,7 +319,11 @@ class _KeyRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(fontSize: 13, color: palette.textMuted),
                 ),
-                if (key.tokenLimit != null && !key.revoked) ...<Widget>[
+                if (!key.revoked) ...<Widget>[
+                  const SizedBox(height: 8),
+                  KeyExpiryStatus(expiresAt: key.expiresAt == null ? null : DateTime.tryParse(key.expiresAt!), expired: key.expired),
+                ],
+                if (key.tokenLimit != null && !key.revoked && !key.expired) ...<Widget>[
                   const SizedBox(height: 10),
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 360),
@@ -312,7 +343,7 @@ class _KeyRow extends StatelessWidget {
                     ),
                   ),
                 ],
-                if (budget != null && !key.revoked) ...<Widget>[
+                if (budget != null && !key.revoked && !key.expired) ...<Widget>[
                   const SizedBox(height: 10),
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 360),
@@ -342,7 +373,7 @@ class _KeyRow extends StatelessWidget {
               ],
             ),
           ),
-          if (!key.revoked) _PriorityPicker(priority: key.priority, onChanged: canEdit ? onPriority : null),
+          if (!key.revoked && !key.expired) _PriorityPicker(priority: key.priority, onChanged: canEdit ? onPriority : null),
           if (actions.isNotEmpty)
             PopupMenuButton<String>(
               tooltip: t.moreActions,
@@ -466,6 +497,8 @@ class _KeyFormState extends State<_KeyForm> {
   late String _routingGroup = widget.existing?.raw['routingGroup'] as String? ?? '';
   List<Map<String, dynamic>> _groups = [];
   late String _profile = widget.existing?.profile ?? 'balanced';
+  late DateTime? _expiresAt = widget.existing?.expiresAt == null ? null : DateTime.tryParse(widget.existing!.expiresAt!);
+  bool _expiryChanged = false;
   bool _advanced = false;
   bool _saving = false;
   String? _error;
@@ -527,6 +560,10 @@ class _KeyFormState extends State<_KeyForm> {
   }
 
   Future<void> _submit() async {
+    if (_expiryChanged && _expiresAt != null && !_expiresAt!.isAfter(DateTime.now())) {
+      setState(() => _error = AppL10n.of(context).keyExpiryInvalid);
+      return;
+    }
     if (!_free && !_plan && !_paid) {
       setState(() => _error = AppL10n.of(context).pickOneKind);
       return;
@@ -553,6 +590,7 @@ class _KeyFormState extends State<_KeyForm> {
       'allowedModels': _allowedList(),
       'profile': _profile,
       'routingGroup': _routingGroup.isEmpty ? null : _routingGroup,
+      if (_expiryChanged) 'expiresAt': _expiresAt?.toUtc().toIso8601String(),
       // Only sent while in a pool, so a key keeps its choice if the pool is left and rejoined.
       if (widget.controller.inPool) 'poolAccess': _pool ? 'pool' : 'own',
     };
@@ -562,7 +600,7 @@ class _KeyFormState extends State<_KeyForm> {
         if (mounted) Navigator.of(context).pop();
       } else {
         final created = await widget.controller.api.createKey(body);
-        if (mounted) Navigator.of(context).pop(created.secret);
+        if (mounted) Navigator.of(context).pop(created);
       }
     } on ApiException catch (error) {
       setState(() => _error = error.message);
@@ -588,6 +626,8 @@ class _KeyFormState extends State<_KeyForm> {
                 autofocus: true,
                 decoration: InputDecoration(labelText: t.keyName, hintText: t.keyNameHint),
               ),
+              const SizedBox(height: AppSpacing.lg),
+              KeyExpiryField(value: _expiresAt, wasExpired: widget.existing?.expired ?? false, enabled: !_saving, onChanged: (value) => setState(() { _expiresAt = value; _expiryChanged = true; _error = null; })),
               const SizedBox(height: AppSpacing.lg),
               KeyAccessFields(
                 free: _free,

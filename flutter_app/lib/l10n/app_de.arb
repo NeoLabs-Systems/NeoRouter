@@ -1651,5 +1651,22 @@
   "slotPeak": "Maximal belegte Slots",
   "slotIdle": "Ungenutzte Kapazität",
   "slotObserved": "Beobachtete Slot-Nutzung der letzten 24 Stunden",
-  "allowancePace": "Kontingenttempo (über 1 bedeutet Reserve)"
+  "allowancePace": "Kontingenttempo (über 1 bedeutet Reserve)",
+  "keyExpiryTitle": "Gültigkeitsdauer",
+  "keyExpiryHint": "Ab dem gewählten Zeitpunkt nimmt dieser Key keine neuen Anfragen mehr an. Zeiten werden in deiner lokalen Zeitzone angezeigt.",
+  "keyExpiryNever": "Kein Ablaufdatum",
+  "keyExpiryDays": "In {days} Tagen",
+  "keyExpiryCustom": "Datum und Uhrzeit wählen",
+  "keyExpiryChange": "Datum und Uhrzeit ändern",
+  "keyExpiryAt": "Läuft am {date} ab",
+  "keyExpiredAt": "Am {date} abgelaufen",
+  "keyExpired": "Abgelaufen",
+  "keyExpiringSoon": "Läuft bald ab",
+  "keyExpiryInvalid": "Wähle ein Datum und eine Uhrzeit in der Zukunft.",
+  "keyExpiryRenewHint": "Wähle ein zukünftiges Ablaufdatum oder keinen Ablauf, um diesen Key wieder zu verwenden. Sein Geheimnis bleibt gleich.",
+  "keyExpiryRenewSave": "Speichern aktiviert den bestehenden Key wieder.",
+  "expiredKeys": "Abgelaufene Keys ({count})",
+  "keyRenewEdit": "Verlängern / bearbeiten",
+  "noActiveKeysTitle": "Keine aktiven API-Keys",
+  "noActiveKeysHint": "Erstelle einen Key oder verlängere unten einen abgelaufenen Key."
 }

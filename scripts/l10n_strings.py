@@ -1714,6 +1714,25 @@ S = {
   'slotIdle': ('Idle capacity', 'Ungenutzte Kapazität'),
   'slotObserved': ('Observed slot usage over the last 24 hours', 'Beobachtete Slot-Nutzung der letzten 24 Stunden'),
   'allowancePace': ('Allowance pace (above 1 means ahead of schedule)', 'Kontingenttempo (über 1 bedeutet Reserve)'),
+
+  # API key expiration
+  'keyExpiryTitle': ('Expiration', 'Gültigkeitsdauer'),
+  'keyExpiryHint': ('This key stops accepting new requests at the selected time. Times are shown in your local time zone.', 'Ab dem gewählten Zeitpunkt nimmt dieser Key keine neuen Anfragen mehr an. Zeiten werden in deiner lokalen Zeitzone angezeigt.'),
+  'keyExpiryNever': ('No expiration', 'Kein Ablaufdatum'),
+  'keyExpiryDays': ('{days} days from now', 'In {days} Tagen'),
+  'keyExpiryCustom': ('Custom date and time', 'Datum und Uhrzeit wählen'),
+  'keyExpiryChange': ('Change date and time', 'Datum und Uhrzeit ändern'),
+  'keyExpiryAt': ('Expires {date}', 'Läuft am {date} ab'),
+  'keyExpiredAt': ('Expired {date}', 'Am {date} abgelaufen'),
+  'keyExpired': ('Expired', 'Abgelaufen'),
+  'keyExpiringSoon': ('Expires soon', 'Läuft bald ab'),
+  'keyExpiryInvalid': ('Choose a date and time in the future.', 'Wähle ein Datum und eine Uhrzeit in der Zukunft.'),
+  'keyExpiryRenewHint': ('Choose a future expiry or no expiration to use this key again. Its secret stays the same.', 'Wähle ein zukünftiges Ablaufdatum oder keinen Ablauf, um diesen Key wieder zu verwenden. Sein Geheimnis bleibt gleich.'),
+  'keyExpiryRenewSave': ('Saving this change reactivates the existing key.', 'Speichern aktiviert den bestehenden Key wieder.'),
+  'expiredKeys': ('Expired keys ({count})', 'Abgelaufene Keys ({count})'),
+  'keyRenewEdit': ('Renew / edit', 'Verlängern / bearbeiten'),
+  'noActiveKeysTitle': ('No active API keys', 'Keine aktiven API-Keys'),
+  'noActiveKeysHint': ('Create a key or renew an expired key below.', 'Erstelle einen Key oder verlängere unten einen abgelaufenen Key.'),
 }
 
 PLACEHOLDER = re.compile(r'\{(\w+)\}')

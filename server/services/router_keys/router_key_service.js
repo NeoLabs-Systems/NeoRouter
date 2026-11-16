@@ -63,6 +63,7 @@ function publicKey(row) {
     routingGroup: row.routing_group || null,
     profile: row.profile,
     expiresAt: row.expires_at,
+    expired: Boolean(row.expires_at && Date.parse(row.expires_at) <= Date.now()),
     revoked: Boolean(row.revoked_at),
     lastUsedAt: row.last_used_at,
     createdAt: row.created_at,
@@ -76,8 +77,18 @@ function assertProfile(userId, profile) {
   if (profile && !profiles.resolve(userId, profile)) throw new HttpError(400, 'UNKNOWN_PROFILE', 'This routing profile does not exist.');
 }
 
+function assertExpiry(expiresAt, previous = null) {
+  if (expiresAt == null) return;
+  const timestamp = Date.parse(expiresAt);
+  // Unrelated edits can preserve a past expiry; only changing it renews a key.
+  if (!Number.isFinite(timestamp) || (timestamp !== Date.parse(previous) && timestamp <= Date.now())) {
+    throw new HttpError(400, 'INVALID_KEY_EXPIRY', 'Choose an expiry date and time in the future.');
+  }
+}
+
 // `app` ({name, origin, scopes}) marks a key made for a connected app.
 function create(userId, input, createdBy = userId, app = null) {
+  assertExpiry(input.expiresAt);
   assertProfile(userId, input.profile);
   if (input.routingGroup) require('../routing/groups').requireGroup(userId, input.routingGroup);
   const id = crypto.randomUUID();
@@ -115,6 +126,7 @@ function list(userId) {
 
 function update(userId, id, input) {
   const row = getRow(userId, id);
+  if (input.expiresAt !== undefined) assertExpiry(input.expiresAt, row.expires_at);
   assertProfile(userId, input.profile);
   if (input.routingGroup) require('../routing/groups').requireGroup(userId, input.routingGroup);
   const allowed = kinds(input, row);
@@ -158,7 +170,10 @@ function authenticate(token) {
   const row = getDatabase().prepare(`SELECT k.*, u.disabled_at user_disabled FROM router_keys k JOIN users u ON u.id = k.user_id
     WHERE k.key_hash = ?`).get(sha256(token));
   if (!row || row.revoked_at || row.user_disabled) return null;
-  if (row.expires_at && Date.parse(row.expires_at) <= Date.now()) return null;
+  if (row.expires_at) {
+    const expiry = Date.parse(row.expires_at);
+    if (!Number.isFinite(expiry) || expiry <= Date.now()) return null;
+  }
   getDatabase().prepare("UPDATE router_keys SET last_used_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?").run(row.id);
   return row;
 }
@@ -176,4 +191,4 @@ function consumeRpm(key, now = Date.now()) {
   return { allowed: true };
 }
 
-module.exports = { create, list, get, getRow, update, revoke, remove, authenticate, consumeRpm, publicKey, kinds, PREFIX };
+module.exports = { create, list, get, getRow, update, revoke, remove, authenticate, consumeRpm, publicKey, kinds, assertExpiry, PREFIX };

@@ -31,7 +31,7 @@ const keyInput = z.object({
   allowedModels: z.array(z.string().min(1).max(200)).max(200).optional(),
   routingGroup: z.string().min(1).max(80).nullable().optional(),
   profile: z.string().max(80).optional(),
-  expiresAt: z.string().datetime().nullable().optional(),
+  expiresAt: z.string().datetime({ offset: true }).nullable().optional(),
 });
 
 router.get('/', requirePermission('keys.view'), (req, res) => res.json({ keys: keys.list(req.space.ownerId) }));

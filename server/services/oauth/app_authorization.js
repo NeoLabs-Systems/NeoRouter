@@ -193,6 +193,7 @@ function approve(reference, { ownerId, actorId, access }) {
   const item = pending(reference);
   // Validates the options now, so the app never receives a failing code.
   keys.kinds(access);
+  keys.assertExpiry(access.expiresAt);
   const approval = { ownerId, actorId, access };
   if (item.kind === 'device') {
     item.status = 'approved';
@@ -225,6 +226,7 @@ function issueKey(request, approval, origin) {
     budgetUsd: access.allowPaid ? access.budgetUsd ?? null : null,
     budgetPeriod: access.budgetPeriod,
     rpmLimit: access.rpmLimit ?? null,
+    expiresAt: access.expiresAt ?? null,
     tokenLimit: access.allowFree || access.allowPlan ? access.tokenLimit ?? null : null,
     tokenPeriod: access.tokenPeriod,
     maxPricePerMillion: access.allowPaid ? access.maxPricePerMillion ?? null : null,
@@ -232,6 +234,7 @@ function issueKey(request, approval, origin) {
   return {
     access_token: secret,
     token_type: 'Bearer',
+    ...(key.expiresAt ? { expires_in: Math.max(0, Math.floor((Date.parse(key.expiresAt) - Date.now()) / 1000)) } : {}),
     scope: request.scopes.join(' '),
     // Where the key works, so apps need nothing else.
     base_url: `${origin}/v1`,

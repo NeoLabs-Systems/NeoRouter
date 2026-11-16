@@ -58,6 +58,7 @@ const access = z.object({
   tokenLimit: z.number().int().positive().nullable().optional(),
   tokenPeriod: z.enum(['total', 'monthly', 'daily']).optional(),
   maxPricePerMillion: z.number().min(0).nullable().optional(),
+  expiresAt: z.string().datetime({ offset: true }).nullable().optional(),
 });
 
 approval.get('/requests/:reference', (req, res) => res.json({ request: apps.describe(req.params.reference) }));

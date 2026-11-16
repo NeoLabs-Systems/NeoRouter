@@ -10008,6 +10008,108 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Allowance pace (above 1 means ahead of schedule)'**
   String get allowancePace;
+
+  /// No description provided for @keyExpiryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiration'**
+  String get keyExpiryTitle;
+
+  /// No description provided for @keyExpiryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This key stops accepting new requests at the selected time. Times are shown in your local time zone.'**
+  String get keyExpiryHint;
+
+  /// No description provided for @keyExpiryNever.
+  ///
+  /// In en, this message translates to:
+  /// **'No expiration'**
+  String get keyExpiryNever;
+
+  /// No description provided for @keyExpiryDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days from now'**
+  String keyExpiryDays(String days);
+
+  /// No description provided for @keyExpiryCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom date and time'**
+  String get keyExpiryCustom;
+
+  /// No description provided for @keyExpiryChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change date and time'**
+  String get keyExpiryChange;
+
+  /// No description provided for @keyExpiryAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires {date}'**
+  String keyExpiryAt(String date);
+
+  /// No description provided for @keyExpiredAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired {date}'**
+  String keyExpiredAt(String date);
+
+  /// No description provided for @keyExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get keyExpired;
+
+  /// No description provided for @keyExpiringSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires soon'**
+  String get keyExpiringSoon;
+
+  /// No description provided for @keyExpiryInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a date and time in the future.'**
+  String get keyExpiryInvalid;
+
+  /// No description provided for @keyExpiryRenewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a future expiry or no expiration to use this key again. Its secret stays the same.'**
+  String get keyExpiryRenewHint;
+
+  /// No description provided for @keyExpiryRenewSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving this change reactivates the existing key.'**
+  String get keyExpiryRenewSave;
+
+  /// No description provided for @expiredKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired keys ({count})'**
+  String expiredKeys(String count);
+
+  /// No description provided for @keyRenewEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Renew / edit'**
+  String get keyRenewEdit;
+
+  /// No description provided for @noActiveKeysTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No active API keys'**
+  String get noActiveKeysTitle;
+
+  /// No description provided for @noActiveKeysHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a key or renew an expired key below.'**
+  String get noActiveKeysHint;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
