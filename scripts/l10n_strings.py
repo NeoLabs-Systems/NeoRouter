@@ -392,6 +392,7 @@ S = {
   'smoothOff': ('Off. Requests use limits as fast as they come.', 'Aus. Anfragen nutzen Limits so schnell, wie sie kommen.'),
   'smoothLearning': ('NeoRouter is still learning how you use it. This unlocks by itself once there is enough to go by.', 'NeoRouter lernt noch, wie du es nutzt. Das schaltet sich frei, sobald genug Daten da sind.'),
   'smoothPausedLearning': ('On, but paused until there is enough data again.', 'An, aber pausiert, bis wieder genug Daten da sind.'),
+  'smoothHomeNote': ('Limits are being spread until they reset. Keys with a high priority are not held back.', 'Limits werden bis zum Zurücksetzen verteilt. Keys mit hoher Priorität werden nicht gebremst.'),
   'smoothStatusActive': ('Active', 'Aktiv'),
   'smoothStatusOff': ('Off', 'Aus'),
   'smoothStatusLearning': ('Learning', 'Lernt noch'),

@@ -359,6 +359,7 @@
   "smoothOff": "Aus. Anfragen nutzen Limits so schnell, wie sie kommen.",
   "smoothLearning": "NeoRouter lernt noch, wie du es nutzt. Das schaltet sich frei, sobald genug Daten da sind.",
   "smoothPausedLearning": "An, aber pausiert, bis wieder genug Daten da sind.",
+  "smoothHomeNote": "Limits werden bis zum Zurücksetzen verteilt. Keys mit hoher Priorität werden nicht gebremst.",
   "smoothStatusActive": "Aktiv",
   "smoothStatusOff": "Aus",
   "smoothStatusLearning": "Lernt noch",

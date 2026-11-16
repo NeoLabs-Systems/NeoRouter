@@ -1217,6 +1217,10 @@ class AppL10nDe extends AppL10n {
       'An, aber pausiert, bis wieder genug Daten da sind.';
 
   @override
+  String get smoothHomeNote =>
+      'Limits werden bis zum Zurücksetzen verteilt. Keys mit hoher Priorität werden nicht gebremst.';
+
+  @override
   String get smoothStatusActive => 'Aktiv';
 
   @override

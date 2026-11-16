@@ -2251,6 +2251,12 @@ abstract class AppL10n {
   /// **'On, but paused until there is enough data again.'**
   String get smoothPausedLearning;
 
+  /// No description provided for @smoothHomeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Limits are being spread until they reset. Keys with a high priority are not held back.'**
+  String get smoothHomeNote;
+
   /// No description provided for @smoothStatusActive.
   ///
   /// In en, this message translates to:

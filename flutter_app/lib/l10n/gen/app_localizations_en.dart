@@ -1207,6 +1207,10 @@ class AppL10nEn extends AppL10n {
       'On, but paused until there is enough data again.';
 
   @override
+  String get smoothHomeNote =>
+      'Limits are being spread until they reset. Keys with a high priority are not held back.';
+
+  @override
   String get smoothStatusActive => 'Active';
 
   @override

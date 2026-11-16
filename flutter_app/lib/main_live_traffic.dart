@@ -19,7 +19,7 @@ import 'src/models.dart';
 /// answers. Only real traffic plays, as it arrives; with none, the view
 /// stays quiet and says so.
 class LiveTrafficHero extends StatefulWidget {
-  const LiveTrafficHero({super.key, required this.controller, required this.accounts, required this.keys, required this.ready, required this.title, required this.status, this.action, this.onMore, this.onStatusTap});
+  const LiveTrafficHero({super.key, required this.controller, required this.accounts, required this.keys, required this.ready, required this.title, required this.status, this.action, this.onMore, this.onStatusTap, this.note});
 
   final NeoRouterController controller;
 
@@ -29,6 +29,9 @@ class LiveTrafficHero extends StatefulWidget {
   final List<RouterKey> keys;
   final String title;
   final String status;
+
+  /// A small extra line under the status (e.g. that limits are being spread).
+  final String? note;
   final Widget? action;
   final VoidCallback? onMore;
 
@@ -600,7 +603,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _Header(title: widget.title, status: widget.status, onStatusTap: widget.onStatusTap, action: widget.action, scene: _scene, liveSince: () => _lastLive, hasTraffic: () => _history.isNotEmpty, loaded: () => _ready, compact: compact),
+              _Header(title: widget.title, status: widget.status, note: widget.note, onStatusTap: widget.onStatusTap, action: widget.action, scene: _scene, liveSince: () => _lastLive, hasTraffic: () => _history.isNotEmpty, loaded: () => _ready, compact: compact),
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, stage) {
@@ -626,10 +629,11 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.title, required this.status, this.onStatusTap, required this.action, required this.scene, required this.liveSince, required this.hasTraffic, required this.loaded, required this.compact});
+  const _Header({required this.title, required this.status, this.note, this.onStatusTap, required this.action, required this.scene, required this.liveSince, required this.hasTraffic, required this.loaded, required this.compact});
 
   final String title;
   final String status;
+  final String? note;
   final VoidCallback? onStatusTap;
   final Widget? action;
   final _Scene scene;
@@ -704,6 +708,18 @@ class _Header extends StatelessWidget {
                 ),
               ),
             ),
+        ],
+        if (note != null) ...<Widget>[
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(padding: const EdgeInsets.only(top: 2), child: Icon(Icons.schedule_rounded, size: 13, color: palette.textMuted)),
+              const SizedBox(width: 6),
+              Flexible(child: Text(note!, style: TextStyle(fontSize: 12.5, color: palette.textMuted, height: 1.4))),
+            ],
+          ),
         ],
       ],
     );

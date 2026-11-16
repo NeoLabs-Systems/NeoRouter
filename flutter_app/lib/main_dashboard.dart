@@ -30,6 +30,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic> _totals = <String, dynamic>{};
   Map<String, dynamic>? _capacity;
   Map<String, dynamic>? _health;
+  bool _spreading = false;
   bool _loading = true;
   String? _error;
   final ScrollController _scroll = ScrollController();
@@ -68,6 +69,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     later(api.summary('7d', onlyTotals: true), (value) => _totals = Map<String, dynamic>.from(value['totals'] as Map? ?? const <String, dynamic>{}));
     later(api.capacity(), (value) => _capacity = value);
     later(api.usageHealth(), (value) => _health = value);
+    later(api.smoothing(), (value) => _spreading = value['active'] == true);
     try {
       final results = await Future.wait(<Future<Object>>[api.accounts(), api.keys(), api.logs(limit: 5)]);
       if (!mounted) return;
@@ -173,6 +175,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ready: !_loading,
             title: _greeting(t),
             status: status,
+            note: _spreading ? t.smoothHomeNote : null,
             // "2 connections need your attention": opens which ones and why.
             onStatusTap: problems.isEmpty && failing.isEmpty ? null : () => _showAttention(problems, failing),
             action: setupDone ? FilledButton(onPressed: () => controller.go(AppPage.playground), child: Text(t.homeOpenPlayground)) : null,

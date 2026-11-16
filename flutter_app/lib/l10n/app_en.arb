@@ -661,6 +661,7 @@
   "smoothOff": "Off. Requests use limits as fast as they come.",
   "smoothLearning": "NeoRouter is still learning how you use it. This unlocks by itself once there is enough to go by.",
   "smoothPausedLearning": "On, but paused until there is enough data again.",
+  "smoothHomeNote": "Limits are being spread until they reset. Keys with a high priority are not held back.",
   "smoothStatusActive": "Active",
   "smoothStatusOff": "Off",
   "smoothStatusLearning": "Learning",
