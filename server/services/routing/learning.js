@@ -105,15 +105,24 @@ const TRUNCATED_HEADROOM = 2;
 // requestSpecific: the request carries its own options (a voice, size or
 // format) that one model may not offer, so a refusal of it is not the model's
 // fault: it is noted, but leaves no cooldown, penalty or breaker count.
-function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, requestSpecific = false, now = Date.now() } = {}) {
+function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, boosted = false, requestSpecific = false, now = Date.now() } = {}) {
   const policy = policyFor(error);
   if (error.kind === KINDS.ABORTED) return policy;
   if (requestSpecific && error.kind === KINDS.BAD_REQUEST) {
     stats.recordFailure(entry.ref, { weight: 0, penalty: 0, message: `${error.kind}: ${error.message}`, countsForBreaker: false, cooldownUntil: 0, cooldownReason: null, escalate: false }, now);
     return policy;
   }
-  if (TASK_FAILURES.has(error.kind)) experience.recordOutcome(entry.ref, entry.task, false, now);
-  if (error.kind === KINDS.TRUNCATED && maxTokens) stats.raiseMinOutputTokens(entry.ref, Math.ceil(maxTokens * TRUNCATED_HEADROOM), now);
+  if (TASK_FAILURES.has(error.kind) && !(error.kind === KINDS.TRUNCATED && maxTokens && !boosted)) experience.recordOutcome(entry.ref, entry.task, false, now);
+  if (error.kind === KINDS.TRUNCATED && maxTokens) {
+    stats.raiseMinOutputTokens(entry.ref, Math.ceil(maxTokens * TRUNCATED_HEADROOM), now);
+    // Out of room at the client's own limit says the limit was small, not that
+    // the model is unreliable: it only learns the room it needs. Once it was
+    // given extra room and still ran out, it counts as usual.
+    if (!boosted) {
+      stats.recordFailure(entry.ref, { weight: 0, penalty: 0, message: `${error.kind}: ${error.message}`, countsForBreaker: false, cooldownUntil: 0, cooldownReason: null, escalate: false }, now);
+      return policy;
+    }
+  }
   if (error.kind === KINDS.CONTEXT_LENGTH) {
     learnContextWindow(entry, estimatedTokens);
     return policy;

@@ -9,6 +9,7 @@ const WebSocket = require('ws');
 //   slow-*    answers after 300 ms       tools-*  returns a tool call
 //   hang-*    answers after 5 s          think-*  reasoning only, no answer
 //   trunc-*   spends max_tokens on reasoning (finish_reason length)
+//   room-*    the same below max_tokens 100, answers with 100 or more
 //   echo-*    answers with the last user message (streams it in small pieces)
 //   searcher-* calls the web_search tool once, then answers from its result
 //   *guard*   answers like Llama Guard ("unsafe\nS9" when the text mentions a bomb)
@@ -60,9 +61,9 @@ function createMockProvider({ models, prices = {}, port = 0, failSearch = false,
       }
     }
     const searchAnswer = model.startsWith('searcher-') ? `Answer from: ${String((req.body.messages || []).find((message) => message.role === 'tool')?.content || 'nothing').split('\n')[0]}` : null;
-    const plain = searchAnswer ?? (model.startsWith('echo-') ? String(lastUser?.content || '') : model.startsWith('empty-') || model.startsWith('think-') ? '' : `hello from ${model}`);
+    const plain = searchAnswer ?? (model.startsWith('echo-') ? String(lastUser?.content || '') : model.startsWith('empty-') || model.startsWith('think-') ? '' : model.startsWith('room-') ? `hello with ${req.body.max_tokens}` : `hello from ${model}`);
     const content = guard ?? plain;
-    if (model.startsWith('trunc-') && !stream) {
+    if ((model.startsWith('trunc-') || (model.startsWith('room-') && (req.body.max_tokens || 0) < 100)) && !stream) {
       return res.json({ id: 'cmpl-1', object: 'chat.completion', created: 1, model, choices: [{ index: 0, message: { role: 'assistant', content: '', reasoning: 'thinking and thinking' }, finish_reason: 'length' }], usage: { prompt_tokens: 5, completion_tokens: 50, total_tokens: 55 } });
     }
     if (model.startsWith('think-') && !stream) {

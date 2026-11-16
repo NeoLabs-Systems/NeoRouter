@@ -136,6 +136,22 @@ function maxOutputFor(request, entry) {
   return request.max_tokens || Math.min(entry.maxOutput || DEFAULT_OUTPUT_TOKENS, DEFAULT_OUTPUT_TOKENS);
 }
 
+// Reasoning models think before they answer, and a client's max_tokens counts
+// the thinking too. When a model already ran out at this size (its learned
+// output floor) and using it costs nothing extra (free or a flat-rate plan),
+// it is given the room it needs instead of being skipped: the client's limit
+// is raised for that attempt only, so a stronger or faster model is not passed
+// over for a weaker one just because of a budget meant for the answer.
+const MAX_BOOSTED_OUTPUT = 32000;
+
+function boostedMaxTokens(entry, request, now = Date.now()) {
+  if (!request.max_tokens || !(entry.isFree || entry.isPlan)) return null;
+  const floor = stats.outputFloor(entry.ref, now);
+  if (!floor || floor <= request.max_tokens) return null;
+  const cap = Math.min(MAX_BOOSTED_OUTPUT, entry.maxOutput || MAX_BOOSTED_OUTPUT);
+  return floor <= cap ? floor : null;
+}
+
 // How many failures one connection may cost a single request. A provider with
 // many models must not use up every attempt before others get a turn.
 const MAX_FAILURES_PER_ACCOUNT = 2;
@@ -195,7 +211,7 @@ function rejection(entry, ctx, now) {
   }
   // Reasoning models that already ran out of budget at this size are skipped.
   const minOutput = stats.outputFloor(entry.ref, now);
-  if (request.max_tokens && minOutput && request.max_tokens < minOutput && !ctx.primaryRefs.has(entry.ref) && !ctx.lastResort) return 'needs_more_tokens';
+  if (request.max_tokens && minOutput && request.max_tokens < minOutput && !boostedMaxTokens(entry, request, now) && !ctx.primaryRefs.has(entry.ref) && !ctx.lastResort) return 'needs_more_tokens';
   const available = stats.availability(entry.ref, now);
   if (!available.available && !(ctx.longShot && LONG_SHOT_REASONS.has(available.reason) && longShotDue(entry.ref, now))) return available.reason;
   const planReason = plans.rejection(entry, now);
@@ -827,4 +843,4 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
   };
 }
 
-module.exports = { LONG_SHOT_REASONS, MAX_LONG_SHOTS, LONG_SHOT_GAP_MS, resetLongShotsForTests, needsCredits, RoutingPlan, explainNoModel, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, routeAllowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor };
+module.exports = { LONG_SHOT_REASONS, MAX_LONG_SHOTS, LONG_SHOT_GAP_MS, resetLongShotsForTests, needsCredits, RoutingPlan, explainNoModel, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, routeAllowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor, boostedMaxTokens };

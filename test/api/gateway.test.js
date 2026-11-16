@@ -172,6 +172,22 @@ test('reasoning that exhausts max_tokens falls back and is learned', async () =>
   await api('delete', `/providers/accounts/${added.body.account.id}`);
 });
 
+test('a free reasoning model that needed more room gets it next time and answers', async () => {
+  const added = await api('post', '/providers/accounts', { definitionId: 'custom_openai', slug: 'roomy', baseUrl: mock.url, secret: 'good-key', billingMode: 'free_tier', options: { manualModels: ['room-thinker'] } });
+  const body = { model: 'roomy/room-thinker', max_tokens: 50, messages: [{ role: 'user', content: 'hi' }] };
+  const first = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${freeKey}`).send(body);
+  assert.equal(first.body.error.details.trail[0].outcome, 'truncated');
+  const db = require('../../server/db/database').getDatabase();
+  const ref = db.prepare("SELECT id FROM models WHERE model_id = 'room-thinker'").get().id;
+  const row = db.prepare('SELECT failures, penalty FROM model_stats WHERE model_ref = ?').get(ref);
+  assert.equal(row.failures, 0, 'running out of a small client budget is not unreliability');
+  assert.equal(row.penalty, 0);
+  const second = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${freeKey}`).send(body);
+  assert.equal(second.status, 200, JSON.stringify(second.body));
+  assert.equal(second.body.choices[0].message.content, 'hello with 100', 'sent with the learned room');
+  await api('delete', `/providers/accounts/${added.body.account.id}`);
+});
+
 test('Anthropic Messages endpoint, plain and streaming', async () => {
   const plain = await request(app).post('/v1/messages').set('x-api-key', freeKey).set('anthropic-version', '2023-06-01')
     .send({ model: 'mock/ok-gamma', max_tokens: 50, system: 'be brief', messages: [{ role: 'user', content: 'hi' }] });

@@ -8,7 +8,7 @@ const webSearch = require('./web_search');
 const { HttpError } = require('../../middleware/error_handler');
 const { ProviderError, KINDS, fromNetworkError } = require('../../providers/provider_error');
 const accounts = require('../../services/providers/account_service');
-const { RoutingPlan, explainNoModel, maxOutputFor } = require('../../services/routing/router');
+const { RoutingPlan, explainNoModel, maxOutputFor, boostedMaxTokens } = require('../../services/routing/router');
 const learning = require('../../services/routing/learning');
 const capacity = require('../../services/routing/capacity');
 const experience = require('../../services/routing/task/experience');
@@ -446,8 +446,13 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
     if (!runtime) return false;
     const adapter = accounts.adapterFor(runtime);
     const controller = new AbortController();
+    // A free reasoning model that needs more room than the client allowed gets it.
+    const boost = boostedMaxTokens(entry, canonical);
+    const sent = boost ? { ...canonical, max_tokens: boost } : canonical;
     const attempt = {
       entry,
+      maxTokens: sent.max_tokens,
+      boosted: Boolean(boost),
       controller,
       started: Date.now(),
       reservation: budget.reserve(key, budget.estimateMaxCost(entry, inputTokens, maxOutputFor(canonical, entry)) || 0),
@@ -456,7 +461,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
     quota.recordRequest(entry, inputTokens);
     plans.onSent(entry);
     const timeoutMs = Math.min(adapter.timeoutMs, config.routing.totalBudgetMs - (Date.now() - startedAt));
-    attempt.promise = runAttempt({ entry, adapter, canonical, stream, signal: AbortSignal.any([clientAbort.signal, controller.signal]), timeoutMs, sessionId })
+    attempt.promise = runAttempt({ entry, adapter, canonical: sent, stream, signal: AbortSignal.any([clientAbort.signal, controller.signal]), timeoutMs, sessionId })
       .then((result) => ({ attempt, result }), (error) => ({ attempt, error }));
     running.add(attempt);
     attemptsStarted += 1;
@@ -542,7 +547,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
       if (error.kind === KINDS.ABORTED && clientAbort.signal.aborted) break;
       lastError = error;
       trail.push(trailItem(attempt.entry, error.kind, { status: error.status, ms: Date.now() - attempt.started, message: String(error.message).slice(0, 200) }));
-      const policy = learning.onFailure(attempt.entry, error, { estimatedTokens: inputTokens, maxTokens: canonical.max_tokens });
+      const policy = learning.onFailure(attempt.entry, error, { estimatedTokens: inputTokens, maxTokens: attempt.maxTokens, boosted: attempt.boosted });
       // A partner counts only the requests it answered, so a refused one does not use up our share of it here either.
       if (isPeerEntry(attempt.entry)) quota.refundRequest(attempt.entry, inputTokens);
       if (isPeerEntry(attempt.entry)) reachability.noteFailure(attempt.entry.accountId, error.kind);
