@@ -409,6 +409,28 @@ function fitCalibration() {
   return { slope, intercept: meanY - slope * meanX, pairs: pairs.length };
 }
 
+// A new variant of a benchmarked model ("hy4-flash" next to "hy4") is far
+// better judged by its sibling than by its price: a cheap price reads as a
+// weak model, which is exactly wrong for a new flash release. The share is
+// what such variants typically keep of their base model's score.
+const VARIANT_SHARE = { turbo: 0.9, flash: 0.8, air: 0.75, lite: 0.7, mini: 0.7, small: 0.6, nano: 0.55, tiny: 0.5 };
+const VARIANT_PATTERN = new RegExp(`[-_ .](${Object.keys(VARIANT_SHARE).join('|')})(?=$|[-_:])`, 'i');
+
+function familyBenchmark(canonical, modelIds = []) {
+  for (const id of [...modelIds, canonical]) {
+    const text = String(id);
+    const match = text.split('/').pop().match(VARIANT_PATTERN);
+    if (!match) continue;
+    const at = text.length - text.split('/').pop().length + match.index;
+    const base = (text.slice(0, at) + text.slice(at + match[0].length)).replace(/:[a-z]+$/i, '');
+    const baseCanonical = canonicalId(base);
+    if (!baseCanonical || baseCanonical === canonical) continue;
+    const record = lookupBenchmark(baseCanonical, [base, base.split('/').pop()]);
+    if (record?.intelligenceIndex) return { record, share: VARIANT_SHARE[match[1].toLowerCase()], base: baseCanonical, baseId: base };
+  }
+  return null;
+}
+
 // Price, size, recency and reasoning as a rough 0..1 guess of capability.
 function heuristicIntelligence(records, sampleModelIds = [], aa = null) {
   const paidPrices = records.map((record) => record.priceOut).filter((price) => Number.isFinite(price) && price > 0);
@@ -594,6 +616,17 @@ function computeCanonical(canonical, sampleModelIds = [], capability = 'chat') {
       : guess.value;
     source = guess.weightSum ? (calibration ? 'calibrated' : 'heuristic') : 'default';
     confidence = Math.min(0.7, guess.weightSum * 0.7);
+    // Only lifts a guess: the family score fixes cheap new variants that the
+    // price-led guess undersells, it never pushes a model further down.
+    const family = familyBenchmark(canonical, sampleModelIds);
+    if (family) {
+      const base = computeCanonical(family.base, [family.baseId]).intelligence;
+      if (base * family.share > intelligence) {
+        intelligence = base * family.share;
+        source = 'family';
+        confidence = 0.6;
+      }
+    }
   }
   return {
     canonical_id: canonical,

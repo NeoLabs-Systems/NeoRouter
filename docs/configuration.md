@@ -56,7 +56,7 @@ deadlines must be in the future. Key responses include `expiresAt` and `expired`
 | --- | --- | --- |
 | `NEOROUTER_WORKERS_ENABLED` | `true` | Key checks, model sync, metadata refresh and quota probes. |
 | `NEOROUTER_VALIDATE_INTERVAL_MS` | 5 min | Key re-validation. |
-| `NEOROUTER_MODEL_SYNC_INTERVAL_MS` | 6 h | Model list refresh. |
+| `NEOROUTER_MODEL_SYNC_INTERVAL_MS` | 2 h | Model list refresh. |
 | `NEOROUTER_METADATA_INTERVAL_MS` | 1 h | models.dev / OpenRouter / Artificial Analysis refresh. |
 | `NEOROUTER_QUOTA_PROBE_INTERVAL_MS` | 15 min | Balance and credit probes. |
 | `NEOROUTER_METADATA_SOURCES_ENABLED` | `true` | Disable to run fully offline. |

@@ -166,6 +166,20 @@ test('intelligence uses benchmark data when present and heuristics otherwise', (
   assert.equal(unknown.intelligence_source, 'default');
 });
 
+test('a new flash variant without benchmarks is scored from its benchmarked base model, not its price', () => {
+  metadata.resetForTests({
+    modelsDev: { a: { 'hy4-flash': { priceIn: 0.04, priceOut: 0.18, contextWindow: 1048576, reasoning: true, releaseDate: '2026-11-16' } } },
+    artificialAnalysis: [{ slug: 'top', name: 'Top', intelligenceIndex: 60 }, { slug: 'hy4', name: 'Hy4', intelligenceIndex: 57 }],
+  });
+  const base = metadata.computeCanonical(canonicalId('tencent/hy4'), ['tencent/hy4']);
+  const flash = metadata.computeCanonical(canonicalId('tencent/hy4-flash:free'), ['tencent/hy4-flash:free']);
+  assert.equal(flash.intelligence_source, 'family');
+  assert.ok(Math.abs(flash.intelligence - base.intelligence * 0.8) < 1e-3, `${flash.intelligence} vs ${base.intelligence}`);
+  // "mini" inside a word is not a variant.
+  const gemini = metadata.computeCanonical(canonicalId('gemini'), ['gemini']);
+  assert.notEqual(gemini.intelligence_source, 'family');
+});
+
 test('only the listed Z.ai flash models are free', () => {
   const definition = registry.get('zai');
   assert.equal(classify({ definition, billingMode: 'paid', modelId: 'glm-4.5-flash' }).isFree, true);

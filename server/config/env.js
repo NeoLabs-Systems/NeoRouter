@@ -54,7 +54,7 @@ function getConfig() {
     }),
     sync: Object.freeze({
       validateIntervalMs: integer('NEOROUTER_VALIDATE_INTERVAL_MS', 5 * 60_000, { min: 30_000 }),
-      modelSyncIntervalMs: integer('NEOROUTER_MODEL_SYNC_INTERVAL_MS', 6 * 60 * 60_000, { min: 60_000 }),
+      modelSyncIntervalMs: integer('NEOROUTER_MODEL_SYNC_INTERVAL_MS', 2 * 60 * 60_000, { min: 60_000 }),
       metadataIntervalMs: integer('NEOROUTER_METADATA_INTERVAL_MS', 60 * 60_000, { min: 60_000 }),
       quotaProbeIntervalMs: integer('NEOROUTER_QUOTA_PROBE_INTERVAL_MS', 15 * 60_000, { min: 60_000 }),
     }),
