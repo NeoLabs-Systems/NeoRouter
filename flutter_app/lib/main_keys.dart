@@ -651,9 +651,9 @@ class _KeyFormState extends State<_KeyForm> {
                   initialValue: _routingGroup,
                   decoration: InputDecoration(labelText: t.routingGroupDefault),
                   items: <DropdownMenuItem<String>>[
-                    DropdownMenuItem(value: '', child: Text(t.routingGroupNone)),
+                    DropdownMenuItem(value: '', child: Text(t.routingGroupNoKeyDefault)),
                     if (_routingGroup.isNotEmpty && !_groups.any((group) => group['name'] == _routingGroup)) DropdownMenuItem(value: _routingGroup, child: Text(_routingGroup)),
-                    for (final group in _groups) DropdownMenuItem(value: group['name'] as String, child: Text('${group['name']}')),
+                    for (final group in _groups) DropdownMenuItem(value: group['name'] as String, child: Text('pool:${group['name']}')),
                   ],
                   onChanged: (value) => setState(() => _routingGroup = value ?? ''),
                 ),

@@ -5,7 +5,6 @@ import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
 import 'main_models.dart';
 import 'main_shared.dart';
-import 'main_routing_groups.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
 import 'src/backend_client.dart';
@@ -149,8 +148,6 @@ class _RoutingScreenState extends State<RoutingScreen> {
     return PageScaffold(
       header: ScreenHeader(title: t.routingTitle, description: t.routingDescription),
       children: <Widget>[
-        RoutingGroups(controller: widget.controller),
-        const SizedBox(height: 28),
         AsyncBody(
           loading: _loading,
           error: _error,

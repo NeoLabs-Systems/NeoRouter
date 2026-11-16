@@ -3506,20 +3506,68 @@
   "lmErrNoStarter": "No starter set fits this server.",
   "lmNothingFits": "Nothing of this kind fits this server.",
   "routingGroups": "Routing groups",
-  "routingGroupsHint": "Choose accounts or model patterns for a kind of work. Use pool:name as the model, or send X-NeoRouter-Group.",
   "createRoutingGroup": "Create group",
-  "routingGroupName": "Routing name",
-  "routingGroupModels": "Model patterns (one per line)",
+  "routingGroupName": "Name",
   "routingGroupAccounts": "Accounts",
   "routingGroupFallback": "Fallback group",
-  "routingGroupMinimum": "Minimum intelligence (0–1, optional)",
+  "routingGroupNoKeyDefault": "None: the key routes normally",
   "routingGroupDefault": "Default routing group",
-  "routingGroupNone": "None",
-  "routingGroupEdit": "Edit group",
+  "navGroups": "Routing groups",
+  "routingGroupsDescription": "Send one kind of work, such as an agent's helpers, to the plans you choose. An app picks a group by asking for pool:name as the model.",
+  "routingGroupsEmptyTitle": "No routing groups yet",
+  "routingGroupUsesStyle": "Style: {name}",
+  "@routingGroupUsesStyle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupAtLeast": "At least {percent} % intelligence",
+  "@routingGroupAtLeast": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupFallsBackTo": "Then {name}",
+  "@routingGroupFallsBackTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupPlanUsed": "{percent} % used",
+  "@routingGroupPlanUsed": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupAccountsHint": "Every model of a chosen account belongs to the group.",
+  "routingGroupOtherAccounts": "Other accounts",
+  "routingGroupSearchAccounts": "Search accounts",
+  "routingGroupNoAccounts": "No matching accounts.",
+  "routingGroupModelsTitle": "Models",
+  "routingGroupModelsHint": "Single models from any account. A pattern with * takes several, e.g. groq/*.",
+  "routingGroupPickModels": "Choose models",
+  "routingGroupPatternHint": "or type a pattern, e.g. groq/*",
+  "routingGroupAddPattern": "Add pattern",
+  "routingGroupOptions": "Options",
+  "routingGroupOptionsHint": "How the group picks among its models, and where requests go when it is full.",
+  "routingGroupMinimumTitle": "Minimum intelligence",
+  "routingGroupMinimumOff": "Any model in the group may answer.",
+  "routingGroupStyle": "Routing style",
+  "routingGroupStyleHint": "What counts most when the group picks a model.",
+  "routingGroupStyleKey": "The key's own style",
+  "routingGroupFallbackHint": "Used when every model in this group is busy or failing.",
+  "routingGroupNoFallback": "None: wait, then any model",
   "routingGroupsEmpty": "No groups yet. A group sends one kind of work, such as an agent's helpers, to the plans you choose.",
   "routingGroupNameHint": "Lowercase letters, digits, - and _. Cannot be changed later.",
   "routingGroupNameInvalid": "Use lowercase letters, digits, - and _ only, starting with a letter or digit.",
-  "routingGroupMinimumInvalid": "Enter a number from 0 to 1, or leave it empty.",
   "routingGroupMembersMissing": "Choose at least one account or model pattern.",
   "routingGroupDeleteTitle": "Delete this group?",
   "routingGroupDeleteMessage": "Keys and apps that use pool:{name} will route normally again.",

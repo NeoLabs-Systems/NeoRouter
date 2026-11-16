@@ -12,6 +12,7 @@ import 'main_playground.dart';
 import 'main_processing.dart';
 import 'main_providers.dart';
 import 'main_routing.dart';
+import 'main_routing_groups.dart';
 import 'main_settings.dart';
 import 'main_team.dart';
 import 'main_shared.dart';
@@ -53,6 +54,7 @@ List<NavGroup> navigationGroups(BuildContext context, NeoRouterController contro
     ]),
     NavGroup(t.groupAccess, Icons.alt_route_outlined, <NavItem>[
       NavItem(AppPage.routing, t.navRouting, Icons.alt_route_outlined),
+      NavItem(AppPage.groups, t.navGroups, Icons.workspaces_outline),
       NavItem(AppPage.keys, t.navKeys, Icons.key_outlined),
       NavItem(AppPage.processing, t.navProcessing, Icons.shield_outlined),
       NavItem(AppPage.team, t.navTeam, Icons.hub_outlined),
@@ -146,6 +148,7 @@ class _NeoRouterShellState extends State<NeoRouterShell> {
         AppPage.providers => ProvidersScreen(controller: controller),
         AppPage.keys => KeysScreen(controller: controller),
         AppPage.routing => RoutingScreen(controller: controller),
+        AppPage.groups => RoutingGroupsScreen(controller: controller),
         AppPage.processing => ProcessingScreen(controller: controller),
         AppPage.team => TeamScreen(controller: controller),
         AppPage.settings => SettingsScreen(controller: controller),

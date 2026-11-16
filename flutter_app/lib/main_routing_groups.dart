@@ -1,24 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
+import 'main_model_picker.dart';
 import 'main_shared.dart';
+import 'main_spacing.dart';
 import 'main_theme.dart';
+import 'src/backend_client.dart';
 import 'src/models.dart';
 
-class RoutingGroups extends StatefulWidget {
-  const RoutingGroups({super.key, required this.controller});
+/// Routing groups: one kind of work (an agent's helpers, heavy jobs) goes to
+/// the plans the person chooses. Apps pick a group with pool:name.
+class RoutingGroupsScreen extends StatefulWidget {
+  const RoutingGroupsScreen({super.key, required this.controller});
   final NeoRouterController controller;
 
   @override
-  State<RoutingGroups> createState() => _RoutingGroupsState();
+  State<RoutingGroupsScreen> createState() => _RoutingGroupsScreenState();
 }
 
-class _RoutingGroupsState extends State<RoutingGroups> {
+class _RoutingGroupsScreenState extends State<RoutingGroupsScreen> {
   List<Map<String, dynamic>> _groups = [];
   Map<String, String> _profileNames = {};
-  bool _loaded = false;
+  Map<String, String> _accountNames = {};
+  bool _loading = true;
   String? _error;
+
+  bool get _canEdit => widget.controller.can('routing.edit');
 
   @override
   void initState() {
@@ -30,23 +39,31 @@ class _RoutingGroupsState extends State<RoutingGroups> {
     try {
       final groups = await widget.controller.api.routingGroups();
       final profiles = await widget.controller.api.profiles();
+      final accounts = await widget.controller.api.accounts();
+      if (!mounted) return;
+      setState(() {
+        _groups = groups;
+        _profileNames = {
+          for (final profile in profiles) profile.id: profile.name,
+        };
+        _accountNames = {
+          for (final account in accounts) account.id: account.label,
+        };
+        _loading = false;
+        _error = null;
+      });
+    } catch (error) {
       if (mounted) {
         setState(() {
-          _groups = groups;
-          _profileNames = {
-            for (final profile in profiles) profile.id: profile.name,
-          };
-          _loaded = true;
-          _error = null;
+          _loading = false;
+          _error = '$error';
         });
       }
-    } catch (error) {
-      if (mounted) setState(() => _error = '$error');
     }
   }
 
   Future<void> _edit([Map<String, dynamic>? group]) async {
-    await showDialog<void>(
+    final changed = await showDialog<bool>(
       context: context,
       builder: (_) => _GroupEditor(
         controller: widget.controller,
@@ -54,62 +71,214 @@ class _RoutingGroupsState extends State<RoutingGroups> {
         groups: _groups,
       ),
     );
-    await _load();
+    if (changed == true) await _load();
   }
 
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SettingsHeading(title: t.routingGroups),
-        Text(t.routingGroupsHint),
-        if (_error != null) InlineError(message: _error!),
-        const SizedBox(height: 12),
-        if (_loaded && _groups.isEmpty && _error == null)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              t.routingGroupsEmpty,
-              style: TextStyle(color: neoRouterPaletteOf(context).textSoft),
-            ),
-          ),
-        if (_groups.isNotEmpty)
-          SettingsCardList(
-            children: [
-              for (final group in _groups)
-                ListTile(
-                  title: Text('pool:${group['name']}'),
-                  subtitle: Text(
-                    [
-                      if (group['profile'] != null)
-                        _profileNames[group['profile']] ??
-                            '${group['profile']}',
-                      if (group['fallback'] != null) '→ ${group['fallback']}',
-                      for (final plan in (group['plans'] as List? ?? []))
-                        '${plan['name']}: ${plan['usedShare'] == null ? t.planUsageUnknown : '${t.planUsage} ${((plan['usedShare'] as num) * 100).round()} %'}',
-                    ].join(' · '),
-                  ),
-                  trailing: widget.controller.can('routing.edit')
-                      ? const Icon(Icons.chevron_right)
+    return PageScaffold(
+      header: ScreenHeader(
+        title: t.routingGroups,
+        description: t.routingGroupsDescription,
+        trailing: _canEdit && _groups.isNotEmpty
+            ? FilledButton.icon(
+                onPressed: _edit,
+                icon: const Icon(Icons.add, size: 18),
+                label: Text(t.createRoutingGroup),
+              )
+            : null,
+      ),
+      children: <Widget>[
+        AsyncBody(
+          loading: _loading,
+          error: _error,
+          onRetry: _load,
+          child: _groups.isEmpty
+              ? EmptyState(
+                  icon: Icons.workspaces_outline,
+                  title: t.routingGroupsEmptyTitle,
+                  message: t.routingGroupsEmpty,
+                  action: _canEdit
+                      ? FilledButton.icon(
+                          onPressed: _edit,
+                          icon: const Icon(Icons.add, size: 18),
+                          label: Text(t.createRoutingGroup),
+                        )
                       : null,
-                  onTap: widget.controller.can('routing.edit')
-                      ? () => _edit(group)
-                      : null,
+                )
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    final columns = constraints.maxWidth >= 900 ? 2 : 1;
+                    final width =
+                        (constraints.maxWidth - (columns - 1) * AppSpacing.md) /
+                        columns;
+                    return Wrap(
+                      spacing: AppSpacing.md,
+                      runSpacing: AppSpacing.md,
+                      children: <Widget>[
+                        for (final group in _groups)
+                          SizedBox(
+                            width: width,
+                            child: _GroupCard(
+                              group: group,
+                              profileName: _profileNames[group['profile']],
+                              accountNames: _accountNames,
+                              onTap: _canEdit ? () => _edit(group) : null,
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
+        ),
+      ],
+    );
+  }
+}
+
+class _GroupCard extends StatelessWidget {
+  const _GroupCard({
+    required this.group,
+    required this.profileName,
+    required this.accountNames,
+    this.onTap,
+  });
+  final Map<String, dynamic> group;
+  final String? profileName;
+  final Map<String, String> accountNames;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final name = '${group['name']}';
+    final accounts = [
+      for (final id in (group['accounts'] as List? ?? []))
+        accountNames[id] ?? '$id',
+    ];
+    final models = [
+      for (final pattern in (group['models'] as List? ?? [])) '$pattern',
+    ];
+    final members = [...accounts, ...models];
+    final plans = (group['plans'] as List? ?? []).cast<Map>();
+    final minimum = group['minIntelligence'] as num?;
+    final details = <String>[
+      if (profileName != null) t.routingGroupUsesStyle(profileName!),
+      if (minimum != null) t.routingGroupAtLeast('${(minimum * 100).round()}'),
+      if (group['fallback'] != null)
+        t.routingGroupFallsBackTo('pool:${group['fallback']}'),
+    ];
+    const shown = 5;
+    return AppCard(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  name,
+                  style: displayTitleStyle(palette, size: 18),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              _CopyName(value: 'pool:$name'),
+              if (onTap != null)
+                Icon(Icons.chevron_right, color: palette.textSoft),
             ],
           ),
-        if (widget.controller.can('routing.edit'))
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: _edit,
-              icon: const Icon(Icons.add),
-              label: Text(t.createRoutingGroup),
+          if (details.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 4),
+            Text(
+              details.join(' · '),
+              style: TextStyle(color: palette.textSoft, fontSize: 13),
             ),
+          ],
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: <Widget>[
+              for (final member in members.take(shown)) MetaPill(label: member),
+              if (members.length > shown)
+                MetaPill(label: '+${members.length - shown}'),
+            ],
           ),
-      ],
+          if (plans.isNotEmpty) ...<Widget>[
+            const SizedBox(height: AppSpacing.md),
+            for (final plan in plans) ...<Widget>[
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      '${plan['name']}',
+                      style: const TextStyle(fontSize: 13),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    plan['usedShare'] is num
+                        ? t.routingGroupPlanUsed(
+                            '${((plan['usedShare'] as num) * 100).round()}',
+                          )
+                        : t.planUsageUnknown,
+                    style: TextStyle(color: palette.textSoft, fontSize: 12),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              UsageBar(
+                fraction: plan['usedShare'] is num
+                    ? (plan['usedShare'] as num).toDouble()
+                    : 0,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CopyName extends StatelessWidget {
+  const _CopyName({required this.value});
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    return Tooltip(
+      message: t.copy,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.tag),
+        onTap: () {
+          Clipboard.setData(ClipboardData(text: value));
+          showSnack(context, t.copied);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: palette.surfaceRaised,
+            borderRadius: BorderRadius.circular(AppRadius.tag),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                value,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12.5),
+              ),
+              const SizedBox(width: 6),
+              Icon(Icons.copy_rounded, size: 14, color: palette.textSoft),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -129,24 +298,30 @@ class _GroupEditor extends StatefulWidget {
 }
 
 class _GroupEditorState extends State<_GroupEditor> {
+  static final _namePattern = RegExp(r'^[a-z0-9][a-z0-9_-]{0,79}$');
+
   late final _name = TextEditingController(
     text: widget.group?['name'] as String? ?? '',
   );
-  late final _models = TextEditingController(
-    text: (widget.group?['models'] as List? ?? []).join('\n'),
-  );
-  late final _minimum = TextEditingController(
-    text: widget.group?['minIntelligence']?.toString() ?? '',
-  );
+  final _search = TextEditingController();
+  final _pattern = TextEditingController();
   late final Set<String> _selected = Set<String>.from(
     widget.group?['accounts'] as List? ?? [],
   );
+  late final List<String> _models = [
+    for (final item in (widget.group?['models'] as List? ?? [])) '$item',
+  ];
+  late double? _minimum = (widget.group?['minIntelligence'] as num?)
+      ?.toDouble();
   late String _profile = widget.group?['profile'] as String? ?? '';
   late String _fallback = widget.group?['fallback'] as String? ?? '';
   List<ProviderAccount> _accounts = [];
   List<RoutingProfile> _profiles = [];
-  String? _error;
+  bool _loading = true;
   bool _saving = false;
+  String? _error;
+
+  bool get _creating => widget.group == null;
 
   @override
   void initState() {
@@ -158,212 +333,466 @@ class _GroupEditorState extends State<_GroupEditor> {
     try {
       final accounts = await widget.controller.api.accounts();
       final profiles = await widget.controller.api.profiles();
+      if (!mounted) return;
+      setState(() {
+        _accounts = accounts;
+        _profiles = profiles;
+        _loading = false;
+      });
+    } catch (error) {
       if (mounted) {
         setState(() {
-          _accounts = accounts;
-          _profiles = profiles;
+          _loading = false;
+          _error = '$error';
         });
       }
-    } catch (error) {
-      if (mounted) setState(() => _error = '$error');
     }
   }
 
   @override
   void dispose() {
     _name.dispose();
-    _models.dispose();
-    _minimum.dispose();
+    _search.dispose();
+    _pattern.dispose();
     super.dispose();
   }
 
-  static final _namePattern = RegExp(r'^[a-z0-9][a-z0-9_-]{0,79}$');
-
   String? _validate(AppL10n t) {
-    if (widget.group == null && !_namePattern.hasMatch(_name.text.trim())) {
+    if (_creating && !_namePattern.hasMatch(_name.text.trim())) {
       return t.routingGroupNameInvalid;
     }
-    final minimum = _minimum.text.trim().replaceAll(',', '.');
-    if (minimum.isNotEmpty) {
-      final value = double.tryParse(minimum);
-      if (value == null || value < 0 || value > 1) {
-        return t.routingGroupMinimumInvalid;
-      }
+    if (_selected.isEmpty && _models.isEmpty) {
+      return t.routingGroupMembersMissing;
     }
-    final hasModels = _models.text
-        .split('\n')
-        .any((line) => line.trim().isNotEmpty);
-    if (_selected.isEmpty && !hasModels) return t.routingGroupMembersMissing;
     return null;
   }
 
-  Future<void> _save({bool remove = false}) async {
+  Future<void> _pickModels() async {
+    final picked = await showModelPicker(
+      context,
+      controller: widget.controller,
+      selected: _models.where((item) => !item.contains('*')).toList(),
+      multi: true,
+    );
+    if (picked == null) return;
+    setState(() {
+      _models
+        ..removeWhere((item) => !item.contains('*'))
+        ..addAll(picked);
+    });
+  }
+
+  void _addPattern() {
+    final value = _pattern.text.trim();
+    if (value.isEmpty) return;
+    setState(() {
+      if (!_models.contains(value)) _models.add(value);
+      _pattern.clear();
+    });
+  }
+
+  Future<void> _save() async {
     final t = AppL10n.of(context);
-    if (remove) {
-      final confirmed = await confirmAction(
-        context,
-        title: t.routingGroupDeleteTitle,
-        message: t.routingGroupDeleteMessage('${widget.group!['name']}'),
-        confirmLabel: t.delete,
-        cancelLabel: t.cancel,
-      );
-      if (!confirmed || !mounted) return;
-    } else {
-      final invalid = _validate(t);
-      if (invalid != null) {
-        setState(() => _error = invalid);
-        return;
-      }
+    final invalid = _validate(t);
+    if (invalid != null) {
+      setState(() => _error = invalid);
+      return;
     }
     setState(() {
       _saving = true;
       _error = null;
     });
     try {
-      if (remove) {
-        await widget.controller.api.deleteRoutingGroup(
-          widget.group!['id'] as String,
-        );
-      } else {
-        await widget.controller.api.saveRoutingGroup({
-          'name': _name.text.trim(),
-          'accounts': _selected.toList(),
-          'models': _models.text
-              .split('\n')
-              .map((line) => line.trim())
-              .where((line) => line.isNotEmpty)
-              .toList(),
-          'profile': _profile.isEmpty ? null : _profile,
-          'fallback': _fallback.isEmpty ? null : _fallback,
-          'minIntelligence': _minimum.text.trim().isEmpty
-              ? null
-              : double.parse(_minimum.text.trim().replaceAll(',', '.')),
-        }, id: widget.group?['id'] as String?);
-      }
-      if (mounted) Navigator.of(context).pop();
+      await widget.controller.api.saveRoutingGroup({
+        'name': _creating ? _name.text.trim() : widget.group!['name'],
+        'accounts': _selected.toList(),
+        'models': _models,
+        'profile': _profile.isEmpty ? null : _profile,
+        'fallback': _fallback.isEmpty ? null : _fallback,
+        'minIntelligence': _minimum,
+      }, id: widget.group?['id'] as String?);
+      if (mounted) Navigator.of(context).pop(true);
     } catch (error) {
       if (mounted) {
         setState(() {
-          _error = '$error';
+          _error = error is ApiException ? error.message : '$error';
           _saving = false;
         });
       }
     }
   }
 
+  Future<void> _delete() async {
+    final t = AppL10n.of(context);
+    final confirmed = await confirmAction(
+      context,
+      title: t.routingGroupDeleteTitle,
+      message: t.routingGroupDeleteMessage('${widget.group!['name']}'),
+      confirmLabel: t.delete,
+      cancelLabel: t.cancel,
+    );
+    if (!confirmed || !mounted) return;
+    setState(() => _saving = true);
+    try {
+      await widget.controller.api.deleteRoutingGroup(
+        widget.group!['id'] as String,
+      );
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _error = error is ApiException ? error.message : '$error';
+          _saving = false;
+        });
+      }
+    }
+  }
+
+  Widget _section(String title, String hint, List<Widget> children) {
+    final palette = neoRouterPaletteOf(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            hint,
+            style: TextStyle(
+              color: palette.textSoft,
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _accountPicker(AppL10n t) {
+    final palette = neoRouterPaletteOf(context);
+    final query = _search.text.trim().toLowerCase();
+    final byProvider = <String, List<ProviderAccount>>{};
+    for (final account in _accounts) {
+      if (query.isNotEmpty &&
+          !'${account.label} ${account.providerName}'.toLowerCase().contains(
+            query,
+          )) {
+        continue;
+      }
+      byProvider.putIfAbsent(account.providerName, () => []).add(account);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        if (_accounts.length > 6) ...<Widget>[
+          TextField(
+            controller: _search,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              isDense: true,
+              prefixIcon: const Icon(Icons.search, size: 18),
+              hintText: t.routingGroupSearchAccounts,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+        if (byProvider.isEmpty)
+          Text(
+            t.routingGroupNoAccounts,
+            style: TextStyle(color: palette.textSoft, fontSize: 13),
+          ),
+        for (final entry in [
+          ...byProvider.entries.where((entry) => entry.value.length > 1),
+          if (byProvider.values.any((list) => list.length == 1))
+            MapEntry<String, List<ProviderAccount>>(
+              byProvider.values.any((list) => list.length > 1)
+                  ? t.routingGroupOtherAccounts
+                  : '',
+              [
+                for (final list in byProvider.values.where(
+                  (list) => list.length == 1,
+                ))
+                  ...list,
+              ],
+            ),
+        ]) ...<Widget>[
+          if (entry.key.isNotEmpty) ...<Widget>[
+            Text(
+              entry.key,
+              style: TextStyle(
+                color: palette.textSoft,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+          ],
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: <Widget>[
+              for (final account in entry.value)
+                FilterChip(
+                  label: Text(account.label),
+                  selected: _selected.contains(account.id),
+                  showCheckmark: true,
+                  onSelected: (on) => setState(
+                    () => on
+                        ? _selected.add(account.id)
+                        : _selected.remove(account.id),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+      ],
+    );
+  }
+
+  Widget _modelList(AppL10n t) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        if (_models.isNotEmpty) ...<Widget>[
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: <Widget>[
+              for (final model in _models)
+                InputChip(
+                  label: Text(model),
+                  onDeleted: () => setState(() => _models.remove(model)),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+        Row(
+          children: <Widget>[
+            OutlinedButton.icon(
+              onPressed: _pickModels,
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(t.routingGroupPickModels),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: TextField(
+                controller: _pattern,
+                onSubmitted: (_) => _addPattern(),
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: t.routingGroupPatternHint,
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.keyboard_return, size: 18),
+                    tooltip: t.routingGroupAddPattern,
+                    onPressed: _addPattern,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _options(AppL10n t) {
+    final palette = neoRouterPaletteOf(context);
+    final fallbacks = widget.groups
+        .where((group) => group['id'] != widget.group?['id'])
+        .toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(t.routingGroupMinimumTitle),
+          subtitle: Text(
+            _minimum == null
+                ? t.routingGroupMinimumOff
+                : t.routingGroupAtLeast('${(_minimum! * 100).round()}'),
+          ),
+          value: _minimum != null,
+          onChanged: (on) => setState(() => _minimum = on ? 0.5 : null),
+        ),
+        if (_minimum != null)
+          Slider(
+            value: _minimum!,
+            divisions: 20,
+            label: '${(_minimum! * 100).round()} %',
+            activeColor: palette.accent,
+            onChanged: (value) => setState(() => _minimum = value),
+          ),
+        const SizedBox(height: AppSpacing.md),
+        DropdownButtonFormField<String>(
+          initialValue: _profiles.any((profile) => profile.id == _profile)
+              ? _profile
+              : '',
+          isExpanded: true,
+          decoration: InputDecoration(
+            labelText: t.routingGroupStyle,
+            helperText: t.routingGroupStyleHint,
+            helperMaxLines: 2,
+          ),
+          items: [
+            DropdownMenuItem(value: '', child: Text(t.routingGroupStyleKey)),
+            for (final profile in _profiles)
+              DropdownMenuItem(value: profile.id, child: Text(profile.name)),
+          ],
+          onChanged: (value) => setState(() => _profile = value ?? ''),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        DropdownButtonFormField<String>(
+          initialValue: fallbacks.any((group) => group['name'] == _fallback)
+              ? _fallback
+              : '',
+          isExpanded: true,
+          decoration: InputDecoration(
+            labelText: t.routingGroupFallback,
+            helperText: t.routingGroupFallbackHint,
+            helperMaxLines: 2,
+          ),
+          items: [
+            DropdownMenuItem(value: '', child: Text(t.routingGroupNoFallback)),
+            for (final group in fallbacks)
+              DropdownMenuItem(
+                value: group['name'] as String,
+                child: Text('pool:${group['name']}'),
+              ),
+          ],
+          onChanged: (value) => setState(() => _fallback = value ?? ''),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    return AlertDialog(
-      title: Text(
-        widget.group == null ? t.createRoutingGroup : t.routingGroupEdit,
-      ),
-      content: SizedBox(
-        width: 520,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_error != null) InlineError(message: _error!),
-              TextField(
-                controller: _name,
-                enabled: widget.group == null,
-                decoration: InputDecoration(
-                  labelText: t.routingGroupName,
-                  prefixText: 'pool:',
-                  helperText: widget.group == null
-                      ? t.routingGroupNameHint
-                      : null,
-                  helperMaxLines: 2,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(t.routingGroupAccounts),
-              for (final account in _accounts)
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(account.label),
-                  value: _selected.contains(account.id),
-                  onChanged: (value) => setState(() {
-                    if (value == true) {
-                      _selected.add(account.id);
-                    } else {
-                      _selected.remove(account.id);
-                    }
-                  }),
-                ),
-              TextField(
-                controller: _models,
-                minLines: 2,
-                maxLines: 5,
-                decoration: InputDecoration(labelText: t.routingGroupModels),
-              ),
-              TextField(
-                controller: _minimum,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: InputDecoration(labelText: t.routingGroupMinimum),
-              ),
-              if (_profiles.isNotEmpty)
-                DropdownButtonFormField<String>(
-                  initialValue:
-                      _profiles.any((profile) => profile.id == _profile)
-                      ? _profile
-                      : '',
-                  decoration: InputDecoration(labelText: t.defaultProfile),
-                  items: [
-                    DropdownMenuItem(
-                      value: '',
-                      child: Text(t.routingGroupNone),
+    final palette = neoRouterPaletteOf(context);
+    final mobile = MediaQuery.sizeOf(context).width < AppBreakpoints.mobile;
+    return Dialog(
+      insetPadding: mobile
+          ? const EdgeInsets.all(12)
+          : const EdgeInsets.all(40),
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640, maxHeight: 760),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 12, 8),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      _creating
+                          ? t.createRoutingGroup
+                          : 'pool:${widget.group!['name']}',
+                      style: displayTitleStyle(palette, size: 20),
                     ),
-                    for (final profile in _profiles)
-                      DropdownMenuItem(
-                        value: profile.id,
-                        child: Text(profile.name),
-                      ),
-                  ],
-                  onChanged: (value) => setState(() => _profile = value ?? ''),
-                ),
-              DropdownButtonFormField<String>(
-                initialValue:
-                    widget.groups.any(
-                      (group) =>
-                          group['name'] == _fallback &&
-                          group['id'] != widget.group?['id'],
-                    )
-                    ? _fallback
-                    : '',
-                decoration: InputDecoration(labelText: t.routingGroupFallback),
-                items: [
-                  DropdownMenuItem(value: '', child: Text(t.routingGroupNone)),
-                  for (final group in widget.groups.where(
-                    (group) => group['id'] != widget.group?['id'],
-                  ))
-                    DropdownMenuItem(
-                      value: group['name'] as String,
-                      child: Text('${group['name']}'),
-                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    tooltip: t.cancel,
+                    onPressed: () => Navigator.of(context).pop(false),
+                  ),
                 ],
-                onChanged: (value) => setState(() => _fallback = value ?? ''),
               ),
-            ],
-          ),
+            ),
+            Flexible(
+              child: _loading
+                  ? const Padding(
+                      padding: EdgeInsets.all(48),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          if (_creating)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: AppSpacing.lg,
+                              ),
+                              child: TextField(
+                                controller: _name,
+                                autofocus: true,
+                                decoration: InputDecoration(
+                                  labelText: t.routingGroupName,
+                                  prefixText: 'pool:',
+                                  helperText: t.routingGroupNameHint,
+                                  helperMaxLines: 2,
+                                ),
+                              ),
+                            ),
+                          _section(
+                            t.routingGroupAccounts,
+                            t.routingGroupAccountsHint,
+                            [_accountPicker(t)],
+                          ),
+                          _section(
+                            t.routingGroupModelsTitle,
+                            t.routingGroupModelsHint,
+                            [_modelList(t)],
+                          ),
+                          _section(
+                            t.routingGroupOptions,
+                            t.routingGroupOptionsHint,
+                            [_options(t)],
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                child: InlineError(message: _error!),
+              ),
+            Divider(height: 1, color: palette.border),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 24, 16),
+              child: Row(
+                children: <Widget>[
+                  if (!_creating)
+                    TextButton.icon(
+                      onPressed: _saving ? null : _delete,
+                      style: TextButton.styleFrom(
+                        foregroundColor: palette.error,
+                      ),
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      label: Text(t.delete),
+                    ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: _saving
+                        ? null
+                        : () => Navigator.of(context).pop(false),
+                    child: Text(t.cancel),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  FilledButton(
+                    onPressed: _saving || _loading ? null : _save,
+                    child: Text(t.save),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      actions: [
-        if (widget.group != null)
-          TextButton(
-            onPressed: _saving ? null : () => _save(remove: true),
-            child: Text(t.delete),
-          ),
-        TextButton(
-          onPressed: _saving ? null : () => Navigator.of(context).pop(),
-          child: Text(t.cancel),
-        ),
-        FilledButton(onPressed: _saving ? null : _save, child: Text(t.save)),
-      ],
     );
   }
 }

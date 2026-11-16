@@ -5578,17 +5578,10 @@ class AppL10nDe extends AppL10n {
   String get routingGroups => 'Routing-Gruppen';
 
   @override
-  String get routingGroupsHint =>
-      'Wähle Konten oder Modellmuster für eine Aufgabe. Nutze pool:name als Modell oder X-NeoRouter-Group als Header.';
-
-  @override
   String get createRoutingGroup => 'Gruppe erstellen';
 
   @override
-  String get routingGroupName => 'Routing-Name';
-
-  @override
-  String get routingGroupModels => 'Modellmuster (eines pro Zeile)';
+  String get routingGroupName => 'Name';
 
   @override
   String get routingGroupAccounts => 'Konten';
@@ -5597,16 +5590,101 @@ class AppL10nDe extends AppL10n {
   String get routingGroupFallback => 'Ausweichgruppe';
 
   @override
-  String get routingGroupMinimum => 'Mindestintelligenz (0–1, optional)';
+  String get routingGroupNoKeyDefault => 'Keine: der Schlüssel routet normal';
 
   @override
   String get routingGroupDefault => 'Standard-Routing-Gruppe';
 
   @override
-  String get routingGroupNone => 'Keine';
+  String get navGroups => 'Routing-Gruppen';
 
   @override
-  String get routingGroupEdit => 'Gruppe bearbeiten';
+  String get routingGroupsDescription =>
+      'Schicke eine Art von Arbeit, etwa die Helfer eines Agenten, an die Tarife deiner Wahl. Eine App wählt eine Gruppe, indem sie pool:name als Modell anfragt.';
+
+  @override
+  String get routingGroupsEmptyTitle => 'Noch keine Routing-Gruppen';
+
+  @override
+  String routingGroupUsesStyle(String name) {
+    return 'Stil: $name';
+  }
+
+  @override
+  String routingGroupAtLeast(String percent) {
+    return 'Mindestens $percent % Intelligenz';
+  }
+
+  @override
+  String routingGroupFallsBackTo(String name) {
+    return 'Danach $name';
+  }
+
+  @override
+  String routingGroupPlanUsed(String percent) {
+    return '$percent % genutzt';
+  }
+
+  @override
+  String get routingGroupAccountsHint =>
+      'Alle Modelle eines gewählten Kontos gehören zur Gruppe.';
+
+  @override
+  String get routingGroupOtherAccounts => 'Weitere Konten';
+
+  @override
+  String get routingGroupSearchAccounts => 'Konten suchen';
+
+  @override
+  String get routingGroupNoAccounts => 'Keine passenden Konten.';
+
+  @override
+  String get routingGroupModelsTitle => 'Modelle';
+
+  @override
+  String get routingGroupModelsHint =>
+      'Einzelne Modelle aus beliebigen Konten. Ein Muster mit * nimmt mehrere, z. B. groq/*.';
+
+  @override
+  String get routingGroupPickModels => 'Modelle wählen';
+
+  @override
+  String get routingGroupPatternHint => 'oder Muster eingeben, z. B. groq/*';
+
+  @override
+  String get routingGroupAddPattern => 'Muster hinzufügen';
+
+  @override
+  String get routingGroupOptions => 'Optionen';
+
+  @override
+  String get routingGroupOptionsHint =>
+      'Wie die Gruppe unter ihren Modellen wählt und wohin Anfragen gehen, wenn sie voll ist.';
+
+  @override
+  String get routingGroupMinimumTitle => 'Mindestintelligenz';
+
+  @override
+  String get routingGroupMinimumOff =>
+      'Jedes Modell der Gruppe darf antworten.';
+
+  @override
+  String get routingGroupStyle => 'Routing-Stil';
+
+  @override
+  String get routingGroupStyleHint =>
+      'Was beim Auswählen eines Modells am meisten zählt.';
+
+  @override
+  String get routingGroupStyleKey => 'Stil des Schlüssels';
+
+  @override
+  String get routingGroupFallbackHint =>
+      'Wird genutzt, wenn alle Modelle dieser Gruppe belegt sind oder ausfallen.';
+
+  @override
+  String get routingGroupNoFallback =>
+      'Keine: warten, dann ein beliebiges Modell';
 
   @override
   String get routingGroupsEmpty =>
@@ -5619,10 +5697,6 @@ class AppL10nDe extends AppL10n {
   @override
   String get routingGroupNameInvalid =>
       'Nur Kleinbuchstaben, Ziffern, - und _, beginnend mit Buchstabe oder Ziffer.';
-
-  @override
-  String get routingGroupMinimumInvalid =>
-      'Gib eine Zahl von 0 bis 1 ein oder lass das Feld leer.';
 
   @override
   String get routingGroupMembersMissing =>

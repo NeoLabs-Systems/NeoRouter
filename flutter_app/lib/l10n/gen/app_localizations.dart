@@ -9679,12 +9679,6 @@ abstract class AppL10n {
   /// **'Routing groups'**
   String get routingGroups;
 
-  /// No description provided for @routingGroupsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose accounts or model patterns for a kind of work. Use pool:name as the model, or send X-NeoRouter-Group.'**
-  String get routingGroupsHint;
-
   /// No description provided for @createRoutingGroup.
   ///
   /// In en, this message translates to:
@@ -9694,14 +9688,8 @@ abstract class AppL10n {
   /// No description provided for @routingGroupName.
   ///
   /// In en, this message translates to:
-  /// **'Routing name'**
+  /// **'Name'**
   String get routingGroupName;
-
-  /// No description provided for @routingGroupModels.
-  ///
-  /// In en, this message translates to:
-  /// **'Model patterns (one per line)'**
-  String get routingGroupModels;
 
   /// No description provided for @routingGroupAccounts.
   ///
@@ -9715,11 +9703,11 @@ abstract class AppL10n {
   /// **'Fallback group'**
   String get routingGroupFallback;
 
-  /// No description provided for @routingGroupMinimum.
+  /// No description provided for @routingGroupNoKeyDefault.
   ///
   /// In en, this message translates to:
-  /// **'Minimum intelligence (0–1, optional)'**
-  String get routingGroupMinimum;
+  /// **'None: the key routes normally'**
+  String get routingGroupNoKeyDefault;
 
   /// No description provided for @routingGroupDefault.
   ///
@@ -9727,17 +9715,155 @@ abstract class AppL10n {
   /// **'Default routing group'**
   String get routingGroupDefault;
 
-  /// No description provided for @routingGroupNone.
+  /// No description provided for @navGroups.
   ///
   /// In en, this message translates to:
-  /// **'None'**
-  String get routingGroupNone;
+  /// **'Routing groups'**
+  String get navGroups;
 
-  /// No description provided for @routingGroupEdit.
+  /// No description provided for @routingGroupsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Edit group'**
-  String get routingGroupEdit;
+  /// **'Send one kind of work, such as an agent\'s helpers, to the plans you choose. An app picks a group by asking for pool:name as the model.'**
+  String get routingGroupsDescription;
+
+  /// No description provided for @routingGroupsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No routing groups yet'**
+  String get routingGroupsEmptyTitle;
+
+  /// No description provided for @routingGroupUsesStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Style: {name}'**
+  String routingGroupUsesStyle(String name);
+
+  /// No description provided for @routingGroupAtLeast.
+  ///
+  /// In en, this message translates to:
+  /// **'At least {percent} % intelligence'**
+  String routingGroupAtLeast(String percent);
+
+  /// No description provided for @routingGroupFallsBackTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Then {name}'**
+  String routingGroupFallsBackTo(String name);
+
+  /// No description provided for @routingGroupPlanUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent} % used'**
+  String routingGroupPlanUsed(String percent);
+
+  /// No description provided for @routingGroupAccountsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Every model of a chosen account belongs to the group.'**
+  String get routingGroupAccountsHint;
+
+  /// No description provided for @routingGroupOtherAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Other accounts'**
+  String get routingGroupOtherAccounts;
+
+  /// No description provided for @routingGroupSearchAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Search accounts'**
+  String get routingGroupSearchAccounts;
+
+  /// No description provided for @routingGroupNoAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching accounts.'**
+  String get routingGroupNoAccounts;
+
+  /// No description provided for @routingGroupModelsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Models'**
+  String get routingGroupModelsTitle;
+
+  /// No description provided for @routingGroupModelsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Single models from any account. A pattern with * takes several, e.g. groq/*.'**
+  String get routingGroupModelsHint;
+
+  /// No description provided for @routingGroupPickModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose models'**
+  String get routingGroupPickModels;
+
+  /// No description provided for @routingGroupPatternHint.
+  ///
+  /// In en, this message translates to:
+  /// **'or type a pattern, e.g. groq/*'**
+  String get routingGroupPatternHint;
+
+  /// No description provided for @routingGroupAddPattern.
+  ///
+  /// In en, this message translates to:
+  /// **'Add pattern'**
+  String get routingGroupAddPattern;
+
+  /// No description provided for @routingGroupOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Options'**
+  String get routingGroupOptions;
+
+  /// No description provided for @routingGroupOptionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How the group picks among its models, and where requests go when it is full.'**
+  String get routingGroupOptionsHint;
+
+  /// No description provided for @routingGroupMinimumTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum intelligence'**
+  String get routingGroupMinimumTitle;
+
+  /// No description provided for @routingGroupMinimumOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Any model in the group may answer.'**
+  String get routingGroupMinimumOff;
+
+  /// No description provided for @routingGroupStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing style'**
+  String get routingGroupStyle;
+
+  /// No description provided for @routingGroupStyleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What counts most when the group picks a model.'**
+  String get routingGroupStyleHint;
+
+  /// No description provided for @routingGroupStyleKey.
+  ///
+  /// In en, this message translates to:
+  /// **'The key\'s own style'**
+  String get routingGroupStyleKey;
+
+  /// No description provided for @routingGroupFallbackHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Used when every model in this group is busy or failing.'**
+  String get routingGroupFallbackHint;
+
+  /// No description provided for @routingGroupNoFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'None: wait, then any model'**
+  String get routingGroupNoFallback;
 
   /// No description provided for @routingGroupsEmpty.
   ///
@@ -9756,12 +9882,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Use lowercase letters, digits, - and _ only, starting with a letter or digit.'**
   String get routingGroupNameInvalid;
-
-  /// No description provided for @routingGroupMinimumInvalid.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a number from 0 to 1, or leave it empty.'**
-  String get routingGroupMinimumInvalid;
 
   /// No description provided for @routingGroupMembersMissing.
   ///
