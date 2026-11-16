@@ -1,0 +1,10 @@
+{
+  "node": {
+    "runtime": "node",
+    "modelWorkerIpc": true
+  },
+  "bun": {
+    "runtime": "bun",
+    "modelWorkerIpc": true
+  }
+}

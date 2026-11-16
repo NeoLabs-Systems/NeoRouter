@@ -1,0 +1,82 @@
+{
+  "machine": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M4",
+    "ramGiB": 16
+  },
+  "node": "v22.22.3",
+  "bun": "1.4.4",
+  "durationMs": 30000,
+  "rpsPerRuntime": 5,
+  "startupRuns": 4,
+  "runtimes": {
+    "node": {
+      "startup": {
+        "count": 4,
+        "median": 129.38475000000005,
+        "p95": 279.43487500000003,
+        "min": 126.77858300000003,
+        "max": 279.43487500000003
+      },
+      "rssSamplesMiB": [
+        {
+          "seconds": 0,
+          "rss": 118.890625
+        },
+        {
+          "seconds": 30,
+          "rss": 94.921875
+        }
+      ],
+      "errors": 0,
+      "idleRssMiB": 84.515625,
+      "finalRssMiB": 94.921875,
+      "latency": {
+        "count": 151,
+        "median": 10.168249999998807,
+        "p95": 13.624625000000378,
+        "min": 3.2134589999996024,
+        "max": 30.97283299999981
+      },
+      "medianAddedOverheadMs": 10.00683299999855
+    },
+    "bun": {
+      "startup": {
+        "count": 4,
+        "median": 108.87070799999992,
+        "p95": 309.68029199999995,
+        "min": 107.12262499999997,
+        "max": 309.68029199999995
+      },
+      "rssSamplesMiB": [
+        {
+          "seconds": 0,
+          "rss": 95.75
+        },
+        {
+          "seconds": 30,
+          "rss": 81.53125
+        }
+      ],
+      "errors": 0,
+      "idleRssMiB": 59.375,
+      "finalRssMiB": 81.53125,
+      "latency": {
+        "count": 151,
+        "median": 8.749499999999898,
+        "p95": 20.03849999999875,
+        "min": 2.9335829999999987,
+        "max": 25.355124999998225
+      },
+      "medianAddedOverheadMs": 8.588082999999642
+    }
+  },
+  "directMockMs": {
+    "count": 150,
+    "median": 0.16141700000025594,
+    "p95": 0.1968749999996362,
+    "min": 0.1407920000001468,
+    "max": 0.763583999999355
+  }
+}

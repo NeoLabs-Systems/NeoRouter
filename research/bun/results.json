@@ -1,0 +1,234 @@
+{
+  "machine": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M4",
+    "ramGiB": 16
+  },
+  "node": "v22.22.3",
+  "bun": "1.4.4",
+  "durationMs": 600000,
+  "rpsPerRuntime": 5,
+  "startupRuns": 8,
+  "runtimes": {
+    "node": {
+      "startup": {
+        "count": 8,
+        "median": 128.61725,
+        "p95": 241.581334,
+        "min": 124.83649999999989,
+        "max": 241.581334
+      },
+      "rssSamplesMiB": [
+        {
+          "seconds": 0,
+          "rss": 118.75
+        },
+        {
+          "seconds": 30,
+          "rss": 66.59375
+        },
+        {
+          "seconds": 60,
+          "rss": 76.234375
+        },
+        {
+          "seconds": 90,
+          "rss": 104.65625
+        },
+        {
+          "seconds": 120,
+          "rss": 107.0625
+        },
+        {
+          "seconds": 150,
+          "rss": 105.78125
+        },
+        {
+          "seconds": 180,
+          "rss": 92.765625
+        },
+        {
+          "seconds": 210,
+          "rss": 100.4375
+        },
+        {
+          "seconds": 240,
+          "rss": 101.84375
+        },
+        {
+          "seconds": 270,
+          "rss": 108.96875
+        },
+        {
+          "seconds": 300,
+          "rss": 78.671875
+        },
+        {
+          "seconds": 330,
+          "rss": 88.890625
+        },
+        {
+          "seconds": 360,
+          "rss": 102.78125
+        },
+        {
+          "seconds": 390,
+          "rss": 87.484375
+        },
+        {
+          "seconds": 420,
+          "rss": 103.640625
+        },
+        {
+          "seconds": 450,
+          "rss": 104.28125
+        },
+        {
+          "seconds": 480,
+          "rss": 104.71875
+        },
+        {
+          "seconds": 510,
+          "rss": 95.75
+        },
+        {
+          "seconds": 540,
+          "rss": 66.125
+        },
+        {
+          "seconds": 570,
+          "rss": 79.890625
+        },
+        {
+          "seconds": 600,
+          "rss": 100.203125
+        }
+      ],
+      "errors": 0,
+      "idleRssMiB": 84.875,
+      "finalRssMiB": 100.203125,
+      "latency": {
+        "count": 3001,
+        "median": 9.06741699995473,
+        "p95": 12.155291999923065,
+        "min": 2.104250000003958,
+        "max": 50.102542000007816
+      },
+      "medianAddedOverheadMs": 8.90224999995462
+    },
+    "bun": {
+      "startup": {
+        "count": 8,
+        "median": 104.36233300000004,
+        "p95": 308.347709,
+        "min": 100.99295899999993,
+        "max": 308.347709
+      },
+      "rssSamplesMiB": [
+        {
+          "seconds": 0,
+          "rss": 96.34375
+        },
+        {
+          "seconds": 30,
+          "rss": 78.203125
+        },
+        {
+          "seconds": 60,
+          "rss": 88.078125
+        },
+        {
+          "seconds": 90,
+          "rss": 94.1875
+        },
+        {
+          "seconds": 120,
+          "rss": 73.5
+        },
+        {
+          "seconds": 150,
+          "rss": 81.671875
+        },
+        {
+          "seconds": 180,
+          "rss": 69.8125
+        },
+        {
+          "seconds": 210,
+          "rss": 69.890625
+        },
+        {
+          "seconds": 240,
+          "rss": 71.15625
+        },
+        {
+          "seconds": 270,
+          "rss": 85.96875
+        },
+        {
+          "seconds": 300,
+          "rss": 81.25
+        },
+        {
+          "seconds": 330,
+          "rss": 74.671875
+        },
+        {
+          "seconds": 360,
+          "rss": 75.484375
+        },
+        {
+          "seconds": 390,
+          "rss": 67.484375
+        },
+        {
+          "seconds": 420,
+          "rss": 80.84375
+        },
+        {
+          "seconds": 450,
+          "rss": 81.734375
+        },
+        {
+          "seconds": 480,
+          "rss": 82.078125
+        },
+        {
+          "seconds": 510,
+          "rss": 73.421875
+        },
+        {
+          "seconds": 540,
+          "rss": 94.5
+        },
+        {
+          "seconds": 570,
+          "rss": 92.671875
+        },
+        {
+          "seconds": 600,
+          "rss": 80.609375
+        }
+      ],
+      "errors": 0,
+      "idleRssMiB": 59.78125,
+      "finalRssMiB": 80.609375,
+      "latency": {
+        "count": 3001,
+        "median": 7.7743330000084825,
+        "p95": 16.479166999983136,
+        "min": 1.823499999998603,
+        "max": 65.65095899999869
+      },
+      "medianAddedOverheadMs": 7.609166000008372
+    }
+  },
+  "directMockMs": {
+    "count": 150,
+    "median": 0.16516700000011042,
+    "p95": 0.25945800000044983,
+    "min": 0.14454200000000128,
+    "max": 1.9227079999991474
+  }
+}

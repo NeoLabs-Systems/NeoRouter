@@ -1,0 +1,70 @@
+{
+  "node": [
+    {
+      "stage": "baseline",
+      "runtime": "node",
+      "rssMiB": 39.9375
+    },
+    {
+      "stage": "library-import",
+      "runtime": "node",
+      "rssMiB": 85.796875,
+      "elapsedMs": 155.221
+    },
+    {
+      "stage": "model-loaded",
+      "runtime": "node",
+      "rssMiB": 1165.859375,
+      "elapsedMs": 3967.2515829999998
+    },
+    {
+      "stage": "inference",
+      "runtime": "node",
+      "rssMiB": 1282.9375,
+      "elapsedMs": 122.13250000000062,
+      "spans": 1
+    },
+    {
+      "stage": "disposed",
+      "runtime": "node",
+      "rssMiB": 1255
+    }
+  ],
+  "bun": [
+    {
+      "stage": "baseline",
+      "runtime": "bun",
+      "rssMiB": 13.953125
+    },
+    {
+      "stage": "library-import",
+      "runtime": "bun",
+      "rssMiB": 70.625,
+      "elapsedMs": 170.321167
+    },
+    {
+      "stage": "model-loaded",
+      "runtime": "bun",
+      "rssMiB": 1595.1875,
+      "elapsedMs": 1426.910333
+    },
+    {
+      "stage": "inference",
+      "runtime": "bun",
+      "rssMiB": 1737.984375,
+      "elapsedMs": 47.43504199999984,
+      "spans": 1
+    },
+    {
+      "stage": "disposed",
+      "runtime": "bun",
+      "rssMiB": 1707.296875
+    }
+  ],
+  "source": {
+    "model": "openai/privacy-filter",
+    "revision": "7ffa9a043d54d1be65afb281eddf0ffbe629385b",
+    "dtype": "q4",
+    "weightsBytes": 917120144
+  }
+}

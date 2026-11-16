@@ -14,6 +14,7 @@ const { listen } = http.Server.prototype;
 http.Server.prototype.listen = function listenOnLoopback(port, ...rest) {
   if (port !== 0 || (rest.length > 0 && typeof rest[0] !== 'function')) return listen.call(this, port, ...rest);
   if (rest[0]) this.once('listening', rest[0]);
+  if (process.versions.bun) return listen.call(this, port, '127.0.0.1');
   this._listen2('127.0.0.1', 0, 4, 511);
   return this;
 };

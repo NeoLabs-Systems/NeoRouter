@@ -1,6 +1,7 @@
 'use strict';
 
-const Database = require('better-sqlite3');
+// Research branch only: compare runtimes without changing Node's driver.
+const Database = process.versions.bun ? require('../../research/bun/sqlite') : require('better-sqlite3');
 const { ensureRuntimeDirs } = require('../../runtime/paths');
 
 let connection;

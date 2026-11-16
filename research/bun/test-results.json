@@ -1,0 +1,440 @@
+[
+  {
+    "file": "test/api/account_data.test.js",
+    "exit": 0,
+    "pass": 6,
+    "fail": 0
+  },
+  {
+    "file": "test/api/account_limits.test.js",
+    "exit": 0,
+    "pass": 4,
+    "fail": 0
+  },
+  {
+    "file": "test/api/api_docs.test.js",
+    "exit": 0,
+    "pass": 1,
+    "fail": 0
+  },
+  {
+    "file": "test/api/apps.test.js",
+    "exit": 0,
+    "pass": 4,
+    "fail": 0
+  },
+  {
+    "file": "test/api/auto_variants.test.js",
+    "exit": 0,
+    "pass": 10,
+    "fail": 0
+  },
+  {
+    "file": "test/api/budget_pacing.test.js",
+    "exit": 0,
+    "pass": 2,
+    "fail": 0
+  },
+  {
+    "file": "test/api/chatgpt.test.js",
+    "exit": 0,
+    "pass": 4,
+    "fail": 0
+  },
+  {
+    "file": "test/api/confirm_throttle.test.js",
+    "exit": 0,
+    "pass": 3,
+    "fail": 0
+  },
+  {
+    "file": "test/api/connect.test.js",
+    "exit": 0,
+    "pass": 6,
+    "fail": 0
+  },
+  {
+    "file": "test/api/connection_limits.test.js",
+    "exit": 0,
+    "pass": 4,
+    "fail": 0
+  },
+  {
+    "file": "test/api/free_guard.test.js",
+    "exit": 0,
+    "pass": 2,
+    "fail": 0
+  },
+  {
+    "file": "test/api/gateway.test.js",
+    "exit": 0,
+    "pass": 25,
+    "fail": 0
+  },
+  {
+    "file": "test/api/hedging.test.js",
+    "exit": 0,
+    "pass": 2,
+    "fail": 0
+  },
+  {
+    "file": "test/api/key_priority.test.js",
+    "exit": 0,
+    "pass": 3,
+    "fail": 0
+  },
+  {
+    "file": "test/api/last_resort.test.js",
+    "exit": 0,
+    "pass": 2,
+    "fail": 0
+  },
+  {
+    "file": "test/api/learning_stats.test.js",
+    "exit": 0,
+    "pass": 8,
+    "fail": 0
+  },
+  {
+    "file": "test/api/live.test.js",
+    "exit": 0,
+    "pass": 7,
+    "fail": 0
+  },
+  {
+    "file": "test/api/local_models.test.js",
+    "exit": 0,
+    "pass": 11,
+    "fail": 0
+  },
+  {
+    "file": "test/api/long_shots.test.js",
+    "exit": 0,
+    "pass": 9,
+    "fail": 0
+  },
+  {
+    "file": "test/api/media.test.js",
+    "exit": 0,
+    "pass": 14,
+    "fail": 0
+  },
+  {
+    "file": "test/api/models_listing.test.js",
+    "exit": 0,
+    "pass": 1,
+    "fail": 0
+  },
+  {
+    "file": "test/api/multi_account.test.js",
+    "exit": 0,
+    "pass": 4,
+    "fail": 0
+  },
+  {
+    "file": "test/api/not_found.test.js",
+    "exit": 0,
+    "pass": 1,
+    "fail": 0
+  },
+  {
+    "file": "test/api/nous_portal.test.js",
+    "exit": 0,
+    "pass": 6,
+    "fail": 0
+  },
+  {
+    "file": "test/api/plans.test.js",
+    "exit": 0,
+    "pass": 5,
+    "fail": 0
+  },
+  {
+    "file": "test/api/playground.test.js",
+    "exit": 0,
+    "pass": 1,
+    "fail": 0
+  },
+  {
+    "file": "test/api/pool_relay.test.js",
+    "exit": 0,
+    "pass": 10,
+    "fail": 0
+  },
+  {
+    "file": "test/api/pools.test.js",
+    "exit": 0,
+    "pass": 17,
+    "fail": 0
+  },
+  {
+    "file": "test/api/processing.test.js",
+    "exit": 0,
+    "pass": 5,
+    "fail": 0
+  },
+  {
+    "file": "test/api/provider_guard.test.js",
+    "exit": 0,
+    "pass": 5,
+    "fail": 0
+  },
+  {
+    "file": "test/api/providers_custom.test.js",
+    "exit": 0,
+    "pass": 3,
+    "fail": 0
+  },
+  {
+    "file": "test/api/public_status.test.js",
+    "exit": 0,
+    "pass": 1,
+    "fail": 0
+  },
+  {
+    "file": "test/api/search.test.js",
+    "exit": 0,
+    "pass": 4,
+    "fail": 0
+  },
+  {
+    "file": "test/api/slot_plans.test.js",
+    "exit": 0,
+    "pass": 3,
+    "fail": 0
+  },
+  {
+    "file": "test/api/smoothing.test.js",
+    "exit": 0,
+    "pass": 1,
+    "fail": 0
+  },
+  {
+    "file": "test/api/task_routing.test.js",
+    "exit": 0,
+    "pass": 2,
+    "fail": 0
+  },
+  {
+    "file": "test/api/teams.test.js",
+    "exit": 0,
+    "pass": 8,
+    "fail": 0
+  },
+  {
+    "file": "test/api/two_factor.test.js",
+    "exit": 0,
+    "pass": 7,
+    "fail": 0
+  },
+  {
+    "file": "test/api/updates.test.js",
+    "exit": 0,
+    "pass": 3,
+    "fail": 0
+  },
+  {
+    "file": "test/api/weather.test.js",
+    "exit": 0,
+    "pass": 3,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/analytics.test.js",
+    "exit": 0,
+    "pass": 4,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/catalog.test.js",
+    "exit": 0,
+    "pass": 35,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/cli.test.js",
+    "exit": 0,
+    "pass": 6,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/command_link.test.js",
+    "exit": 0,
+    "pass": 4,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/container.test.js",
+    "exit": 0,
+    "pass": 3,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/install_helpers.test.js",
+    "exit": 0,
+    "pass": 8,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/limit_summary.test.js",
+    "exit": 0,
+    "pass": 3,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/local_models.test.js",
+    "exit": 0,
+    "pass": 16,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/media_voices.test.js",
+    "exit": 0,
+    "pass": 14,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/opencode.test.js",
+    "exit": 0,
+    "pass": 9,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/plans.test.js",
+    "exit": 0,
+    "pass": 3,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/pool_relay.test.js",
+    "exit": 0,
+    "pass": 6,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/pools.test.js",
+    "exit": 0,
+    "pass": 8,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/processing.test.js",
+    "exit": 0,
+    "pass": 7,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/provider_problems.test.js",
+    "exit": 0,
+    "pass": 9,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/redaction_restore.test.js",
+    "exit": 0,
+    "pass": 8,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/release_channel.test.js",
+    "exit": 0,
+    "pass": 1,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/routing_groups_cache.test.js",
+    "exit": 0,
+    "pass": 3,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/routing_recovery.test.js",
+    "exit": 0,
+    "pass": 8,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/routing.test.js",
+    "exit": 0,
+    "pass": 16,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/service_path.test.js",
+    "exit": 0,
+    "pass": 2,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/shield_corpus.test.js",
+    "exit": 0,
+    "pass": 6,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/shield_rules.test.js",
+    "exit": 0,
+    "pass": 298,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/smoothing.test.js",
+    "exit": 0,
+    "pass": 9,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/status_history.test.js",
+    "exit": 0,
+    "pass": 2,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/system_one.test.js",
+    "exit": 0,
+    "pass": 5,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/systemd_unit.test.js",
+    "exit": 0,
+    "pass": 1,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/task.test.js",
+    "exit": 0,
+    "pass": 7,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/test_support.test.js",
+    "exit": 0,
+    "pass": 1,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/translators.test.js",
+    "exit": 0,
+    "pass": 7,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/update_check.test.js",
+    "exit": 0,
+    "pass": 4,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/voice_providers.test.js",
+    "exit": 0,
+    "pass": 4,
+    "fail": 0
+  },
+  {
+    "file": "test/unit/weather_adapter.test.js",
+    "exit": 0,
+    "pass": 4,
+    "fail": 0
+  }
+]
