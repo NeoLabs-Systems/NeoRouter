@@ -153,6 +153,12 @@ router.get('/models', requireRouterKey, (req, res) => {
   // Only the autos the key may ask for, and models only when it may name them.
   // A partner's router picks models itself, so it gets no autos.
   const autos = key.peer_link_id ? [] : autoModels(key, reachable, kind).filter((auto) => routeAllowedByKey(auto.id, key));
+  if (!key.peer_link_id) {
+    for (const group of require('../../services/routing/groups').list(key.user_id)) {
+      const id = `pool:${group.name}`;
+      if (routeAllowedByKey(id, key)) autos.push({ id, name: group.name, neorouter: { routingGroup: group.name } });
+    }
+  }
   const entries = reachable.filter((entry) => routeAllowedByKey(entry.id, key));
   if (req.get('anthropic-version')) {
     const data = [...autos.map((auto) => ({ type: 'model', id: auto.id, display_name: auto.name, created_at: new Date().toISOString() })),

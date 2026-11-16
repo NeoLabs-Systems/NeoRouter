@@ -181,10 +181,14 @@ class _OverviewState extends State<_Overview> {
           ),
         ),
         const SizedBox(height: 28),
+        if ((data['byRoutingGroup'] as List? ?? []).isNotEmpty) ...<Widget>[
+          ActivityRanking(title: t.routingGroups, rows: (data['byRoutingGroup'] as List).cast<Map>()),
+          const SizedBox(height: 28),
+        ],
         LayoutBuilder(
           builder: (context, constraints) {
             final models = ActivityRanking(title: t.topModelsTitle, rows: (data['byModel'] as List).cast<Map>(), label: shortModelName);
-            final providers = ActivityRanking(title: t.byConnection, rows: (data['byProvider'] as List).cast<Map>());
+            final providers = ActivityRanking(title: t.byConnection, rows: (data['byProvider'] as List).cast<Map>(), detail: (row) => '${formatCount(_num(row['requests']))} · ${t.cacheHitRate}: ${row['cacheHitRate'] == null ? '—' : '${(_num(row['cacheHitRate']) * 100).round()} %'}');
             final keys = ActivityRanking(title: t.byKey, rows: (data['byKey'] as List).cast<Map>());
             // Shown once more than one kind of model (chat, embeddings, …) was used.
             final kindRows = ((data['byCapability'] as List?) ?? const <Object>[]).cast<Map>();
@@ -575,6 +579,8 @@ class _RequestDetails extends StatelessWidget {
     final palette = neoRouterPaletteOf(context);
     final facts = <(String, String)>[
       (t.detailRequested, log.requestedModel),
+      if (log.routingGroup != null) (t.routingGroups, log.routingGroup!),
+      (t.cachedInputTokens, formatCount(log.cachedInputTokens)),
       if (log.keyName != null) (t.detailKey, log.keyName!),
       (t.detailResponse, formatMs(log.latencyMs)),
       if (log.ttftMs != null) (t.detailFirstToken, formatMs(log.ttftMs)),

@@ -128,7 +128,7 @@ function usageOf(metadata) {
   if (!metadata) return null;
   const input = metadata.promptTokenCount || 0;
   const output = (metadata.candidatesTokenCount || 0) + (metadata.thoughtsTokenCount || 0);
-  return { prompt_tokens: input, completion_tokens: output, total_tokens: input + output };
+  return { prompt_tokens: input, prompt_tokens_details: { cached_tokens: metadata.cachedContentTokenCount || 0 }, completion_tokens: output, total_tokens: input + output };
 }
 
 function partsToDelta(parts, toolCounter) {

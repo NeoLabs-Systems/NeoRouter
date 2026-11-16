@@ -7,6 +7,7 @@
 const crypto = require('node:crypto');
 
 const PASSTHROUGH_FIELDS = [
+  'prompt_cache_key',
   'temperature', 'top_p', 'stop', 'seed', 'presence_penalty', 'frequency_penalty', 'n', 'logit_bias',
   'logprobs', 'top_logprobs', 'user', 'parallel_tool_calls', 'reasoning_effort', 'response_format', 'tool_choice',
 ];
@@ -70,13 +71,16 @@ function estimateInputTokens(request) {
 
 function normalizeUsage(usage) {
   if (!usage) return null;
-  const input = usage.prompt_tokens ?? usage.input_tokens ?? 0;
+  const cached = usage.prompt_tokens_details?.cached_tokens ?? usage.input_tokens_details?.cached_tokens ?? usage.cache_read_input_tokens ?? 0;
+  const creation = usage.cache_creation_input_tokens ?? 0;
+  const input = usage.prompt_tokens ?? ((usage.input_tokens ?? 0) + (usage.cache_read_input_tokens || 0) + creation);
   const output = usage.completion_tokens ?? usage.output_tokens ?? 0;
   return {
     prompt_tokens: input,
     completion_tokens: output,
     total_tokens: usage.total_tokens ?? input + output,
-    ...(usage.prompt_tokens_details ? { prompt_tokens_details: usage.prompt_tokens_details } : {}),
+    prompt_tokens_details: { ...usage.prompt_tokens_details, cached_tokens: Math.max(0, Math.min(input, cached)) },
+    cache_creation_input_tokens: creation,
     ...(usage.completion_tokens_details ? { completion_tokens_details: usage.completion_tokens_details } : {}),
   };
 }

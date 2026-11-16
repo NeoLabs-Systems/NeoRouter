@@ -1,7 +1,8 @@
 'use strict';
 
 const crypto = require('node:crypto');
-const { clientSession } = require('../../providers/session_id');
+const cacheAffinity = require('../../services/routing/cache_affinity');
+const { clientSession, derivedSession } = require('../../providers/session_id');
 const { getConfig } = require('../../config/env');
 const webSearch = require('./web_search');
 const { HttpError } = require('../../middleware/error_handler');
@@ -100,7 +101,7 @@ function hedgeDelay(entry, stream) {
 }
 
 function trailItem(entry, outcome, extra = {}) {
-  return { model: entry.id, ref: entry.ref, outcome, ...(entry.tryingLuck ? { luck: true } : {}), ...(entry.lastResort ? { lastResort: true } : {}), ...extra };
+  return { group: entry.routingGroup || null, model: entry.id, ref: entry.ref, outcome, ...(entry.tryingLuck ? { luck: true } : {}), ...(entry.lastResort ? { lastResort: true } : {}), ...extra };
 }
 
 // Wraps the remaining upstream iterator so idle gaps abort the attempt.
@@ -243,7 +244,8 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
     throw new HttpError(400, 'INVALID_REQUEST', `The request body could not be read: ${error.message}`);
   }
   if (!canonical.messages.length) throw new HttpError(400, 'INVALID_REQUEST', 'The request contains no messages.');
-  const sessionId = clientSession(req);
+  const sessionId = clientSession(req) || derivedSession(canonical, key.id);
+  if (!canonical.prompt_cache_key) canonical.prompt_cache_key = sessionId;
 
   const rpm = internal ? { allowed: true } : routerKeys.consumeRpm(key);
   if (!rpm.allowed) {
@@ -284,6 +286,8 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
     keepPrivate,
     shareReserve,
     sharePoolId,
+    sessionId,
+    routingGroup: peer ? null : req.get?.('x-neorouter-group') || null,
   });
   // The same conversation again right after an answer: that answer was no good.
   const retryId = internal || peer ? null : retries.fingerprint(key.id, canonical.messages);
@@ -327,6 +331,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
         redacted_count: processingStats.redacted,
         compression_saved_tokens: processingStats.compression.savedTokens,
         task: plan.task?.primary ?? null,
+        routing_group: trail.at(-1)?.group || plan.group?.name || null,
         latency_ms: Date.now() - startedAt,
         input_tokens: 0,
         output_tokens: 0,
@@ -344,6 +349,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
     const { entry, reservation } = attempt;
     if (!peer) {
       res.set('X-NeoRouter-Model', entry.id);
+      if (entry.routingGroup) res.set('X-NeoRouter-Group', entry.routingGroup);
       res.set('X-NeoRouter-Trail', [...trail.map((item) => item.model), entry.id].join(','));
     }
     if (keepPrivate) res.set('X-NeoRouter-Kept-Private', keptPrivate.reasons.join(','));
@@ -354,6 +360,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
         prompt_tokens: inputTokens,
         completion_tokens: Math.ceil(textOf(result.response.choices[0].message.content).length / 4),
       };
+      cacheAffinity.remember(key.id, sessionId, entry);
       const cost = budget.costOf(entry, tokens);
       reservation.settle(cost, requestId);
       billing.observeCost(entry, reportedCost(result.response.usage));
@@ -362,6 +369,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
       trail.push(trailItem(entry, 'success', { ms: result.latencyMs }));
       finish({
         status: 'success', http_status: 200, model_ref: entry.ref, model_label: entry.id, account_id: entry.accountId,
+        routing_group: entry.routingGroup || null, cached_input_tokens: cacheAffinity.cachedTokens(tokens), cache_creation_tokens: tokens.cache_creation_input_tokens || 0,
         input_tokens: tokens.prompt_tokens, output_tokens: tokens.completion_tokens, cost_usd: cost, is_free: entry.isFree ? 1 : 0,
       });
       const response = vault ? restoreResponse(result.response, vault) : result.response;
@@ -408,6 +416,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
     } else if (invalidToolCalls(accumulator.toolCalls)) {
       learning.onFailure(entry, new ProviderError(KINDS.INVALID_OUTPUT, 'Streamed tool-call arguments were not valid JSON.'));
     } else {
+      cacheAffinity.remember(key.id, sessionId, entry);
       learning.onSuccess(entry, {
         latencyMs: durationMs, ttftMs: result.ttftMs, outputTokens: tokens.completion_tokens, generationMs: durationMs - result.ttftMs,
       }, result.headers);
@@ -419,6 +428,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
       error_code: streamError ? (streamError.kind === KINDS.ABORTED ? 'client_closed' : streamError.kind) : null,
       error_message: streamError?.message || null,
       model_ref: entry.ref, model_label: entry.id, account_id: entry.accountId,
+      routing_group: entry.routingGroup || null, cached_input_tokens: cacheAffinity.cachedTokens(tokens), cache_creation_tokens: tokens.cache_creation_input_tokens || 0,
       input_tokens: tokens.prompt_tokens, output_tokens: tokens.completion_tokens, cost_usd: cost, is_free: entry.isFree ? 1 : 0,
       ttft_ms: result.ttftMs,
     });

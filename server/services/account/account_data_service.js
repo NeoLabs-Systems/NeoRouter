@@ -58,10 +58,11 @@ async function exportData(userId, credentials) {
       models: rows('SELECT model_id, display_name, capability, enabled, is_free FROM models WHERE account_id = ? ORDER BY model_id', row.id)
         .map((model) => ({ id: model.model_id, name: model.display_name, capability: model.capability, enabled: Boolean(model.enabled), free: Boolean(model.is_free) })),
     })),
+    routingGroups: require('../routing/groups').list(userId),
     routingProfiles: rows('SELECT id, name, weights_json, constraints_json, created_at FROM routing_profiles WHERE user_id = ?', userId)
       .map((row) => ({ id: row.id, name: row.name, weights: json(row.weights_json, {}), constraints: json(row.constraints_json, {}), createdAt: row.created_at })),
     // NeoRouter keys are stored only as a hash: listed, but they cannot be exported.
-    routerKeys: rows(`SELECT id, name, prefix, mode, budget_usd, budget_period, rpm_limit, allowed_models_json, profile, expires_at, revoked_at,
+    routerKeys: rows(`SELECT id, name, prefix, mode, budget_usd, budget_period, rpm_limit, allowed_models_json, profile, routing_group, expires_at, revoked_at,
       last_used_at, created_at, app_name, token_limit, token_period, priority FROM router_keys WHERE user_id = ? ORDER BY created_at`, userId)
       .map(({ allowed_models_json: allowed, ...row }) => ({ ...row, allowedModels: json(allowed, null) })),
     team: {
@@ -72,7 +73,7 @@ async function exportData(userId, credentials) {
       .map((row) => ({ id: row.pool_id, name: row.name, host: Boolean(row.is_host), myName: row.self_name, share: json(row.share_json, {}), paused: Boolean(row.paused), joinedAt: row.joined_at })),
     // Usage history: which model answered, tokens, cost. Prompts are never stored.
     requests: rows(`SELECT id, created_at, capability, task, requested_model, model_label, status, http_status, error_code, input_tokens, output_tokens,
-      units, cost_usd, saved_usd, is_free, latency_ms, stream FROM requests WHERE user_id = ? ORDER BY created_at`, userId),
+      units, routing_group, cached_input_tokens, cache_creation_tokens, cost_usd, saved_usd, is_free, latency_ms, stream FROM requests WHERE user_id = ? ORDER BY created_at`, userId),
     mediaJobs: rows('SELECT id, capability, model_label, status, request_json, result_json, created_at FROM media_jobs WHERE user_id = ? ORDER BY created_at', userId)
       .map(({ request_json: request, result_json: result, ...row }) => ({ ...row, request: json(request), result: json(result) })),
   };

@@ -60,6 +60,7 @@ function publicKey(row) {
     allowedModels: JSON.parse(row.allowed_models_json || '[]'),
     // 'pool': may also use pool partners' free models; 'own': own connections only.
     poolAccess: row.pool_access === 'pool' ? 'pool' : 'own',
+    routingGroup: row.routing_group || null,
     profile: row.profile,
     expiresAt: row.expires_at,
     revoked: Boolean(row.revoked_at),
@@ -78,6 +79,7 @@ function assertProfile(userId, profile) {
 // `app` ({name, origin, scopes}) marks a key made for a connected app.
 function create(userId, input, createdBy = userId, app = null) {
   assertProfile(userId, input.profile);
+  if (input.routingGroup) require('../routing/groups').requireGroup(userId, input.routingGroup);
   const id = crypto.randomUUID();
   const prefix = crypto.randomBytes(4).toString('hex');
   const secret = `${PREFIX}_${prefix}_${randomToken(32)}`;
@@ -92,6 +94,7 @@ function create(userId, input, createdBy = userId, app = null) {
       app?.name ?? null, app?.origin ?? null, app ? JSON.stringify(app.scopes || []) : null,
       input.tokenLimit ?? null, input.tokenPeriod || 'monthly', input.priority || 'normal',
       input.maxPricePerMillion ?? null, input.poolAccess === 'pool' ? 'pool' : 'own');
+  if (input.routingGroup) getDatabase().prepare('UPDATE router_keys SET routing_group = ? WHERE id = ?').run(input.routingGroup, id);
   return { key: get(userId, id), secret };
 }
 
@@ -113,6 +116,7 @@ function list(userId) {
 function update(userId, id, input) {
   const row = getRow(userId, id);
   assertProfile(userId, input.profile);
+  if (input.routingGroup) require('../routing/groups').requireGroup(userId, input.routingGroup);
   const allowed = kinds(input, row);
   getDatabase().prepare(`UPDATE router_keys SET name = ?, mode = ?, budget_usd = ?, budget_period = ?, rpm_limit = ?,
     allowed_models_json = ?, profile = ?, expires_at = ?, allow_free = ?, allow_plan = ?, token_limit = ?, token_period = ?, priority = ?, max_price_per_million = ?, pool_access = ? WHERE id = ?`)
@@ -134,6 +138,7 @@ function update(userId, id, input) {
       input.poolAccess !== undefined ? (input.poolAccess === 'pool' ? 'pool' : 'own') : row.pool_access,
       id,
     );
+  if (input.routingGroup !== undefined) getDatabase().prepare('UPDATE router_keys SET routing_group = ? WHERE id = ?').run(input.routingGroup, id);
   return get(userId, id);
 }
 

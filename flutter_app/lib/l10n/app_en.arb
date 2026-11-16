@@ -3504,5 +3504,19 @@
   "lmErrUnsupported": "This system cannot run this model.",
   "lmErrInstalled": "This model is already installed.",
   "lmErrNoStarter": "No starter set fits this server.",
-  "lmNothingFits": "Nothing of this kind fits this server."
+  "lmNothingFits": "Nothing of this kind fits this server.",
+  "routingGroups": "Routing groups",
+  "routingGroupsHint": "Choose accounts or model patterns for a kind of work. Use pool:name as the model, or send X-NeoRouter-Group.",
+  "createRoutingGroup": "Create group",
+  "routingGroupName": "Routing name",
+  "routingGroupModels": "Model patterns (one per line)",
+  "routingGroupAccounts": "Accounts",
+  "routingGroupFallback": "Fallback group",
+  "routingGroupMinimum": "Minimum intelligence (0–1, optional)",
+  "routingGroupDefault": "Default routing group",
+  "routingGroupNone": "None",
+  "cachedInputTokens": "Cached input tokens",
+  "cacheHitRate": "Cache hit rate",
+  "planUsageUnknown": "Plan usage unknown",
+  "planUsage": "Plan usage"
 }

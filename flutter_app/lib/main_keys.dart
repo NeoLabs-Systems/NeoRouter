@@ -463,6 +463,8 @@ class _KeyFormState extends State<_KeyForm> {
   late bool _paid = widget.existing?.allowPaid ?? false;
   late bool _pool = widget.existing?.usesPool ?? false;
   late String _period = widget.existing?.budgetPeriod ?? 'monthly';
+  late String _routingGroup = widget.existing?.raw['routingGroup'] as String? ?? '';
+  List<Map<String, dynamic>> _groups = [];
   late String _profile = widget.existing?.profile ?? 'balanced';
   bool _advanced = false;
   bool _saving = false;
@@ -471,6 +473,9 @@ class _KeyFormState extends State<_KeyForm> {
   @override
   void initState() {
     super.initState();
+    widget.controller.api.routingGroups().then((groups) {
+      if (mounted) setState(() => _groups = groups);
+    }).catchError((_) {});
     // The kinds of model this user has connected, for the kind chips.
     widget.controller.api.capabilities().then((items) {
       if (mounted) setState(() => _available = items.where((item) => item.routable && item.total > 0 && item.id != 'live').map((item) => item.id).toList());
@@ -491,7 +496,7 @@ class _KeyFormState extends State<_KeyForm> {
     final lines = _allowed.text.split('\n').map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
     final kinds = _kinds ?? _available.toSet();
     final narrowed = _kinds != null && !_available.every(kinds.contains);
-    final hasModels = lines.any((line) => !RegExp(r'^auto(?:$|[-:*?])', caseSensitive: false).hasMatch(line));
+    final hasModels = lines.any((line) => !RegExp(r'^(?:auto(?:$|[-:*?])|pool:)', caseSensitive: false).hasMatch(line));
     return <String>[if (narrowed || hasModels) for (final kind in kinds) 'kind:$kind', ...lines];
   }
 
@@ -513,6 +518,7 @@ class _KeyFormState extends State<_KeyForm> {
     final routes = <(String, String)>[
       ('auto', t.autoKeyDefault),
       for (final profile in widget.profiles) ('auto:${profile.slug}', 'Auto (${profileLabel(t, profile)})'),
+      for (final group in _groups) ('pool:${group['name']}', '${group['name']}'),
     ];
     final picked = await showModelPicker(context, controller: widget.controller, selected: lines.where((line) => !line.contains('*')).toList(), multi: true, routes: routes, capabilities: _available.where(_kindOn).toList());
     if (picked == null) return;
@@ -546,6 +552,7 @@ class _KeyFormState extends State<_KeyForm> {
       'tokenPeriod': _tokenPeriod,
       'allowedModels': _allowedList(),
       'profile': _profile,
+      'routingGroup': _routingGroup.isEmpty ? null : _routingGroup,
       // Only sent while in a pool, so a key keeps its choice if the pool is left and rejoined.
       if (widget.controller.inPool) 'poolAccess': _pool ? 'pool' : 'own',
     };
@@ -640,6 +647,17 @@ class _KeyFormState extends State<_KeyForm> {
                 ),
               ),
               if (_advanced) ...<Widget>[
+                DropdownButtonFormField<String>(
+                  initialValue: _routingGroup,
+                  decoration: InputDecoration(labelText: t.routingGroupDefault),
+                  items: <DropdownMenuItem<String>>[
+                    DropdownMenuItem(value: '', child: Text(t.routingGroupNone)),
+                    if (_routingGroup.isNotEmpty && !_groups.any((group) => group['name'] == _routingGroup)) DropdownMenuItem(value: _routingGroup, child: Text(_routingGroup)),
+                    for (final group in _groups) DropdownMenuItem(value: group['name'] as String, child: Text('${group['name']}')),
+                  ],
+                  onChanged: (value) => setState(() => _routingGroup = value ?? ''),
+                ),
+                const SizedBox(height: AppSpacing.sm),
                 DropdownButtonFormField<String>(
                   initialValue: widget.profiles.any((item) => item.id == _profile) ? _profile : 'balanced',
                   decoration: InputDecoration(labelText: t.defaultProfile),

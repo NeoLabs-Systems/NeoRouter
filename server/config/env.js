@@ -35,6 +35,11 @@ function getConfig() {
     routing: Object.freeze({
       maxAttempts: integer('NEOROUTER_ROUTING_MAX_ATTEMPTS', 8, { min: 1, max: 30 }),
       totalBudgetMs: integer('NEOROUTER_ROUTING_TOTAL_BUDGET_MS', 300_000, { min: 1000 }),
+      cacheAffinityTtlMs: integer('NEOROUTER_CACHE_AFFINITY_TTL_MS', 30 * 60_000, { min: 1000 }),
+      cacheAffinityMaxSessions: integer('NEOROUTER_CACHE_AFFINITY_MAX_SESSIONS', 10000, { min: 1 }),
+      cacheLearningWindowMs: integer('NEOROUTER_CACHE_LEARNING_WINDOW_MS', 7 * 86_400_000, { min: 1000 }),
+      cacheAffinityTokenScale: integer('NEOROUTER_CACHE_AFFINITY_TOKEN_SCALE', 1024, { min: 1 }),
+      cacheAffinityMaxBonus: 0.2,
       topK: integer('NEOROUTER_ROUTING_TOP_K', 5, { min: 1, max: 50 }),
       hedging: boolean('NEOROUTER_ROUTING_HEDGING', true),
       maxParallel: integer('NEOROUTER_ROUTING_MAX_PARALLEL', 3, { min: 1, max: 8 }),

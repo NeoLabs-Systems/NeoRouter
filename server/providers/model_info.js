@@ -181,6 +181,8 @@ function normalizeModel(raw, overrides = {}) {
     contextWindow: contextWindow && contextWindow > 0 ? Math.round(contextWindow) : null,
     maxOutput: maxOutput && maxOutput > 0 ? Math.round(maxOutput) : null,
     ...pricing,
+    priceCachedIn: toNumber(raw.priceCachedIn) ?? (toNumber(raw.pricing?.input_cache_read) !== null ? toNumber(raw.pricing.input_cache_read) * 1e6 : null),
+    priceCacheWrite: toNumber(raw.priceCacheWrite) ?? (toNumber(raw.pricing?.input_cache_write) !== null ? toNumber(raw.pricing.input_cache_write) * 1e6 : null),
     ...parseUnitPricing(raw),
     tools: params ? params.includes('tools') : flag(raw.supports_tools ?? raw.capabilities?.function_calling ?? supports(raw.capabilities?.tools)),
     vision: Array.isArray(inputs) ? inputs.some((input) => input === 'image' || /^image\//i.test(String(input))) : flag(raw.supports_vision ?? raw.capabilities?.vision),

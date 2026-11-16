@@ -59,7 +59,7 @@ async function syncAccount(accountId) {
         price_source: model.priceKnown ? 'listing' : priceFromFacts ? 'models.dev' : null,
         is_free: 0,
         free_reason: null,
-        raw_json: JSON.stringify({ freeHint: model.freeHint, priceKnown: model.priceKnown, ...(model.decision ? { decision: true } : {}), ...(model.paidOnly ? { paidOnly: true } : {}) }),
+        raw_json: JSON.stringify({ priceCachedIn: model.priceCachedIn ?? facts.priceCachedIn ?? null, priceCacheWrite: model.priceCacheWrite ?? facts.priceCacheWrite ?? null, freeHint: model.freeHint, priceKnown: model.priceKnown, ...(model.decision ? { decision: true } : {}), ...(model.paidOnly ? { paidOnly: true } : {}) }),
         price_unit: model.priceUnit || null,
         price_per_unit: model.unitPrice ?? null,
         // Only a new model starts switched off; the ON CONFLICT update leaves a choice alone.
@@ -128,7 +128,14 @@ function capabilitySummary(userId) {
     GROUP BY m.capability ORDER BY total DESC`).all(userId).map((row) => ({ id: row.capability, total: row.total, free: row.free || 0 }));
 }
 
-const OVERRIDE_KEYS = ['free', 'billedAt', 'noFreeTier', 'priceUnit', 'unitPrice', 'priceIn', 'priceOut', 'contextWindow', 'tools', 'vision', 'intelligence'];
+// Cache prices retained from listings and provider facts use USD/million.
+function cachePrice(row, overrides, field) {
+  const raw = JSON.parse(row.raw_json || '{}');
+  const value = overrides[field] ?? raw[field] ?? null;
+  return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+const OVERRIDE_KEYS = ['free', 'billedAt', 'noFreeTier', 'priceUnit', 'unitPrice', 'priceIn', 'priceOut', 'priceCachedIn', 'priceCacheWrite', 'contextWindow', 'tools', 'vision', 'intelligence'];
 
 function updateModel(userId, modelRef, { enabled, overrides }) {
   const db = getDatabase();
@@ -200,6 +207,8 @@ function toEntry(row) {
     reasoning: bool(pick(undefined, row.supports_reasoning, row.md_reasoning)),
     priceIn: pick(overrides.priceIn, row.price_in, null),
     priceOut: pick(overrides.priceOut, row.price_out, null),
+    priceCachedIn: cachePrice(row, overrides, 'priceCachedIn'),
+    priceCacheWrite: cachePrice(row, overrides, 'priceCacheWrite'),
     priceSource: overrides.priceIn !== undefined ? 'manual' : row.price_source,
     // Media models: USD per image, second (video), minute (audio in) or
     // million characters (speech).

@@ -10,6 +10,8 @@ async function fetchSource({ signal } = {}) {
   const data = await response.json();
   return (data?.data || []).map((model) => ({
     id: model.id,
+    priceCachedIn: model.pricing?.input_cache_read != null ? Number(model.pricing.input_cache_read) * 1e6 : null,
+    priceCacheWrite: model.pricing?.input_cache_write != null ? Number(model.pricing.input_cache_write) * 1e6 : null,
     priceIn: Number(model.pricing?.prompt) * 1e6,
     priceOut: Number(model.pricing?.completion) * 1e6,
     contextWindow: model.context_length || null,

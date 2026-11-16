@@ -5535,4 +5535,47 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get lmNothingFits => 'Nothing of this kind fits this server.';
+
+  @override
+  String get routingGroups => 'Routing groups';
+
+  @override
+  String get routingGroupsHint =>
+      'Choose accounts or model patterns for a kind of work. Use pool:name as the model, or send X-NeoRouter-Group.';
+
+  @override
+  String get createRoutingGroup => 'Create group';
+
+  @override
+  String get routingGroupName => 'Routing name';
+
+  @override
+  String get routingGroupModels => 'Model patterns (one per line)';
+
+  @override
+  String get routingGroupAccounts => 'Accounts';
+
+  @override
+  String get routingGroupFallback => 'Fallback group';
+
+  @override
+  String get routingGroupMinimum => 'Minimum intelligence (0–1, optional)';
+
+  @override
+  String get routingGroupDefault => 'Default routing group';
+
+  @override
+  String get routingGroupNone => 'None';
+
+  @override
+  String get cachedInputTokens => 'Cached input tokens';
+
+  @override
+  String get cacheHitRate => 'Cache hit rate';
+
+  @override
+  String get planUsageUnknown => 'Plan usage unknown';
+
+  @override
+  String get planUsage => 'Plan usage';
 }

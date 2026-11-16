@@ -122,6 +122,7 @@ function remove(userId, id) {
   const result = getDatabase().prepare('DELETE FROM routing_profiles WHERE id = ? AND user_id = ?').run(id, userId);
   if (!result.changes) throw new HttpError(404, 'PROFILE_NOT_FOUND', 'This routing profile does not exist.');
   getDatabase().prepare("UPDATE router_keys SET profile = 'balanced' WHERE user_id = ? AND profile = ?").run(userId, id);
+  getDatabase().prepare("UPDATE routing_groups SET config_json = json_set(config_json, '$.profile', NULL) WHERE user_id = ? AND json_extract(config_json, '$.profile') = ?").run(userId, id);
 }
 
 module.exports = { PRESETS, ALIASES, DEFAULT_CONSTRAINTS, list, resolve, create, update, remove, weightsSchema, constraintsSchema };

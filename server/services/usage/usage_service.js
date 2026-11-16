@@ -29,12 +29,12 @@ function record(entry) {
 function insert(entry) {
   getDatabase().prepare(`INSERT INTO requests (id, user_id, router_key_id, created_at, api_format, requested_model, model_ref, model_label,
       account_id, status, http_status, error_code, error_message, input_tokens, output_tokens, cost_usd, is_free, latency_ms, ttft_ms,
-      attempts, stream, trail_json, saved_usd, redacted_count, compression_saved_tokens, capability, units, task, queued_ms, kept_private)
+      attempts, stream, trail_json, saved_usd, redacted_count, compression_saved_tokens, capability, units, task, queued_ms, kept_private, routing_group, cached_input_tokens, cache_creation_tokens)
     VALUES (@id, @user_id, @router_key_id, @created_at, @api_format, @requested_model, @model_ref, @model_label, @account_id, @status,
       @http_status, @error_code, @error_message, @input_tokens, @output_tokens, @cost_usd, @is_free, @latency_ms, @ttft_ms, @attempts,
-      @stream, @trail_json, @saved_usd, @redacted_count, @compression_saved_tokens, @capability, @units, @task, @queued_ms, @kept_private)`).run({
+      @stream, @trail_json, @saved_usd, @redacted_count, @compression_saved_tokens, @capability, @units, @task, @queued_ms, @kept_private, @routing_group, @cached_input_tokens, @cache_creation_tokens)`).run({
     model_ref: null, model_label: null, account_id: null, error_code: null, error_message: null, ttft_ms: null,
-    redacted_count: 0, compression_saved_tokens: 0, capability: 'chat', units: 0, task: null, queued_ms: 0, kept_private: null, ...entry,
+    redacted_count: 0, compression_saved_tokens: 0, capability: 'chat', units: 0, task: null, queued_ms: 0, kept_private: null, routing_group: null, cached_input_tokens: 0, cache_creation_tokens: 0, ...entry,
     saved_usd: savedUsd(entry),
   });
 }
@@ -105,7 +105,7 @@ function percentile(sorted, p) {
 }
 
 function newGroup() {
-  return { requests: 0, successes: 0, errors: 0, inputTokens: 0, outputTokens: 0, costUsd: 0, savedUsd: 0, freeRequests: 0, fallbacks: 0, latencies: [], ttfts: [] };
+  return { requests: 0, successes: 0, errors: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheHits: 0, costUsd: 0, savedUsd: 0, freeRequests: 0, fallbacks: 0, latencies: [], ttfts: [] };
 }
 
 function addRow(group, row) {
@@ -114,6 +114,8 @@ function addRow(group, row) {
   else group.errors += 1;
   group.inputTokens += row.input_tokens;
   group.outputTokens += row.output_tokens;
+  group.cachedInputTokens += row.cached_input_tokens || 0;
+  if (row.status === 'success' && row.cached_input_tokens > 0) group.cacheHits += 1;
   group.costUsd += row.cost_usd;
   group.savedUsd += row.saved_usd || 0;
   if (row.is_free && row.status === 'success') group.freeRequests += 1;
@@ -128,6 +130,7 @@ function finishGroup(group) {
   const { latencies: _l, ttfts: _t, ...rest } = group;
   return {
     ...rest,
+    cacheHitRate: group.successes ? group.cacheHits / group.successes : null,
     successRate: group.requests ? group.successes / group.requests : null,
     latencyP50: percentile(latencies, 0.5),
     latencyP95: percentile(latencies, 0.95),
@@ -172,7 +175,7 @@ function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}
   const keys = keyFilter(keyIds);
   const since = rangeStart(range, now);
   const bucketMs = range === '24h' ? 3_600_000 : range === '7d' ? 6 * 3_600_000 : 86_400_000;
-  const rows = db.prepare(`SELECT r.created_at, r.status, r.error_code, r.input_tokens, r.output_tokens, r.cost_usd, r.saved_usd, r.is_free,
+  const rows = db.prepare(`SELECT r.cached_input_tokens, r.routing_group, r.created_at, r.status, r.error_code, r.input_tokens, r.output_tokens, r.cost_usd, r.saved_usd, r.is_free,
       r.latency_ms, r.ttft_ms, r.attempts, r.stream, r.api_format, r.model_label, r.router_key_id, r.trail_json, r.capability, k.name key_name,
       a.definition_id, a.slug account_slug, a.label account_label, a.base_url account_base_url, m.canonical_id
     FROM requests r LEFT JOIN router_keys k ON k.id = r.router_key_id LEFT JOIN provider_accounts a ON a.id = r.account_id
@@ -191,6 +194,7 @@ function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}
     : row.model_label ? row.model_label.split('/')[0] : null);
   const groups = {
     byProvider: grouper(providerOf),
+    byRoutingGroup: grouper((row) => row.routing_group),
     byModel: grouper(modelKeyOf, modelNameOf),
     byKey: grouper((row) => row.key_name || row.router_key_id),
     byFormat: grouper((row) => `${row.api_format}${row.stream ? ' · stream' : ''}`),
@@ -213,6 +217,7 @@ function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}
     totals: finishGroup(total),
     series: [...buckets.entries()].sort((a, b) => a[0] - b[0]).map(([bucket, group]) => ({ bucket, ...finishGroup(group) })),
     byProvider: groups.byProvider.top(20),
+    byRoutingGroup: groups.byRoutingGroup.top(100),
     byModel: groups.byModel.top(15),
     byKey: groups.byKey.top(20),
     byFormat: groups.byFormat.top(10),
@@ -241,6 +246,8 @@ function logs(userId, { limit = 100, before = null, keyId = null, keyIds = [], s
       httpStatus: row.http_status,
       errorCode: row.error_code,
       errorMessage: row.error_message,
+      routingGroup: row.routing_group || null,
+      cachedInputTokens: row.cached_input_tokens || 0,
       inputTokens: row.input_tokens,
       outputTokens: row.output_tokens,
       costUsd: row.cost_usd,

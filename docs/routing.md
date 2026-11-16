@@ -8,6 +8,63 @@
 - `auto` — the key's routing profile. `auto:<profile>` picks a preset
   (`reliable`, `fast`, `balanced`, `best`, `smart`, `cheap`) or a custom profile id.
 
+## Routing groups
+
+Create a named group on **Routing → Routing groups**. Select accounts (all their
+models) and/or model patterns (matched against `provider-slug/model-id`). Members
+are combined as a union. A group can set a routing style, minimum intelligence and
+a fallback group. Names are stable routing identifiers; fallback cycles are rejected.
+These groups are independent of the shared-capacity pools between users.
+
+Select a group with `pool:<group-name>` as the model, `X-NeoRouter-Group` as a
+request header, or the key's default routing group. The model name takes precedence
+over the header, which takes precedence over the key default. A key default applies
+to automatic routing; explicitly named models keep their normal behavior. Key
+allowed-model patterns can include `pool:*` or individual group routes. A route
+permission controls client selection; configured fallbacks still obey the key's
+underlying model, capability, cost and privacy policies.
+
+Groups reuse scoring, measured health, plan pacing, concurrency limits and the
+capacity queue. If one group has no candidate, its fallback is tried. Queueing
+watches every configured group and reconsiders the preferred group when capacity
+opens. If the chain cannot serve, the existing last-resort pass can use models
+outside the group; key restrictions and hard provider limits still apply.
+
+Management API: `GET/POST /api/v1/routing/groups`, and
+`PUT/DELETE /api/v1/routing/groups/:id`. The writable fields are `name`, `accounts`,
+`models`, `profile`, `minIntelligence` and `fallback`. At least one account or model
+pattern is required. The list includes current plan usage per member account;
+unknown usage is shown as unknown. Activity records and `X-NeoRouter-Group` identify
+the group that actually served a request, including a fallback.
+
+## Provider cache awareness
+
+Chat routing remembers the last successful account and model for a conversation,
+scoped to the router key. It uses the existing client session headers or derives a
+hash from the leading system/user messages. Only a hashed identifier and model
+reference are retained in bounded, expiring process memory. Restarting the router
+clears affinity; observed cache usage remains in the request history.
+
+Affinity is a soft score benefit, scaled by the recent measured share of cached
+input, request size and known cache discount. A model with no reported cache hits
+receives no benefit. Normal health, capacity, quality and budget decisions can move
+the conversation elsewhere. Configure expiry, memory size and learning window with
+`NEOROUTER_CACHE_AFFINITY_TTL_MS`, `NEOROUTER_CACHE_AFFINITY_MAX_SESSIONS`,
+`NEOROUTER_CACHE_LEARNING_WINDOW_MS` and `NEOROUTER_CACHE_AFFINITY_TOKEN_SCALE`.
+
+OpenAI Chat/Responses requests preserve `prompt_cache_key`; absent a client value,
+the conversation identifier supplies it. Anthropic translation preserves system
+and tool cache breakpoints and adds ephemeral prefix breakpoints when absent.
+JSON and streamed usage preserve cache reads and cache creation separately.
+Provider listing prices and provider-specific models.dev facts supply cache rates;
+`priceCachedIn` and `priceCacheWrite` model overrides use USD per million tokens.
+Unknown cache prices fall back to the ordinary input price. Budget reservations
+include known cache write premiums. Activity shows cached tokens and the percentage
+of successful requests with cache hits for each provider.
+
+This uses upstream prompt caches. NeoRouter never stores prompts or responses in
+a local response cache.
+
 ## Pipeline (`server/services/routing/router.js`)
 
 1. **Request profile** — estimated input tokens, needed capabilities (tools,

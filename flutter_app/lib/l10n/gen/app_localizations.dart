@@ -9672,6 +9672,90 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Nothing of this kind fits this server.'**
   String get lmNothingFits;
+
+  /// No description provided for @routingGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing groups'**
+  String get routingGroups;
+
+  /// No description provided for @routingGroupsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose accounts or model patterns for a kind of work. Use pool:name as the model, or send X-NeoRouter-Group.'**
+  String get routingGroupsHint;
+
+  /// No description provided for @createRoutingGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Create group'**
+  String get createRoutingGroup;
+
+  /// No description provided for @routingGroupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing name'**
+  String get routingGroupName;
+
+  /// No description provided for @routingGroupModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Model patterns (one per line)'**
+  String get routingGroupModels;
+
+  /// No description provided for @routingGroupAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get routingGroupAccounts;
+
+  /// No description provided for @routingGroupFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Fallback group'**
+  String get routingGroupFallback;
+
+  /// No description provided for @routingGroupMinimum.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum intelligence (0–1, optional)'**
+  String get routingGroupMinimum;
+
+  /// No description provided for @routingGroupDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default routing group'**
+  String get routingGroupDefault;
+
+  /// No description provided for @routingGroupNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get routingGroupNone;
+
+  /// No description provided for @cachedInputTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached input tokens'**
+  String get cachedInputTokens;
+
+  /// No description provided for @cacheHitRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache hit rate'**
+  String get cacheHitRate;
+
+  /// No description provided for @planUsageUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan usage unknown'**
+  String get planUsageUnknown;
+
+  /// No description provided for @planUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan usage'**
+  String get planUsage;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

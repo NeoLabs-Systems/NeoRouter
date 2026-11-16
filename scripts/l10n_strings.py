@@ -1654,6 +1654,22 @@ S = {
   'lmErrInstalled': ('This model is already installed.', 'Dieses Modell ist bereits installiert.'),
   'lmErrNoStarter': ('No starter set fits this server.', 'Auf diesen Server passt kein Schnellstart-Paket.'),
   'lmNothingFits': ('Nothing of this kind fits this server.', 'Davon passt nichts auf diesen Server.'),
+
+  # routing groups and upstream cache usage
+  'routingGroups': ('Routing groups', 'Routing-Gruppen'),
+  'routingGroupsHint': ('Choose accounts or model patterns for a kind of work. Use pool:name as the model, or send X-NeoRouter-Group.', 'Wähle Konten oder Modellmuster für eine Aufgabe. Nutze pool:name als Modell oder X-NeoRouter-Group als Header.'),
+  'createRoutingGroup': ('Create group', 'Gruppe erstellen'),
+  'routingGroupName': ('Routing name', 'Routing-Name'),
+  'routingGroupModels': ('Model patterns (one per line)', 'Modellmuster (eines pro Zeile)'),
+  'routingGroupAccounts': ('Accounts', 'Konten'),
+  'routingGroupFallback': ('Fallback group', 'Ausweichgruppe'),
+  'routingGroupMinimum': ('Minimum intelligence (0–1, optional)', 'Mindestintelligenz (0–1, optional)'),
+  'routingGroupDefault': ('Default routing group', 'Standard-Routing-Gruppe'),
+  'routingGroupNone': ('None', 'Keine'),
+  'cachedInputTokens': ('Cached input tokens', 'Eingabetokens aus dem Cache'),
+  'cacheHitRate': ('Cache hit rate', 'Cache-Trefferquote'),
+  'planUsageUnknown': ('Plan usage unknown', 'Plannutzung unbekannt'),
+  'planUsage': ('Plan usage', 'Plannutzung'),
 }
 
 PLACEHOLDER = re.compile(r'\{(\w+)\}')

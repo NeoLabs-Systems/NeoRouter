@@ -124,6 +124,16 @@ class RouterApi {
   Future<Map<String, dynamic>> keyActivity(String keyId) => client.get('$_base/apps/keys/$keyId/activity');
   /// Admins: 'local' or 'network'; returns { restarting, restartNeeded, places, ... }.
   Future<Map<String, dynamic>> setNetworkScope(String scope) => client.putJson('$_base/apps/network', <String, Object>{'scope': scope});
+  Future<List<Map<String, dynamic>>> routingGroups() async => ((await client.get('$_base/routing/groups'))['groups'] as List).map((row) => Map<String, dynamic>.from(row as Map)).toList();
+  Future<void> saveRoutingGroup(Map<String, Object?> body, {String? id}) async {
+    if (id == null) {
+      await client.post('$_base/routing/groups', body);
+    } else {
+      await client.put('$_base/routing/groups/$id', body);
+    }
+  }
+  Future<void> deleteRoutingGroup(String id) => client.delete('$_base/routing/groups/$id');
+
   Future<List<RoutingProfile>> profiles() async => _list(await client.get('$_base/routing/profiles'), 'profiles', RoutingProfile.new);
   Future<RoutingProfile> createProfile(String name, RoutingWeights weights, Map<String, Object?> constraints) async => RoutingProfile(
     Map<String, dynamic>.from(

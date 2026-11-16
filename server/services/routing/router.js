@@ -9,6 +9,8 @@ const stats = require('./stats_store');
 const scoring = require('./scoring');
 const accountHealth = require('./account_health');
 const profiles = require('./profiles');
+const groups = require('./groups');
+const cacheAffinity = require('./cache_affinity');
 const budget = require('../budget/budget_service');
 const pacing = require('../budget/pacing');
 const plans = require('./plans');
@@ -53,7 +55,7 @@ function globToRegExp(pattern) {
 // ("auto", "auto:coding", "auto-free:*"). Model patterns bound which models
 // the key reaches, routing included; routing entries bound which autos it
 // may ask for.
-const isRoutePattern = (pattern) => /^auto(?:$|[-:*?])/i.test(String(pattern).trim());
+const isRoutePattern = (pattern) => /^(?:auto(?:$|[-:*?])|pool:)/i.test(String(pattern).trim());
 
 // A key's allowed list holds model patterns ("groq/*"), routings ("auto:fast")
 // and kinds of model ("kind:speech").
@@ -99,6 +101,7 @@ function routeAllowedByKey(requested, key) {
   const { models, routes } = keyPatterns(key);
   if (!routes.length) return true;
   const parsed = parseModel(requested);
+  if (parsed.group) return routes.some((pattern) => globToRegExp(pattern).test(`pool:${parsed.group}`));
   if (!parsed.auto) return models.length > 0;
   const base = parsed.kind ? `auto-${parsed.kind}` : 'auto';
   const named = parsed.profile === 'default' ? null : parsed.profile;
@@ -116,6 +119,7 @@ const AUTO_PATTERN = /^auto(?:-(free|plan|paid))?(?::(.+))?$/;
 function parseModel(requested) {
   const value = String(requested || '').trim();
   if (!value) return { auto: true, profile: null, kind: null };
+  if (value.startsWith('pool:') && value.length > 5) return { auto: true, group: value.slice(5), profile: null, kind: null };
   const match = AUTO_PATTERN.exec(value);
   if (match) return { auto: true, kind: match[1] || null, profile: match[2] || null };
   return { auto: false, model: value };
@@ -142,6 +146,8 @@ const CONNECTION_FAILURES = new Set(['rate_limit', 'quota_exhausted', 'payment',
 // Hard filters. Returns a reason string when the entry cannot serve.
 function rejection(entry, ctx, now) {
   const { key, needs, inputTokens, request, constraints, freeOnly } = ctx;
+  if (!ctx.lastResort && ctx.group && !groups.contains(ctx.group, entry)) return 'outside_routing_group';
+  if (!ctx.lastResort && ctx.group?.minIntelligence != null && (entry.intelligence ?? 0) < ctx.group.minIntelligence) return 'below_min_intelligence';
   if (!entry.enabled) return 'model_disabled';
   if (!entry.available) return 'model_unavailable';
   if (!entry.accountEnabled || entry.accountStatus === 'disabled' || entry.accountStatus === 'invalid') return 'account_unavailable';
@@ -320,7 +326,7 @@ const REJECTION_GROUPS = [
   ['busy', ['scheduled_downtime', 'account_failing', 'account_resting', 'quota_exhausted', 'quota_rpd', 'quota_rpm', 'quota_tpm', 'quota_tpd', 'rate_limited', 'circuit_open', 'account_busy', 'held_for_priority', 'plan_used_up', 'kept_for_owner'], 'are used up, rate-limited or cooling down for now'],
   ['fit', ['no_tools', 'no_vision', 'context_too_small', 'context_unknown', 'needs_more_tokens', 'incompatible'], 'cannot handle this request (tools, images or its size)'],
   ['unsupported', ['unsupported'], 'cannot be used for this through NeoRouter yet (the provider speaks a different API for it)'],
-  ['profile', ['below_min_intelligence', 'too_expensive', 'too_slow', 'provider_not_included', 'provider_excluded', 'model_excluded', 'kind_not_in_style'], "are left out by the routing style"],
+  ['profile', ['outside_routing_group', 'below_min_intelligence', 'too_expensive', 'too_slow', 'provider_not_included', 'provider_excluded', 'model_excluded', 'kind_not_in_style'], "are left out by the routing style"],
   ['budget', ['price_unknown', 'budget_exhausted', 'key_too_expensive'], "have no known price or would go past this key's budget or price limit"],
   ['key', ['not_free', 'not_allowed_for_key', 'other_kind', 'not_in_pool', 'not_shared', 'peer_no_forward'], 'are not allowed for this key'],
   ['paced', ['paced'], 'are being spread out so their limits last until they reset (Settings → Usage → even out usage); keys with a high priority still get through'],
@@ -359,7 +365,7 @@ const lastLongShot = new Map();
 // once ran out of room at this many output tokens (it may well fit this time). When nothing else can
 // take the request, a slow or weaker model that works beats failing, and
 // beats retrying connections known to be refusing (long shots).
-const PREFERENCE_REASONS = new Set(['too_slow', 'below_min_intelligence', 'paced', 'needs_more_tokens']);
+const PREFERENCE_REASONS = new Set(['outside_routing_group', 'too_slow', 'below_min_intelligence', 'paced', 'needs_more_tokens']);
 const longShotDue = (ref, now = Date.now()) => now - (lastLongShot.get(ref) || 0) >= LONG_SHOT_GAP_MS;
 function resetLongShotsForTests() {
   lastLongShot.clear();
@@ -403,7 +409,7 @@ class RoutingPlan {
   // taskHint: a task kind the client named (X-NeoRouter-Task).
   // keepPrivate: very sensitive content, kept off pool partners.
   // shareReserve: for a partner's request, the share of capacity kept for the owner.
-  constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null, taskHint = null, keepPrivate = false, shareReserve = null, sharePoolId = null }) {
+  constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null, taskHint = null, keepPrivate = false, shareReserve = null, sharePoolId = null, routingGroup = null, sessionId = null }) {
     this.capability = capability;
     this.keepPrivate = keepPrivate;
     this.shareReserve = shareReserve;
@@ -420,10 +426,15 @@ class RoutingPlan {
     this.parsed = parseModel(requestedModel);
     // "auto:default" is plain auto for apps that cannot send a bare "auto".
     const named = this.parsed.profile === 'default' ? null : this.parsed.profile;
-    const profileRef = named || key.profile || 'balanced';
+    this.group = this.parsed.group || routingGroup || (this.parsed.auto ? key.routing_group : null);
+    if (this.group) {
+      this.group = groups.requireGroup(userId, this.group);
+      if (!routeAllowedByKey(`pool:${this.group.name}`, key)) throw new HttpError(403, 'MODEL_NOT_ALLOWED', 'This key may not use this routing group.');
+    }
+    const profileRef = this.group?.profile || named || key.profile || 'balanced';
     this.profile = profiles.resolve(userId, profileRef);
     if (!this.profile) throw new HttpError(400, 'UNKNOWN_PROFILE', `Unknown routing profile "${profileRef}".`);
-    if (!routeAllowedByKey(requestedModel, key)) {
+    if ((!this.group || !this.parsed.auto) && !routeAllowedByKey(requestedModel, key)) {
       throw new HttpError(403, 'MODEL_NOT_ALLOWED', `This key may not use "${String(requestedModel || 'auto').trim() || 'auto'}". Ask for one of the models or routings it allows (GET /v1/models).`);
     }
     // What a chat request asks for (kind mix, skills, difficulty); other
@@ -440,9 +451,14 @@ class RoutingPlan {
     if (this.pacing && this.pacing.costShift !== 1) {
       this.weights = { ...this.weights, cost: Math.max(this.weights.cost, PACED_COST_FLOOR) * this.pacing.costShift };
     }
+    this.initialGroup = this.group;
+    this.initialProfile = this.profile;
     this.tokenLimitReached = budget.tokenLimitReached(key);
     // Settings → even out usage: allowances are spent at a steady pace.
     this.userId = userId;
+    this.affinityRef = sessionId ? cacheAffinity.affinity(key.id, sessionId) : null;
+    this.cacheRates = this.affinityRef != null ? cacheAffinity.rates(userId) : new Map();
+    this.visitedGroups = new Set(this.group ? [this.group.name] : []);
     this.smoothing = smoothing.active(userId);
     this.entries = catalog.listForUser(userId, { capability }).map((entry) => plans.effective(entry));
     // Outcomes are learned per kind of task (learning.js).
@@ -481,7 +497,7 @@ class RoutingPlan {
   }
 
   context() {
-    return { keepPrivate: this.keepPrivate, shareReserve: this.shareReserve, sharePoolId: this.sharePoolId, longShot: this.longShot, lastResort: this.lastResort, accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost, smoothing: this.smoothing, userId: this.userId };
+    return { group: this.group, keepPrivate: this.keepPrivate, shareReserve: this.shareReserve, sharePoolId: this.sharePoolId, longShot: this.longShot, lastResort: this.lastResort, accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost, smoothing: this.smoothing, userId: this.userId };
   }
 
   rank({ includeRejected = false, sample = true, now = Date.now() } = {}) {
@@ -558,6 +574,12 @@ class RoutingPlan {
     const kinds = this.profile.constraints.kinds;
     spreadAcrossAccounts(scored);
     preferCheaperEquals(scored, kinds ? (entry) => kindWeight(kinds, entry) : undefined);
+    for (const item of scored) if (item.entry.ref === this.affinityRef) {
+      const bonus = cacheAffinity.bonus(item.entry, this.cacheRates.get(item.entry.ref), this.inputTokens);
+      item.score += bonus;
+      item.details.factors.cacheAffinity = bonus;
+      if (bonus > 0) item.pricierEqual = false;
+    }
     // The model (or account) the client asked for comes first.
     for (const item of scored) if (this.primaryRefs.has(item.entry.ref)) item.score += 10;
     ranked.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
@@ -566,9 +588,16 @@ class RoutingPlan {
 
   // Softmax draw among the top-k so load spreads across good candidates
   // instead of hammering the single best one.
-  next({ filter = null, now = Date.now() } = {}) {
+  next({ filter = null, now = Date.now(), advancing = false } = {}) {
+    if (this.initialGroup && !advancing) {
+      this.setGroup(this.initialGroup);
+      this.visitedGroups = new Set([this.initialGroup.name]);
+    }
     const candidates = this.rank({ now }).filter((item) => !filter || filter(item.entry));
-    if (!candidates.length) return null;
+    if (!candidates.length) {
+      if (this.advanceGroup()) return this.next({ filter, now, advancing: true });
+      return null;
+    }
     // Only the style's first tier of model kinds that still has a candidate.
     const tier = Math.min(...candidates.map((item) => item.tier ?? 0));
     const ranked = candidates.filter((item) => (item.tier ?? 0) === tier);
@@ -594,6 +623,7 @@ class RoutingPlan {
         }
       }
     }
+    choice.entry.routingGroup = this.group && groups.contains(this.group, choice.entry) ? this.group.name : null;
     this.tried.add(choice.entry.ref);
     if (this.lastResort && PREFERENCE_REASONS.has(rejection(choice.entry, { ...this.context(), lastResort: false, longShot: false }, now))) choice.entry.lastResort = true;
     if (this.longShot && this.heldBack(choice.entry, now)) {
@@ -606,6 +636,39 @@ class RoutingPlan {
     return choice;
   }
 
+  advanceGroup() {
+    if (!this.group?.fallback) return false;
+    const group = groups.requireGroup(this.userId, this.group.fallback);
+    if (this.visitedGroups.has(group.name)) return false;
+    this.visitedGroups.add(group.name);
+    this.setGroup(group);
+    return true;
+  }
+
+  setGroup(group) {
+    this.group = group;
+    this.profile = group.profile ? profiles.resolve(this.userId, group.profile) || this.initialProfile : this.initialProfile;
+    this.weights = scoring.adaptWeights(this.profile.weights, this.complexity, this.profile.constraints.adaptive !== false);
+    if (this.pacing && this.pacing.costShift !== 1) this.weights.cost = Math.max(this.weights.cost, PACED_COST_FLOOR) * this.pacing.costShift;
+    this.need = this.profile.constraints.adaptive !== false ? neededIntelligence(this.complexity) : null;
+  }
+
+  // A slot on any configured group can wake the request; the next draw starts
+  // with the preferred group again, including after a fallback was busy.
+  queueContexts() {
+    if (!this.initialGroup || this.lastResort) return [this.context()];
+    const contexts = [];
+    const seen = new Set();
+    let group = this.initialGroup;
+    while (group && !seen.has(group.name)) {
+      seen.add(group.name);
+      const profile = group.profile ? profiles.resolve(this.userId, group.profile) || this.initialProfile : this.initialProfile;
+      contexts.push({ ...this.context(), group, constraints: profile.constraints });
+      group = group.fallback ? groups.resolve(this.userId, group.fallback) : null;
+    }
+    return contexts;
+  }
+
   // Held back only by its health record (not by a limit, a policy or a request it cannot serve).
   heldBack(entry, now = Date.now()) {
     return LONG_SHOT_REASONS.has(rejection(entry, { ...this.context(), longShot: false }, now));
@@ -615,10 +678,12 @@ class RoutingPlan {
   // back (PREFERENCE_REASONS). False when that adds no candidate.
   enableLastResort({ filter = null, now = Date.now() } = {}) {
     if (this.lastResort) return false;
-    const ctx = { ...this.context(), lastResort: true };
-    const strict = { ...this.context(), longShot: false };
-    this.lastResort = this.entries.some((entry) => !this.tried.has(entry.ref) && (!filter || filter(entry))
-      && PREFERENCE_REASONS.has(rejection(entry, strict, now)) && !rejection(entry, ctx, now));
+    this.lastResort = this.queueContexts().some((context) => {
+      const ctx = { ...context, lastResort: true };
+      const strict = { ...context, longShot: false };
+      return this.entries.some((entry) => !this.tried.has(entry.ref) && (!filter || filter(entry))
+        && PREFERENCE_REASONS.has(rejection(entry, strict, now)) && !rejection(entry, ctx, now));
+    });
     return this.lastResort;
   }
 
@@ -638,9 +703,8 @@ class RoutingPlan {
   // again, or null when none will without outside help (a daily limit, a
   // key policy, a model that cannot handle the request).
   freesUpAt(now = Date.now(), filter = null) {
-    const ctx = this.context();
     let soonest = null;
-    for (const entry of this.entries) {
+    for (const ctx of this.queueContexts()) for (const entry of this.entries) {
       if (this.tried.has(entry.ref) || (filter && !filter(entry))) continue;
       const reason = rejection(entry, ctx, now);
       let at = null;
@@ -659,17 +723,15 @@ class RoutingPlan {
   // True when a model that can take this request is only at its account's
   // limit of requests at once: a slot frees as soon as one of those answers.
   waitingOnBusy(now = Date.now(), filter = null) {
-    const ctx = this.context();
-    return this.entries.some((entry) => !this.tried.has(entry.ref) && (!filter || filter(entry)) && rejection(entry, ctx, now) === 'account_busy');
+    return this.queueContexts().some((ctx) => this.entries.some((entry) => !this.tried.has(entry.ref) && (!filter || filter(entry)) && rejection(entry, ctx, now) === 'account_busy'));
   }
 
   // While this request waits for capacity, requests of a lower priority leave
   // what it waits for alone. Called on every pass, as candidates free up or
   // block; leaveQueue() ends it.
   joinQueue(now = Date.now(), filter = null) {
-    const ctx = this.context();
     const targets = new Set();
-    for (const entry of this.entries) {
+    for (const ctx of this.queueContexts()) for (const entry of this.entries) {
       if (this.tried.has(entry.ref) || (filter && !filter(entry))) continue;
       const reason = rejection(entry, ctx, now);
       if (reason === 'account_busy') targets.add(`account:${entry.accountId}`);
@@ -707,6 +769,7 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
   const ranked = plan.rank({ includeRejected: true, sample: false })
     .sort((a, b) => (a.rejected ? 1 : 0) - (b.rejected ? 1 : 0) || (a.tier ?? 0) - (b.tier ?? 0) || (b.score ?? -1) - (a.score ?? -1));
   return {
+    group: plan.group?.name || null,
     profile: plan.profile,
     weights: plan.weights,
     complexity: plan.complexity,

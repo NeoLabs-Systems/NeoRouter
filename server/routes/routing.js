@@ -2,6 +2,7 @@
 
 const express = require('express');
 const { z } = require('zod');
+const groups = require('../services/routing/groups');
 const profiles = require('../services/routing/profiles');
 const router_ = require('../services/routing/router');
 const loadTracker = require('../services/routing/load_tracker');
@@ -11,6 +12,11 @@ const { validate } = require('../middleware/validate');
 const { requirePermission } = require('../middleware/space');
 
 const router = express.Router();
+
+router.get('/groups', requirePermission('routing.view'), (req, res) => res.json({ groups: groups.status(req.space.ownerId) }));
+router.post('/groups', requirePermission('routing.edit'), validate(groups.schema), (req, res) => res.status(201).json({ group: groups.save(req.space.ownerId, req.body) }));
+router.put('/groups/:id', requirePermission('routing.edit'), validate(groups.schema), (req, res) => res.json({ group: groups.save(req.space.ownerId, req.body, req.params.id) }));
+router.delete('/groups/:id', requirePermission('routing.edit'), (req, res) => { groups.remove(req.space.ownerId, req.params.id); res.status(204).end(); });
 
 // Profile names are readable by every member, since key forms pick from them.
 router.get('/profiles', (req, res) => res.json({ profiles: profiles.list(req.space.ownerId) }));

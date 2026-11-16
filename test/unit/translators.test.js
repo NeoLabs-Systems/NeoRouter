@@ -45,7 +45,7 @@ test('canonical request maps back to Anthropic upstream format', () => {
     ],
     tools: [{ type: 'function', function: { name: 'get', parameters: { type: 'object' } } }],
   });
-  assert.equal(body.system, 'sys');
+  assert.deepEqual(body.system, [{ type: 'text', text: 'sys', cache_control: { type: 'ephemeral' } }]);
   assert.equal(body.messages[0].content[1].source.media_type, 'image/png');
   assert.equal(body.messages[1].content[0].type, 'tool_use');
   assert.equal(body.messages[2].content[0].type, 'tool_result');
@@ -83,7 +83,7 @@ test('Anthropic upstream stream maps to canonical chunks with usage', async () =
   assert.equal(out[2].choices[0].delta.tool_calls[0].id, 'tu');
   const last = out[out.length - 1];
   assert.equal(last.choices[0].finish_reason, 'tool_calls');
-  assert.deepEqual(last.usage, { prompt_tokens: 7, completion_tokens: 4, total_tokens: 11 });
+  assert.deepEqual(last.usage, { prompt_tokens: 7, prompt_tokens_details: { cached_tokens: 0 }, cache_creation_input_tokens: 0, completion_tokens: 4, total_tokens: 11 });
 });
 
 test('Responses input items with function calls map to canonical messages', () => {

@@ -317,6 +317,8 @@ class RequestLog {
   int? get httpStatus => _int(raw['httpStatus']);
   String? get errorCode => raw['errorCode'] as String?;
   String? get errorMessage => raw['errorMessage'] as String?;
+  String? get routingGroup => raw['routingGroup'] as String?;
+  int get cachedInputTokens => _int(raw['cachedInputTokens']) ?? 0;
   int get inputTokens => _int(raw['inputTokens']) ?? 0;
   int get outputTokens => _int(raw['outputTokens']) ?? 0;
   double get costUsd => _double(raw['costUsd']) ?? 0;

@@ -1595,5 +1595,19 @@
   "lmErrUnsupported": "Dieses System kann dieses Modell nicht ausführen.",
   "lmErrInstalled": "Dieses Modell ist bereits installiert.",
   "lmErrNoStarter": "Auf diesen Server passt kein Schnellstart-Paket.",
-  "lmNothingFits": "Davon passt nichts auf diesen Server."
+  "lmNothingFits": "Davon passt nichts auf diesen Server.",
+  "routingGroups": "Routing-Gruppen",
+  "routingGroupsHint": "Wähle Konten oder Modellmuster für eine Aufgabe. Nutze pool:name als Modell oder X-NeoRouter-Group als Header.",
+  "createRoutingGroup": "Gruppe erstellen",
+  "routingGroupName": "Routing-Name",
+  "routingGroupModels": "Modellmuster (eines pro Zeile)",
+  "routingGroupAccounts": "Konten",
+  "routingGroupFallback": "Ausweichgruppe",
+  "routingGroupMinimum": "Mindestintelligenz (0–1, optional)",
+  "routingGroupDefault": "Standard-Routing-Gruppe",
+  "routingGroupNone": "Keine",
+  "cachedInputTokens": "Eingabetokens aus dem Cache",
+  "cacheHitRate": "Cache-Trefferquote",
+  "planUsageUnknown": "Plannutzung unbekannt",
+  "planUsage": "Plannutzung"
 }

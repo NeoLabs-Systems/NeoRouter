@@ -73,6 +73,36 @@ test('router key lists auto profiles and catalog models', async () => {
   assert.ok(ids.includes('mock/ok-beta'));
 });
 
+test('routing groups are managed, discovered, selected and recorded through the gateway', async () => {
+  const created = await api('post', '/routing/groups', { name: 'small-work', models: ['mock/ok-alpha'] });
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  const id = created.body.group.id;
+  const listed = await request(app).get('/v1/models').set('Authorization', `Bearer ${freeKey}`);
+  assert.ok(listed.body.data.some((model) => model.id === 'pool:small-work'));
+  for (const stream of [false, true]) {
+    const response = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${freeKey}`)
+      .send({ model: 'pool:small-work', messages: [{ role: 'user', content: 'hi' }], stream });
+    assert.equal(response.status, 200, response.text);
+    assert.equal(response.headers['x-neorouter-group'], 'small-work');
+    assert.equal(response.headers['x-neorouter-model'], 'mock/ok-alpha');
+  }
+  const header = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${freeKey}`).set('X-NeoRouter-Group', 'small-work')
+    .send({ model: 'auto', messages: [{ role: 'user', content: 'hi' }] });
+  assert.equal(header.status, 200);
+  assert.equal(header.headers['x-neorouter-group'], 'small-work');
+  const keyResult = await api('post', '/keys', { name: 'group-key', mode: 'free_only', routingGroup: 'small-work', allowedModels: ['pool:small-work'] });
+  assert.equal(keyResult.status, 201);
+  const byKey = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${keyResult.body.secret}`)
+    .send({ model: 'auto', messages: [{ role: 'user', content: 'hi' }] });
+  assert.equal(byKey.status, 200, byKey.text);
+  assert.equal(byKey.headers['x-neorouter-group'], 'small-work');
+  const logs = await api('get', '/usage/logs');
+  assert.ok(logs.body.logs.some((row) => row.routingGroup === 'small-work'));
+  const removed = await api('delete', `/routing/groups/${id}`);
+  assert.equal(removed.status, 204);
+});
+
+
 test('explicit model, non-streaming OpenAI chat', async () => {
   const response = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${freeKey}`)
     .send({ model: 'mock/ok-alpha', messages: [{ role: 'user', content: 'hi' }] });
