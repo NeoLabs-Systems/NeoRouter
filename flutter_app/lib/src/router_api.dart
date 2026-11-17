@@ -1,3 +1,4 @@
+import '../discovery/models.dart';
 import 'backend_client.dart';
 import 'capabilities.dart';
 import 'models.dart';
@@ -48,6 +49,13 @@ class RouterApi {
     ),
   );
   Future<Map<String, dynamic>> info() => client.get('$_base/info');
+
+  Future<BenchmarkPageData> benchmarks({String query = '', String capability = 'chat', String source = '', bool free = false, int offset = 0, List<String> compare = const []}) async =>
+      BenchmarkPageData(await client.get(Uri(path: '$_base/discovery/benchmarks', queryParameters: {
+        'query': query, 'capability': capability, 'source': source, 'free': free ? '1' : '0', 'offset': '$offset', 'compare': compare.join(','),
+      }).toString()));
+  Future<ModelNewsPage> modelNews({String query = '', int offset = 0, int? asOf}) async =>
+      ModelNewsPage(await client.get(Uri(path: '$_base/discovery/news', queryParameters: {'query': query, 'offset': '$offset', if (asOf != null) 'asOf': '$asOf'}).toString()));
 
   // ---- providers ------------------------------------------------------------
   Future<List<ProviderDefinition>> definitions() async => _list(await client.get('$_base/providers/definitions'), 'definitions', ProviderDefinition.new);

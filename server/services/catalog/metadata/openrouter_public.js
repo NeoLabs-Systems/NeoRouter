@@ -10,6 +10,9 @@ async function fetchSource({ signal } = {}) {
   const data = await response.json();
   return (data?.data || []).map((model) => ({
     id: model.id,
+    // All published charges must be known zero; null/empty is never free.
+    isFree: model.pricing?.prompt != null && model.pricing?.completion != null
+      && Object.values(model.pricing).every((value) => value != null && value !== '' && Number.isFinite(Number(value)) && Number(value) === 0),
     priceCachedIn: model.pricing?.input_cache_read != null ? Number(model.pricing.input_cache_read) * 1e6 : null,
     priceCacheWrite: model.pricing?.input_cache_write != null ? Number(model.pricing.input_cache_write) * 1e6 : null,
     priceIn: Number(model.pricing?.prompt) * 1e6,

@@ -175,3 +175,30 @@ a working proxy unhealthy. Long response bodies stream with backpressure;
 retained dispatchers are bounded and idle ones are evicted. Live health resets
 on restart; proxy configuration persists and credentials are encrypted with the
 instance master key and omitted from API responses.
+
+### Benchmarks and model news
+
+**Overview → Benchmarks** brings together measured results already collected
+from Artificial Analysis, OpenRouter benchmarks, Artificial Analysis media
+arenas and MTEB. Search and filter by model kind, source or confirmed free
+listing, then select two models for a side-by-side comparison. Original scores,
+source links, collection dates and coverage remain visible. No routing guesses
+or derived intelligence estimates are presented as benchmark measurements.
+
+The combined score averages test percentiles within each source, then gives
+sources equal weight. Percentiles use only the same model kind and test; missing
+measurements do not become zero. This is a relative ranking over the collected
+models, not accuracy. Models with different coverage are best compared on their
+shared tests. The blurred NeoRouter section is a labelled preview, with no
+internal benchmark scoring or synthetic results.
+
+**Overview → News** highlights confirmed zero-price models in OpenRouter's
+public catalog that reach the top half of currently benchmarked free models.
+All published price components must be known zero. Unknown prices and models
+without measured evidence are excluded. First detection is stored once per
+canonical model, independently of provider aliases; it means first highlighted
+by this instance, not first released. Historical entries remain when a model is
+no longer confirmed free. News is updated after metadata collection and survives
+restarts; page refresh reloads collected data without triggering external work.
+The timeline is loaded in bounded pages against a stable snapshot. Both pages
+respect team provider-view permissions and reduced-motion preferences.

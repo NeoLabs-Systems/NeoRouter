@@ -2609,6 +2609,187 @@ class AppL10nEn extends AppL10n {
   String get topModelsTitle => 'Most used models';
 
   @override
+  String get discoveryBenchmarks => 'Benchmarks';
+
+  @override
+  String get discoveryNews => 'News';
+
+  @override
+  String get discoveryBenchHint =>
+      'Measured model performance, brought together. Explore the evidence and compare two models side by side.';
+
+  @override
+  String get discoveryNewsHint =>
+      'New free models worth a closer look, detected from OpenRouter’s public listings and measured benchmarks.';
+
+  @override
+  String get discoveryMeasuredModels => 'Measured models';
+
+  @override
+  String get discoveryMethod => 'How scores are combined';
+
+  @override
+  String get discoveryMethodHint =>
+      'Raw scores stay on their original scales. Each test becomes a percentile among models measured by that source, within the same model kind. Test percentiles are averaged per source, then sources receive equal weight. Missing tests are excluded, never scored as zero. Coverage differs: compare shared tests for a fairer view. This is a relative ranking, not an accuracy percentage.';
+
+  @override
+  String get discoverySources => 'Sources';
+
+  @override
+  String get discoverySourceHint =>
+      'Uses the latest successfully collected data. Refresh reloads this view; source collection follows the instance sync schedule.';
+
+  @override
+  String get discoveryNotSynced => 'Not collected yet';
+
+  @override
+  String discoveryUpdated(String date) {
+    return 'Updated $date';
+  }
+
+  @override
+  String discoveryCoverage(String sources, String tests) {
+    return '$sources sources · $tests tests';
+  }
+
+  @override
+  String get discoveryScore => 'Combined score';
+
+  @override
+  String get discoverySourceFilter => 'Benchmark source';
+
+  @override
+  String get discoveryAllSources => 'All sources';
+
+  @override
+  String get discoveryKind => 'Model kind';
+
+  @override
+  String get discoveryFreeHint =>
+      'Verified zero-price OpenRouter listings. Provider free tiers depend on your connected accounts.';
+
+  @override
+  String get discoveryFreeOnly => 'Confirmed free only';
+
+  @override
+  String get discoveryFree => 'Free listing';
+
+  @override
+  String get discoverySearchModels => 'Search models';
+
+  @override
+  String get discoveryCompare => 'Compare two models';
+
+  @override
+  String get discoveryCompareHint =>
+      'Choose up to two models from the ranking. They must be the same kind.';
+
+  @override
+  String discoverySelectCompare(String name) {
+    return 'Compare $name';
+  }
+
+  @override
+  String discoveryRemoveCompare(String name) {
+    return 'Remove $name from comparison';
+  }
+
+  @override
+  String get discoveryCompareLimit =>
+      'Remove a selection first, or choose the same model kind.';
+
+  @override
+  String discoveryShared(String count) {
+    return '$count shared tests';
+  }
+
+  @override
+  String get discoveryBreakdown => 'Benchmark breakdown';
+
+  @override
+  String get discoveryNoShared =>
+      'These models have no shared tests in the collected data. Their overall rankings use different evidence.';
+
+  @override
+  String discoveryTestScale(String count) {
+    return 'Raw score · percentile bar · $count measured peers';
+  }
+
+  @override
+  String get discoveryEmpty => 'No measured results yet';
+
+  @override
+  String get discoveryEmptyHint =>
+      'Results appear after metadata sources have been collected. Try a different search or filter if sources are already available.';
+
+  @override
+  String get discoveryOwnTitle => 'NeoRouter benchmarks';
+
+  @override
+  String get discoveryOwnHint =>
+      'Coming later. A preview of our own evaluations — no results yet.';
+
+  @override
+  String get discoveryPrevious => 'Previous page';
+
+  @override
+  String get discoveryNext => 'Next page';
+
+  @override
+  String discoveryPage(String page, String count) {
+    return 'Page $page · $count models';
+  }
+
+  @override
+  String get discoveryNewsEmpty => 'The next discovery starts here';
+
+  @override
+  String get discoveryNewsEmptyHint =>
+      'When a confirmed free model reaches the top half of benchmarked free models, NeoRouter adds it here. Models without benchmark evidence stay out of the feed.';
+
+  @override
+  String get discoveryNewsRule => 'Why these models?';
+
+  @override
+  String get discoveryNewsRuleHint =>
+      'Detected means first highlighted by this instance, not the model release date. Entries are deduplicated across provider aliases and survive restarts. Selection uses the top half of currently benchmarked free models; historical entries remain when availability changes. Free listings may still have rate limits.';
+
+  @override
+  String discoveryDetected(String date) {
+    return 'Detected $date';
+  }
+
+  @override
+  String discoveryConfirmed(String date) {
+    return 'Free listing confirmed $date';
+  }
+
+  @override
+  String get discoveryUnavailable => 'No longer confirmed free';
+
+  @override
+  String discoveryNewsScore(String score, String sources) {
+    return 'Ranking $score / 100 · $sources sources';
+  }
+
+  @override
+  String discoveryContext(String count) {
+    return '$count context tokens';
+  }
+
+  @override
+  String get discoveryOpenModel => 'View listing';
+
+  @override
+  String get discoveryOpenBenchmarks => 'Explore benchmarks';
+
+  @override
+  String get discoveryMore => 'Load more';
+
+  @override
+  String get discoveryNewsSearch => 'Search discoveries';
+
+  @override
   String get mostUsedProviders => 'Most used providers';
 
   @override

@@ -536,6 +536,7 @@ async function refreshSources() {
     results.mteb = error.message;
     logger.warn('Metadata source failed', { source: 'mteb', error: error.message });
   }
+  require('../discovery/news_service').observe();
   return results;
 }
 
@@ -697,12 +698,29 @@ function status() {
   };
 }
 
+// Internal read-only projection: public model metadata, never source credentials.
+function discoverySnapshot() {
+  loadState();
+  return { artificialAnalysis: state.artificialAnalysis, openrouter: state.openrouter,
+    openrouterBenchmarks: state.openrouterBenchmarks, artificialAnalysisMedia: state.artificialAnalysisMedia,
+    mteb: state.mteb, fetchedAt: { ...state.fetchedAt } };
+}
+
+function benchmarkIdentity(id, capability = 'chat') {
+  loadState();
+  const canonical = canonicalId(id);
+  const match = capability === 'chat' ? lookupBenchmark(canonical, [id]) : null;
+  return match?.slug ? canonicalId(match.slug) : canonical;
+}
+
 function resetForTests(seed) {
   state = { modelsDev: {}, openrouter: [], artificialAnalysis: [], artificialAnalysisMedia: {}, mteb: {}, fetchedAt: {}, ...seed };
   buildIndexes();
 }
 
 module.exports = {
+  discoverySnapshot,
+  benchmarkIdentity,
   sameSize,
   reconcileWithSkills,
   openRouterAgreement: () => indexes.openrouter?.agreement || {},

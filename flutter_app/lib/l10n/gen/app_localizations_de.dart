@@ -2632,6 +2632,187 @@ class AppL10nDe extends AppL10n {
   String get topModelsTitle => 'Meistgenutzte Modelle';
 
   @override
+  String get discoveryBenchmarks => 'Benchmarks';
+
+  @override
+  String get discoveryNews => 'Neuigkeiten';
+
+  @override
+  String get discoveryBenchHint =>
+      'Gemessene Modellleistung an einem Ort. Ergebnisse entdecken und zwei Modelle direkt vergleichen.';
+
+  @override
+  String get discoveryNewsHint =>
+      'Neue kostenlose Modelle im Blick – erkannt aus öffentlichen OpenRouter-Listen und gemessenen Benchmarks.';
+
+  @override
+  String get discoveryMeasuredModels => 'Gemessene Modelle';
+
+  @override
+  String get discoveryMethod => 'Wie die Bewertung entsteht';
+
+  @override
+  String get discoveryMethodHint =>
+      'Rohwerte behalten ihre ursprüngliche Skala. Jeder Test wird zum Perzentil innerhalb derselben Quelle und Modellart. Test-Perzentile werden je Quelle gemittelt, danach zählen Quellen gleich viel. Fehlende Tests werden ausgelassen, nie als null gewertet. Die Abdeckung variiert: Gemeinsame Tests erlauben einen faireren Vergleich. Dies ist eine relative Rangfolge, keine Genauigkeit in Prozent.';
+
+  @override
+  String get discoverySources => 'Quellen';
+
+  @override
+  String get discoverySourceHint =>
+      'Verwendet die zuletzt erfolgreich gesammelten Daten. Aktualisieren lädt diese Ansicht neu; Quellen folgen dem Synchronisationsplan der Instanz.';
+
+  @override
+  String get discoveryNotSynced => 'Noch nicht gesammelt';
+
+  @override
+  String discoveryUpdated(String date) {
+    return 'Aktualisiert: $date';
+  }
+
+  @override
+  String discoveryCoverage(String sources, String tests) {
+    return '$sources Quellen · $tests Tests';
+  }
+
+  @override
+  String get discoveryScore => 'Kombinierte Bewertung';
+
+  @override
+  String get discoverySourceFilter => 'Benchmark-Quelle';
+
+  @override
+  String get discoveryAllSources => 'Alle Quellen';
+
+  @override
+  String get discoveryKind => 'Modellart';
+
+  @override
+  String get discoveryFreeHint =>
+      'Bestätigte OpenRouter-Angebote zum Nullpreis. Anbieter-Freikontingente hängen von deinen verbundenen Konten ab.';
+
+  @override
+  String get discoveryFreeOnly => 'Nur bestätigt kostenlos';
+
+  @override
+  String get discoveryFree => 'Kostenlos gelistet';
+
+  @override
+  String get discoverySearchModels => 'Modelle suchen';
+
+  @override
+  String get discoveryCompare => 'Zwei Modelle vergleichen';
+
+  @override
+  String get discoveryCompareHint =>
+      'Wähle bis zu zwei Modelle aus der Rangliste. Beide müssen derselben Modellart angehören.';
+
+  @override
+  String discoverySelectCompare(String name) {
+    return '$name vergleichen';
+  }
+
+  @override
+  String discoveryRemoveCompare(String name) {
+    return '$name aus dem Vergleich entfernen';
+  }
+
+  @override
+  String get discoveryCompareLimit =>
+      'Entferne zuerst eine Auswahl oder wähle dieselbe Modellart.';
+
+  @override
+  String discoveryShared(String count) {
+    return '$count gemeinsame Tests';
+  }
+
+  @override
+  String get discoveryBreakdown => 'Benchmark-Details';
+
+  @override
+  String get discoveryNoShared =>
+      'Diese Modelle haben keine gemeinsamen Tests in den gesammelten Daten. Ihre Gesamtbewertungen beruhen auf unterschiedlichen Ergebnissen.';
+
+  @override
+  String discoveryTestScale(String count) {
+    return 'Rohwert · Perzentil-Balken · $count gemessene Vergleichsmodelle';
+  }
+
+  @override
+  String get discoveryEmpty => 'Noch keine gemessenen Ergebnisse';
+
+  @override
+  String get discoveryEmptyHint =>
+      'Ergebnisse erscheinen, sobald Metadatenquellen gesammelt wurden. Falls Quellen bereits verfügbar sind, ändere Suche oder Filter.';
+
+  @override
+  String get discoveryOwnTitle => 'NeoRouter-Benchmarks';
+
+  @override
+  String get discoveryOwnHint =>
+      'Kommt später. Eine Vorschau auf unsere eigenen Bewertungen – noch keine Ergebnisse.';
+
+  @override
+  String get discoveryPrevious => 'Vorherige Seite';
+
+  @override
+  String get discoveryNext => 'Nächste Seite';
+
+  @override
+  String discoveryPage(String page, String count) {
+    return 'Seite $page · $count Modelle';
+  }
+
+  @override
+  String get discoveryNewsEmpty => 'Die nächste Entdeckung beginnt hier';
+
+  @override
+  String get discoveryNewsEmptyHint =>
+      'Sobald ein bestätigt kostenloses Modell die obere Hälfte der bewerteten kostenlosen Modelle erreicht, erscheint es hier. Modelle ohne Benchmark-Nachweise werden nicht aufgenommen.';
+
+  @override
+  String get discoveryNewsRule => 'Warum diese Modelle?';
+
+  @override
+  String get discoveryNewsRuleHint =>
+      'Erkannt bedeutet erstmals von dieser Instanz hervorgehoben, nicht das Veröffentlichungsdatum. Einträge werden über Anbieter-Aliase hinweg zusammengefasst und bleiben nach Neustarts erhalten. Die Auswahl nutzt die obere Hälfte der aktuell bewerteten kostenlosen Modelle; frühere Einträge bleiben bei geänderter Verfügbarkeit sichtbar. Kostenlose Angebote können Rate-Limits haben.';
+
+  @override
+  String discoveryDetected(String date) {
+    return 'Erkannt: $date';
+  }
+
+  @override
+  String discoveryConfirmed(String date) {
+    return 'Kostenloses Angebot bestätigt: $date';
+  }
+
+  @override
+  String get discoveryUnavailable => 'Nicht mehr bestätigt kostenlos';
+
+  @override
+  String discoveryNewsScore(String score, String sources) {
+    return 'Bewertung $score / 100 · $sources Quellen';
+  }
+
+  @override
+  String discoveryContext(String count) {
+    return '$count Kontext-Token';
+  }
+
+  @override
+  String get discoveryOpenModel => 'Angebot ansehen';
+
+  @override
+  String get discoveryOpenBenchmarks => 'Benchmarks entdecken';
+
+  @override
+  String get discoveryMore => 'Mehr laden';
+
+  @override
+  String get discoveryNewsSearch => 'Entdeckungen suchen';
+
+  @override
   String get mostUsedProviders => 'Meistgenutzte Anbieter';
 
   @override
