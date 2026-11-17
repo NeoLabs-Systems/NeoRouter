@@ -141,3 +141,10 @@ test('replays get the output room the model is known to need', () => {
   stats.raiseMinOutputTokens(model.ref, 50000);
   assert.equal(transport.outputRoom(entry, { max_tokens: 768 }), 20000, 'never past the model or the cap');
 });
+
+test('replays get time for the room they were given', () => {
+  const entry = { ...model };
+  assert.equal(transport.replayTimeout(entry, 100), 45000, 'short replies keep the base timeout');
+  assert.ok(transport.replayTimeout(entry, 14000) > 45000, 'a long reasoning reply gets more time');
+  assert.equal(transport.replayTimeout(entry, 1000000), 300000, 'never past five minutes');
+});

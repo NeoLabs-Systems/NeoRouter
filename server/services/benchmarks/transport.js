@@ -60,6 +60,17 @@ function outputRoom(entry, request) {
   return Math.min(cap, Math.max(asked, stats.outputFloor(entry.ref), needed.get(entry.ref) || 0));
 }
 
+// Time for one replay: the output room at the model's measured speed (or a
+// slow 30 tokens/s when unmeasured), plus its usual time to first token and
+// half again as margin. Never under the base timeout, never over 5 minutes.
+const MAX_REPLAY_MS = 5 * 60_000;
+function replayTimeout(entry, outputTokens) {
+  const measured = stats.snapshot(entry.ref);
+  const tps = measured.tps > 0 ? measured.tps : 30;
+  const expected = (measured.ttft_ms || 0) + (outputTokens / tps) * 1000;
+  return Math.round(Math.min(MAX_REPLAY_MS, Math.max(POLICY.timeoutMs, expected * 1.5)));
+}
+
 // Full when the in-flight requests (real and this one) reach the account's
 // stated, documented or learned concurrency limit. Unknown limits never block:
 // rate limits and cooldowns are still enforced by rejection() and quotas.
@@ -95,7 +106,8 @@ async function call(row, ref, request, signal) {
   const stopListening = load.onForeground((accountId) => {
     if (accountId === entry.accountId && accountFull(entry)) controller.abort(new Deferred('traffic_yield'));
   });
-  const combined = AbortSignal.any([signal, controller.signal, AbortSignal.timeout(POLICY.timeoutMs)].filter(Boolean));
+  const timeoutMs = replayTimeout(entry, output);
+  const combined = AbortSignal.any([signal, controller.signal, AbortSignal.timeout(timeoutMs)].filter(Boolean));
   let release;
   try {
     assertActive(row, combined);
@@ -106,7 +118,7 @@ async function call(row, ref, request, signal) {
     // Persist the reservation before a crash can cause a replay without quota accounting.
     quota.flush({ prune: false });
     const { response, headers } = await adapter.chat({ ...request, stream: false, max_tokens: output }, {
-      modelId: entry.modelId, model: entry, signal: combined, timeoutMs: POLICY.timeoutMs, benchmark: true,
+      modelId: entry.modelId, model: entry, signal: combined, timeoutMs, benchmark: true,
     });
     const usage = normalizeUsage(response.usage);
     if (usage) quota.recordTokens(entry, usage.prompt_tokens + usage.completion_tokens - reserved);
@@ -141,4 +153,4 @@ async function call(row, ref, request, signal) {
     throw new Deferred('provider_failure');
   } finally { stopListening(); release?.(); quota.flush({ prune: false }); }
 }
-module.exports = { accountFull, outputRoom, call, candidates, assertActive, automaticallyFree, Deferred };
+module.exports = { accountFull, outputRoom, replayTimeout, call, candidates, assertActive, automaticallyFree, Deferred };
