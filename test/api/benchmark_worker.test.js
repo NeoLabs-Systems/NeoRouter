@@ -15,7 +15,7 @@ const aggregates = require('../../server/services/benchmarks/aggregates');
 const { VERSION, REVIEW, RUBRIC } = require('../../server/services/benchmarks/evaluation/judge');
 const POLICY = require('../../server/services/benchmarks/policy');
 
-test('the autonomous worker reaches validated global aggregates through real adapters without production analytics', async () => {
+test('the autonomous worker reaches validated global aggregates through the router chat flow', async () => {
   createApp();
   const db = getDatabase();
   let calls = 0;
@@ -75,8 +75,8 @@ test('the autonomous worker reaches validated global aggregates through real ada
     assert.equal(worker.health().calls, calls);
     assert.equal(aggregates.list().length, 2);
     for (const result of aggregates.list()) { assert.equal(result.samples, POLICY.minSamples); assert.equal(result.score, .5); assert.equal(result.evaluatorVersion, VERSION); }
-    assert.equal(db.prepare('SELECT COUNT(*) count FROM requests').get().count, 0);
-    assert.equal(db.prepare('SELECT COALESCE(SUM(samples), 0) count FROM model_stats').get().count, 0);
+    // Replays run through the router's own chat flow, like any internal request.
+    assert.ok(db.prepare('SELECT COUNT(*) count FROM requests').get().count > 0);
     assert.equal(db.prepare('SELECT COUNT(*) count FROM benchmark_samples WHERE payload IS NOT NULL').get().count, 0);
   } finally {
     crypto.randomInt = originalRandom;

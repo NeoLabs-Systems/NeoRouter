@@ -31,13 +31,6 @@ async function step(row, payload, signal, adapters = transport) {
     p.answers = []; p.calibrations = []; p.verdicts = []; p.cases = objective.calibration(); p.flip = !!crypto.randomInt(2);
     return next();
   }
-  // A chosen model that turned out too slow for replays: choose again. Steps
-  // done with the old models are dropped, so every verdict uses one set.
-  const chosen = [...p.selection.candidates, ...p.selection.judges];
-  if (adapters.isSlow && chosen.some((model) => adapters.isSlow(model.ref))) {
-    for (const key of Object.keys(p)) if (key !== 'privacyRevision') delete p[key];
-    return next();
-  }
   const ask = (model, request) => adapters.call(row, model.ref, request, signal);
   if (!p.reviewed) {
     const result = judge.review(await ask(p.selection.judges[0], judge.reviewRequest(sample)));

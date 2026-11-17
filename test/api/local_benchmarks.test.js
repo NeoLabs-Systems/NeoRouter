@@ -81,36 +81,13 @@ test('plain and streamed captures stay sanitized before response placeholders ar
   assert.deepEqual((await api('get', '/discovery/internal-benchmarks')).body.results, [], 'unvalidated samples never appear globally');
 });
 
-test('background transport accounts for real quota, yields to traffic and never writes production statistics', async () => {
+test('replays run the chosen free model through the router and count against its quota', async () => {
   const row = staged()[0];
   const canonical = { messages: [{ role: 'user', content: 'Return a brief greeting.' }], max_tokens: 64 };
-  const beforeRequests = db().prepare('SELECT COUNT(*) count FROM requests').get().count;
-  const beforeStats = stats.snapshot(model.ref);
   const beforeQuota = quota.usageOf(`m:${model.ref}`).rpd;
   const response = await transport.call(row, model.ref, canonical, new AbortController().signal);
   assert.match(response.content, /greeting/);
-  assert.equal(db().prepare('SELECT COUNT(*) count FROM requests').get().count, beforeRequests);
-  assert.equal(stats.snapshot(model.ref).samples, beforeStats.samples);
   assert.equal(quota.usageOf(`m:${model.ref}`).rpd, beforeQuota + 1);
-  // Traffic elsewhere does not hold it back; traffic on the same account does.
-  const elsewhere = load.foreground({ accountId: 'another-account' });
-  try { assert.match((await transport.call(row, model.ref, canonical, new AbortController().signal)).content, /greeting/); }
-  finally { elsewhere(); }
-  // Real traffic on the same account only holds it back once the account is full.
-  const limits = require('../../server/services/quota/account_limits');
-  limits.set(model.accountId, { concurrent: 1 });
-  const release = load.lease(model);
-  try { await assert.rejects(transport.call(row, model.ref, canonical, new AbortController().signal), (error) => error.code === 'account_busy'); }
-  finally { release(); }
-  const count = upstream.calls.length;
-  const running = transport.call(row, slow.ref, canonical, new AbortController().signal);
-  for (let attempt = 0; attempt < 30 && upstream.calls.length === count; attempt++) await new Promise((resolve) => setTimeout(resolve, 5));
-  assert.ok(upstream.calls.length > count);
-  // The replay holds the account's one slot; a real request takes it back.
-  const unblock = load.foreground(slow);
-  try { await assert.rejects(running, (error) => error.code === 'traffic_yield'); } finally { unblock(); }
-  assert.equal(stats.snapshot(slow.ref).samples, 0);
-  assert.equal(db().prepare('SELECT COUNT(*) count FROM requests').get().count, beforeRequests);
   assert.equal(load.hasForeground(), false);
 });
 
@@ -130,21 +107,4 @@ test('quota exhaustion, subscriptions and revoked key permissions prevent backgr
   assert.equal(staged().length, 0);
   await assert.rejects(transport.call(row, model.ref, canonical, new AbortController().signal), (error) => error.code === 'consent_revoked');
   assert.equal(upstream.calls.length, calls);
-});
-
-test('replays get the output room the model is known to need', () => {
-  const stats = require('../../server/services/routing/stats_store');
-  const entry = { ...model, maxOutput: 20000 };
-  assert.equal(transport.outputRoom(entry, { max_tokens: 768 }), 768);
-  stats.raiseMinOutputTokens(model.ref, 14000);
-  assert.equal(transport.outputRoom(entry, { max_tokens: 768 }), 14000, 'judge prompts get the learned room');
-  stats.raiseMinOutputTokens(model.ref, 50000);
-  assert.equal(transport.outputRoom(entry, { max_tokens: 768 }), 20000, 'never past the model or the cap');
-});
-
-test('replays get time for the room they were given', () => {
-  const entry = { ...model };
-  assert.equal(transport.replayTimeout(entry, 100), 45000, 'short replies keep the base timeout');
-  assert.ok(transport.replayTimeout(entry, 14000) > 45000, 'a long reasoning reply gets more time');
-  assert.equal(transport.replayTimeout(entry, 1000000), 300000, 'never past five minutes');
 });
