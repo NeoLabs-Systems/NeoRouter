@@ -14,6 +14,7 @@ const { isPeerEntry } = require('../pools/links');
 const { requirements, estimateInputTokens, normalizeUsage, reportedCost, invalidToolCalls } = require('../../capabilities/chat/canonical');
 const consent = require('./consent');
 const POLICY = require('./policy');
+const logger = require('../../utils/logger').createLogger('local-benchmarks');
 
 class Deferred extends Error {
   constructor(code = 'waiting_capacity', retryAt = null) { super(code); this.code = code; this.retryAt = retryAt; }
@@ -109,6 +110,8 @@ async function call(row, ref, request, signal) {
   const timeoutMs = replayTimeout(entry, output);
   const combined = AbortSignal.any([signal, controller.signal, AbortSignal.timeout(timeoutMs)].filter(Boolean));
   let release;
+  const began = Date.now();
+  let outcome = 'answered';
   try {
     assertActive(row, combined);
     const adapter = accounts.adapterFor(runtime);
@@ -141,6 +144,8 @@ async function call(row, ref, request, signal) {
     // Do not persist hidden reasoning or model/provider response metadata.
     return { role: 'assistant', content: choice.message.content ?? null, ...(choice.message.tool_calls?.length ? { tool_calls: choice.message.tool_calls } : {}) };
   } catch (error) {
+    outcome = combined.aborted ? (combined.reason instanceof Deferred ? combined.reason.code : 'provider_timeout')
+      : error instanceof Deferred ? error.code : `provider_${error.kind || 'failure'}`;
     if (combined.aborted) throw combined.reason instanceof Deferred ? combined.reason : new Deferred('provider_timeout');
     if (error instanceof Deferred) throw error;
     if (error.headers) quota.observeHeaders(entry, error.headers);
@@ -151,6 +156,10 @@ async function call(row, ref, request, signal) {
     }
     // Provider errors may echo request text. Only a closed error code survives.
     throw new Deferred('provider_failure');
-  } finally { stopListening(); release?.(); quota.flush({ prune: false }); }
+  } finally {
+    stopListening(); release?.(); quota.flush({ prune: false });
+    // Which model, how much room and time, and what came of it: never content.
+    if (release) logger.info('Benchmark call', { model: entry.canonicalId, account: entry.accountId, room: output, timeoutMs, ms: Date.now() - began, outcome });
+  }
 }
 module.exports = { accountFull, outputRoom, replayTimeout, call, candidates, assertActive, automaticallyFree, Deferred };
