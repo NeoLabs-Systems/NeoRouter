@@ -107,7 +107,26 @@ async function probe(id, url) {
     await response.body?.cancel();
     if (response.status === 407) throw new Error('Proxy authentication failed');
     h.latencyMs = Date.now() - began; h.failures = 0; h.until = 0;
+    h.checkedAt = Date.now(); h.checkOk = true;
     return { ok: true, status: response.status, latencyMs: h.latencyMs };
-  } catch { failed(id, h); return { ok: false }; }
+  } catch { failed(id, h); h.checkedAt = Date.now(); h.checkOk = false; return { ok: false }; }
 }
-module.exports = { probe, parse, list, config, importLines, change, remove, fetch: fetchWithProxies, POLICY };
+
+// Every enabled proxy against the check page, a few at a time. A failing one
+// rests (and so leaves the rotation) until a later check or request succeeds.
+let lastCheck = null;
+async function checkAll(url = POLICY.checkUrl) {
+  const ids = getDatabase().prepare('SELECT id FROM outbound_proxies WHERE enabled = 1').all().map((row) => row.id);
+  let next = 0; let ok = 0;
+  const worker = async () => {
+    while (next < ids.length) {
+      const id = ids[next++];
+      if ((await probe(id, url).catch(() => ({ ok: false }))).ok) ok++;
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(POLICY.checkConcurrency, ids.length) }, worker));
+  lastCheck = { at: Date.now(), checked: ids.length, ok };
+  return lastCheck;
+}
+const lastCheckResult = () => lastCheck;
+module.exports = { checkAll, lastCheckResult, probe, parse, list, config, importLines, change, remove, fetch: fetchWithProxies, POLICY };

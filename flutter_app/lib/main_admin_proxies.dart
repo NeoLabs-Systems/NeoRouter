@@ -22,6 +22,7 @@ class _AdminProxiesState extends State<AdminProxies> {
   String? _error, _result;
   String _search = '';
   final Set<String> _picked = {};
+  Map? _lastCheck;
   int _page = 0;
   static const _pageSize = 25;
   static const _base = '/api/v1/admin/proxies';
@@ -44,6 +45,7 @@ class _AdminProxiesState extends State<AdminProxies> {
       if (mounted) {
         setState(() {
           _rows = (data['proxies'] as List).cast<Map>();
+          _lastCheck = data['lastCheck'] as Map?;
           _picked.retainAll(_rows.map((row) => '${row['id']}'));
           _enabled = (data['policy'] as Map)['enabled'] == true;
           _direct = (data['policy'] as Map)['fallbackDirect'] == true;
@@ -297,6 +299,43 @@ class _AdminProxiesState extends State<AdminProxies> {
                             ),
                           ],
                         ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _lastCheck == null
+                              ? t.proxyNotChecked
+                              : t.proxyLastCheck(
+                                  formatAgo(
+                                    t,
+                                    DateTime.fromMillisecondsSinceEpoch(
+                                      (_lastCheck!['at'] as num).toInt(),
+                                    ),
+                                  ),
+                                  '${_lastCheck!['ok']}',
+                                  '${_lastCheck!['checked']}',
+                                ),
+                          style: TextStyle(
+                            color: palette.textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      TextButton.icon(
+                        icon: const Icon(Icons.network_check, size: 16),
+                        label: Text(t.proxyCheckNow),
+                        onPressed: _busy
+                            ? null
+                            : () => _run(
+                                () => widget.controller.api.client.post(
+                                  '$_base/check',
+                                  {},
+                                ),
+                              ),
+                      ),
                     ],
                   ),
                   if (top.isNotEmpty) ...[

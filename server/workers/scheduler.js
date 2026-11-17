@@ -76,6 +76,9 @@ function start() {
   every('check-updates', UPDATE_CHECK_MS, () => updates.check(), { runAtStart: true });
   every('prune-logs', 24 * 60 * 60_000, () => usage.prune(LOG_RETENTION_DAYS));
   // Pools: pick up members who joined or left while this server was away.
+  // Outbound proxies: find dead ones before a request does.
+  const proxies = require('../services/proxies/pool');
+  every('check-proxies', proxies.POLICY.checkEveryMs, () => proxies.checkAll(), { runAtStart: true });
   every('sync-pools', POOL_SYNC_MS, () => require('../services/pools/pool_service').syncAll(), { runAtStart: true });
 }
 

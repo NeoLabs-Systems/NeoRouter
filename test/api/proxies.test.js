@@ -155,3 +155,17 @@ test('bulk actions disable, enable and delete selected or all proxies', async ()
   await api('post', '/bulk').send({ action: 'delete', all: true });
   assert.equal((await api('get', '')).body.proxies.length, 0);
 });
+
+test('the automatic check tests every enabled proxy and rests the dead ones', async () => {
+  reset();
+  const unavailable = net.createServer(); const closedPort = await listen(unavailable);
+  await new Promise((resolve) => unavailable.close(resolve)); servers.splice(servers.indexOf(unavailable), 1);
+  pool.importLines(`127.0.0.1:${socks}\n127.0.0.1:${closedPort}`, 'socks5');
+  const result = await pool.checkAll(`http://127.0.0.1:${origin}/`);
+  assert.equal(result.checked, 2);
+  assert.equal(result.ok, 1);
+  const dead = pool.list().find((row) => row.endpoint.endsWith(`:${closedPort}`));
+  assert.equal(dead.checkOk, false);
+  assert.ok(dead.until > Date.now(), 'a dead proxy leaves the rotation');
+  assert.equal(pool.lastCheckResult().checked, 2);
+});

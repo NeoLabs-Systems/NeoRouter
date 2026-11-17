@@ -4819,6 +4819,24 @@ abstract class AppL10n {
   /// **'{count} new'**
   String discoveryDayCount(String count);
 
+  /// No description provided for @proxyCheckNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Check all now'**
+  String get proxyCheckNow;
+
+  /// No description provided for @proxyLastCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked {ago} · {ok} of {count} working · every hour'**
+  String proxyLastCheck(String ago, String ok, String count);
+
+  /// No description provided for @proxyNotChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked automatically every hour'**
+  String get proxyNotChecked;
+
   /// No description provided for @proxySelectAll.
   ///
   /// In en, this message translates to:

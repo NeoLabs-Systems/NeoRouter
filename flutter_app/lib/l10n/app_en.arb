@@ -1684,6 +1684,22 @@
       }
     }
   },
+  "proxyCheckNow": "Check all now",
+  "proxyLastCheck": "Checked {ago} · {ok} of {count} working · every hour",
+  "@proxyLastCheck": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      },
+      "ok": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyNotChecked": "Checked automatically every hour",
   "proxySelectAll": "Select all",
   "proxySelected": "{count} selected",
   "@proxySelected": {

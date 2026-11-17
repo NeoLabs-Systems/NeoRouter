@@ -2746,6 +2746,17 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
+  String get proxyCheckNow => 'Jetzt alle prüfen';
+
+  @override
+  String proxyLastCheck(String ago, String ok, String count) {
+    return 'Geprüft $ago · $ok von $count funktionieren · stündlich';
+  }
+
+  @override
+  String get proxyNotChecked => 'Wird stündlich automatisch geprüft';
+
+  @override
   String get proxySelectAll => 'Alle auswählen';
 
   @override

@@ -10,7 +10,10 @@ const { isPrivateDestination } = require('../providers/net_guard');
 const { asyncRoute } = require('./helpers');
 
 // Mounted behind the admin router's authentication and role checks.
-router.get('/', (_req, res) => res.json({ proxies: pool.list(), policy: pool.config() }));
+router.get('/', (_req, res) => res.json({ proxies: pool.list(), policy: pool.config(), lastCheck: pool.lastCheckResult() }));
+
+// Checks every enabled proxy now instead of waiting for the hourly check.
+router.post('/check', asyncRoute(async (_req, res) => res.json(await pool.checkAll())));
 
 router.put('/policy', validate(z.object({ enabled: z.boolean(), fallbackDirect: z.boolean() })), (req, res) => {
   settings.setGlobal('outbound_proxy_policy', req.body);

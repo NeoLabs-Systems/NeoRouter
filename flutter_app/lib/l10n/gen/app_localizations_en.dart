@@ -2722,6 +2722,17 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String get proxyCheckNow => 'Check all now';
+
+  @override
+  String proxyLastCheck(String ago, String ok, String count) {
+    return 'Checked $ago · $ok of $count working · every hour';
+  }
+
+  @override
+  String get proxyNotChecked => 'Checked automatically every hour';
+
+  @override
   String get proxySelectAll => 'Select all';
 
   @override

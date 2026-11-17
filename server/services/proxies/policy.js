@@ -11,5 +11,9 @@ const POLICY = Object.freeze({
   unmeasuredMs: 100,
   maxDispatchers: 64,
   idleMs: 60000,
+  // Automatic check: a tiny public page every proxy should reach.
+  checkUrl: 'https://www.cloudflare.com/cdn-cgi/trace',
+  checkEveryMs: 60 * 60_000,
+  checkConcurrency: 16,
 });
 module.exports = { POLICY };
