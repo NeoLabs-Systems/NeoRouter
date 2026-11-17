@@ -19,6 +19,7 @@ double _num(Object? value) => value is num ? value.toDouble() : 0;
 double? _maybe(Object? value) => value is num ? value.toDouble() : null;
 
 enum _ActivityTab { overview, learned, requests }
+enum _ProviderUsage { total, average }
 
 /// What happened: an overview with a few charts, what routing learned from
 /// it, and the request list.
@@ -34,6 +35,7 @@ class ActivityScreen extends StatefulWidget {
 class _ActivityScreenState extends State<ActivityScreen> {
   late _ActivityTab _tab = widget.controller.savedTab('activity', _ActivityTab.values, _ActivityTab.overview);
   String _range = '7d';
+  late _ProviderUsage _providerUsage = widget.controller.savedTab('activityProviderUsage', _ProviderUsage.values, _ProviderUsage.total);
   // Keys the numbers are limited to; empty means all of them.
   Set<String> _keyIds = <String>{};
   List<RouterKey> _keys = <RouterKey>[];
@@ -82,7 +84,10 @@ class _ActivityScreenState extends State<ActivityScreen> {
         // What it learned belongs to the models, not to any one key.
         if (_keys.length > 1 && _tab != _ActivityTab.learned) _KeyFilter(keys: _keys, selected: _keyIds, onChanged: (value) => setState(() => _keyIds = value)),
         if (_tab == _ActivityTab.overview)
-          _Overview(key: ValueKey<String>('$_range|${(_keyIds.toList()..sort()).join(',')}'), controller: widget.controller, range: _range, keyIds: _keyIds.toList())
+          _Overview(key: ValueKey<String>('$_range|${(_keyIds.toList()..sort()).join(',')}'), controller: widget.controller, range: _range, keyIds: _keyIds.toList(), providerUsage: _providerUsage, onProviderUsageChanged: (value) {
+            widget.controller.rememberChoice('activityProviderUsage', value);
+            setState(() => _providerUsage = value);
+          })
         else if (_tab == _ActivityTab.learned)
           LearnedView(controller: widget.controller)
         else
@@ -93,11 +98,13 @@ class _ActivityScreenState extends State<ActivityScreen> {
 }
 
 class _Overview extends StatefulWidget {
-  const _Overview({super.key, required this.controller, required this.range, this.keyIds = const <String>[]});
+  const _Overview({super.key, required this.controller, required this.range, this.keyIds = const <String>[], required this.providerUsage, required this.onProviderUsageChanged});
 
   final NeoRouterController controller;
   final String range;
   final List<String> keyIds;
+  final _ProviderUsage providerUsage;
+  final ValueChanged<_ProviderUsage> onProviderUsageChanged;
 
   @override
   State<_Overview> createState() => _OverviewState();
@@ -188,7 +195,33 @@ class _OverviewState extends State<_Overview> {
         LayoutBuilder(
           builder: (context, constraints) {
             final models = ActivityRanking(title: t.topModelsTitle, rows: (data['byModel'] as List).cast<Map>(), label: shortModelName);
-            final providers = ActivityRanking(title: t.byConnection, rows: (data['byProvider'] as List).cast<Map>(), detail: (row) => '${formatCount(_num(row['requests']))} · ${t.cacheHitRate}: ${row['cacheHitRate'] == null ? '—' : '${(_num(row['cacheHitRate']) * 100).round()} %'}');
+            final average = widget.providerUsage == _ProviderUsage.average;
+            final providers = ActivityRanking(
+              title: t.mostUsedProviders,
+              description: average ? t.providerUsageAverageHint : null,
+              controls: Align(
+                alignment: Alignment.centerLeft,
+                child: SegmentedButton<_ProviderUsage>(
+                  showSelectedIcon: false,
+                  segments: [
+                    ButtonSegment(value: _ProviderUsage.total, label: Text(t.providerUsageTotal)),
+                    ButtonSegment(value: _ProviderUsage.average, label: Text(t.providerUsageAverage)),
+                  ],
+                  selected: {widget.providerUsage},
+                  onSelectionChanged: (values) => widget.onProviderUsageChanged(values.first),
+                ),
+              ),
+              rows: ((average ? data['byProviderAverage'] : data['byProvider']) as List? ?? const []).cast<Map>(),
+              value: (row) => _num(row[average ? 'requestsPerAccount' : 'requests']),
+              detail: (row) {
+                if (average && row['requestsPerAccount'] == null) return t.providerUsageUnavailable;
+                final requests = _num(row[average ? 'requestsPerAccount' : 'requests']);
+                final count = average && requests < 1000 ? requests.toStringAsFixed(requests == requests.roundToDouble() ? 0 : 1) : formatCount(requests);
+                return average
+                    ? t.providerUsageAverageLine(count, '${row['accountCount']}')
+                    : '$count · ${t.cacheHitRate}: ${row['cacheHitRate'] == null ? '—' : '${(_num(row['cacheHitRate']) * 100).round()} %'}';
+              },
+            );
             final keys = ActivityRanking(title: t.byKey, rows: (data['byKey'] as List).cast<Map>());
             // Shown once more than one kind of model (chat, embeddings, …) was used.
             final kindRows = ((data['byCapability'] as List?) ?? const <Object>[]).cast<Map>();
@@ -230,23 +263,31 @@ class _OverviewState extends State<_Overview> {
 /// Top entries with a thin neutral bar for their share (rows carry key,
 /// name and requests). [detail] says what the right side shows per row.
 class ActivityRanking extends StatelessWidget {
-  const ActivityRanking({super.key, required this.title, required this.rows, this.label, this.detail});
+  const ActivityRanking({super.key, required this.title, required this.rows, this.label, this.detail, this.controls, this.description, this.value});
 
   final String title;
   final List<Map> rows;
   final String Function(String)? label;
   final String Function(Map row)? detail;
+  final Widget? controls;
+  final String? description;
+  final double Function(Map row)? value;
 
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final top = rows.take(6).toList();
-    final max = top.fold<double>(0, (value, row) => math.max(value, _num(row['requests'])));
+    double amount(Map row) => value?.call(row) ?? _num(row['requests']);
+    final max = top.fold<double>(0, (value, row) => math.max(value, amount(row)));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        SettingsHeading(title: title),
+        SettingsHeading(title: title, description: description),
+        if (controls != null) ...[
+          controls!,
+          const SizedBox(height: 12),
+        ],
         SettingsCardList(
           children: <Widget>[
             for (final row in top)
@@ -265,9 +306,14 @@ class ActivityRanking extends StatelessWidget {
                             style: TextStyle(fontSize: 13.5, color: palette.text, fontWeight: FontWeight.w500),
                           ),
                         ),
-                        Text(
-                          detail?.call(row) ?? t.rankingLine(formatCount(_num(row['requests'])), formatMs(_maybe(row['latencyP50']))),
-                          style: TextStyle(fontSize: 12.5, color: palette.textMuted),
+                        Flexible(
+                          child: Text(
+                            detail?.call(row) ?? t.rankingLine(formatCount(_num(row['requests'])), formatMs(_maybe(row['latencyP50']))),
+                            textAlign: TextAlign.right,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 12.5, color: palette.textMuted),
+                          ),
                         ),
                       ],
                     ),
@@ -276,7 +322,7 @@ class ActivityRanking extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppRadius.pill),
                       child: LinearProgressIndicator(
                         minHeight: 4,
-                        value: max == 0 ? 0 : _num(row['requests']) / max,
+                        value: max == 0 ? 0 : amount(row) / max,
                         backgroundColor: palette.surfaceRaised,
                         valueColor: AlwaysStoppedAnimation<Color>(palette.textSoft.withValues(alpha: 0.6)),
                       ),

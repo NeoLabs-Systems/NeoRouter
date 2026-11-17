@@ -142,3 +142,36 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
 [AGPL-3.0-only](LICENSE).
 
 <p align="center"><sub>Made with ❤️ by <a href="https://github.com/neooriginal">Neo</a> · <a href="https://github.com/NeoLabs-Systems">NeoLabs Systems</a></sub></p>
+
+### Outbound proxies
+
+In **Admin → Outbound proxies**, import proxies, test connections, then enable
+rotation. This is off by default. SOCKS5 (including `socks5h` URLs), HTTP and
+HTTPS CONNECT proxies are supported, with optional username/password credentials.
+Paste a list or load a UTF-8 text, CSV or TSV file, up to 5,000 lines per import.
+Accepted entries are proxy URLs, `user:password@host:port`, `host:port`,
+`host:port:user:password`, or comma/tab-separated host, port, user, password.
+Entries without a scheme use the selected default protocol. Use URL syntax for
+IPv6 addresses and URL-encode special characters in URL credentials. Blank lines
+and `#` comments are ignored; duplicates are skipped and invalid lines remain
+in the editor for correction. Simple CSV/TSV columns are supported, without a
+header or quoted fields.
+
+The shared provider HTTP transport uses the pool, including streamed responses.
+Local/private destinations stay direct; relay and WebSocket transports are
+unchanged. **Allow direct fallback** controls whether public provider requests
+can use the server connection when no proxy can connect. Disable it to require
+proxies for these requests. Test URLs must be public HTTP(S) addresses, with no
+credentials; tests send GET without provider keys.
+
+Selection spreads requests using measured latency, active requests (including
+streams) and recent connection failures. Failed proxies cool down exponentially
+from 30 seconds to 15 minutes, then become eligible again; a successful manual
+test restores them immediately. There are at most three proxy attempts per
+request, with eight-second timeouts for connection/handshake stages. Requests that may
+already have reached an upstream are never automatically replayed through
+another proxy or direct fallback. Provider HTTP errors such as 429 do not mark
+a working proxy unhealthy. Long response bodies stream with backpressure;
+retained dispatchers are bounded and idle ones are evicted. Live health resets
+on restart; proxy configuration persists and credentials are encrypted with the
+instance master key and omitted from API responses.

@@ -4627,6 +4627,42 @@ abstract class AppL10n {
   /// **'Most used models'**
   String get topModelsTitle;
 
+  /// No description provided for @mostUsedProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'Most used providers'**
+  String get mostUsedProviders;
+
+  /// No description provided for @providerUsageTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get providerUsageTotal;
+
+  /// No description provided for @providerUsageAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Average per key'**
+  String get providerUsageAverage;
+
+  /// No description provided for @providerUsageAverageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests divided by provider keys used in this period and filter. Unused keys are excluded.'**
+  String get providerUsageAverageHint;
+
+  /// No description provided for @providerUsageUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Average unavailable: missing connection history'**
+  String get providerUsageUnavailable;
+
+  /// No description provided for @providerUsageAverageLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{requests} / key · keys: {keys}'**
+  String providerUsageAverageLine(String requests, String keys);
+
   /// No description provided for @byConnection.
   ///
   /// In en, this message translates to:
@@ -10122,6 +10158,168 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Create a key or renew an expired key below.'**
   String get noActiveKeysHint;
+
+  /// No description provided for @proxyChooseFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Load text or CSV file'**
+  String get proxyChooseFile;
+
+  /// No description provided for @proxyFileError.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a UTF-8 text file smaller than 1 MB.'**
+  String get proxyFileError;
+
+  /// No description provided for @proxyDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {endpoint}? Import it again to restore it.'**
+  String proxyDeleteConfirm(String endpoint);
+
+  /// No description provided for @proxyActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Active requests: {active} · assigned: {served}'**
+  String proxyActivity(String active, String served);
+
+  /// No description provided for @proxyPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous proxies'**
+  String get proxyPrevious;
+
+  /// No description provided for @proxyNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next proxies'**
+  String get proxyNext;
+
+  /// No description provided for @proxyPage.
+  ///
+  /// In en, this message translates to:
+  /// **'{page} / {pages} · {count} proxies'**
+  String proxyPage(String page, String pages, String count);
+
+  /// No description provided for @proxyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Outbound proxies'**
+  String get proxyTitle;
+
+  /// No description provided for @proxyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional proxy rotation for public provider HTTP requests, including streams. Local/private destinations and relayed or WebSocket traffic keep their existing transport. Credentials are encrypted and never shown back.'**
+  String get proxyHint;
+
+  /// No description provided for @proxyEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Use outbound proxies'**
+  String get proxyEnable;
+
+  /// No description provided for @proxyDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow direct fallback'**
+  String get proxyDirect;
+
+  /// No description provided for @proxyDirectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'If proxies cannot connect, requests may use your server’s direct connection. Turn off to require a proxy for public provider HTTP requests.'**
+  String get proxyDirectHint;
+
+  /// No description provided for @proxyImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import proxies'**
+  String get proxyImport;
+
+  /// No description provided for @proxyFormats.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste one proxy per line: scheme://user:password@host:port, user:password@host:port, host:port, or host:port:user:password. CSV/tab-separated host, port, user, password also works. Use URL-encoding for special characters in URL credentials. Duplicate entries are skipped.'**
+  String get proxyFormats;
+
+  /// No description provided for @proxyProtocol.
+  ///
+  /// In en, this message translates to:
+  /// **'Default protocol for entries without a scheme'**
+  String get proxyProtocol;
+
+  /// No description provided for @proxyPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy list'**
+  String get proxyPaste;
+
+  /// No description provided for @proxyImportResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Added {added}; duplicates {duplicates}; invalid lines: {lines} (kept below for correction)'**
+  String proxyImportResult(String added, String duplicates, String lines);
+
+  /// No description provided for @proxyList.
+  ///
+  /// In en, this message translates to:
+  /// **'Configured proxies'**
+  String get proxyList;
+
+  /// No description provided for @proxyTestUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Public test URL'**
+  String get proxyTestUrl;
+
+  /// No description provided for @proxyTestHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tests send a GET without provider credentials. Any origin HTTP response proves connectivity.'**
+  String get proxyTestHint;
+
+  /// No description provided for @proxyEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No proxies configured. Import a list to get started.'**
+  String get proxyEmpty;
+
+  /// No description provided for @proxyCooling.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooling down after a connection failure'**
+  String get proxyCooling;
+
+  /// No description provided for @proxyUnmeasured.
+  ///
+  /// In en, this message translates to:
+  /// **'Not measured yet'**
+  String get proxyUnmeasured;
+
+  /// No description provided for @proxyLatency.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured latency: {ms} ms'**
+  String proxyLatency(String ms);
+
+  /// No description provided for @proxyTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Test connection'**
+  String get proxyTest;
+
+  /// No description provided for @proxyTestOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy connection succeeded.'**
+  String get proxyTestOk;
+
+  /// No description provided for @proxyTestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy connection failed; it is cooling down.'**
+  String get proxyTestFailed;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

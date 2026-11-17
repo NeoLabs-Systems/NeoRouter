@@ -140,20 +140,32 @@ function finishGroup(group) {
 
 // Rows counted under a key each, e.g. per provider; the largest kept.
 // nameOf (optional) gives each group a readable name when the key is an id.
-function grouper(keyOf, nameOf = null) {
+function grouper(keyOf, nameOf = null, memberOf = null) {
   const groups = new Map();
   const names = new Map();
+  const members = new Map();
   return {
     add(row) {
       const key = keyOf(row);
       if (key === null || key === undefined) return;
       if (!groups.has(key)) groups.set(key, newGroup());
       if (nameOf && !names.has(key)) names.set(key, nameOf(row));
+      if (memberOf) {
+        if (!members.has(key)) members.set(key, new Set());
+        members.get(key).add(memberOf(row));
+      }
       addRow(groups.get(key), row);
     },
-    top(limit) {
-      return [...groups.entries()].map(([key, group]) => ({ key, ...(names.has(key) ? { name: names.get(key) } : {}), ...finishGroup(group) }))
-        .sort((a, b) => b.requests - a.requests).slice(0, limit);
+    top(limit, average = false) {
+      return [...groups.entries()].map(([key, group]) => ({
+        key, ...(names.has(key) ? { name: names.get(key) } : {}), ...finishGroup(group),
+        ...(memberOf ? {
+          accountCount: members.get(key).size - (members.get(key).has(null) ? 1 : 0),
+          // Deleted/missing account links cannot produce a reliable divisor.
+          requestsPerAccount: members.get(key).has(null) ? null : group.requests / members.get(key).size,
+        } : {}),
+      }))
+        .sort((a, b) => average ? (b.requestsPerAccount ?? -1) - (a.requestsPerAccount ?? -1) || b.requests - a.requests : b.requests - a.requests).slice(0, limit);
     },
   };
 }
@@ -176,7 +188,7 @@ function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}
   const since = rangeStart(range, now);
   const bucketMs = range === '24h' ? 3_600_000 : range === '7d' ? 6 * 3_600_000 : 86_400_000;
   const rows = db.prepare(`SELECT r.cached_input_tokens, r.routing_group, r.created_at, r.status, r.error_code, r.input_tokens, r.output_tokens, r.cost_usd, r.saved_usd, r.is_free,
-      r.latency_ms, r.ttft_ms, r.attempts, r.stream, r.api_format, r.model_label, r.router_key_id, r.trail_json, r.capability, k.name key_name,
+      r.latency_ms, r.ttft_ms, r.attempts, r.stream, r.api_format, r.model_label, r.account_id, r.router_key_id, r.trail_json, r.capability, k.name key_name,
       a.definition_id, a.slug account_slug, a.label account_label, a.base_url account_base_url, m.canonical_id
     FROM requests r LEFT JOIN router_keys k ON k.id = r.router_key_id LEFT JOIN provider_accounts a ON a.id = r.account_id
       LEFT JOIN models m ON m.id = r.model_ref
@@ -193,7 +205,9 @@ function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}
     ? providerIdentity({ definitionId: row.definition_id, slug: row.account_slug, label: row.account_label, baseUrl: row.account_base_url }).providerName
     : row.model_label ? row.model_label.split('/')[0] : null);
   const groups = {
-    byProvider: grouper(providerOf),
+    // Count distinct provider connections, never downstream router keys. A
+    // historical request without its account link makes the average unavailable.
+    byProvider: grouper(providerOf, null, (row) => row.account_id || null),
     byRoutingGroup: grouper((row) => row.routing_group),
     byModel: grouper(modelKeyOf, modelNameOf),
     byKey: grouper((row) => row.key_name || row.router_key_id),
@@ -217,6 +231,7 @@ function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}
     totals: finishGroup(total),
     series: [...buckets.entries()].sort((a, b) => a[0] - b[0]).map(([bucket, group]) => ({ bucket, ...finishGroup(group) })),
     byProvider: groups.byProvider.top(20),
+    byProviderAverage: groups.byProvider.top(20, true),
     byRoutingGroup: groups.byRoutingGroup.top(100),
     byModel: groups.byModel.top(15),
     byKey: groups.byKey.top(20),

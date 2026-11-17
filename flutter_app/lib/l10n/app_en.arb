@@ -1614,6 +1614,22 @@
   "chartTypical": "Typical",
   "chartSlowest": "Slowest 5 %",
   "topModelsTitle": "Most used models",
+  "mostUsedProviders": "Most used providers",
+  "providerUsageTotal": "Total",
+  "providerUsageAverage": "Average per key",
+  "providerUsageAverageHint": "Requests divided by provider keys used in this period and filter. Unused keys are excluded.",
+  "providerUsageUnavailable": "Average unavailable: missing connection history",
+  "providerUsageAverageLine": "{requests} / key · keys: {keys}",
+  "@providerUsageAverageLine": {
+    "placeholders": {
+      "requests": {
+        "type": "String"
+      },
+      "keys": {
+        "type": "String"
+      }
+    }
+  },
   "byConnection": "By connection",
   "byKey": "By API key",
   "rankingLine": "{count} · {latency}",
@@ -3652,5 +3668,82 @@
   },
   "keyRenewEdit": "Renew / edit",
   "noActiveKeysTitle": "No active API keys",
-  "noActiveKeysHint": "Create a key or renew an expired key below."
+  "noActiveKeysHint": "Create a key or renew an expired key below.",
+  "proxyChooseFile": "Load text or CSV file",
+  "proxyFileError": "Choose a UTF-8 text file smaller than 1 MB.",
+  "proxyDeleteConfirm": "Delete {endpoint}? Import it again to restore it.",
+  "@proxyDeleteConfirm": {
+    "placeholders": {
+      "endpoint": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyActivity": "Active requests: {active} · assigned: {served}",
+  "@proxyActivity": {
+    "placeholders": {
+      "active": {
+        "type": "String"
+      },
+      "served": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyPrevious": "Previous proxies",
+  "proxyNext": "Next proxies",
+  "proxyPage": "{page} / {pages} · {count} proxies",
+  "@proxyPage": {
+    "placeholders": {
+      "page": {
+        "type": "String"
+      },
+      "pages": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyTitle": "Outbound proxies",
+  "proxyHint": "Optional proxy rotation for public provider HTTP requests, including streams. Local/private destinations and relayed or WebSocket traffic keep their existing transport. Credentials are encrypted and never shown back.",
+  "proxyEnable": "Use outbound proxies",
+  "proxyDirect": "Allow direct fallback",
+  "proxyDirectHint": "If proxies cannot connect, requests may use your server’s direct connection. Turn off to require a proxy for public provider HTTP requests.",
+  "proxyImport": "Import proxies",
+  "proxyFormats": "Paste one proxy per line: scheme://user:password@host:port, user:password@host:port, host:port, or host:port:user:password. CSV/tab-separated host, port, user, password also works. Use URL-encoding for special characters in URL credentials. Duplicate entries are skipped.",
+  "proxyProtocol": "Default protocol for entries without a scheme",
+  "proxyPaste": "Proxy list",
+  "proxyImportResult": "Added {added}; duplicates {duplicates}; invalid lines: {lines} (kept below for correction)",
+  "@proxyImportResult": {
+    "placeholders": {
+      "added": {
+        "type": "String"
+      },
+      "duplicates": {
+        "type": "String"
+      },
+      "lines": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyList": "Configured proxies",
+  "proxyTestUrl": "Public test URL",
+  "proxyTestHint": "Tests send a GET without provider credentials. Any origin HTTP response proves connectivity.",
+  "proxyEmpty": "No proxies configured. Import a list to get started.",
+  "proxyCooling": "Cooling down after a connection failure",
+  "proxyUnmeasured": "Not measured yet",
+  "proxyLatency": "Measured latency: {ms} ms",
+  "@proxyLatency": {
+    "placeholders": {
+      "ms": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyTest": "Test connection",
+  "proxyTestOk": "Proxy connection succeeded.",
+  "proxyTestFailed": "Proxy connection failed; it is cooling down."
 }

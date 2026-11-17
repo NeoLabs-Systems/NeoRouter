@@ -15,6 +15,7 @@ const { asyncRoute } = require('./helpers');
 
 const router = express.Router();
 router.use(requireAdmin);
+router.use('/proxies', require('./proxies'));
 
 // Each user with the owner whose team they are in, if any.
 const listUsers = () => auth.listUsers().map((user) => {

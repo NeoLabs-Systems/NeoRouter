@@ -49,18 +49,30 @@ function transportFor(url) {
 async function send(url, init, publicOnly, owner) {
   const transport = transportFor(url);
   if (transport) return transport(url, init, { owner });
-  if (!publicOnly) return fetch(url, { ...init, redirect: 'follow' });
+
+  const proxies = require('../services/proxies/pool');
+  if (!publicOnly && !proxies.config().enabled) return fetch(url, { ...init, redirect: 'follow' });
+
   let current = url;
   let options = init;
   for (let hop = 0; ; hop += 1) {
-    if (await isPrivateDestination(current)) {
+    const privateDestination = await isPrivateDestination(current);
+    if (publicOnly && privateDestination) {
       throw new ProviderError(KINDS.BAD_REQUEST, 'This address is on a local or private network. Only the instance admin can use those.');
     }
-    const response = await fetch(current, { ...options, redirect: 'manual' });
+    const sendFetch = privateDestination ? fetch : proxies.fetch;
+    const response = await sendFetch(current, { ...options, redirect: 'manual' });
     const location = response.status >= 300 && response.status < 400 ? response.headers.get('location') : null;
     if (!location) return response;
+    await response.body?.cancel();
     if (hop >= MAX_REDIRECTS) throw new ProviderError(KINDS.NETWORK, 'Too many redirects.');
-    current = new URL(location, current).toString();
+    const next = new URL(location, current).toString();
+    if (new URL(next).origin !== new URL(current).origin) {
+      const headers = new Headers(options.headers);
+      for (const name of ['authorization', 'x-api-key', 'x-goog-api-key', 'cookie']) headers.delete(name);
+      options = { ...options, headers };
+    }
+    current = next;
     if (response.status === 303 || ((response.status === 301 || response.status === 302) && options.method === 'POST')) {
       options = { ...options, method: 'GET', body: undefined };
     }

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_admin_local_models.dart';
 import 'main_admin_update.dart';
+import 'main_admin_proxies.dart';
 import 'main_controller.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
@@ -13,7 +14,7 @@ import 'main_theme.dart';
 import 'src/backend_client.dart';
 import 'src/models.dart';
 
-enum _AdminTab { users, server, localModels, metadata }
+enum _AdminTab { users, server, localModels, metadata, proxies }
 
 /// One line for a team event, e.g. "anna joined neo's team".
 String teamEventLabel(AppL10n t, Map<String, dynamic> event) {
@@ -36,6 +37,7 @@ extension on _AdminTab {
         _AdminTab.server => Icons.dns_outlined,
         _AdminTab.localModels => Icons.memory_outlined,
         _AdminTab.metadata => Icons.auto_awesome_outlined,
+        _AdminTab.proxies => Icons.route_outlined,
       };
 
   String label(AppL10n t) => switch (this) {
@@ -43,6 +45,7 @@ extension on _AdminTab {
         _AdminTab.server => t.serverTitle,
         _AdminTab.localModels => t.lmTab,
         _AdminTab.metadata => t.metadataSources,
+        _AdminTab.proxies => t.proxyTitle,
       };
 }
 
@@ -156,6 +159,7 @@ class _AdminScreenState extends State<AdminScreen> {
         _AdminSearchEntry(t.privacyModelTitle, _AdminTab.server, 'privacy filter openai datenschutz pii ai detection'),
         _AdminSearchEntry(t.privacyModelTitle, _AdminTab.localModels, 'privacy filter openai datenschutz pii local model lokal'),
         _AdminSearchEntry(t.lmTab, _AdminTab.localModels, 'local lokal models modelle llama ollama gpu grafik download whisper speech tts embeddings self-hosted offline'),
+        _AdminSearchEntry(t.proxyTitle, _AdminTab.proxies, 'socks socks5 proxy proxies connect network import'),
         _AdminSearchEntry(t.metadataSources, _AdminTab.metadata, 'models.dev openrouter prices preise context intelligence'),
         _AdminSearchEntry(t.aaKey, _AdminTab.metadata, 'artificial analysis benchmark key api'),
       ];
@@ -293,6 +297,8 @@ class _AdminScreenState extends State<AdminScreen> {
             ),
           ],
         );
+      case _AdminTab.proxies:
+        return AdminProxies(controller: widget.controller);
       case _AdminTab.localModels:
         return LocalModelsSection(controller: widget.controller);
       case _AdminTab.metadata:

@@ -2632,6 +2632,28 @@ class AppL10nDe extends AppL10n {
   String get topModelsTitle => 'Meistgenutzte Modelle';
 
   @override
+  String get mostUsedProviders => 'Meistgenutzte Anbieter';
+
+  @override
+  String get providerUsageTotal => 'Gesamt';
+
+  @override
+  String get providerUsageAverage => 'Durchschnitt pro Key';
+
+  @override
+  String get providerUsageAverageHint =>
+      'Anfragen geteilt durch die in diesem Zeitraum und Filter genutzten Anbieter-Keys. Ungenutzte Keys zählen nicht mit.';
+
+  @override
+  String get providerUsageUnavailable =>
+      'Durchschnitt nicht verfügbar: Verbindungsverlauf fehlt';
+
+  @override
+  String providerUsageAverageLine(String requests, String keys) {
+    return '$requests / Key · Keys: $keys';
+  }
+
+  @override
   String get byConnection => 'Nach Verbindung';
 
   @override
@@ -5838,4 +5860,100 @@ class AppL10nDe extends AppL10n {
   @override
   String get noActiveKeysHint =>
       'Erstelle einen Key oder verlängere unten einen abgelaufenen Key.';
+
+  @override
+  String get proxyChooseFile => 'Text- oder CSV-Datei laden';
+
+  @override
+  String get proxyFileError => 'Wähle eine UTF-8-Textdatei kleiner als 1 MB.';
+
+  @override
+  String proxyDeleteConfirm(String endpoint) {
+    return '$endpoint löschen? Zum Wiederherstellen erneut importieren.';
+  }
+
+  @override
+  String proxyActivity(String active, String served) {
+    return 'Aktive Anfragen: $active · zugeteilt: $served';
+  }
+
+  @override
+  String get proxyPrevious => 'Vorherige Proxys';
+
+  @override
+  String get proxyNext => 'Nächste Proxys';
+
+  @override
+  String proxyPage(String page, String pages, String count) {
+    return '$page / $pages · $count Proxys';
+  }
+
+  @override
+  String get proxyTitle => 'Ausgehende Proxys';
+
+  @override
+  String get proxyHint =>
+      'Optionale Proxy-Rotation für öffentliche Anbieter-HTTP-Anfragen inklusive Streams. Lokale/private Ziele sowie Relay- und WebSocket-Verkehr behalten ihren bisherigen Transport. Zugangsdaten werden verschlüsselt und nicht erneut angezeigt.';
+
+  @override
+  String get proxyEnable => 'Ausgehende Proxys verwenden';
+
+  @override
+  String get proxyDirect => 'Direkten Fallback erlauben';
+
+  @override
+  String get proxyDirectHint =>
+      'Wenn Proxys keine Verbindung herstellen, dürfen Anfragen die direkte Server-Verbindung nutzen. Ausschalten erzwingt einen Proxy für öffentliche Anbieter-HTTP-Anfragen.';
+
+  @override
+  String get proxyImport => 'Proxys importieren';
+
+  @override
+  String get proxyFormats =>
+      'Ein Proxy pro Zeile: scheme://user:password@host:port, user:password@host:port, host:port oder host:port:user:password. CSV/Tab mit Host, Port, Benutzer, Passwort funktioniert auch. Sonderzeichen in URL-Zugangsdaten URL-kodieren. Duplikate werden übersprungen.';
+
+  @override
+  String get proxyProtocol => 'Standardprotokoll für Einträge ohne Schema';
+
+  @override
+  String get proxyPaste => 'Proxy-Liste';
+
+  @override
+  String proxyImportResult(String added, String duplicates, String lines) {
+    return 'Hinzugefügt: $added; Duplikate: $duplicates; ungültige Zeilen: $lines (zur Korrektur unten behalten)';
+  }
+
+  @override
+  String get proxyList => 'Konfigurierte Proxys';
+
+  @override
+  String get proxyTestUrl => 'Öffentliche Test-URL';
+
+  @override
+  String get proxyTestHint =>
+      'Tests senden GET ohne Anbieter-Zugangsdaten. Jede HTTP-Antwort des Ziels bestätigt die Verbindung.';
+
+  @override
+  String get proxyEmpty => 'Keine Proxys konfiguriert. Importiere eine Liste.';
+
+  @override
+  String get proxyCooling => 'Pause nach einem Verbindungsfehler';
+
+  @override
+  String get proxyUnmeasured => 'Noch nicht gemessen';
+
+  @override
+  String proxyLatency(String ms) {
+    return 'Gemessene Latenz: $ms ms';
+  }
+
+  @override
+  String get proxyTest => 'Verbindung testen';
+
+  @override
+  String get proxyTestOk => 'Proxy-Verbindung erfolgreich.';
+
+  @override
+  String get proxyTestFailed =>
+      'Proxy-Verbindung fehlgeschlagen; pausiert vorübergehend.';
 }

@@ -57,7 +57,7 @@ void downloadBytes(Uint8List bytes, String mime, String filename) {
 typedef PickedFile = ({Uint8List bytes, String name, String mime});
 
 /// Opens the browser's file dialog. Returns null when nothing was chosen.
-Future<PickedFile?> pickFile({String accept = '*/*'}) {
+Future<PickedFile?> pickFile({String accept = '*/*', int? maxBytes}) {
   final completer = Completer<PickedFile?>();
   final input = web.HTMLInputElement()
     ..type = 'file'
@@ -65,6 +65,10 @@ Future<PickedFile?> pickFile({String accept = '*/*'}) {
   input.onChange.listen((_) async {
     final file = input.files?.item(0);
     if (file == null) return completer.complete(null);
+    if (maxBytes != null && file.size > maxBytes) {
+      completer.completeError(const FormatException('File exceeds the size limit.'));
+      return;
+    }
     final buffer = await file.arrayBuffer().toDart;
     completer.complete((bytes: buffer.toDart.asUint8List(), name: file.name, mime: file.type));
   });

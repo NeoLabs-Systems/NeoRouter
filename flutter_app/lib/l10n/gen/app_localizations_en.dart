@@ -2609,6 +2609,28 @@ class AppL10nEn extends AppL10n {
   String get topModelsTitle => 'Most used models';
 
   @override
+  String get mostUsedProviders => 'Most used providers';
+
+  @override
+  String get providerUsageTotal => 'Total';
+
+  @override
+  String get providerUsageAverage => 'Average per key';
+
+  @override
+  String get providerUsageAverageHint =>
+      'Requests divided by provider keys used in this period and filter. Unused keys are excluded.';
+
+  @override
+  String get providerUsageUnavailable =>
+      'Average unavailable: missing connection history';
+
+  @override
+  String providerUsageAverageLine(String requests, String keys) {
+    return '$requests / key · keys: $keys';
+  }
+
+  @override
   String get byConnection => 'By connection';
 
   @override
@@ -5797,4 +5819,100 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get noActiveKeysHint => 'Create a key or renew an expired key below.';
+
+  @override
+  String get proxyChooseFile => 'Load text or CSV file';
+
+  @override
+  String get proxyFileError => 'Choose a UTF-8 text file smaller than 1 MB.';
+
+  @override
+  String proxyDeleteConfirm(String endpoint) {
+    return 'Delete $endpoint? Import it again to restore it.';
+  }
+
+  @override
+  String proxyActivity(String active, String served) {
+    return 'Active requests: $active · assigned: $served';
+  }
+
+  @override
+  String get proxyPrevious => 'Previous proxies';
+
+  @override
+  String get proxyNext => 'Next proxies';
+
+  @override
+  String proxyPage(String page, String pages, String count) {
+    return '$page / $pages · $count proxies';
+  }
+
+  @override
+  String get proxyTitle => 'Outbound proxies';
+
+  @override
+  String get proxyHint =>
+      'Optional proxy rotation for public provider HTTP requests, including streams. Local/private destinations and relayed or WebSocket traffic keep their existing transport. Credentials are encrypted and never shown back.';
+
+  @override
+  String get proxyEnable => 'Use outbound proxies';
+
+  @override
+  String get proxyDirect => 'Allow direct fallback';
+
+  @override
+  String get proxyDirectHint =>
+      'If proxies cannot connect, requests may use your server’s direct connection. Turn off to require a proxy for public provider HTTP requests.';
+
+  @override
+  String get proxyImport => 'Import proxies';
+
+  @override
+  String get proxyFormats =>
+      'Paste one proxy per line: scheme://user:password@host:port, user:password@host:port, host:port, or host:port:user:password. CSV/tab-separated host, port, user, password also works. Use URL-encoding for special characters in URL credentials. Duplicate entries are skipped.';
+
+  @override
+  String get proxyProtocol => 'Default protocol for entries without a scheme';
+
+  @override
+  String get proxyPaste => 'Proxy list';
+
+  @override
+  String proxyImportResult(String added, String duplicates, String lines) {
+    return 'Added $added; duplicates $duplicates; invalid lines: $lines (kept below for correction)';
+  }
+
+  @override
+  String get proxyList => 'Configured proxies';
+
+  @override
+  String get proxyTestUrl => 'Public test URL';
+
+  @override
+  String get proxyTestHint =>
+      'Tests send a GET without provider credentials. Any origin HTTP response proves connectivity.';
+
+  @override
+  String get proxyEmpty =>
+      'No proxies configured. Import a list to get started.';
+
+  @override
+  String get proxyCooling => 'Cooling down after a connection failure';
+
+  @override
+  String get proxyUnmeasured => 'Not measured yet';
+
+  @override
+  String proxyLatency(String ms) {
+    return 'Measured latency: $ms ms';
+  }
+
+  @override
+  String get proxyTest => 'Test connection';
+
+  @override
+  String get proxyTestOk => 'Proxy connection succeeded.';
+
+  @override
+  String get proxyTestFailed => 'Proxy connection failed; it is cooling down.';
 }
