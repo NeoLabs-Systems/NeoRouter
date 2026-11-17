@@ -30,11 +30,13 @@ consent.events.on('revoke', ({ userId, keyId }) => {
   }
 });
 
+// Samples already under way go first, so work finishes instead of every
+// sample creeping forward one step at a time.
 function claim(now) {
   const db = getDatabase();
   return db.transaction(() => {
     const row = db.prepare(`SELECT * FROM benchmark_samples WHERE payload IS NOT NULL AND expires_at > ? AND next_run_at <= ?
-      AND (status = 'pending' OR (status = 'running' AND lease_until <= ?)) ORDER BY next_run_at, created_at LIMIT 1`).get(now, now, now);
+      AND (status = 'pending' OR (status = 'running' AND lease_until <= ?)) ORDER BY (code IS NULL AND calls > 0) DESC, next_run_at, created_at LIMIT 1`).get(now, now, now);
     if (!row) return null;
     db.prepare("UPDATE benchmark_samples SET status = 'running', lease_until = ? WHERE id = ?").run(now + POLICY.leaseMs, row.id);
     return row;
