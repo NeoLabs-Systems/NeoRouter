@@ -131,3 +131,13 @@ test('quota exhaustion, subscriptions and revoked key permissions prevent backgr
   await assert.rejects(transport.call(row, model.ref, canonical, new AbortController().signal), (error) => error.code === 'consent_revoked');
   assert.equal(upstream.calls.length, calls);
 });
+
+test('replays get the output room the model is known to need', () => {
+  const stats = require('../../server/services/routing/stats_store');
+  const entry = { ...model, maxOutput: 20000 };
+  assert.equal(transport.outputRoom(entry, { max_tokens: 768 }), 768);
+  stats.raiseMinOutputTokens(model.ref, 14000);
+  assert.equal(transport.outputRoom(entry, { max_tokens: 768 }), 14000, 'judge prompts get the learned room');
+  stats.raiseMinOutputTokens(model.ref, 50000);
+  assert.equal(transport.outputRoom(entry, { max_tokens: 768 }), 20000, 'never past the model or the cap');
+});

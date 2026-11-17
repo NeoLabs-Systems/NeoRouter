@@ -6,6 +6,7 @@ const quota = require('../quota/quota_service');
 const billing = require('../providers/billing_check');
 const load = require('../routing/load_tracker');
 const concurrency = require('../routing/concurrency');
+const stats = require('../routing/stats_store');
 const smoothing = require('../routing/smoothing');
 const priority = require('../routing/priority');
 const { RoutingPlan, rejection } = require('../routing/router');
@@ -46,6 +47,19 @@ function candidates(row, canonical) {
   return catalog.listForUser(row.user_id).filter((entry) => automaticallyFree(entry) && !rejection(entry, ctx, Date.now()) && !priority.hasWaiters(entry));
 }
 
+// Output room for a replay. Reasoning models think before they answer, so the
+// small budgets of judge prompts and of the original request are raised to
+// what the model is known to need: the room live routing learned for it, or
+// what an earlier replay ran out of (kept here, so replays never write to
+// production learning).
+const MAX_ROOM = 32000;
+const needed = new Map();
+function outputRoom(entry, request) {
+  const asked = Math.min(request.max_tokens || POLICY.maxOutputTokens, POLICY.maxOutputTokens);
+  const cap = Math.min(MAX_ROOM, entry.maxOutput || MAX_ROOM);
+  return Math.min(cap, Math.max(asked, stats.outputFloor(entry.ref), needed.get(entry.ref) || 0));
+}
+
 // Full when the in-flight requests (real and this one) reach the account's
 // stated, documented or learned concurrency limit. Unknown limits never block:
 // rate limits and cooldowns are still enforced by rejection() and quotas.
@@ -70,7 +84,7 @@ async function call(row, ref, request, signal) {
   if (reason?.startsWith('quota_')) throw new Deferred('waiting_quota', quota.evaluate(entry, ctx.inputTokens).blocked?.resetAt);
   if (reason) throw new Deferred('model_unavailable');
   const input = estimateInputTokens(request);
-  const output = Math.min(request.max_tokens || POLICY.maxOutputTokens, entry.maxOutput || POLICY.maxOutputTokens, POLICY.maxOutputTokens);
+  const output = outputRoom(entry, request);
   const reserved = input + output;
   const capacity = quota.evaluate(entry, reserved);
   if (capacity.blocked) throw new Deferred('waiting_quota', capacity.blocked.resetAt);
@@ -102,6 +116,14 @@ async function call(row, ref, request, signal) {
     if (charged > 0) throw new Deferred('billed_model');
     assertActive(row, combined);
     const choice = response.choices?.[0];
+    // Cut off while thinking or answering: try again with twice the room, up to
+    // the cap. Only a model that runs out even then makes the sample incomplete.
+    if (choice?.finish_reason === 'length') {
+      const cap = Math.min(MAX_ROOM, entry.maxOutput || MAX_ROOM);
+      if (output >= cap) throw new Deferred('incomplete_output');
+      needed.set(entry.ref, Math.min(cap, output * 2));
+      throw new Deferred('needs_more_room', Date.now());
+    }
     if (!choice || !['stop', 'tool_calls'].includes(choice.finish_reason) || invalidToolCalls(choice.message?.tool_calls)) throw new Deferred('incomplete_output');
     if (Buffer.byteLength(JSON.stringify(choice.message)) > POLICY.maxPayloadBytes) throw new Deferred('oversized_output');
     // Do not persist hidden reasoning or model/provider response metadata.
@@ -119,4 +141,4 @@ async function call(row, ref, request, signal) {
     throw new Deferred('provider_failure');
   } finally { stopListening(); release?.(); quota.flush({ prune: false }); }
 }
-module.exports = { accountFull, call, candidates, assertActive, automaticallyFree, Deferred };
+module.exports = { accountFull, outputRoom, call, candidates, assertActive, automaticallyFree, Deferred };
