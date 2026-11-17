@@ -8,7 +8,10 @@ const pipeline = require('./evaluation/pipeline');
 const aggregates = require('./aggregates');
 const POLICY = require('./policy');
 const sanitizationEpoch = require('node:crypto').randomUUID();
-let active = null;
+// Samples being evaluated right now, a few at a time; the router's low
+// priority keeps them behind real traffic.
+const active = new Map();
+const PARALLEL = 4;
 let lastRunAt = null, lastCode = 'idle';
 // Outcome counts for a once-a-minute summary line: codes only, never content.
 const outcomes = new Map();
@@ -22,7 +25,9 @@ function note(code) {
   summaryAt = Date.now();
 }
 consent.events.on('revoke', ({ userId, keyId }) => {
-  if (active && (!userId || active.row.user_id === userId) && (!keyId || active.row.key_id === keyId)) active.controller.abort(new transport.Deferred('consent_revoked'));
+  for (const item of active.values()) {
+    if ((!userId || item.row.user_id === userId) && (!keyId || item.row.key_id === keyId)) item.controller.abort(new transport.Deferred('consent_revoked'));
+  }
 });
 
 function claim(now) {
@@ -35,14 +40,20 @@ function claim(now) {
     return row;
   })();
 }
+// Fills the free slots and waits for them; pruning runs on the scheduler's own timer.
 async function tick() {
-  if (active) return;
-  // Pruning runs on the scheduler's own minute timer; replays yield per account (transport).
   if (!consent.globalSettings().enabled) return;
-  const row = claim(Date.now());
-  if (!row) return;
+  const runs = [];
+  while (active.size + runs.length < PARALLEL) {
+    const row = claim(Date.now());
+    if (!row) break;
+    runs.push(runOne(row));
+  }
+  await Promise.all(runs);
+}
+async function runOne(row) {
   const controller = new AbortController();
-  active = { row, controller, startedAt: Date.now() };
+  active.set(row.id, { row, controller, startedAt: Date.now() });
   lastRunAt = Date.now();
   try {
     transport.assertActive(row, controller.signal);
@@ -80,11 +91,11 @@ async function tick() {
     const retryAt = error.retryAt || Date.now() + (code === 'traffic_yield' ? 0 : Math.min(POLICY.maxRetryMs, POLICY.retryMs * 2 ** attempts));
     getDatabase().prepare("UPDATE benchmark_samples SET status = 'pending', attempts = ?, next_run_at = ?, lease_until = 0, code = ? WHERE id = ? AND user_id = ?")
       .run(attempts, retryAt, code, row.id, row.user_id);
-  } finally { active = null; }
+  } finally { active.delete(row.id); }
 }
 function health() {
-  return { enabled: consent.globalSettings().enabled, active: !!active, startedAt: active?.startedAt || null,
+  return { enabled: consent.globalSettings().enabled, active: active.size > 0, running: active.size, startedAt: active.size ? Math.min(...[...active.values()].map((item) => item.startedAt)) : null,
     lastRunAt, lastCode, counts: store.counts(), calls: getDatabase().prepare('SELECT COALESCE(SUM(calls), 0) count FROM benchmark_samples').get().count, aggregates: aggregates.count() };
 }
-function stop() { active?.controller.abort(new transport.Deferred('traffic_yield')); }
+function stop() { for (const item of active.values()) item.controller.abort(new transport.Deferred('traffic_yield')); }
 module.exports = { tick, health, stop, claim };
