@@ -10,6 +10,8 @@ const POLICY = require('./policy');
 const sanitizationEpoch = require('node:crypto').randomUUID();
 let active = null;
 let lastRunAt = null, lastCode = 'idle';
+// After a network failure the whole worker waits, instead of trying every sample in turn.
+let pausedUntil = 0;
 // Outcome counts for a once-a-minute summary line: codes only, never content.
 const outcomes = new Map();
 let summaryAt = Date.now();
@@ -38,7 +40,7 @@ function claim(now) {
 async function tick() {
   if (active) return;
   // Pruning runs on the scheduler's own minute timer; replays yield per account (transport).
-  if (!consent.globalSettings().enabled) return;
+  if (!consent.globalSettings().enabled || Date.now() < pausedUntil) return;
   const row = claim(Date.now());
   if (!row) return;
   const controller = new AbortController();
@@ -72,6 +74,7 @@ async function tick() {
     const code = error instanceof transport.Deferred ? error.code : 'evaluation_failed';
     lastCode = code;
     note(code);
+    if (code === 'network_down') pausedUntil = error.retryAt || Date.now() + 60_000;
     if (code === 'consent_revoked') { store.finish(row, code); return; }
     if (['incomplete_output', 'oversized_output', 'billed_model'].includes(code)) { store.finish(row, code); return; }
     const failure = ['provider_failure', 'provider_timeout', 'evaluation_failed'].includes(code);

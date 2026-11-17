@@ -5,6 +5,7 @@ const privacy = require('../privacy');
 const judge = require('./judge');
 const objective = require('./objective');
 const scoring = require('../../routing/scoring');
+const stats = require('../../routing/stats_store');
 
 // One provider call per durable step. A normal request can interrupt any step;
 // completed steps survive restarts instead of spending the same quota again.
@@ -20,8 +21,11 @@ async function step(row, payload, signal, adapters = transport) {
     // choose or calibrate their own evaluators or candidate rankings.
     for (let i = eligible.length - 1; i > 0; i--) { const j = crypto.randomInt(i + 1); [eligible[i], eligible[j]] = [eligible[j], eligible[i]]; }
     const candidates = eligible.splice(0, 2);
+    // Judges: the faster two of the four smartest. The very smartest free
+    // model is often slow enough to make one sample take an hour.
     eligible.sort((a, b) => scoring.trustedIntelligence(b) - scoring.trustedIntelligence(a));
-    const judges = eligible.slice(0, 2);
+    const speed = (entry) => stats.snapshot(entry.ref).tps || 0;
+    const judges = eligible.slice(0, 4).sort((a, b) => speed(b) - speed(a)).slice(0, 2);
     const publicModel = (entry) => ({ ref: entry.ref, canonicalId: entry.canonicalId });
     p.selection = { candidates: candidates.map(publicModel), judges: judges.map(publicModel) };
     p.answers = []; p.calibrations = []; p.verdicts = []; p.cases = objective.calibration(); p.flip = !!crypto.randomInt(2);

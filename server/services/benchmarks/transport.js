@@ -54,6 +54,7 @@ function candidates(row, canonical) {
 // what an earlier replay ran out of (kept here, so replays never write to
 // production learning).
 const MAX_ROOM = 32000;
+const NETWORK_PAUSE_MS = 60_000;
 const needed = new Map();
 function outputRoom(entry, request) {
   const asked = Math.min(request.max_tokens || POLICY.maxOutputTokens, POLICY.maxOutputTokens);
@@ -149,6 +150,9 @@ async function call(row, ref, request, signal) {
     if (combined.aborted) throw combined.reason instanceof Deferred ? combined.reason : new Deferred('provider_timeout');
     if (error instanceof Deferred) throw error;
     if (error.headers) quota.observeHeaders(entry, error.headers);
+    // No connection at all (the server's internet is down, or the provider is
+    // unreachable): not the sample's fault, so it is not counted against it.
+    if (error.kind === 'network') throw new Deferred('network_down', Date.now() + NETWORK_PAUSE_MS);
     if (error.kind === 'rate_limit' || error.kind === 'quota_exhausted') {
       const resetAt = error.retryAfterMs ? Date.now() + error.retryAfterMs : Date.now() + POLICY.retryMs;
       quota.markExhausted(entry, error.learned?.metric || 'rpm', resetAt);
