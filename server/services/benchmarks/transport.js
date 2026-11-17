@@ -45,7 +45,7 @@ function context(row, canonical) {
 }
 function candidates(row, canonical) {
   const ctx = context(row, canonical);
-  return catalog.listForUser(row.user_id).filter((entry) => automaticallyFree(entry) && !rejection(entry, ctx, Date.now()) && !priority.hasWaiters(entry));
+  return catalog.listForUser(row.user_id).filter((entry) => automaticallyFree(entry) && !isSlow(entry.ref) && !rejection(entry, ctx, Date.now()) && !priority.hasWaiters(entry));
 }
 
 // Output room for a replay. Reasoning models think before they answer, so the
@@ -55,6 +55,11 @@ function candidates(row, canonical) {
 // production learning).
 const MAX_ROOM = 32000;
 const NETWORK_PAUSE_MS = 60_000;
+// Models that ran out of time on a replay sit out for a while, so one slow
+// model cannot hold the single worker for minutes per step.
+const SLOW_PAUSE_MS = 6 * 60 * 60_000;
+const slow = new Map();
+const isSlow = (ref, now = Date.now()) => (slow.get(ref) || 0) > now;
 const needed = new Map();
 function outputRoom(entry, request) {
   const asked = Math.min(request.max_tokens || POLICY.maxOutputTokens, POLICY.maxOutputTokens);
@@ -147,6 +152,7 @@ async function call(row, ref, request, signal) {
   } catch (error) {
     outcome = combined.aborted ? (combined.reason instanceof Deferred ? combined.reason.code : 'provider_timeout')
       : error instanceof Deferred ? error.code : `provider_${error.kind || 'failure'}`;
+    if (combined.aborted && !(combined.reason instanceof Deferred)) slow.set(entry.ref, Date.now() + SLOW_PAUSE_MS);
     if (combined.aborted) throw combined.reason instanceof Deferred ? combined.reason : new Deferred('provider_timeout');
     if (error instanceof Deferred) throw error;
     if (error.headers) quota.observeHeaders(entry, error.headers);
@@ -166,4 +172,4 @@ async function call(row, ref, request, signal) {
     if (release) logger.info('Benchmark call', { model: entry.canonicalId, account: entry.accountId, room: output, timeoutMs, ms: Date.now() - began, outcome });
   }
 }
-module.exports = { accountFull, outputRoom, replayTimeout, call, candidates, assertActive, automaticallyFree, Deferred };
+module.exports = { isSlow, accountFull, outputRoom, replayTimeout, call, candidates, assertActive, automaticallyFree, Deferred };
