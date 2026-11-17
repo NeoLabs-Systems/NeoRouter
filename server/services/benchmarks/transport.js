@@ -5,7 +5,7 @@ const catalog = require('../catalog/catalog_service');
 const quota = require('../quota/quota_service');
 const billing = require('../providers/billing_check');
 const load = require('../routing/load_tracker');
-const pressure = require('../routing/capacity');
+const concurrency = require('../routing/concurrency');
 const smoothing = require('../routing/smoothing');
 const priority = require('../routing/priority');
 const { RoutingPlan, rejection } = require('../routing/router');
@@ -46,20 +46,29 @@ function candidates(row, canonical) {
   return catalog.listForUser(row.user_id).filter((entry) => automaticallyFree(entry) && !rejection(entry, ctx, Date.now()) && !priority.hasWaiters(entry));
 }
 
+// Full when the in-flight requests (real and this one) reach the account's
+// stated, documented or learned concurrency limit. Unknown limits never block:
+// rate limits and cooldowns are still enforced by rejection() and quotas.
+function accountFull(entry) {
+  const known = concurrency.limitFor(entry);
+  return !!known && load.inflight(entry).account >= known.limit;
+}
+
 // Uses the same eligibility, quota windows, pools, health and provider adapters,
 // but deliberately never calls the executor, production learning or analytics.
 async function call(row, ref, request, signal) {
   assertActive(row, signal);
-  if (pressure.isShort(row.user_id)) throw new Deferred();
   const entry = catalog.getModel(row.user_id, ref);
-  // Real traffic on this account goes first; other accounts are fair game.
-  if (!entry || load.accountBusy(entry.accountId)) throw new Deferred();
+  if (!entry || !automaticallyFree(entry)) throw new Deferred('model_unavailable');
+  // Real traffic goes first: wait only while the account has no room left
+  // (its known concurrency limit is reached) or requests queue for it.
+  if (accountFull(entry)) throw new Deferred('account_busy');
+  if (priority.hasWaiters(entry)) throw new Deferred('requests_waiting');
   const ctx = context(row, request);
-  if (!automaticallyFree(entry) || priority.hasWaiters(entry)) throw new Deferred();
   const reason = rejection(entry, ctx, Date.now());
   if (reason === 'paced') throw new Deferred('waiting_quota', smoothing.nextAt(entry, { userId: row.user_id, inputTokens: ctx.inputTokens, maxOutput: request.max_tokens, priority: 'low' }));
   if (reason?.startsWith('quota_')) throw new Deferred('waiting_quota', quota.evaluate(entry, ctx.inputTokens).blocked?.resetAt);
-  if (reason) throw new Deferred();
+  if (reason) throw new Deferred('model_unavailable');
   const input = estimateInputTokens(request);
   const output = Math.min(request.max_tokens || POLICY.maxOutputTokens, entry.maxOutput || POLICY.maxOutputTokens, POLICY.maxOutputTokens);
   const reserved = input + output;
@@ -68,8 +77,9 @@ async function call(row, ref, request, signal) {
   const runtime = accounts.getRuntime(entry.accountId);
   if (!runtime || runtime.prepaid) throw new Deferred('waiting_free_models');
   const controller = new AbortController();
+  // A real request that would find the account full takes the slot back.
   const stopListening = load.onForeground((accountId) => {
-    if (accountId === entry.accountId) controller.abort(new Deferred('traffic_yield'));
+    if (accountId === entry.accountId && accountFull(entry)) controller.abort(new Deferred('traffic_yield'));
   });
   const combined = AbortSignal.any([signal, controller.signal, AbortSignal.timeout(POLICY.timeoutMs)].filter(Boolean));
   let release;
@@ -109,4 +119,4 @@ async function call(row, ref, request, signal) {
     throw new Deferred('provider_failure');
   } finally { stopListening(); release?.(); quota.flush({ prune: false }); }
 }
-module.exports = { call, candidates, assertActive, automaticallyFree, Deferred };
+module.exports = { accountFull, call, candidates, assertActive, automaticallyFree, Deferred };

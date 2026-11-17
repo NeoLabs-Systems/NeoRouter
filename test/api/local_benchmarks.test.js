@@ -96,13 +96,17 @@ test('background transport accounts for real quota, yields to traffic and never 
   const elsewhere = load.foreground({ accountId: 'another-account' });
   try { assert.match((await transport.call(row, model.ref, canonical, new AbortController().signal)).content, /greeting/); }
   finally { elsewhere(); }
-  const release = load.foreground(model);
-  try { await assert.rejects(transport.call(row, model.ref, canonical, new AbortController().signal), (error) => error.code === 'waiting_capacity'); }
+  // Real traffic on the same account only holds it back once the account is full.
+  const limits = require('../../server/services/quota/account_limits');
+  limits.set(model.accountId, { concurrent: 1 });
+  const release = load.lease(model);
+  try { await assert.rejects(transport.call(row, model.ref, canonical, new AbortController().signal), (error) => error.code === 'account_busy'); }
   finally { release(); }
   const count = upstream.calls.length;
   const running = transport.call(row, slow.ref, canonical, new AbortController().signal);
   for (let attempt = 0; attempt < 30 && upstream.calls.length === count; attempt++) await new Promise((resolve) => setTimeout(resolve, 5));
   assert.ok(upstream.calls.length > count);
+  // The replay holds the account's one slot; a real request takes it back.
   const unblock = load.foreground(slow);
   try { await assert.rejects(running, (error) => error.code === 'traffic_yield'); } finally { unblock(); }
   assert.equal(stats.snapshot(slow.ref).samples, 0);

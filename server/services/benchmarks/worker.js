@@ -10,6 +10,17 @@ const POLICY = require('./policy');
 const sanitizationEpoch = require('node:crypto').randomUUID();
 let active = null;
 let lastRunAt = null, lastCode = 'idle';
+// Outcome counts for a once-a-minute summary line: codes only, never content.
+const outcomes = new Map();
+let summaryAt = Date.now();
+const logger = require('../../utils/logger').createLogger('local-benchmarks');
+function note(code) {
+  outcomes.set(code, (outcomes.get(code) || 0) + 1);
+  if (Date.now() - summaryAt < 60_000) return;
+  logger.info('Benchmark worker', { outcomes: Object.fromEntries(outcomes), counts: store.counts() });
+  outcomes.clear();
+  summaryAt = Date.now();
+}
 consent.events.on('revoke', ({ userId, keyId }) => {
   if (active && (!userId || active.row.user_id === userId) && (!keyId || active.row.key_id === keyId)) active.controller.abort(new transport.Deferred('consent_revoked'));
 });
@@ -53,12 +64,14 @@ async function tick() {
     const result = await pipeline.step(row, payload, controller.signal);
     transport.assertActive(row, controller.signal);
     lastCode = result.state;
+    note(result.state === 'rejected' ? `rejected:${result.code}` : result.state);
     if (result.state === 'continue') store.checkpoint(row, result.payload);
     else if (result.state === 'validated') store.finish(row, aggregates.add(row, result.result) ? 'validated' : 'validation_rejected');
     else store.finish(row, result.code);
   } catch (error) {
     const code = error instanceof transport.Deferred ? error.code : 'evaluation_failed';
     lastCode = code;
+    note(code);
     if (code === 'consent_revoked') { store.finish(row, code); return; }
     if (['incomplete_output', 'oversized_output', 'billed_model'].includes(code)) { store.finish(row, code); return; }
     const failure = ['provider_failure', 'provider_timeout', 'evaluation_failed'].includes(code);
