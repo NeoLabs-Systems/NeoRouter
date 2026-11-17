@@ -6,7 +6,6 @@ const concurrency = require('./concurrency');
 const plans = require('./plans');
 const { taskIntelligence, enoughIntelligence } = require('./task/skills');
 const experience = require('./task/experience');
-const internalBenchmarks = require('../benchmarks/signal');
 
 // Feature scaling ranges (log scale). Centralized so they can be tuned.
 const TPS_RANGE = [10, 1500];
@@ -141,7 +140,7 @@ function score(entry, { weights, quotaFactor = 1, random, sample = true, now = D
   const snapshot = stats.snapshot(entry.ref, now);
   const learned = experience.adjust(task ? entry.ref : null, task?.primary, reliability(snapshot, { sample, random }), now);
   const totalWeight = weights.intelligence + weights.speed + weights.reliability + weights.cost;
-  const capability = Math.min(1, internalBenchmarks.blend(taskIntelligence(trustedIntelligence(entry), entry.skills, task?.skills), entry.canonicalId, task?.primary, now) * learned.quality);
+  const capability = Math.min(1, taskIntelligence(trustedIntelligence(entry), entry.skills, task?.skills) * learned.quality);
   const features = {
     intelligence: enoughIntelligence(capability, need, weights.intelligence / totalWeight),
     speed: speed(entry, snapshot),
@@ -182,7 +181,7 @@ function worthParts(entry, { task, now = Date.now() }) {
   const snapshot = stats.snapshot(entry.ref, now);
   const learned = experience.adjust(entry.ref, task.primary, reliability(snapshot, { sample: false }), now);
   return {
-    intelligence: Math.min(1, internalBenchmarks.blend(taskIntelligence(trustedIntelligence(entry), entry.skills, task.skills), entry.canonicalId, task.primary, now) * learned.quality),
+    intelligence: Math.min(1, taskIntelligence(trustedIntelligence(entry), entry.skills, task.skills) * learned.quality),
     speed: speed(entry, snapshot),
     reliability: learned.reliability,
   };

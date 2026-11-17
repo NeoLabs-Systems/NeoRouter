@@ -49,7 +49,6 @@ function publicKey(row) {
     pacing: row.mode === 'free_only' ? null : pick(pacing.pacing(row), ['state', 'forecast']),
     rpmLimit: row.rpm_limit,
     // Who goes first when models are busy.
-    benchmarkCollection: !!row.benchmark_collection,
     priority: row.priority || 'normal',
     // Maximum price per million tokens for paid models (null = no limit).
     maxPricePerMillion: row.max_price_per_million === null || row.max_price_per_million === undefined ? null : row.max_price_per_million,
@@ -89,7 +88,6 @@ function assertExpiry(expiresAt, previous = null) {
 
 // `app` ({name, origin, scopes}) marks a key made for a connected app.
 function create(userId, input, createdBy = userId, app = null) {
-  if (input.benchmarkCollection) require('../benchmarks/consent').assertParent(userId);
   assertExpiry(input.expiresAt);
   assertProfile(userId, input.profile);
   if (input.routingGroup) require('../routing/groups').requireGroup(userId, input.routingGroup);
@@ -108,7 +106,6 @@ function create(userId, input, createdBy = userId, app = null) {
       input.tokenLimit ?? null, input.tokenPeriod || 'monthly', input.priority || 'normal',
       input.maxPricePerMillion ?? null, input.poolAccess === 'pool' ? 'pool' : 'own');
   if (input.routingGroup) getDatabase().prepare('UPDATE router_keys SET routing_group = ? WHERE id = ?').run(input.routingGroup, id);
-  if (input.benchmarkCollection) require('../benchmarks/consent').saveKey(userId, id, true);
   return { key: get(userId, id), secret };
 }
 
@@ -129,7 +126,6 @@ function list(userId) {
 
 function update(userId, id, input) {
   const row = getRow(userId, id);
-  if (input.benchmarkCollection) require('../benchmarks/consent').assertParent(userId);
   if (input.expiresAt !== undefined) assertExpiry(input.expiresAt, row.expires_at);
   assertProfile(userId, input.profile);
   if (input.routingGroup) require('../routing/groups').requireGroup(userId, input.routingGroup);
@@ -155,20 +151,17 @@ function update(userId, id, input) {
       id,
     );
   if (input.routingGroup !== undefined) getDatabase().prepare('UPDATE router_keys SET routing_group = ? WHERE id = ?').run(input.routingGroup, id);
-  if (input.benchmarkCollection !== undefined) require('../benchmarks/consent').saveKey(userId, id, input.benchmarkCollection);
   return get(userId, id);
 }
 
 function revoke(userId, id) {
   getRow(userId, id);
-  require('../benchmarks/consent').saveKey(userId, id, false);
   getDatabase().prepare("UPDATE router_keys SET revoked_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?").run(id);
   return get(userId, id);
 }
 
 function remove(userId, id) {
   getRow(userId, id);
-  require('../benchmarks/consent').saveKey(userId, id, false);
   getDatabase().prepare('DELETE FROM router_keys WHERE id = ?').run(id);
 }
 

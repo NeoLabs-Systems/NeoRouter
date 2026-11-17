@@ -8,13 +8,8 @@ const { requirePermission } = require('../middleware/space');
 const { LEVELS } = require('../services/routing/priority');
 
 const router = express.Router();
-router.use((req, _res, next) => {
-  if (req.body?.benchmarkCollection !== undefined && !req.space.isOwner) return next(new (require('../middleware/error_handler').HttpError)(403, 'OWN_SPACE_ONLY', 'Benchmark consent is personal. Switch to your own space.'));
-  next();
-});
 
 const keyInput = z.object({
-  benchmarkCollection: z.boolean().optional(),
   name: z.string().min(1).max(80),
   mode: z.enum(['free_only', 'paid', 'both']).optional(),
   // The three kinds of models, chosen independently (preferred over mode).

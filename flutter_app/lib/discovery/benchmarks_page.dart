@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../main_controller.dart';
-import '../main_local_benchmarks.dart';
 import '../main_shared.dart';
 import '../main_theme.dart';
 import '../src/capabilities.dart';
@@ -366,7 +365,6 @@ class _BenchmarksScreenState extends State<BenchmarksScreen> {
                 ),
             ],
           ),
-        LocalBenchmarkResults(controller: widget.controller),
       ],
     );
   }

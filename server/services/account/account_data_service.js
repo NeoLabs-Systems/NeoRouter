@@ -123,7 +123,6 @@ async function deleteAccount(userId, credentials) {
     await pools.leave(userId, poolId).catch((error) => logger.warn('Could not tell a pool that the account is gone', { userId, error: error.message }));
   }
   audit.record('account.deleted', { actorUserId: null, subjectUserId: null, detail: { username: user.username } });
-  require('../benchmarks/private_store').purge(userId);
   getDatabase().prepare('DELETE FROM users WHERE id = ?').run(userId);
   logger.info('Account deleted by its owner', { userId });
 }

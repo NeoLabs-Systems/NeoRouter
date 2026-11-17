@@ -32,9 +32,6 @@ class DiscoveryClient extends BackendClient {
   Future<Map<String, dynamic>> get(String path) async {
     final uri = Uri.parse(path);
     requests.add(uri);
-    if (uri.path.endsWith('/internal-benchmarks')) {
-      return {'enabled': false, 'results': []};
-    }
     if (uri.path.endsWith('/benchmarks')) {
       return {
         'models': [
@@ -103,7 +100,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(
-        client.requests.where((uri) => uri.path.endsWith('/benchmarks')).length,
+        client.requests.length,
         1,
         reason: 'comparison uses already fetched measurements',
       );
