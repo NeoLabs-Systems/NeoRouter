@@ -63,7 +63,7 @@ function start() {
   setInterval(() => quota.flush(), QUOTA_FLUSH_MS).unref();
   every('prune-private-benchmarks', require('../services/benchmarks/policy').pruneMs, () => require('../services/benchmarks/private_store').prune(), { runAtStart: true });
   if (!config.workersEnabled) return;
-  every('local-benchmarks', require('../services/benchmarks/policy').tickMs, () => require('../services/benchmarks/worker').tick(), { runAtStart: true });
+  every('local-benchmarks', require('../services/benchmarks/policy').tickMs, () => { require('../services/benchmarks/worker').tick().catch(() => {}); }, { runAtStart: true });
   every('validate-keys', config.sync.validateIntervalMs, () => forEachAccount((id) => accounts.validateAccount(id)));
   every('verify-billing', BILLING_CHECK_MS, () => forEachAccount((id) => billing.verifyAccount(id)), { runAtStart: true });
   every('sync-models', config.sync.modelSyncIntervalMs, () => forEachAccount((id) => catalog.syncAccount(id)));

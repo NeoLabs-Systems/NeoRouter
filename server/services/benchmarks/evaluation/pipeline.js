@@ -10,6 +10,15 @@ const stats = require('../../routing/stats_store');
 // One provider call per durable step. A normal request can interrupt any step;
 // completed steps survive restarts instead of spending the same quota again.
 async function step(row, payload, signal, adapters = transport) {
+  try { return await stepOnce(row, payload, signal, adapters); }
+  catch (error) {
+    // Fresh models were chosen: save that, so the next step starts over.
+    if (error.code === 'reselect') return { state: 'continue', payload };
+    throw error;
+  }
+}
+
+async function stepOnce(row, payload, signal, adapters) {
   const { sample, progress: p } = payload;
   const next = () => ({ state: 'continue', payload });
   const reject = (code) => ({ state: 'rejected', code });
@@ -31,7 +40,18 @@ async function step(row, payload, signal, adapters = transport) {
     p.answers = []; p.calibrations = []; p.verdicts = []; p.cases = objective.calibration(); p.flip = !!crypto.randomInt(2);
     return next();
   }
-  const ask = (model, request) => adapters.call(row, model.ref, request, signal);
+  // A chosen model that fails in the router (it timed out on every try): pick
+  // fresh models and start over, at most three times per sample.
+  const ask = async (model, request) => {
+    try { return await adapters.call(row, model.ref, request, signal); }
+    catch (error) {
+      if (error.code !== 'provider_failure' || (p.reselections || 0) >= 3) throw error;
+      const reselections = (p.reselections || 0) + 1;
+      for (const key of Object.keys(p)) if (key !== 'privacyRevision') delete p[key];
+      p.reselections = reselections;
+      throw Object.assign(new Error('reselect'), { code: 'reselect' });
+    }
+  };
   if (!p.reviewed) {
     const result = judge.review(await ask(p.selection.judges[0], judge.reviewRequest(sample)));
     if (!result || !result.safe || !result.deidentified || !result.verifiable) return reject('unsuitable_task');
