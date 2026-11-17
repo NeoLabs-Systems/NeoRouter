@@ -50,8 +50,35 @@ function capture() {
     get(name) { return headers[String(name).toLowerCase()]; },
     status(code) { this.statusCode = code; return this; },
     json(body) { this.body = body; return this; },
-    on() { return this; }, write() { return true; }, end() { return this; }, flushHeaders() {},
+    sse: '',
+    on() { return this; }, write(chunk) { this.sse += String(chunk); return true; }, end() { return this; }, flushHeaders() {},
   };
+}
+
+// The streamed answer put back together, as an OpenAI client would.
+function assemble(sse) {
+  const message = { role: 'assistant', content: '' };
+  const calls = [];
+  let finishReason = null;
+  for (const line of sse.split('\n')) {
+    if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
+    let chunk;
+    try { chunk = JSON.parse(line.slice(6)); } catch { continue; }
+    if (chunk.error) return null;
+    const choice = chunk.choices?.[0];
+    if (!choice) continue;
+    if (typeof choice.delta?.content === 'string') message.content += choice.delta.content;
+    for (const call of choice.delta?.tool_calls || []) {
+      const slot = calls[call.index ?? calls.length] ||= { id: call.id, type: 'function', function: { name: '', arguments: '' } };
+      if (call.id) slot.id = call.id;
+      if (call.function?.name) slot.function.name += call.function.name;
+      if (call.function?.arguments) slot.function.arguments += call.function.arguments;
+    }
+    if (choice.finish_reason) finishReason = choice.finish_reason;
+  }
+  if (calls.length) message.tool_calls = calls.filter(Boolean);
+  if (!message.content && message.tool_calls) message.content = null;
+  return { message, finish_reason: finishReason };
 }
 
 // One replay through the router's own chat flow: the chosen model, as an
@@ -68,7 +95,7 @@ async function call(row, ref, request, signal) {
   const began = Date.now();
   try {
     await execute({ req, res, key: keyFor(row), format: 'openai_chat', freeOnly: true, internal: true,
-      canonical: { ...request, model: entry.id, stream: false, max_tokens: request.max_tokens || POLICY.maxOutputTokens } });
+      canonical: { ...request, model: entry.id, stream: true, max_tokens: request.max_tokens || POLICY.maxOutputTokens } });
   } catch (error) {
     // The router's own error code and how long it took: never content.
     logger.info('Benchmark call failed', { model: entry.canonicalId, status: error.status || null, code: error.code || error.kind || null, ms: Date.now() - began,
@@ -78,7 +105,9 @@ async function call(row, ref, request, signal) {
     throw new Deferred('provider_failure');
   }
   assertActive(row, signal);
-  const choice = res.body?.choices?.[0];
+  // Streamed like real traffic, so the router's timeout covers the first
+  // token, not a long answer from a slow model.
+  const choice = res.body?.choices?.[0] || assemble(res.sse);
   if (!choice || !['stop', 'tool_calls'].includes(choice.finish_reason) || invalidToolCalls(choice.message?.tool_calls)) throw new Deferred('incomplete_output');
   if (Buffer.byteLength(JSON.stringify(choice.message)) > POLICY.maxPayloadBytes) throw new Deferred('oversized_output');
   // Do not persist hidden reasoning or model/provider response metadata.
