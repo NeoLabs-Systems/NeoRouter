@@ -2733,15 +2733,8 @@ class AppL10nEn extends AppL10n {
   String get discoveryBenchmarks => 'Benchmarks';
 
   @override
-  String get discoveryNews => 'News';
-
-  @override
   String get discoveryBenchHint =>
       'Measured model performance, brought together. Explore the evidence and compare two models side by side.';
-
-  @override
-  String get discoveryNewsHint =>
-      'New free models worth a closer look, detected from OpenRouter’s public listings and measured benchmarks.';
 
   @override
   String get discoveryMeasuredModels => 'Measured models';
@@ -2832,17 +2825,6 @@ class AppL10nEn extends AppL10n {
   String get discoveryNoPrices => 'No prices known for these models.';
 
   @override
-  String get discoveryToday => 'Today';
-
-  @override
-  String get discoveryNothingToday => 'Nothing new today.';
-
-  @override
-  String discoveryDayCount(String count) {
-    return '$count new';
-  }
-
-  @override
   String get proxyCheckNow => 'Check all now';
 
   @override
@@ -2925,55 +2907,6 @@ class AppL10nEn extends AppL10n {
   String discoveryPage(String page, String count) {
     return 'Page $page · $count models';
   }
-
-  @override
-  String get discoveryNewsEmpty => 'The next discovery starts here';
-
-  @override
-  String get discoveryNewsEmptyHint =>
-      'When a confirmed free model reaches the top half of benchmarked free models, NeoRouter adds it here. Models without benchmark evidence stay out of the feed.';
-
-  @override
-  String get discoveryNewsRule => 'Why these models?';
-
-  @override
-  String get discoveryNewsRuleHint =>
-      'Detected means first highlighted by this instance, not the model release date. Entries are deduplicated across provider aliases and survive restarts. Selection uses the top half of currently benchmarked free models; historical entries remain when availability changes. Free listings may still have rate limits.';
-
-  @override
-  String discoveryDetected(String date) {
-    return 'Detected $date';
-  }
-
-  @override
-  String discoveryConfirmed(String date) {
-    return 'Free listing confirmed $date';
-  }
-
-  @override
-  String get discoveryUnavailable => 'No longer confirmed free';
-
-  @override
-  String discoveryNewsScore(String score, String sources) {
-    return 'Ranking $score / 100 · $sources sources';
-  }
-
-  @override
-  String discoveryContext(String count) {
-    return '$count context tokens';
-  }
-
-  @override
-  String get discoveryOpenModel => 'View listing';
-
-  @override
-  String get discoveryOpenBenchmarks => 'Explore benchmarks';
-
-  @override
-  String get discoveryMore => 'Load more';
-
-  @override
-  String get discoveryNewsSearch => 'Search discoveries';
 
   @override
   String get mostUsedProviders => 'Most used providers';

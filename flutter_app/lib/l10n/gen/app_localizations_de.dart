@@ -2758,15 +2758,8 @@ class AppL10nDe extends AppL10n {
   String get discoveryBenchmarks => 'Benchmarks';
 
   @override
-  String get discoveryNews => 'Neuigkeiten';
-
-  @override
   String get discoveryBenchHint =>
       'Gemessene Modellleistung an einem Ort. Ergebnisse entdecken und zwei Modelle direkt vergleichen.';
-
-  @override
-  String get discoveryNewsHint =>
-      'Neue kostenlose Modelle im Blick – erkannt aus öffentlichen OpenRouter-Listen und gemessenen Benchmarks.';
 
   @override
   String get discoveryMeasuredModels => 'Gemessene Modelle';
@@ -2858,17 +2851,6 @@ class AppL10nDe extends AppL10n {
       'Für diese Modelle sind keine Preise bekannt.';
 
   @override
-  String get discoveryToday => 'Heute';
-
-  @override
-  String get discoveryNothingToday => 'Heute nichts Neues.';
-
-  @override
-  String discoveryDayCount(String count) {
-    return '$count neu';
-  }
-
-  @override
   String get proxyCheckNow => 'Jetzt alle prüfen';
 
   @override
@@ -2951,55 +2933,6 @@ class AppL10nDe extends AppL10n {
   String discoveryPage(String page, String count) {
     return 'Seite $page · $count Modelle';
   }
-
-  @override
-  String get discoveryNewsEmpty => 'Die nächste Entdeckung beginnt hier';
-
-  @override
-  String get discoveryNewsEmptyHint =>
-      'Sobald ein bestätigt kostenloses Modell die obere Hälfte der bewerteten kostenlosen Modelle erreicht, erscheint es hier. Modelle ohne Benchmark-Nachweise werden nicht aufgenommen.';
-
-  @override
-  String get discoveryNewsRule => 'Warum diese Modelle?';
-
-  @override
-  String get discoveryNewsRuleHint =>
-      'Erkannt bedeutet erstmals von dieser Instanz hervorgehoben, nicht das Veröffentlichungsdatum. Einträge werden über Anbieter-Aliase hinweg zusammengefasst und bleiben nach Neustarts erhalten. Die Auswahl nutzt die obere Hälfte der aktuell bewerteten kostenlosen Modelle; frühere Einträge bleiben bei geänderter Verfügbarkeit sichtbar. Kostenlose Angebote können Rate-Limits haben.';
-
-  @override
-  String discoveryDetected(String date) {
-    return 'Erkannt: $date';
-  }
-
-  @override
-  String discoveryConfirmed(String date) {
-    return 'Kostenloses Angebot bestätigt: $date';
-  }
-
-  @override
-  String get discoveryUnavailable => 'Nicht mehr bestätigt kostenlos';
-
-  @override
-  String discoveryNewsScore(String score, String sources) {
-    return 'Bewertung $score / 100 · $sources Quellen';
-  }
-
-  @override
-  String discoveryContext(String count) {
-    return '$count Kontext-Token';
-  }
-
-  @override
-  String get discoveryOpenModel => 'Angebot ansehen';
-
-  @override
-  String get discoveryOpenBenchmarks => 'Benchmarks entdecken';
-
-  @override
-  String get discoveryMore => 'Mehr laden';
-
-  @override
-  String get discoveryNewsSearch => 'Entdeckungen suchen';
 
   @override
   String get mostUsedProviders => 'Meistgenutzte Anbieter';

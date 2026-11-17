@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'discovery/benchmarks_page.dart';
-import 'discovery/news_page.dart';
 import 'main_activity.dart';
 import 'main_admin.dart';
 import 'main_controller.dart';
@@ -48,7 +47,6 @@ List<NavGroup> navigationGroups(BuildContext context, NeoRouterController contro
     NavGroup(t.groupOverview, Icons.space_dashboard_outlined, <NavItem>[
       NavItem(AppPage.home, t.navHome, Icons.space_dashboard_outlined),
       NavItem(AppPage.benchmarks, t.discoveryBenchmarks, Icons.query_stats_outlined),
-      NavItem(AppPage.news, t.discoveryNews, Icons.auto_awesome_outlined),
       NavItem(AppPage.activity, t.navActivity, Icons.insights_outlined),
       NavItem(AppPage.playground, t.navPlayground, Icons.forum_outlined),
     ]),
@@ -146,7 +144,6 @@ class _NeoRouterShellState extends State<NeoRouterShell> {
 
   Widget _page(AppPage page) => switch (page) {
         AppPage.benchmarks => BenchmarksScreen(controller: controller),
-        AppPage.news => ModelNewsScreen(controller: controller),
         AppPage.home => DashboardScreen(controller: controller),
         AppPage.playground => PlaygroundScreen(controller: controller),
         AppPage.activity => ActivityScreen(controller: controller),

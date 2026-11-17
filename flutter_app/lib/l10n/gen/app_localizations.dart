@@ -4825,23 +4825,11 @@ abstract class AppL10n {
   /// **'Benchmarks'**
   String get discoveryBenchmarks;
 
-  /// No description provided for @discoveryNews.
-  ///
-  /// In en, this message translates to:
-  /// **'News'**
-  String get discoveryNews;
-
   /// No description provided for @discoveryBenchHint.
   ///
   /// In en, this message translates to:
   /// **'Measured model performance, brought together. Explore the evidence and compare two models side by side.'**
   String get discoveryBenchHint;
-
-  /// No description provided for @discoveryNewsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'New free models worth a closer look, detected from OpenRouter’s public listings and measured benchmarks.'**
-  String get discoveryNewsHint;
 
   /// No description provided for @discoveryMeasuredModels.
   ///
@@ -4993,24 +4981,6 @@ abstract class AppL10n {
   /// **'No prices known for these models.'**
   String get discoveryNoPrices;
 
-  /// No description provided for @discoveryToday.
-  ///
-  /// In en, this message translates to:
-  /// **'Today'**
-  String get discoveryToday;
-
-  /// No description provided for @discoveryNothingToday.
-  ///
-  /// In en, this message translates to:
-  /// **'Nothing new today.'**
-  String get discoveryNothingToday;
-
-  /// No description provided for @discoveryDayCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} new'**
-  String discoveryDayCount(String count);
-
   /// No description provided for @proxyCheckNow.
   ///
   /// In en, this message translates to:
@@ -5148,84 +5118,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Page {page} · {count} models'**
   String discoveryPage(String page, String count);
-
-  /// No description provided for @discoveryNewsEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'The next discovery starts here'**
-  String get discoveryNewsEmpty;
-
-  /// No description provided for @discoveryNewsEmptyHint.
-  ///
-  /// In en, this message translates to:
-  /// **'When a confirmed free model reaches the top half of benchmarked free models, NeoRouter adds it here. Models without benchmark evidence stay out of the feed.'**
-  String get discoveryNewsEmptyHint;
-
-  /// No description provided for @discoveryNewsRule.
-  ///
-  /// In en, this message translates to:
-  /// **'Why these models?'**
-  String get discoveryNewsRule;
-
-  /// No description provided for @discoveryNewsRuleHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Detected means first highlighted by this instance, not the model release date. Entries are deduplicated across provider aliases and survive restarts. Selection uses the top half of currently benchmarked free models; historical entries remain when availability changes. Free listings may still have rate limits.'**
-  String get discoveryNewsRuleHint;
-
-  /// No description provided for @discoveryDetected.
-  ///
-  /// In en, this message translates to:
-  /// **'Detected {date}'**
-  String discoveryDetected(String date);
-
-  /// No description provided for @discoveryConfirmed.
-  ///
-  /// In en, this message translates to:
-  /// **'Free listing confirmed {date}'**
-  String discoveryConfirmed(String date);
-
-  /// No description provided for @discoveryUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'No longer confirmed free'**
-  String get discoveryUnavailable;
-
-  /// No description provided for @discoveryNewsScore.
-  ///
-  /// In en, this message translates to:
-  /// **'Ranking {score} / 100 · {sources} sources'**
-  String discoveryNewsScore(String score, String sources);
-
-  /// No description provided for @discoveryContext.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} context tokens'**
-  String discoveryContext(String count);
-
-  /// No description provided for @discoveryOpenModel.
-  ///
-  /// In en, this message translates to:
-  /// **'View listing'**
-  String get discoveryOpenModel;
-
-  /// No description provided for @discoveryOpenBenchmarks.
-  ///
-  /// In en, this message translates to:
-  /// **'Explore benchmarks'**
-  String get discoveryOpenBenchmarks;
-
-  /// No description provided for @discoveryMore.
-  ///
-  /// In en, this message translates to:
-  /// **'Load more'**
-  String get discoveryMore;
-
-  /// No description provided for @discoveryNewsSearch.
-  ///
-  /// In en, this message translates to:
-  /// **'Search discoveries'**
-  String get discoveryNewsSearch;
 
   /// No description provided for @mostUsedProviders.
   ///

@@ -1715,9 +1715,7 @@
     }
   },
   "discoveryBenchmarks": "Benchmarks",
-  "discoveryNews": "News",
   "discoveryBenchHint": "Measured model performance, brought together. Explore the evidence and compare two models side by side.",
-  "discoveryNewsHint": "New free models worth a closer look, detected from OpenRouter’s public listings and measured benchmarks.",
   "discoveryMeasuredModels": "Measured models",
   "discoveryMethod": "How scores are combined",
   "discoveryMethodHint": "Raw scores stay on their original scales. Each test becomes a percentile among models measured by that source, within the same model kind. Test percentiles are averaged per source, then sources receive equal weight. Missing tests are excluded, never scored as zero. Coverage differs: compare shared tests for a fairer view. This is a relative ranking, not an accuracy percentage.",
@@ -1774,16 +1772,6 @@
   "discoveryChartValue": "Score vs price",
   "discoveryPriceAxis": "Price per 1M tokens (log)",
   "discoveryNoPrices": "No prices known for these models.",
-  "discoveryToday": "Today",
-  "discoveryNothingToday": "Nothing new today.",
-  "discoveryDayCount": "{count} new",
-  "@discoveryDayCount": {
-    "placeholders": {
-      "count": {
-        "type": "String"
-      }
-    }
-  },
   "proxyCheckNow": "Check all now",
   "proxyLastCheck": "Checked {ago} · {ok} of {count} working · every hour",
   "@proxyLastCheck": {
@@ -1858,50 +1846,6 @@
       }
     }
   },
-  "discoveryNewsEmpty": "The next discovery starts here",
-  "discoveryNewsEmptyHint": "When a confirmed free model reaches the top half of benchmarked free models, NeoRouter adds it here. Models without benchmark evidence stay out of the feed.",
-  "discoveryNewsRule": "Why these models?",
-  "discoveryNewsRuleHint": "Detected means first highlighted by this instance, not the model release date. Entries are deduplicated across provider aliases and survive restarts. Selection uses the top half of currently benchmarked free models; historical entries remain when availability changes. Free listings may still have rate limits.",
-  "discoveryDetected": "Detected {date}",
-  "@discoveryDetected": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "discoveryConfirmed": "Free listing confirmed {date}",
-  "@discoveryConfirmed": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "discoveryUnavailable": "No longer confirmed free",
-  "discoveryNewsScore": "Ranking {score} / 100 · {sources} sources",
-  "@discoveryNewsScore": {
-    "placeholders": {
-      "score": {
-        "type": "String"
-      },
-      "sources": {
-        "type": "String"
-      }
-    }
-  },
-  "discoveryContext": "{count} context tokens",
-  "@discoveryContext": {
-    "placeholders": {
-      "count": {
-        "type": "String"
-      }
-    }
-  },
-  "discoveryOpenModel": "View listing",
-  "discoveryOpenBenchmarks": "Explore benchmarks",
-  "discoveryMore": "Load more",
-  "discoveryNewsSearch": "Search discoveries",
   "mostUsedProviders": "Most used providers",
   "providerUsageTotal": "Total",
   "providerUsageAverage": "Average per key",

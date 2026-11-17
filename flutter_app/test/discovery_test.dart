@@ -3,7 +3,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:neorouter/discovery/benchmarks_page.dart';
-import 'package:neorouter/discovery/news_page.dart';
 import 'package:neorouter/l10n/gen/app_localizations.dart';
 import 'package:neorouter/main_controller.dart';
 import 'package:neorouter/main_theme.dart';
@@ -33,7 +32,9 @@ class DiscoveryClient extends BackendClient {
   Future<Map<String, dynamic>> get(String path) async {
     final uri = Uri.parse(path);
     requests.add(uri);
-    if (uri.path.endsWith('/internal-benchmarks')) return {'enabled': false, 'results': []};
+    if (uri.path.endsWith('/internal-benchmarks')) {
+      return {'enabled': false, 'results': []};
+    }
     if (uri.path.endsWith('/benchmarks')) {
       return {
         'models': [
@@ -54,28 +55,7 @@ class DiscoveryClient extends BackendClient {
         ],
       };
     }
-    final searching = (uri.queryParameters['query'] ?? '').isNotEmpty;
-    return {
-      'items': searching
-          ? []
-          : [
-              {
-                'id': 'first',
-                'name': 'First discovery',
-                'modelId': 'vendor/model',
-                'score': 75,
-                'sourceCount': 1,
-                'contextWindow': 32000,
-                'detectedAt': DateTime.now().millisecondsSinceEpoch,
-                'lastSeenAt': 2000,
-                'available': true,
-                'url': 'https://example.test/model',
-              },
-            ],
-      'total': searching ? 0 : 1,
-      'asOf': DateTime.now().millisecondsSinceEpoch + 1000,
-      'updatedAt': '2026-11-17T10:00:00Z',
-    };
+    throw StateError('Unexpected request: $path');
   }
 }
 
@@ -115,7 +95,10 @@ void main() {
       await tester.pumpAndSettle();
       // One paired-bar row per shared test.
       expect(find.text('Measured source · Gpqa'), findsOneWidget);
-      expect(find.byTooltip('Remove First model from comparison'), findsWidgets);
+      expect(
+        find.byTooltip('Remove First model from comparison'),
+        findsWidgets,
+      );
       tester.view.physicalSize = const Size(390, 844);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
@@ -124,37 +107,6 @@ void main() {
         1,
         reason: 'comparison uses already fetched measurements',
       );
-    },
-  );
-  testWidgets(
-    'news renders measured facts and debounced search replaces the timeline',
-    (tester) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      final client = DiscoveryClient();
-      await tester.pumpWidget(
-        wrap(ModelNewsScreen(controller: NeoRouterController(client: client))),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('First discovery'), findsOneWidget);
-      expect(find.text('Today'), findsOneWidget);
-      expect(find.text('1 new'), findsOneWidget);
-      final search = find.byType(TextField);
-      await tester.ensureVisible(search);
-      await tester.enterText(search, 'absent');
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pumpAndSettle();
-      expect(find.text('First discovery'), findsNothing);
-      expect(find.text('Nothing new today.'), findsOneWidget);
-      expect(client.requests.last.queryParameters['query'], 'absent');
-      expect(
-        client.requests.last.queryParameters.containsKey('asOf'),
-        false,
-        reason: 'a new search starts a fresh timeline snapshot',
-      );
-      expect(tester.takeException(), isNull);
     },
   );
 }

@@ -54,8 +54,6 @@ class RouterApi {
       BenchmarkPageData(await client.get(Uri(path: '$_base/discovery/benchmarks', queryParameters: {
         'query': query, 'capability': capability, 'source': source, 'free': free ? '1' : '0', 'offset': '$offset', 'compare': compare.join(','),
       }).toString()));
-  Future<ModelNewsPage> modelNews({String query = '', int offset = 0, int? asOf}) async =>
-      ModelNewsPage(await client.get(Uri(path: '$_base/discovery/news', queryParameters: {'query': query, 'offset': '$offset', if (asOf != null) 'asOf': '$asOf'}).toString()));
 
   Future<Map<String, dynamic>> benchmarkConsent() => client.get('$_base/benchmarks/settings');
   Future<Map<String, dynamic>> setBenchmarkConsent({required bool enabled, required int retentionDays}) =>
