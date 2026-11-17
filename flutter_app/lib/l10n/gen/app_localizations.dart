@@ -4657,6 +4657,24 @@ abstract class AppL10n {
   /// **'Allow private collection and replay to my free providers'**
   String get lbUserEnable;
 
+  /// No description provided for @keySectionModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Models'**
+  String get keySectionModels;
+
+  /// No description provided for @keySectionRouting.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing'**
+  String get keySectionRouting;
+
+  /// No description provided for @keySectionData.
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get keySectionData;
+
   /// No description provided for @lbKeyEnable.
   ///
   /// In en, this message translates to:
@@ -4666,7 +4684,7 @@ abstract class AppL10n {
   /// No description provided for @lbKeyHint.
   ///
   /// In en, this message translates to:
-  /// **'Applies to this key only. Uses mandatory privacy sanitization and excludes failed, incomplete and pool requests.'**
+  /// **'Only this key. Private details are removed first; failed and partner requests are skipped.'**
   String get lbKeyHint;
 
   /// No description provided for @lbKeyNext.

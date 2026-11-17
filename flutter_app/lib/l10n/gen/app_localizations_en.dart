@@ -2627,11 +2627,20 @@ class AppL10nEn extends AppL10n {
       'Allow private collection and replay to my free providers';
 
   @override
+  String get keySectionModels => 'Models';
+
+  @override
+  String get keySectionRouting => 'Routing';
+
+  @override
+  String get keySectionData => 'Data';
+
+  @override
   String get lbKeyEnable => 'Collect completed chats for local evaluation';
 
   @override
   String get lbKeyHint =>
-      'Applies to this key only. Uses mandatory privacy sanitization and excludes failed, incomplete and pool requests.';
+      'Only this key. Private details are removed first; failed and partner requests are skipped.';
 
   @override
   String get lbKeyNext =>

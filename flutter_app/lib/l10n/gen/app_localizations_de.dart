@@ -2650,12 +2650,21 @@ class AppL10nDe extends AppL10n {
       'Private Sammlung und Wiederholung bei meinen kostenlosen Anbietern erlauben';
 
   @override
+  String get keySectionModels => 'Modelle';
+
+  @override
+  String get keySectionRouting => 'Routing';
+
+  @override
+  String get keySectionData => 'Daten';
+
+  @override
   String get lbKeyEnable =>
       'Abgeschlossene Chats für lokale Bewertungen sammeln';
 
   @override
   String get lbKeyHint =>
-      'Gilt nur für diesen Key. Verpflichtende Datenschutz-Bereinigung; fehlgeschlagene, unvollständige und Pool-Anfragen sind ausgeschlossen.';
+      'Nur dieser Key. Private Angaben werden vorher entfernt; fehlgeschlagene und Partner-Anfragen werden übersprungen.';
 
   @override
   String get lbKeyNext =>
