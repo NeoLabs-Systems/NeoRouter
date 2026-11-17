@@ -431,6 +431,16 @@ function familyBenchmark(canonical, modelIds = []) {
   return null;
 }
 
+// "vendor/hy4-flash:free" → { base: 'vendor/hy4', share: 0.8 }; null when no variant word.
+function variantBase(id) {
+  const text = String(id);
+  const last = text.split('/').pop();
+  const match = last.match(VARIANT_PATTERN);
+  if (!match) return null;
+  const at = text.length - last.length + match.index;
+  return { base: (text.slice(0, at) + text.slice(at + match[0].length)).replace(/:[a-z]+$/i, ''), share: VARIANT_SHARE[match[1].toLowerCase()] };
+}
+
 // Price, size, recency and reasoning as a rough 0..1 guess of capability.
 function heuristicIntelligence(records, sampleModelIds = [], aa = null) {
   const paidPrices = records.map((record) => record.priceOut).filter((price) => Number.isFinite(price) && price > 0);
@@ -720,6 +730,7 @@ function resetForTests(seed) {
 
 module.exports = {
   discoverySnapshot,
+  variantBase,
   benchmarkIdentity,
   sameSize,
   reconcileWithSkills,

@@ -2722,6 +2722,42 @@ class AppL10nDe extends AppL10n {
       'Entferne zuerst eine Auswahl oder wähle dieselbe Modellart.';
 
   @override
+  String get discoveryChartScore => 'Bewertung';
+
+  @override
+  String get discoveryChartValue => 'Bewertung vs. Preis';
+
+  @override
+  String get discoveryPriceAxis => 'Preis pro 1 Mio. Tokens (log)';
+
+  @override
+  String get discoveryNoPrices =>
+      'Für diese Modelle sind keine Preise bekannt.';
+
+  @override
+  String get discoveryToday => 'Heute';
+
+  @override
+  String get discoveryNothingToday => 'Heute nichts Neues.';
+
+  @override
+  String discoveryDayCount(String count) {
+    return '$count neu';
+  }
+
+  @override
+  String get proxyHealthy => 'Bereit';
+
+  @override
+  String get proxyResting => 'Pausiert';
+
+  @override
+  String get proxyOff => 'Aus';
+
+  @override
+  String get proxyLatencyChart => 'Schnellste Proxys';
+
+  @override
   String discoveryShared(String count) {
     return '$count gemeinsame Tests';
   }

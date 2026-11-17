@@ -6,6 +6,7 @@ import '../main_controller.dart';
 import '../main_shared.dart';
 import '../main_theme.dart';
 import '../src/capabilities.dart';
+import 'charts.dart';
 import 'comparison.dart';
 import 'models.dart';
 import 'widgets.dart';
@@ -25,7 +26,7 @@ class _BenchmarksScreenState extends State<BenchmarksScreen> {
   Timer? _debounce;
   String _capability = 'chat', _source = '';
   String? _error;
-  bool _free = false, _busy = true;
+  bool _free = false, _busy = true, _valueChart = false;
   int _offset = 0, _request = 0;
   static const _pageSize = 24;
 
@@ -116,125 +117,118 @@ class _BenchmarksScreenState extends State<BenchmarksScreen> {
     final palette = neoRouterPaletteOf(context);
     final data = _data;
     final capabilities = <String>{_capability, ...?data?.capabilities};
+    final selectedIds = _selected.map((model) => model.id).toSet();
+    bool canSelect(BenchmarkModel model) =>
+        selectedIds.contains(model.id) ||
+        (_selected.length < 2 &&
+            (_selected.isEmpty ||
+                _selected.first.capability == model.capability));
     return PageScaffold(
       header: ScreenHeader(
         title: t.discoveryBenchmarks,
-        description: t.discoveryBenchHint,
-        trailing: IconButton(
-          tooltip: t.refresh,
-          onPressed: _busy ? null : _load,
-          icon: const Icon(Icons.refresh),
+        description: '',
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Tooltip(
+              message: t.discoveryMethodHint,
+              child: Icon(
+                Icons.info_outline,
+                size: 18,
+                color: palette.textMuted,
+              ),
+            ),
+            IconButton(
+              tooltip: t.refresh,
+              onPressed: _busy ? null : _load,
+              icon: const Icon(Icons.refresh),
+            ),
+          ],
         ),
       ),
       children: [
-        if (data != null)
-          DiscoveryReveal(
-            child: MetricStrip(
-              metrics: [
-                (
-                  label: t.discoveryMeasuredModels,
-                  value: '${data.total}',
-                  caption: capabilityInfo(_capability).label(t),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            SizedBox(
+              width: 260,
+              child: TextField(
+                controller: _search,
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: t.discoverySearchModels,
+                  prefixIcon: const Icon(Icons.search, size: 18),
                 ),
-                (
-                  label: t.discoverySources,
-                  value:
-                      '${data.sources.where((source) => source.modelCount > 0).length}',
-                  caption: null,
-                ),
-              ],
+                onChanged: (_) {
+                  _debounce?.cancel();
+                  // Invalidate an older request immediately, even during the debounce.
+                  _request++;
+                  _debounce = Timer(
+                    const Duration(milliseconds: 250),
+                    () => _filter(() {}),
+                  );
+                },
+              ),
             ),
-          ),
-        TextField(
-          controller: _search,
-          decoration: InputDecoration(
-            labelText: t.discoverySearchModels,
-            prefixIcon: const Icon(Icons.search),
-          ),
-          onChanged: (_) {
-            _debounce?.cancel();
-            // Invalidate an older request immediately, even during the debounce.
-            _request++;
-            _debounce = Timer(
-              const Duration(milliseconds: 250),
-              () => _filter(() {}),
-            );
-          },
-        ),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final width = constraints.maxWidth < 560
-                ? constraints.maxWidth
-                : (constraints.maxWidth - 16) / 2;
-            return Wrap(
-              spacing: 16,
-              runSpacing: 12,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                SizedBox(
-                  width: width,
-                  child: DropdownButtonFormField<String>(
-                    initialValue: _capability,
-                    decoration: InputDecoration(labelText: t.discoveryKind),
-                    items: [
-                      for (final kind in capabilities)
-                        DropdownMenuItem(
-                          value: kind,
-                          child: Text(capabilityInfo(kind).label(t)),
-                        ),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) _filter(() => _capability = value);
-                    },
-                  ),
-                ),
-                SizedBox(
-                  width: width,
-                  child: DropdownButtonFormField<String>(
-                    initialValue: _source,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: t.discoverySourceFilter,
+            SizedBox(
+              width: 170,
+              child: DropdownButtonFormField<String>(
+                initialValue: _capability,
+                isDense: true,
+                isExpanded: true,
+                items: [
+                  for (final kind in capabilities)
+                    DropdownMenuItem(
+                      value: kind,
+                      child: Text(capabilityInfo(kind).label(t)),
                     ),
-                    items: [
-                      DropdownMenuItem(
-                        value: '',
-                        child: Text(t.discoveryAllSources),
-                      ),
-                      for (final source in data?.sources ?? <BenchmarkSource>[])
-                        DropdownMenuItem(
-                          value: source.id,
-                          child: Text(
-                            source.name,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) _filter(() => _source = value);
-                    },
+                ],
+                onChanged: (value) {
+                  if (value != null) _filter(() => _capability = value);
+                },
+              ),
+            ),
+            SizedBox(
+              width: 220,
+              child: DropdownButtonFormField<String>(
+                initialValue: _source,
+                isDense: true,
+                isExpanded: true,
+                items: [
+                  DropdownMenuItem(
+                    value: '',
+                    child: Text(t.discoveryAllSources),
                   ),
-                ),
-                Tooltip(
-                  message: t.discoveryFreeHint,
-                  child: FilterChip(
-                    label: Text(t.discoveryFreeOnly),
-                    selected: _free,
-                    onSelected: (value) => _filter(() => _free = value),
-                  ),
-                ),
-              ],
-            );
-          },
+                  for (final source in data?.sources ?? <BenchmarkSource>[])
+                    DropdownMenuItem(
+                      value: source.id,
+                      child: Text(source.name, overflow: TextOverflow.ellipsis),
+                    ),
+                ],
+                onChanged: (value) {
+                  if (value != null) _filter(() => _source = value);
+                },
+              ),
+            ),
+            Tooltip(
+              message: t.discoveryFreeHint,
+              child: FilterChip(
+                label: Text(t.discoveryFreeOnly),
+                selected: _free,
+                onSelected: (value) => _filter(() => _free = value),
+              ),
+            ),
+            if (data != null)
+              Text(
+                t.discoveryPage('${_offset ~/ _pageSize + 1}', '${data.total}'),
+                style: TextStyle(color: palette.textMuted, fontSize: 12),
+              ),
+          ],
         ),
-        BenchmarkComparison(
-          key: _comparisonKey,
-          models: _selected,
-          sources: data?.sources ?? [],
-          onRemove: _choose,
-        ),
-        if (_busy) const LinearProgressIndicator(),
-        if (_error != null) InlineError(message: _error!),
+        if (_busy) const LinearProgressIndicator(minHeight: 2),
+        if (_error != null && data != null) InlineError(message: _error!),
         AsyncBody(
           loading: data == null && _busy,
           error: data == null ? _error : null,
@@ -249,30 +243,74 @@ class _BenchmarksScreenState extends State<BenchmarksScreen> {
                     message: t.discoveryEmptyHint,
                   ),
                 )
-              : SettingsCardList(
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    for (var i = 0; i < data.models.length; i++)
-                      _BenchmarkRow(
-                        key: ValueKey(data.models[i].id),
-                        model: data.models[i],
-                        rank: _offset + i + 1,
-                        selected: _selected.any(
-                          (model) => model.id == data.models[i].id,
+                    DiscoveryReveal(
+                      child: AppCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: SegmentedButton<bool>(
+                                showSelectedIcon: false,
+                                segments: [
+                                  ButtonSegment(
+                                    value: false,
+                                    label: Text(t.discoveryChartScore),
+                                  ),
+                                  ButtonSegment(
+                                    value: true,
+                                    label: Text(t.discoveryChartValue),
+                                  ),
+                                ],
+                                selected: {_valueChart},
+                                onSelectionChanged: (values) =>
+                                    setState(() => _valueChart = values.first),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _valueChart
+                                ? ScoreCostChart(models: data.models)
+                                : ScoreBarChart(
+                                    models: data.models,
+                                    selected: selectedIds,
+                                    onTap: (model) {
+                                      if (canSelect(model)) _choose(model);
+                                    },
+                                  ),
+                          ],
                         ),
-                        canSelect:
-                            _selected.any(
-                              (model) => model.id == data.models[i].id,
-                            ) ||
-                            (_selected.length < 2 &&
-                                (_selected.isEmpty ||
-                                    _selected.first.capability ==
-                                        data.models[i].capability)),
-                        onSelect: () => _choose(data.models[i]),
                       ),
+                    ),
+                    if (_selected.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      BenchmarkComparison(
+                        key: _comparisonKey,
+                        models: _selected,
+                        sources: data.sources,
+                        onRemove: _choose,
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    SettingsCardList(
+                      children: [
+                        for (var i = 0; i < data.models.length; i++)
+                          _BenchmarkRow(
+                            key: ValueKey(data.models[i].id),
+                            model: data.models[i],
+                            rank: _offset + i + 1,
+                            selected: selectedIds.contains(data.models[i].id),
+                            canSelect: canSelect(data.models[i]),
+                            onSelect: () => _choose(data.models[i]),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
         ),
-        if (data != null && data.total > 0)
+        if (data != null && data.total > _pageSize)
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -286,15 +324,6 @@ class _BenchmarksScreenState extends State<BenchmarksScreen> {
                       },
                 icon: const Icon(Icons.chevron_left),
               ),
-              Flexible(
-                child: Text(
-                  t.discoveryPage(
-                    '${_offset ~/ _pageSize + 1}',
-                    '${data.total}',
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
               IconButton(
                 tooltip: t.discoveryNext,
                 onPressed: _busy || _offset + _pageSize >= data.total
@@ -307,52 +336,35 @@ class _BenchmarksScreenState extends State<BenchmarksScreen> {
               ),
             ],
           ),
-        const DiscoveryReveal(child: NeoRouterBenchmarkPreview()),
-        AppCard(
-          child: ExpansionTile(
-            tilePadding: EdgeInsets.zero,
-            title: Text(t.discoveryMethod),
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Text(
-                  t.discoveryMethodHint,
-                  style: TextStyle(color: palette.textSoft, height: 1.5),
-                ),
-              ),
-            ],
-          ),
-        ),
-        SectionCard(
-          title: t.discoverySources,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        if (data != null)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
-                t.discoverySourceHint,
-                style: TextStyle(color: palette.textSoft),
+                t.discoverySources,
+                style: TextStyle(color: palette.textMuted, fontSize: 12),
               ),
-              const SizedBox(height: 12),
-              for (final source in data?.sources ?? <BenchmarkSource>[])
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(source.name),
-                  subtitle: Text(
-                    source.updatedAt == null
-                        ? t.discoveryNotSynced
-                        : t.discoveryUpdated(
-                            discoveryDate(context, source.updatedAt!),
-                          ),
+              for (final source in data.sources)
+                ActionChip(
+                  visualDensity: VisualDensity.compact,
+                  label: Text(
+                    source.name,
+                    style: const TextStyle(fontSize: 12),
                   ),
-                  trailing: const Icon(Icons.open_in_new, size: 18),
-                  onTap: () => launchUrl(
+                  tooltip: source.updatedAt == null
+                      ? t.discoveryNotSynced
+                      : t.discoveryUpdated(
+                          discoveryDate(context, source.updatedAt!),
+                        ),
+                  onPressed: () => launchUrl(
                     source.url,
                     mode: LaunchMode.externalApplication,
                   ),
                 ),
             ],
           ),
-        ),
       ],
     );
   }
@@ -375,79 +387,81 @@ class _BenchmarkRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              SizedBox(
-                width: 34,
-                child: Text(
-                  '$rank'.padLeft(2, '0'),
-                  style: TextStyle(color: palette.textMuted, fontSize: 12),
-                ),
+    return InkWell(
+      onTap: canSelect ? onSelect : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 28,
+              child: Text(
+                '$rank',
+                style: TextStyle(color: palette.textMuted, fontSize: 12),
               ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
+            ),
+            Expanded(
+              flex: 3,
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
                       model.name,
-                      style: TextStyle(
-                        color: palette.text,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: palette.text, fontSize: 13),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      t.discoveryCoverage(
-                        '${model.sourceCount}',
-                        '${model.scores.length}',
-                      ),
-                      style: TextStyle(color: palette.textMuted, fontSize: 12),
+                  ),
+                  if (model.isFree) ...[
+                    const SizedBox(width: 6),
+                    Tooltip(
+                      message: t.discoveryFree,
+                      child: Icon(Icons.circle, size: 7, color: palette.accent),
                     ),
-                    if (model.isFree)
-                      Text(
-                        t.discoveryFree,
-                        style: TextStyle(color: palette.textSoft, fontSize: 11),
-                      ),
                   ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: Semantics(
+                label:
+                    '${t.discoveryScore}: ${model.score.toStringAsFixed(1)} / 100',
+                child: BenchmarkScoreBar(
+                  score: model.score,
+                  selected: selected,
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(
+            ),
+            SizedBox(
+              width: 44,
+              child: Text(
                 model.score.toStringAsFixed(1),
+                textAlign: TextAlign.right,
                 style: TextStyle(
                   color: selected ? palette.accent : palette.text,
-                  fontSize: 22,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
                 ),
               ),
-              const SizedBox(width: 8),
-              IconButton(
-                tooltip: canSelect
-                    ? selected
-                          ? t.discoveryRemoveCompare(model.name)
-                          : t.discoverySelectCompare(model.name)
-                    : t.discoveryCompareLimit,
-                onPressed: canSelect ? onSelect : null,
-                icon: Icon(
-                  selected
-                      ? Icons.check_circle_outline
-                      : Icons.add_circle_outline,
-                  color: selected ? palette.accent : null,
-                ),
+            ),
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              iconSize: 18,
+              tooltip: canSelect
+                  ? selected
+                        ? t.discoveryRemoveCompare(model.name)
+                        : t.discoverySelectCompare(model.name)
+                  : t.discoveryCompareLimit,
+              onPressed: canSelect ? onSelect : null,
+              icon: Icon(
+                selected ? Icons.check_circle : Icons.add_circle_outline,
+                color: selected ? palette.accent : palette.textMuted,
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Semantics(
-            label:
-                '${t.discoveryScore}: ${model.score.toStringAsFixed(1)} / 100',
-            child: BenchmarkScoreBar(score: model.score, selected: selected),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }

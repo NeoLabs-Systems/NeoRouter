@@ -10,7 +10,7 @@ function observe(now = Date.now()) {
   const sourceAt = Date.parse(metadata.discoverySnapshot().fetchedAt.openrouter || '');
   if (!Number.isFinite(sourceAt)) return;
   const free = benchmarks.freeListings();
-  const candidates = benchmarks.snapshot().models.filter((model) => free.has(model.id));
+  const candidates = benchmarks.freeCandidates();
   const threshold = new Map();
   for (const capability of new Set(candidates.map((model) => model.capability))) {
     const scores = candidates.filter((model) => model.capability === capability).map((model) => model.score).sort((a, b) => a - b);
@@ -29,7 +29,7 @@ function observe(now = Date.now()) {
     for (const [id] of free) available.run(sourceAt, id);
     for (const model of candidates) {
       if (model.score < threshold.get(model.capability)) continue;
-      const listing = free.get(model.id);
+      const { listing } = model;
       upsert.run({ id: model.id, canonicalId: model.canonicalId, capability: model.capability,
         modelId: listing.id, name: model.name, score: model.score, sourceCount: model.sourceCount,
         contextWindow: listing.contextWindow ?? null, detectedAt: now, lastSeenAt: sourceAt });

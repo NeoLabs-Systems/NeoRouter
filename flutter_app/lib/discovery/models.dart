@@ -20,6 +20,8 @@ class BenchmarkModel {
       score = (data['score'] as num).toDouble(),
       sourceCount = (data['sourceCount'] as num).toInt(),
       isFree = data['isFree'] == true,
+      price = (data['price'] as num?)?.toDouble(),
+      vendor = data['vendor'] as String?,
       scores = (data['scores'] as List)
           .map((row) => BenchmarkMetric(row as Map))
           .toList();
@@ -27,6 +29,8 @@ class BenchmarkModel {
   final double score;
   final int sourceCount;
   final bool isFree;
+  final double? price;
+  final String? vendor;
   final List<BenchmarkMetric> scores;
 }
 

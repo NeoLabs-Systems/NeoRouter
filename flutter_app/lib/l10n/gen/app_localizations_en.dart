@@ -2699,6 +2699,41 @@ class AppL10nEn extends AppL10n {
       'Remove a selection first, or choose the same model kind.';
 
   @override
+  String get discoveryChartScore => 'Score';
+
+  @override
+  String get discoveryChartValue => 'Score vs price';
+
+  @override
+  String get discoveryPriceAxis => 'Price per 1M tokens (log)';
+
+  @override
+  String get discoveryNoPrices => 'No prices known for these models.';
+
+  @override
+  String get discoveryToday => 'Today';
+
+  @override
+  String get discoveryNothingToday => 'Nothing new today.';
+
+  @override
+  String discoveryDayCount(String count) {
+    return '$count new';
+  }
+
+  @override
+  String get proxyHealthy => 'Ready';
+
+  @override
+  String get proxyResting => 'Resting';
+
+  @override
+  String get proxyOff => 'Off';
+
+  @override
+  String get proxyLatencyChart => 'Fastest proxies';
+
+  @override
   String discoveryShared(String count) {
     return '$count shared tests';
   }

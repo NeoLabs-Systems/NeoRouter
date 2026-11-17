@@ -65,14 +65,14 @@ class DiscoveryClient extends BackendClient {
                 'score': 75,
                 'sourceCount': 1,
                 'contextWindow': 32000,
-                'detectedAt': 1000,
+                'detectedAt': DateTime.now().millisecondsSinceEpoch,
                 'lastSeenAt': 2000,
                 'available': true,
                 'url': 'https://example.test/model',
               },
             ],
       'total': searching ? 0 : 1,
-      'asOf': 3000,
+      'asOf': DateTime.now().millisecondsSinceEpoch + 1000,
       'updatedAt': '2026-11-17T10:00:00Z',
     };
   }
@@ -112,9 +112,9 @@ void main() {
       await tester.ensureVisible(second);
       await tester.tap(second);
       await tester.pumpAndSettle();
-      expect(find.text('1 shared tests'), findsOneWidget);
-      expect(find.text('50.0 / 100'), findsOneWidget);
-      expect(find.text('70.0 / 100'), findsOneWidget);
+      // One paired-bar row per shared test.
+      expect(find.text('Measured source · Gpqa'), findsOneWidget);
+      expect(find.byTooltip('Remove First model from comparison'), findsWidgets);
       tester.view.physicalSize = const Size(390, 844);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
@@ -138,14 +138,15 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('First discovery'), findsOneWidget);
-      expect(find.text('Ranking 75.0 / 100 · 1 sources'), findsOneWidget);
+      expect(find.text('Today'), findsOneWidget);
+      expect(find.text('1 new'), findsOneWidget);
       final search = find.byType(TextField);
       await tester.ensureVisible(search);
       await tester.enterText(search, 'absent');
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pumpAndSettle();
       expect(find.text('First discovery'), findsNothing);
-      expect(find.text('The next discovery starts here'), findsOneWidget);
+      expect(find.text('Nothing new today.'), findsOneWidget);
       expect(client.requests.last.queryParameters['query'], 'absent');
       expect(
         client.requests.last.queryParameters.containsKey('asOf'),

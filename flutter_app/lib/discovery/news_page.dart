@@ -84,15 +84,67 @@ class _ModelNewsScreenState extends State<ModelNewsScreen> {
     }
   }
 
+  // Days the person opened; today is always open.
+  final Set<DateTime> _open = {};
+
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    // Lazily built cards: a long-lived timeline does not mount the whole feed.
+    final today = DateUtils.dateOnly(DateTime.now());
+    final days = <DateTime, List<ModelNews>>{today: []};
+    for (final item in _items) {
+      days
+          .putIfAbsent(DateUtils.dateOnly(item.detectedAt.toLocal()), () => [])
+          .add(item);
+    }
+    final ordered = days.keys.toList()..sort((a, b) => b.compareTo(a));
+    // One flat list: a day row, then that day's models when it is open.
+    final rows = <Widget>[];
+    for (final day in ordered) {
+      final items = days[day]!;
+      final open = day == today || _open.contains(day);
+      rows.add(
+        _DayRow(
+          label: day == today ? t.discoveryToday : discoveryDate(context, day),
+          count: items.length,
+          open: open,
+          current: day == today,
+          onTap: day == today
+              ? null
+              : () => setState(() => open ? _open.remove(day) : _open.add(day)),
+        ),
+      );
+      if (day == today && items.isEmpty && !_busy) {
+        rows.add(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 2, 0, 10),
+            child: Text(
+              t.discoveryNothingToday,
+              style: TextStyle(color: palette.textMuted, fontSize: 12),
+            ),
+          ),
+        );
+      }
+      if (open) {
+        for (final item in items) {
+          rows.add(
+            DiscoveryReveal(
+              key: ValueKey(item.id),
+              child: _NewsRow(
+                item: item,
+                onBenchmarks: () => widget.controller.go(AppPage.benchmarks),
+              ),
+            ),
+          );
+        }
+      }
+    }
+    // Lazily built rows: a long-lived timeline does not mount the whole feed.
     return ListView.builder(
       controller: _scroll,
       padding: pagePadding(context),
-      itemCount: _items.length + 2,
+      itemCount: rows.length + 2,
       itemBuilder: (context, index) {
         Widget child;
         if (index == 0) {
@@ -101,70 +153,33 @@ class _ModelNewsScreenState extends State<ModelNewsScreen> {
             children: [
               ScreenHeader(
                 title: t.discoveryNews,
-                description: t.discoveryNewsHint,
-                trailing: IconButton(
-                  tooltip: t.refresh,
-                  onPressed: _busy ? null : () => _load(reset: true),
-                  icon: const Icon(Icons.refresh),
+                description: '',
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Tooltip(
+                      message:
+                          '${t.discoveryNewsEmptyHint}\n\n${t.discoveryNewsRuleHint}',
+                      child: Icon(
+                        Icons.info_outline,
+                        size: 18,
+                        color: palette.textMuted,
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: t.refresh,
+                      onPressed: _busy ? null : () => _load(reset: true),
+                      icon: const Icon(Icons.refresh),
+                    ),
+                  ],
                 ),
               ),
-              DiscoveryReveal(
-                child: AppCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.auto_awesome_outlined,
-                        size: 24,
-                        color: palette.accent,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        t.discoveryNewsRule,
-                        style: sectionTitleStyle(palette),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        t.discoveryNewsEmptyHint,
-                        style: TextStyle(color: palette.textSoft, height: 1.5),
-                      ),
-                      const SizedBox(height: 8),
-                      ExpansionTile(
-                        tilePadding: EdgeInsets.zero,
-                        title: Text(t.discoveryMethod),
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Text(
-                              t.discoveryNewsRuleHint,
-                              style: TextStyle(
-                                color: palette.textMuted,
-                                height: 1.5,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_updatedAt != null)
-                        Text(
-                          t.discoveryUpdated(
-                            discoveryDate(context, _updatedAt!),
-                          ),
-                          style: TextStyle(
-                            color: palette.textMuted,
-                            fontSize: 12,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
               TextField(
                 controller: _search,
                 decoration: InputDecoration(
-                  labelText: t.discoveryNewsSearch,
-                  prefixIcon: const Icon(Icons.search),
+                  isDense: true,
+                  hintText: t.discoveryNewsSearch,
+                  prefixIcon: const Icon(Icons.search, size: 18),
                 ),
                 onChanged: (_) {
                   _request++;
@@ -175,16 +190,16 @@ class _ModelNewsScreenState extends State<ModelNewsScreen> {
                   );
                 },
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 16),
             ],
           );
-        } else if (index == _items.length + 1) {
+        } else if (index == rows.length + 1) {
           child = Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (_busy)
                 const Padding(
-                  padding: EdgeInsets.all(24),
+                  padding: EdgeInsets.all(16),
                   child: Center(child: CircularProgressIndicator()),
                 ),
               if (_error != null) ...[
@@ -194,53 +209,26 @@ class _ModelNewsScreenState extends State<ModelNewsScreen> {
                   child: Text(t.retry),
                 ),
               ],
-              if (!_busy && _error == null && _items.isEmpty)
-                AppCard(
-                  child: EmptyState(
-                    icon: Icons.auto_awesome_outlined,
-                    title: t.discoveryNewsEmpty,
-                    message: t.discoveryNewsEmptyHint,
-                  ),
-                ),
               if (!_busy && _hasMore)
                 Center(
-                  child: OutlinedButton(
+                  child: TextButton(
                     onPressed: _load,
                     child: Text(t.discoveryMore),
+                  ),
+                ),
+              if (_updatedAt != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(
+                    t.discoveryUpdated(discoveryDate(context, _updatedAt!)),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: palette.textMuted, fontSize: 11),
                   ),
                 ),
             ],
           );
         } else {
-          final position = index - 1;
-          final item = _items[position];
-          final day = DateUtils.dateOnly(item.detectedAt.toLocal());
-          final previousDay = position == 0
-              ? null
-              : DateUtils.dateOnly(_items[position - 1].detectedAt.toLocal());
-          child = Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (day != previousDay)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 16),
-                  child: Text(
-                    discoveryDate(context, day),
-                    style: TextStyle(
-                      color: palette.textSoft,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              DiscoveryReveal(
-                key: ValueKey(item.id),
-                child: _NewsCard(
-                  item: item,
-                  onBenchmarks: () => widget.controller.go(AppPage.benchmarks),
-                ),
-              ),
-            ],
-          );
+          child = rows[index - 1];
         }
         return Center(
           child: ConstrainedBox(
@@ -253,124 +241,145 @@ class _ModelNewsScreenState extends State<ModelNewsScreen> {
   }
 }
 
-class _NewsCard extends StatelessWidget {
-  const _NewsCard({required this.item, required this.onBenchmarks});
+class _DayRow extends StatelessWidget {
+  const _DayRow({
+    required this.label,
+    required this.count,
+    required this.open,
+    required this.current,
+    this.onTap,
+  });
+  final String label;
+  final int count;
+  final bool open, current;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 28,
+              child: Icon(
+                onTap == null
+                    ? Icons.circle
+                    : open
+                    ? Icons.expand_more
+                    : Icons.chevron_right,
+                size: onTap == null ? 9 : 18,
+                color: current ? palette.accent : palette.textMuted,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                color: current ? palette.text : palette.textSoft,
+                fontWeight: current ? FontWeight.w600 : FontWeight.w500,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (count > 0)
+              Text(
+                t.discoveryDayCount('$count'),
+                style: TextStyle(color: palette.textMuted, fontSize: 12),
+              ),
+            const SizedBox(width: 12),
+            Expanded(child: Divider(color: palette.border, height: 1)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NewsRow extends StatelessWidget {
+  const _NewsRow({required this.item, required this.onBenchmarks});
   final ModelNews item;
   final VoidCallback onBenchmarks;
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            width: 28,
-            child: Column(
+    return Padding(
+      padding: const EdgeInsets.only(left: 28, bottom: 6),
+      child: Material(
+        color: palette.surface,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () =>
+              launchUrl(item.url, mode: LaunchMode.externalApplication),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            decoration: BoxDecoration(
+              border: Border.all(color: palette.border),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
               children: [
-                Container(
-                  width: 9,
-                  height: 9,
-                  margin: const EdgeInsets.only(top: 22),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: item.available ? palette.accent : palette.textMuted,
+                Icon(
+                  Icons.circle,
+                  size: 7,
+                  color: item.available ? palette.accent : palette.textMuted,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 3,
+                  child: Tooltip(
+                    message:
+                        '${item.modelId}\n${t.discoveryConfirmed(discoveryDate(context, item.lastSeenAt))}',
+                    child: Text(
+                      item.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: item.available
+                            ? palette.text
+                            : palette.textMuted,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
                 ),
-                Expanded(child: Container(width: 1, color: palette.border)),
+                if (item.contextWindow != null) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    formatCount(item.contextWindow!),
+                    style: TextStyle(color: palette.textMuted, fontSize: 11),
+                  ),
+                ],
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 80,
+                  child: BenchmarkScoreBar(score: item.score),
+                ),
+                SizedBox(
+                  width: 36,
+                  child: Text(
+                    item.score.toStringAsFixed(0),
+                    textAlign: TextAlign.right,
+                    style: TextStyle(color: palette.text, fontSize: 12),
+                  ),
+                ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  iconSize: 16,
+                  tooltip: t.discoveryOpenBenchmarks,
+                  onPressed: onBenchmarks,
+                  icon: Icon(Icons.bar_chart_rounded, color: palette.textMuted),
+                ),
               ],
             ),
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        MetaPill(
-                          label: item.available
-                              ? t.discoveryFree
-                              : t.discoveryUnavailable,
-                          icon: item.available
-                              ? Icons.check_circle_outline
-                              : Icons.history,
-                        ),
-                        if (item.contextWindow != null)
-                          MetaPill(
-                            label: t.discoveryContext(
-                              formatCount(item.contextWindow!),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      item.name,
-                      style: TextStyle(
-                        fontSize: 21,
-                        color: palette.text,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      item.modelId,
-                      style: TextStyle(color: palette.textMuted, fontSize: 12),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      t.discoveryNewsScore(
-                        item.score.toStringAsFixed(1),
-                        '${item.sourceCount}',
-                      ),
-                      style: TextStyle(color: palette.textSoft),
-                    ),
-                    const SizedBox(height: 10),
-                    BenchmarkScoreBar(score: item.score),
-                    const SizedBox(height: 14),
-                    Text(
-                      t.discoveryDetected(
-                        discoveryDate(context, item.detectedAt),
-                      ),
-                      style: TextStyle(color: palette.textMuted, fontSize: 12),
-                    ),
-                    Text(
-                      t.discoveryConfirmed(
-                        discoveryDate(context, item.lastSeenAt),
-                      ),
-                      style: TextStyle(color: palette.textMuted, fontSize: 12),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 8,
-                      children: [
-                        OutlinedButton.icon(
-                          onPressed: () => launchUrl(
-                            item.url,
-                            mode: LaunchMode.externalApplication,
-                          ),
-                          icon: const Icon(Icons.open_in_new, size: 16),
-                          label: Text(t.discoveryOpenModel),
-                        ),
-                        TextButton(
-                          onPressed: onBenchmarks,
-                          child: Text(t.discoveryOpenBenchmarks),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -1670,6 +1670,24 @@
     }
   },
   "discoveryCompareLimit": "Remove a selection first, or choose the same model kind.",
+  "discoveryChartScore": "Score",
+  "discoveryChartValue": "Score vs price",
+  "discoveryPriceAxis": "Price per 1M tokens (log)",
+  "discoveryNoPrices": "No prices known for these models.",
+  "discoveryToday": "Today",
+  "discoveryNothingToday": "Nothing new today.",
+  "discoveryDayCount": "{count} new",
+  "@discoveryDayCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyHealthy": "Ready",
+  "proxyResting": "Resting",
+  "proxyOff": "Off",
+  "proxyLatencyChart": "Fastest proxies",
   "discoveryShared": "{count} shared tests",
   "@discoveryShared": {
     "placeholders": {

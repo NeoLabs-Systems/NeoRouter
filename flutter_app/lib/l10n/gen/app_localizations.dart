@@ -4777,6 +4777,72 @@ abstract class AppL10n {
   /// **'Remove a selection first, or choose the same model kind.'**
   String get discoveryCompareLimit;
 
+  /// No description provided for @discoveryChartScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score'**
+  String get discoveryChartScore;
+
+  /// No description provided for @discoveryChartValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Score vs price'**
+  String get discoveryChartValue;
+
+  /// No description provided for @discoveryPriceAxis.
+  ///
+  /// In en, this message translates to:
+  /// **'Price per 1M tokens (log)'**
+  String get discoveryPriceAxis;
+
+  /// No description provided for @discoveryNoPrices.
+  ///
+  /// In en, this message translates to:
+  /// **'No prices known for these models.'**
+  String get discoveryNoPrices;
+
+  /// No description provided for @discoveryToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get discoveryToday;
+
+  /// No description provided for @discoveryNothingToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing new today.'**
+  String get discoveryNothingToday;
+
+  /// No description provided for @discoveryDayCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} new'**
+  String discoveryDayCount(String count);
+
+  /// No description provided for @proxyHealthy.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get proxyHealthy;
+
+  /// No description provided for @proxyResting.
+  ///
+  /// In en, this message translates to:
+  /// **'Resting'**
+  String get proxyResting;
+
+  /// No description provided for @proxyOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get proxyOff;
+
+  /// No description provided for @proxyLatencyChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest proxies'**
+  String get proxyLatencyChart;
+
   /// No description provided for @discoveryShared.
   ///
   /// In en, this message translates to:
