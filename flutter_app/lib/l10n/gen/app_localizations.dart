@@ -4627,6 +4627,180 @@ abstract class AppL10n {
   /// **'Most used models'**
   String get topModelsTitle;
 
+  /// No description provided for @lbTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Local evaluations'**
+  String get lbTitle;
+
+  /// No description provided for @lbAdminHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow users to opt in to private, autonomous model evaluation. Only confirmed free capacity is used; paid models and subscription allowances are excluded.'**
+  String get lbAdminHint;
+
+  /// No description provided for @lbAdminEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable local benchmarking'**
+  String get lbAdminEnable;
+
+  /// No description provided for @lbAccountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your choice applies only to your own keys. Samples stay encrypted on this installation. Sanitized tasks may be replayed to additional providers you have configured; no dataset is synchronized or sent to a central service.'**
+  String get lbAccountHint;
+
+  /// No description provided for @lbUserEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow private collection and replay to my free providers'**
+  String get lbUserEnable;
+
+  /// No description provided for @lbKeyEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect completed chats for local evaluation'**
+  String get lbKeyEnable;
+
+  /// No description provided for @lbKeyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to this key only. Uses mandatory privacy sanitization and excludes failed, incomplete and pool requests.'**
+  String get lbKeyHint;
+
+  /// No description provided for @lbKeyNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which API keys may contribute on the Keys page.'**
+  String get lbKeyNext;
+
+  /// No description provided for @lbRetention.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep private samples for'**
+  String get lbRetention;
+
+  /// No description provided for @lbDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days'**
+  String lbDays(String count);
+
+  /// No description provided for @lbPrivateCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} private samples waiting'**
+  String lbPrivateCount(String count);
+
+  /// No description provided for @lbContributions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} validated model results'**
+  String lbContributions(String count);
+
+  /// No description provided for @lbDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete my evaluation data'**
+  String get lbDelete;
+
+  /// No description provided for @lbDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete your private samples and contributions? Published aggregates will be recalculated. This cannot be undone.'**
+  String get lbDeleteConfirm;
+
+  /// No description provided for @lbWorker.
+  ///
+  /// In en, this message translates to:
+  /// **'Background evaluator'**
+  String get lbWorker;
+
+  /// No description provided for @lbIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get lbIdle;
+
+  /// No description provided for @lbWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Evaluating'**
+  String get lbWorking;
+
+  /// No description provided for @lbWaitingModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for four distinct eligible free models'**
+  String get lbWaitingModels;
+
+  /// No description provided for @lbWaitingQuota.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for free capacity to reset'**
+  String get lbWaitingQuota;
+
+  /// No description provided for @lbYielding.
+  ///
+  /// In en, this message translates to:
+  /// **'Yielding to normal traffic'**
+  String get lbYielding;
+
+  /// No description provided for @lbRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to retry'**
+  String get lbRetrying;
+
+  /// No description provided for @lbHealth.
+  ///
+  /// In en, this message translates to:
+  /// **'{queued} queued · {published} published model/task results'**
+  String lbHealth(String queued, String published);
+
+  /// No description provided for @lbResults.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter evaluations'**
+  String get lbResults;
+
+  /// No description provided for @lbEvidenceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Blind comparisons of sanitized tasks, checked by two calibrated judges in both answer orders. Only validated aggregates are published. Internal evidence supplements existing routing intelligence.'**
+  String get lbEvidenceHint;
+
+  /// No description provided for @lbNoEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Results appear after at least {count} distinct validated tasks per model and task category.'**
+  String lbNoEvidence(String count);
+
+  /// No description provided for @lbResultMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'{task} · {count} tasks · confidence {confidence}%'**
+  String lbResultMeta(String task, String count, String confidence);
+
+  /// No description provided for @lbPreference.
+  ///
+  /// In en, this message translates to:
+  /// **'Preference rate {score}%'**
+  String lbPreference(String score);
+
+  /// No description provided for @lbPreferenceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Relative pairwise preference, not absolute accuracy. Ties count as half a preference. Sparse, uncertain or old evidence has little influence on routing.'**
+  String get lbPreferenceHint;
+
+  /// No description provided for @lbRubric.
+  ///
+  /// In en, this message translates to:
+  /// **'Evaluator: {version} · updated {date}'**
+  String lbRubric(String version, String date);
+
   /// No description provided for @discoveryBenchmarks.
   ///
   /// In en, this message translates to:

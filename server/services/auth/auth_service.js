@@ -160,7 +160,11 @@ function setUserDisabled(actorId, userId, disabled) {
   const result = getDatabase().prepare(`UPDATE users SET disabled_at = CASE WHEN ? THEN strftime('%Y-%m-%dT%H:%M:%fZ','now') ELSE NULL END
     WHERE id = ?`).run(disabled ? 1 : 0, userId);
   if (!result.changes) throw new HttpError(404, 'USER_NOT_FOUND', 'This account does not exist.');
-  if (disabled) logoutAll(userId);
+  if (disabled) {
+    require('../benchmarks/consent').cancelUser(userId);
+    getDatabase().prepare('DELETE FROM benchmark_samples WHERE user_id = ?').run(userId);
+    logoutAll(userId);
+  }
 }
 
 function setUserRole(actorId, userId, role) {
@@ -171,6 +175,7 @@ function setUserRole(actorId, userId, role) {
 
 function deleteUser(actorId, userId) {
   if (actorId === userId) throw new HttpError(400, 'CANNOT_DELETE_SELF', 'You cannot delete your own account.');
+  require('../benchmarks/private_store').purge(userId);
   const result = getDatabase().prepare('DELETE FROM users WHERE id = ?').run(userId);
   if (!result.changes) throw new HttpError(404, 'USER_NOT_FOUND', 'This account does not exist.');
 }

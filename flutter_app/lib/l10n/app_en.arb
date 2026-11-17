@@ -1614,6 +1614,103 @@
   "chartTypical": "Typical",
   "chartSlowest": "Slowest 5 %",
   "topModelsTitle": "Most used models",
+  "lbTitle": "Local evaluations",
+  "lbAdminHint": "Allow users to opt in to private, autonomous model evaluation. Only confirmed free capacity is used; paid models and subscription allowances are excluded.",
+  "lbAdminEnable": "Enable local benchmarking",
+  "lbAccountHint": "Your choice applies only to your own keys. Samples stay encrypted on this installation. Sanitized tasks may be replayed to additional providers you have configured; no dataset is synchronized or sent to a central service.",
+  "lbUserEnable": "Allow private collection and replay to my free providers",
+  "lbKeyEnable": "Collect completed chats for local evaluation",
+  "lbKeyHint": "Applies to this key only. Uses mandatory privacy sanitization and excludes failed, incomplete and pool requests.",
+  "lbKeyNext": "Choose which API keys may contribute on the Keys page.",
+  "lbRetention": "Keep private samples for",
+  "lbDays": "{count} days",
+  "@lbDays": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lbPrivateCount": "{count} private samples waiting",
+  "@lbPrivateCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lbContributions": "{count} validated model results",
+  "@lbContributions": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lbDelete": "Delete my evaluation data",
+  "lbDeleteConfirm": "Delete your private samples and contributions? Published aggregates will be recalculated. This cannot be undone.",
+  "lbWorker": "Background evaluator",
+  "lbIdle": "Idle",
+  "lbWorking": "Evaluating",
+  "lbWaitingModels": "Waiting for four distinct eligible free models",
+  "lbWaitingQuota": "Waiting for free capacity to reset",
+  "lbYielding": "Yielding to normal traffic",
+  "lbRetrying": "Waiting to retry",
+  "lbHealth": "{queued} queued · {published} published model/task results",
+  "@lbHealth": {
+    "placeholders": {
+      "queued": {
+        "type": "String"
+      },
+      "published": {
+        "type": "String"
+      }
+    }
+  },
+  "lbResults": "NeoRouter evaluations",
+  "lbEvidenceHint": "Blind comparisons of sanitized tasks, checked by two calibrated judges in both answer orders. Only validated aggregates are published. Internal evidence supplements existing routing intelligence.",
+  "lbNoEvidence": "Results appear after at least {count} distinct validated tasks per model and task category.",
+  "@lbNoEvidence": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lbResultMeta": "{task} · {count} tasks · confidence {confidence}%",
+  "@lbResultMeta": {
+    "placeholders": {
+      "task": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      },
+      "confidence": {
+        "type": "String"
+      }
+    }
+  },
+  "lbPreference": "Preference rate {score}%",
+  "@lbPreference": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "lbPreferenceHint": "Relative pairwise preference, not absolute accuracy. Ties count as half a preference. Sparse, uncertain or old evidence has little influence on routing.",
+  "lbRubric": "Evaluator: {version} · updated {date}",
+  "@lbRubric": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "discoveryBenchmarks": "Benchmarks",
   "discoveryNews": "News",
   "discoveryBenchHint": "Measured model performance, brought together. Explore the evidence and compare two models side by side.",

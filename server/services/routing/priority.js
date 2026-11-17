@@ -42,4 +42,6 @@ function resetForTests() {
   waiting.clear();
 }
 
-module.exports = { LEVELS, join, heldBack, resetForTests };
+const hasWaiters = (entry) => [`model:${entry.ref}`, `account:${entry.accountId}`].some((target) => (waiting.get(target) || []).some((count) => count > 0));
+
+module.exports = { hasWaiters, LEVELS, join, heldBack, resetForTests };

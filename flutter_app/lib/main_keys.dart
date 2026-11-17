@@ -498,6 +498,8 @@ class _KeyFormState extends State<_KeyForm> {
   List<Map<String, dynamic>> _groups = [];
   late String _profile = widget.existing?.profile ?? 'balanced';
   late DateTime? _expiresAt = widget.existing?.expiresAt == null ? null : DateTime.tryParse(widget.existing!.expiresAt!);
+  late bool _benchmark = widget.existing?.raw['benchmarkCollection'] == true;
+  bool _benchmarkParent = false;
   bool _expiryChanged = false;
   bool _advanced = false;
   bool _saving = false;
@@ -506,6 +508,12 @@ class _KeyFormState extends State<_KeyForm> {
   @override
   void initState() {
     super.initState();
+    if (!widget.controller.inSharedSpace) {
+      widget.controller.api.benchmarkConsent().then((data) {
+        if (mounted) setState(() => _benchmarkParent = data['adminEnabled'] == true && data['enabled'] == true && data['allowReplay'] == true);
+      }).catchError((_) {});
+    }
+
     widget.controller.api.routingGroups().then((groups) {
       if (mounted) setState(() => _groups = groups);
     }).catchError((_) {});
@@ -590,6 +598,7 @@ class _KeyFormState extends State<_KeyForm> {
       'allowedModels': _allowedList(),
       'profile': _profile,
       'routingGroup': _routingGroup.isEmpty ? null : _routingGroup,
+      if (_benchmarkParent) 'benchmarkCollection': _benchmark && !_pool,
       if (_expiryChanged) 'expiresAt': _expiresAt?.toUtc().toIso8601String(),
       // Only sent while in a pool, so a key keeps its choice if the pool is left and rejoined.
       if (widget.controller.inPool) 'poolAccess': _pool ? 'pool' : 'own',
@@ -629,6 +638,10 @@ class _KeyFormState extends State<_KeyForm> {
               const SizedBox(height: AppSpacing.lg),
               KeyExpiryField(value: _expiresAt, wasExpired: widget.existing?.expired ?? false, enabled: !_saving, onChanged: (value) => setState(() { _expiresAt = value; _expiryChanged = true; _error = null; })),
               const SizedBox(height: AppSpacing.lg),
+              if (_benchmarkParent && !_pool) ...[
+                SwitchListTile(contentPadding: EdgeInsets.zero, title: Text(t.lbKeyEnable), subtitle: Text(t.lbKeyHint), value: _benchmark, onChanged: _saving ? null : (value) => setState(() => _benchmark = value)),
+                const SizedBox(height: AppSpacing.lg),
+              ],
               KeyAccessFields(
                 free: _free,
                 plan: _plan,

@@ -36,6 +36,7 @@ const adminSettings = () => ({
   registrationOpen: settings.registrationOpen(),
   metadata: metadata.status(),
   privacyModel: privacyModel.status(),
+  localBenchmarks: require('../services/benchmarks/worker').health(),
 });
 
 router.get('/settings', (_req, res) => res.json(adminSettings()));
@@ -43,10 +44,12 @@ router.patch('/settings', validate(z.object({
   registrationOpen: z.boolean().optional(),
   artificialAnalysisKey: z.string().max(512).nullable().optional(),
   privacyModel: z.boolean().optional(),
+  localBenchmarksEnabled: z.boolean().optional(),
 })), (req, res) => {
   if (req.body.registrationOpen !== undefined) settings.setGlobal('registration_open', req.body.registrationOpen);
   if (req.body.artificialAnalysisKey !== undefined) metadata.setArtificialAnalysisKey(req.body.artificialAnalysisKey);
   if (req.body.privacyModel !== undefined) privacyModel.setEnabled(req.body.privacyModel);
+  if (req.body.localBenchmarksEnabled !== undefined) require('../services/benchmarks/consent').saveGlobal(req.body.localBenchmarksEnabled);
   res.json(adminSettings());
 });
 router.post('/metadata/refresh', asyncRoute(async (_req, res) => res.json({ results: await metadata.refreshSources(), metadata: metadata.status() })));

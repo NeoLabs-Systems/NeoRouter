@@ -21,5 +21,15 @@ function options(req) {
   return { ...result.data, free: result.data.free === '1', compare: result.data.compare.split(',').filter(Boolean) };
 }
 router.get('/benchmarks', (req, res) => res.json(benchmarks.list(options(req))));
+router.get('/internal-benchmarks', (req, res) => {
+  const { offset, limit } = options(req);
+  const internal = require('../services/benchmarks/aggregates');
+  const results = internal.list({ offset, limit });
+  const names = results.length ? new Map(benchmarks.snapshot().models.filter((model) => model.capability === 'chat').map((model) => [model.canonicalId, model.name])) : new Map();
+  res.json({ enabled: require('../services/benchmarks/consent').globalSettings().enabled,
+    minSamples: require('../services/benchmarks/policy').minSamples, total: internal.count(), offset, limit,
+    results: results.map((row) => ({ ...row, name: names.get(row.model) || row.model })),
+  });
+});
 router.get('/news', (req, res) => res.json(news.list(options(req))));
 module.exports = router;

@@ -26,7 +26,10 @@ In scope:
 
 ## Design notes
 
-- NeoRouter never stores prompts or completions. Request logs contain metadata only.
+- Request logs contain metadata only, never prompts or completions. Optional
+  [local evaluations](docs/local-benchmarks.md) can retain sanitized chat inputs
+  and outputs in encrypted, user-isolated staging only after admin, account and
+  per-key consent. Only validated de-identified metrics enter global results.
 - Provider accounts are strictly private per user; there is no sharing.
 - Custom base URLs are user-supplied by design. Run NeoRouter on a network
   where that is acceptable, or restrict egress at the network level.

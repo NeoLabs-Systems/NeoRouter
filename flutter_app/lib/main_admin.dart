@@ -8,6 +8,7 @@ import 'main_admin_local_models.dart';
 import 'main_admin_update.dart';
 import 'main_admin_proxies.dart';
 import 'main_controller.dart';
+import 'main_local_benchmarks.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
@@ -281,6 +282,8 @@ class _AdminScreenState extends State<AdminScreen> {
               ],
             ),
             UpdateSettings(watcher: _updates),
+            LocalBenchmarkAdmin(health: Map<String, dynamic>.from((_settings?['localBenchmarks'] as Map?) ?? {}),
+              onChanged: (value) => _guard(() => widget.controller.api.updateAdminSettings({'localBenchmarksEnabled': value})), onRefresh: _load),
             SettingsGroup(
               title: t.privacyModelTitle,
               description: t.privacyModelHint,

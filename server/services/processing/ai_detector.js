@@ -27,30 +27,37 @@ function remember(key, value) {
 }
 
 // Entities per message index; texts already seen come from the cache.
-async function detectEntities(canonical, { timeoutMs = DEADLINE_MS } = {}) {
+async function detectEntities(canonical, { timeoutMs = DEADLINE_MS, includeAllRoles = false, noCache = false, strict = false } = {}) {
   const deadline = Date.now() + timeoutMs;
   const results = new Map();
   const jobs = [];
   canonical.messages.forEach((message, index) => {
-    if (message.role === 'system' || message.role === 'assistant') return;
+    if (!includeAllRoles && (message.role === 'system' || message.role === 'assistant')) return;
     const text = typeof message.content === 'string'
       ? message.content
       : (Array.isArray(message.content) ? message.content.filter((part) => part.type === 'text').map((part) => part.text || '').join('\n') : '');
     if (text.trim().length < MIN_TEXT) return;
     const key = cacheKey(text);
-    if (cache.has(key)) {
+    if (!noCache && cache.has(key)) {
       results.set(index, cache.get(key));
       return;
     }
     jobs.push(privacyModel.detect(text).then((items) => {
-      if (items) remember(key, items);
+      if (strict && !items) throw new Error('Private detection unavailable');
+      if (items && !noCache) remember(key, items);
       results.set(index, items || []);
     }).catch((error) => {
+      if (strict) throw new Error('Private detection failed');
       logger.warn('AI detection failed', { error: error.message });
       results.set(index, []);
     }));
   });
-  await Promise.race([Promise.all(jobs), new Promise((resolve) => setTimeout(resolve, Math.max(0, deadline - Date.now()) + 50))]);
+  let timer;
+  try {
+    await Promise.race([Promise.all(jobs), new Promise((resolve, reject) => {
+      timer = setTimeout(() => strict ? reject(new Error('Private detection timed out')) : resolve(), Math.max(0, deadline - Date.now()) + 50);
+    })]);
+  } finally { clearTimeout(timer); }
   return (index) => results.get(index) || [];
 }
 

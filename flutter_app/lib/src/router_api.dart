@@ -57,6 +57,12 @@ class RouterApi {
   Future<ModelNewsPage> modelNews({String query = '', int offset = 0, int? asOf}) async =>
       ModelNewsPage(await client.get(Uri(path: '$_base/discovery/news', queryParameters: {'query': query, 'offset': '$offset', if (asOf != null) 'asOf': '$asOf'}).toString()));
 
+  Future<Map<String, dynamic>> benchmarkConsent() => client.get('$_base/benchmarks/settings');
+  Future<Map<String, dynamic>> setBenchmarkConsent({required bool enabled, required int retentionDays}) =>
+      client.putJson('$_base/benchmarks/settings', {'enabled': enabled, 'allowReplay': enabled, 'retentionDays': retentionDays});
+  Future<void> deleteBenchmarkCollection() => client.delete('$_base/benchmarks/collection');
+  Future<Map<String, dynamic>> internalBenchmarkResults({int offset = 0}) => client.get('$_base/discovery/internal-benchmarks?offset=$offset');
+
   // ---- providers ------------------------------------------------------------
   Future<List<ProviderDefinition>> definitions() async => _list(await client.get('$_base/providers/definitions'), 'definitions', ProviderDefinition.new);
   Future<List<ProviderAccount>> accounts() async => _list(await client.get('$_base/providers/accounts'), 'accounts', ProviderAccount.new);

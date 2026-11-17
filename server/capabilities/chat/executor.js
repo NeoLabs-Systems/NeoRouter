@@ -21,6 +21,7 @@ const budget = require('../../services/budget/budget_service');
 const usage = require('../../services/usage/usage_service');
 const billing = require('../../services/providers/billing_check');
 const requestProcessing = require('../../services/processing/processing_service');
+const benchmarkCapture = require('../../services/benchmarks/capture');
 const { restoreResponse, StreamRestorer } = require('../../services/processing/redaction');
 const requestBudget = require('../../services/routing/request_budget');
 const routerKeys = require('../../services/router_keys/router_key_service');
@@ -179,6 +180,11 @@ async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs
  * a turn of a request that already passed the key's rate limit.
  */
 async function execute(options) {
+  const release = loadTracker.foreground();
+  try { return await executeForeground(options); } finally { release(); }
+}
+
+async function executeForeground(options) {
   const { req, res, key } = options;
   // X-NeoRouter-Hop marks a request a pool partner passed on. Only a partner's
   // key may carry it, so nothing travels further than one partner.
@@ -397,6 +403,8 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
         routing_group: entry.routingGroup || null, cached_input_tokens: cacheAffinity.cachedTokens(tokens), cache_creation_tokens: tokens.cache_creation_input_tokens || 0,
         input_tokens: tokens.prompt_tokens, output_tokens: tokens.completion_tokens, cost_usd: cost, is_free: entry.isFree ? 1 : 0,
       });
+      benchmarkCapture.schedule({ signal: clientAbort.signal, task: plan.task?.primary, estimatedTokens: inputTokens, userId: key.user_id, keyId: key.id, entry, canonical, message: result.response.choices[0].message,
+        finishReason: result.response.choices[0].finish_reason, peer, internal, findings: processing.findings || [] });
       const response = vault ? restoreResponse(result.response, vault) : result.response;
       const body = translator.responseFromCanonical({ ...response, usage: tokens }, entry.id);
       // An extra top-level field: OpenAI and Anthropic SDKs ignore what they do not know.
@@ -446,6 +454,8 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
     } else if (invalidToolCalls(accumulator.toolCalls)) {
       learning.onFailure(entry, new ProviderError(KINDS.INVALID_OUTPUT, 'Streamed tool-call arguments were not valid JSON.'));
     } else {
+      benchmarkCapture.schedule({ signal: clientAbort.signal, task: plan.task?.primary, estimatedTokens: inputTokens, userId: key.user_id, keyId: key.id, entry, canonical, message: accumulator.toMessage(),
+        finishReason: accumulator.finishReason, peer, internal, findings: processing.findings || [] });
       cacheAffinity.remember(key.id, sessionId, entry);
       learning.onSuccess(entry, {
         latencyMs: durationMs, ttftMs: result.ttftMs, outputTokens: tokens.completion_tokens, generationMs: durationMs - result.ttftMs,
