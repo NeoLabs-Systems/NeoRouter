@@ -21,6 +21,7 @@ class _AdminProxiesState extends State<AdminProxies> {
   String _protocol = 'socks5';
   String? _error, _result;
   String _search = '';
+  final Set<String> _picked = {};
   int _page = 0;
   static const _pageSize = 25;
   static const _base = '/api/v1/admin/proxies';
@@ -43,6 +44,7 @@ class _AdminProxiesState extends State<AdminProxies> {
       if (mounted) {
         setState(() {
           _rows = (data['proxies'] as List).cast<Map>();
+          _picked.retainAll(_rows.map((row) => '${row['id']}'));
           _enabled = (data['policy'] as Map)['enabled'] == true;
           _direct = (data['policy'] as Map)['fallbackDirect'] == true;
           _loading = false;
@@ -140,6 +142,29 @@ class _AdminProxiesState extends State<AdminProxies> {
         () => widget.controller.api.client.delete('$_base/${row['id']}'),
       );
     }
+  }
+
+  // Selected ids, or every proxy matching the search when all are picked.
+  Future<void> _bulk(AppL10n t, String action, List<Map> filtered) async {
+    final ids = _picked.toList();
+    if (action == 'delete') {
+      final confirmed = await confirmAction(
+        context,
+        title: t.delete,
+        message: t.proxyDeleteSelected('${ids.length}'),
+        confirmLabel: t.delete,
+        cancelLabel: t.cancel,
+      );
+      if (!confirmed || !mounted) return;
+    }
+    final everything = ids.length == _rows.length;
+    await _run(() async {
+      await widget.controller.api.client.post('$_base/bulk', {
+        'action': action,
+        if (everything) 'all': true else 'ids': ids,
+      });
+      if (mounted) setState(_picked.clear);
+    });
   }
 
   String _state(Map row) {
@@ -441,6 +466,63 @@ class _AdminProxiesState extends State<AdminProxies> {
             ],
           ),
           const SizedBox(height: 10),
+          if (_rows.isNotEmpty)
+            Row(
+              children: [
+                Checkbox(
+                  tristate: true,
+                  value: _picked.isEmpty
+                      ? false
+                      : filtered.every(
+                          (row) => _picked.contains('${row['id']}'),
+                        )
+                      ? true
+                      : null,
+                  onChanged: _busy
+                      ? null
+                      : (_) => setState(() {
+                          final all = filtered.every(
+                            (row) => _picked.contains('${row['id']}'),
+                          );
+                          if (all) {
+                            _picked.clear();
+                          } else {
+                            _picked.addAll(
+                              filtered.map((row) => '${row['id']}'),
+                            );
+                          }
+                        }),
+                ),
+                Text(
+                  _picked.isEmpty
+                      ? t.proxySelectAll
+                      : t.proxySelected('${_picked.length}'),
+                  style: TextStyle(color: palette.textSoft, fontSize: 12),
+                ),
+                const Spacer(),
+                if (_picked.isNotEmpty) ...[
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () => _bulk(t, 'enable', filtered),
+                    child: Text(t.proxyEnableAction),
+                  ),
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () => _bulk(t, 'disable', filtered),
+                    child: Text(t.proxyDisableAction),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(foregroundColor: palette.error),
+                    onPressed: _busy
+                        ? null
+                        : () => _bulk(t, 'delete', filtered),
+                    child: Text(t.delete),
+                  ),
+                ],
+              ],
+            ),
           if (_rows.isEmpty)
             Text(t.proxyEmpty, style: TextStyle(color: palette.textMuted))
           else
@@ -448,9 +530,19 @@ class _AdminProxiesState extends State<AdminProxies> {
               children: [
                 for (final row in visible)
                   Padding(
-                    padding: const EdgeInsets.only(left: 14, right: 4),
+                    padding: const EdgeInsets.only(right: 4),
                     child: Row(
                       children: [
+                        Checkbox(
+                          value: _picked.contains('${row['id']}'),
+                          onChanged: _busy
+                              ? null
+                              : (value) => setState(
+                                  () => value == true
+                                      ? _picked.add('${row['id']}')
+                                      : _picked.remove('${row['id']}'),
+                                ),
+                        ),
                         Icon(
                           Icons.circle,
                           size: 8,

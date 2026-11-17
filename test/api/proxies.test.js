@@ -143,3 +143,15 @@ test('streams hold their lease until cancellation and ambiguous POST failures ar
   await assert.rejects(pool.fetch(`http://127.0.0.1:${origin}/drop`, { method: 'POST', body: 'test' }), /transport failed/);
   assert.equal(dropped, 1, 'direct fallback must not replay a request that reached the origin');
 });
+
+test('bulk actions disable, enable and delete selected or all proxies', async () => {
+  await api('post', '/import').send({ text: '10.9.0.1:1080\n10.9.0.2:1080\n10.9.0.3:1080', protocol: 'socks5' });
+  const ids = (await api('get', '')).body.proxies.filter((row) => row.endpoint.includes('10.9.0.')).map((row) => row.id);
+  assert.equal(ids.length, 3);
+  assert.equal((await api('post', '/bulk').send({ action: 'disable', ids: ids.slice(0, 2) })).body.changed, 2);
+  const rows = (await api('get', '')).body.proxies.filter((row) => ids.includes(row.id));
+  assert.equal(rows.filter((row) => !row.enabled).length, 2);
+  assert.equal((await api('post', '/bulk', member).send({ action: 'delete', all: true })).status, 403);
+  await api('post', '/bulk').send({ action: 'delete', all: true });
+  assert.equal((await api('get', '')).body.proxies.length, 0);
+});

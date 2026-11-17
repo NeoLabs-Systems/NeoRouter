@@ -2722,6 +2722,25 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String get proxySelectAll => 'Select all';
+
+  @override
+  String proxySelected(String count) {
+    return '$count selected';
+  }
+
+  @override
+  String get proxyEnableAction => 'Enable';
+
+  @override
+  String get proxyDisableAction => 'Disable';
+
+  @override
+  String proxyDeleteSelected(String count) {
+    return 'Delete $count proxies? This cannot be undone.';
+  }
+
+  @override
   String get proxyHealthy => 'Ready';
 
   @override

@@ -22,6 +22,20 @@ router.post('/import', validate(z.object({
   protocol: z.enum(['socks5', 'http', 'https']).default('socks5'),
 })), (req, res) => res.json(pool.importLines(req.body.text, req.body.protocol)));
 
+// Several at once: ids, or every proxy with all: true.
+router.post('/bulk', validate(z.object({
+  action: z.enum(['enable', 'disable', 'delete']),
+  ids: z.array(z.string().max(200)).max(100000).default([]),
+  all: z.boolean().default(false),
+})), (req, res) => {
+  const ids = req.body.all ? pool.list().map((row) => row.id) : req.body.ids;
+  for (const id of ids) {
+    if (req.body.action === 'delete') pool.remove(id);
+    else pool.change(id, req.body.action === 'enable');
+  }
+  res.json({ changed: ids.length });
+});
+
 router.post('/:id/test', validate(z.object({ url: z.string().url().max(2048) })), asyncRoute(async (req, res) => {
   const url = new URL(req.body.url);
   if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || await isPrivateDestination(url.toString())) {

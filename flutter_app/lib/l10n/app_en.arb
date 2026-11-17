@@ -1684,6 +1684,25 @@
       }
     }
   },
+  "proxySelectAll": "Select all",
+  "proxySelected": "{count} selected",
+  "@proxySelected": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyEnableAction": "Enable",
+  "proxyDisableAction": "Disable",
+  "proxyDeleteSelected": "Delete {count} proxies? This cannot be undone.",
+  "@proxyDeleteSelected": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "proxyHealthy": "Ready",
   "proxyResting": "Resting",
   "proxyOff": "Off",

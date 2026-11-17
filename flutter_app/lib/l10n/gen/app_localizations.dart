@@ -4819,6 +4819,36 @@ abstract class AppL10n {
   /// **'{count} new'**
   String discoveryDayCount(String count);
 
+  /// No description provided for @proxySelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get proxySelectAll;
+
+  /// No description provided for @proxySelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String proxySelected(String count);
+
+  /// No description provided for @proxyEnableAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get proxyEnableAction;
+
+  /// No description provided for @proxyDisableAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable'**
+  String get proxyDisableAction;
+
+  /// No description provided for @proxyDeleteSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} proxies? This cannot be undone.'**
+  String proxyDeleteSelected(String count);
+
   /// No description provided for @proxyHealthy.
   ///
   /// In en, this message translates to:
