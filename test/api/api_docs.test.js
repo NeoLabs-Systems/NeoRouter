@@ -7,7 +7,7 @@ const request = require('supertest');
 const { createApp } = require('../../server/app');
 
 test('GET /api serves the gateway reference as Markdown with this server\'s origin', async () => {
-  const response = await request(createApp()).get('/api').set('Host', 'router.example.test');
+  const response = await request(createApp()).get('/api/docs').set('Host', 'router.example.test');
   assert.equal(response.status, 200);
   assert.match(response.headers['content-type'], /^text\/markdown/);
   assert.match(response.text, /^# NeoRouter API/);

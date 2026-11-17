@@ -143,6 +143,29 @@ test('streaming OpenAI chat replays SSE chunks and ends with [DONE]', async () =
   assert.match(text, /data: \[DONE\]/);
 });
 
+test('answers carry routing stats and pacing limits without breaking the OpenAI shape', async () => {
+  const created = await api('post', '/keys', { name: 'paced', mode: 'free_only', rpmLimit: 30 });
+  const paced = created.body.token || created.body.key?.token || created.body.secret;
+  assert.ok(paced, JSON.stringify(created.body));
+  const response = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${paced}`)
+    .send({ model: 'mock/ok-alpha', messages: [{ role: 'user', content: 'hi' }] });
+  assert.equal(response.status, 200, JSON.stringify(response.body));
+  assert.equal(response.body.object, 'chat.completion');
+  assert.equal(response.body.neorouter.model, 'mock/ok-alpha');
+  assert.deepEqual(response.body.neorouter.trail, ['mock/ok-alpha']);
+  assert.equal(response.body.neorouter.limits.requests.perMinute, 30);
+  assert.equal(response.headers['x-ratelimit-limit-requests'], '30');
+  assert.equal(response.headers['x-ratelimit-remaining-requests'], '29');
+  const streamed = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${paced}`)
+    .send({ model: 'mock/ok-beta', stream: true, messages: [{ role: 'user', content: 'hi' }] });
+  assert.match(streamed.text, /\n: neorouter \{"request_id"/);
+  const limits = await request(app).get('/v1/limits').set('Authorization', `Bearer ${paced}`);
+  assert.equal(limits.status, 200);
+  assert.equal(limits.body.requests.remaining, 28);
+  assert.equal(limits.body.requests.intervalMs, 2000);
+  assert.ok('available' in limits.body.concurrent);
+});
+
 test('streaming falls back when a stream ends without output', async () => {
   const response = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${freeKey}`)
     .send({ model: 'mock/empty-zeta', stream: true, messages: [{ role: 'user', content: 'hi' }] });

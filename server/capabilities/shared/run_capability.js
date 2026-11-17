@@ -51,6 +51,10 @@ async function runCapability({ req, res = null, key, capability, method, request
   const trail = [];
 
   const rpm = routerKeys.consumeRpm(key);
+  const window = routerKeys.rpmState(key);
+  if (window && res) {
+    res.set({ 'x-ratelimit-limit-requests': String(window.limit), 'x-ratelimit-remaining-requests': String(window.remaining), 'x-ratelimit-reset-requests': `${window.resetSeconds}s` });
+  }
   if (!rpm.allowed) {
     res?.set('Retry-After', String(rpm.retryAfterSeconds));
     throw new HttpError(429, 'KEY_RATE_LIMITED', 'This router key exceeded its requests-per-minute limit.', { retryAfterSeconds: rpm.retryAfterSeconds });

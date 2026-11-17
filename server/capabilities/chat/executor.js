@@ -22,6 +22,7 @@ const usage = require('../../services/usage/usage_service');
 const billing = require('../../services/providers/billing_check');
 const requestProcessing = require('../../services/processing/processing_service');
 const { restoreResponse, StreamRestorer } = require('../../services/processing/redaction');
+const requestBudget = require('../../services/routing/request_budget');
 const routerKeys = require('../../services/router_keys/router_key_service');
 const sharePolicy = require('../../services/pools/share_policy');
 const peerPrivacy = require('../../services/pools/peer_privacy');
@@ -248,6 +249,8 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
   if (!canonical.prompt_cache_key) canonical.prompt_cache_key = sessionId;
 
   const rpm = internal ? { allowed: true } : routerKeys.consumeRpm(key);
+  // What the key may still send, so clients pace themselves (not for partners).
+  if (!internal && !peer) res.set(requestBudget.headers(requestBudget.forKey(key)));
   if (!rpm.allowed) {
     res.set('Retry-After', String(rpm.retryAfterSeconds));
     throw new HttpError(429, 'KEY_RATE_LIMITED', 'This router key exceeded its requests-per-minute limit.', { retryAfterSeconds: rpm.retryAfterSeconds });
@@ -344,6 +347,28 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
     }
   };
 
+  // Routing facts about one answer, sent alongside it (never the prompt).
+  const stats = (attempt, { durationMs, ttftMs, tokens, cost }) => {
+    const generationMs = durationMs - (ttftMs || 0);
+    const tried = trail.map((item) => item.model);
+    if (tried.at(-1) !== attempt.entry.id) tried.push(attempt.entry.id);
+    return {
+      request_id: requestId,
+      model: attempt.entry.id,
+      routing_group: attempt.entry.routingGroup || null,
+      task: plan.task?.primary ?? null,
+      attempts: attemptsStarted,
+      trail: tried,
+      latency_ms: Date.now() - startedAt,
+      ttft_ms: ttftMs,
+      tokens_per_second: generationMs > 0 && tokens.completion_tokens ? Math.round(tokens.completion_tokens / (generationMs / 1000)) : null,
+      free: Boolean(attempt.entry.isFree),
+      cost_usd: cost,
+      max_tokens_raised_to: attempt.boosted ? attempt.maxTokens : null,
+      limits: requestBudget.forKey(key),
+    };
+  };
+
   // Commits a successful attempt to the client (JSON or SSE) and records it.
   const commit = async (attempt, result) => {
     const { entry, reservation } = attempt;
@@ -373,7 +398,10 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
         input_tokens: tokens.prompt_tokens, output_tokens: tokens.completion_tokens, cost_usd: cost, is_free: entry.isFree ? 1 : 0,
       });
       const response = vault ? restoreResponse(result.response, vault) : result.response;
-      res.json(translator.responseFromCanonical({ ...response, usage: tokens }, entry.id));
+      const body = translator.responseFromCanonical({ ...response, usage: tokens }, entry.id);
+      // An extra top-level field: OpenAI and Anthropic SDKs ignore what they do not know.
+      if (!peer) body.neorouter = stats(attempt, { durationMs: result.latencyMs, ttftMs: null, tokens, cost });
+      res.json(body);
       return;
     }
     res.status(200);
@@ -404,10 +432,12 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
       streamError = result.controller.signal.reason instanceof ProviderError ? result.controller.signal.reason : fromNetworkError(error);
       if (streamError.kind !== KINDS.ABORTED) writeSse(res, streamErrorEvent(format, streamError));
     }
-    res.end();
     const durationMs = Date.now() - attempt.started;
     const tokens = accumulator.usage || { prompt_tokens: inputTokens, completion_tokens: estimateOutputTokens(accumulator) };
     const cost = budget.costOf(entry, tokens);
+    // An SSE comment line: every SSE parser skips it, readers who want it can parse it.
+    if (!peer && !streamError && !res.writableEnded) res.write(`: neorouter ${JSON.stringify(stats(attempt, { durationMs, ttftMs: result.ttftMs, tokens, cost }))}\n\n`);
+    res.end();
     reservation.settle(cost, requestId);
     billing.observeCost(entry, accumulator.reportedCost);
     quota.recordTokens(entry, tokens.prompt_tokens + tokens.completion_tokens - inputTokens);

@@ -1,5 +1,7 @@
 'use strict';
 
+const requestBudget = require('../../services/routing/request_budget');
+
 const express = require('express');
 const { requireRouterKey } = require('../../middleware/router_key_auth');
 const { execute } = require('./executor');
@@ -203,6 +205,14 @@ router.get('/models/:model(*)', requireRouterKey, (req, res, next) => {
 // Feedback on an answer ("good" or "bad") teaches routing how the model that
 // gave it does on that kind of task. `request_id` is the X-Request-Id header
 // of the answer.
+// How many requests this key may send now, and how many at once.
+router.get('/limits', requireRouterKey, (req, res) => {
+  if (req.routerKey.peer_link_id) return res.status(403).json({ error: { message: 'Pool partners cannot read limits.', type: 'invalid_request_error', code: 'POOL_CHAT_ONLY' } });
+  const budget = requestBudget.forKey(req.routerKey);
+  res.set(requestBudget.headers(budget));
+  return res.json({ object: 'neorouter.limits', ...budget });
+});
+
 router.post('/feedback', requireRouterKey, (req, res) => {
   const requestId = String(req.body?.request_id || '');
   const rating = req.body?.rating;

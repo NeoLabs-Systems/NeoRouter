@@ -1,6 +1,6 @@
 'use strict';
 
-// GET /api: the gateway reference as Markdown, written for coding agents and
+// GET /api/docs: the gateway reference as Markdown, written for coding agents and
 // LLM tools that read it directly. Examples carry this server's own origin.
 // scripts/build_api_docs.js publishes the same text to GitHub Pages.
 const express = require('express');
@@ -30,7 +30,7 @@ connected and falls back to another model when one fails.
 
 - Base URL: \`${base}\`
 - Model kinds on this server: ${kinds}
-- This document: \`GET ${origin}/api\` (Markdown)
+- This document: \`GET ${origin}/api/docs\` (Markdown)
 ${placeholder ? `- Examples use \`${origin}\`. Replace it with the address of your NeoRouter server.\n` : ''}
 ## Quick start
 
@@ -113,6 +113,41 @@ and learns from every outcome.
 | \`X-NeoRouter-Embedding-Pin\` | The embedding model an \`auto\` embedding key is pinned to. |
 | \`X-NeoRouter-Audio-Format\` | The audio format actually returned by \`/audio/speech\`. |
 | \`Retry-After\` | Seconds to wait, on \`429 KEY_RATE_LIMITED\`. |
+| \`x-ratelimit-limit-requests\` | For keys with a requests-per-minute limit: that limit (OpenAI's header name). |
+| \`x-ratelimit-remaining-requests\` | Requests the key may still send in the current minute. |
+| \`x-ratelimit-reset-requests\` | When the oldest request leaves the minute window, e.g. \`12s\`. |
+| \`X-NeoRouter-Concurrency-Limit\` | Chat only: how many requests the key's providers take at once, when known for all of them. |
+| \`X-NeoRouter-Concurrency-Available\` | Of those, how many are free right now. More at once only waits or fails over. |
+
+## Routing stats in the answer
+
+Chat answers carry one extra top-level field, \`neorouter\`. OpenAI and
+Anthropic SDKs ignore fields they do not know, so nothing else changes
+(in the OpenAI Python SDK it is \`reply.model_extra["neorouter"]\`):
+
+\`\`\`json
+"neorouter": {
+  "request_id": "…", "model": "groq/llama-3.3-70b", "routing_group": null,
+  "task": "coding", "attempts": 1, "trail": ["groq/llama-3.3-70b"],
+  "latency_ms": 840, "ttft_ms": null, "tokens_per_second": 310,
+  "free": true, "cost_usd": 0, "max_tokens_raised_to": null,
+  "limits": { "requests": { "perMinute": 60, "remaining": 58, "resetSeconds": 41, "intervalMs": 1000 },
+              "concurrent": { "limit": 8, "inFlight": 1, "available": 7 } }
+}
+\`\`\`
+
+Streams end with the same object as an SSE comment line,
+\`: neorouter {…}\`, which SSE parsers skip. \`max_tokens_raised_to\` is set
+when a free reasoning model was given more output room than asked for.
+\`requests\` is null for keys without a per-minute limit; \`concurrent.limit\`
+is null when a provider's limit is unknown.
+
+## Pacing: \`GET ${base}/limits\`
+
+The same \`limits\` object on its own, without sending a request, so a
+client can ask how often and how many at once before it starts a batch:
+send at most \`concurrent.available\` requests at a time and at least
+\`requests.intervalMs\` apart.
 
 Optional request header: \`X-NeoRouter-Compression: off | lossless | balanced | aggressive\`
 lowers the owner's prompt compression level for this request (it can never raise it).
@@ -383,10 +418,13 @@ Use \`access_token\` as the router key against \`base_url\`.
 `;
 }
 
-router.get('/api', (req, res) => {
+router.get('/api/docs', (req, res) => {
   res.type('text/markdown; charset=utf-8');
   res.send(reference(publicOrigin(req)));
 });
+
+// The old address keeps working for agents that still have it.
+router.get('/api', (_req, res) => res.redirect(301, '/api/docs'));
 
 module.exports = router;
 module.exports.reference = reference;

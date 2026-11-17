@@ -191,4 +191,12 @@ function consumeRpm(key, now = Date.now()) {
   return { allowed: true };
 }
 
-module.exports = { create, list, get, getRow, update, revoke, remove, authenticate, consumeRpm, publicKey, kinds, assertExpiry, PREFIX };
+// The key's minute window without using it up: { limit, remaining, resetSeconds }.
+function rpmState(key, now = Date.now()) {
+  if (!key.rpm_limit) return null;
+  const recent = (rpmWindows.get(key.id) || []).filter((time) => now - time < 60_000);
+  const resetSeconds = recent.length ? Math.max(1, Math.ceil((recent[0] + 60_000 - now) / 1000)) : 0;
+  return { limit: key.rpm_limit, remaining: Math.max(0, key.rpm_limit - recent.length), resetSeconds };
+}
+
+module.exports = { create, list, get, getRow, update, revoke, remove, authenticate, consumeRpm, rpmState, publicKey, kinds, assertExpiry, PREFIX };
