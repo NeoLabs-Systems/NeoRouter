@@ -7,6 +7,7 @@ const { isPeerEntry } = require('../pools/links');
 const { requirements, estimateInputTokens, invalidToolCalls } = require('../../capabilities/chat/canonical');
 const consent = require('./consent');
 const POLICY = require('./policy');
+const logger = require('../../utils/logger').createLogger('local-benchmarks');
 
 class Deferred extends Error {
   constructor(code = 'waiting_capacity', retryAt = null) { super(code); this.code = code; this.retryAt = retryAt; }
@@ -64,10 +65,13 @@ async function call(row, ref, request, signal) {
   const res = capture();
   const req = { id: null, headers: {}, get: () => null, on() { return this; } };
   getDatabase().prepare('UPDATE benchmark_samples SET calls = calls + 1 WHERE id = ? AND user_id = ?').run(row.id, row.user_id);
+  const began = Date.now();
   try {
     await execute({ req, res, key: keyFor(row), format: 'openai_chat', freeOnly: true, internal: true,
       canonical: { ...request, model: entry.id, stream: false, max_tokens: request.max_tokens || POLICY.maxOutputTokens } });
   } catch (error) {
+    // The router's own error code and how long it took: never content.
+    logger.info('Benchmark call failed', { model: entry.canonicalId, status: error.status || null, code: error.code || error.kind || null, ms: Date.now() - began });
     const retryAfter = error.details?.retryAfterSeconds;
     if (error.status === 429 || error.status === 503) throw new Deferred('waiting_quota', retryAfter ? Date.now() + retryAfter * 1000 : null);
     throw new Deferred('provider_failure');
