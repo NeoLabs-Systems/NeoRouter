@@ -71,7 +71,8 @@ async function call(row, ref, request, signal) {
       canonical: { ...request, model: entry.id, stream: false, max_tokens: request.max_tokens || POLICY.maxOutputTokens } });
   } catch (error) {
     // The router's own error code and how long it took: never content.
-    logger.info('Benchmark call failed', { model: entry.canonicalId, status: error.status || null, code: error.code || error.kind || null, ms: Date.now() - began });
+    logger.info('Benchmark call failed', { model: entry.canonicalId, status: error.status || null, code: error.code || error.kind || null, ms: Date.now() - began,
+      trail: (error.details?.trail || []).map((item) => ({ outcome: item.outcome, ms: item.ms ?? null })) });
     const retryAfter = error.details?.retryAfterSeconds;
     if (error.status === 429 || error.status === 503) throw new Deferred('waiting_quota', retryAfter ? Date.now() + retryAfter * 1000 : null);
     throw new Deferred('provider_failure');
