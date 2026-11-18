@@ -3941,6 +3941,11 @@
   "lbUserEnable": "Allow private collection and replay to my free providers",
   "lbKeyEnable": "Collect completed chats for local evaluation",
   "lbKeyHint": "Only this key. Eligible completed chats are sanitized before collection.",
+  "lbKeyAdminRequired": "An administrator must enable local benchmarking under Admin → Server.",
+  "lbKeyAccountRequired": "Enable local evaluations under Settings → Account to collect samples with this key.",
+  "lbKeyPersonalRequired": "Collecting benchmark samples requires an active personal API key.",
+  "lbKeyPoolRequired": "Turn off Use the pool below to collect samples with this key.",
+  "lbKeySettingsUnavailable": "Benchmark settings could not be loaded. Open this editor again to retry.",
   "lbKeyNext": "Choose which API keys may contribute on the Keys page.",
   "lbPrivateCount": "{count} private samples waiting",
   "@lbPrivateCount": {

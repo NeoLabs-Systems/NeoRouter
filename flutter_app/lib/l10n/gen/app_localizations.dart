@@ -10873,6 +10873,36 @@ abstract class AppL10n {
   /// **'Only this key. Eligible completed chats are sanitized before collection.'**
   String get lbKeyHint;
 
+  /// No description provided for @lbKeyAdminRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'An administrator must enable local benchmarking under Admin → Server.'**
+  String get lbKeyAdminRequired;
+
+  /// No description provided for @lbKeyAccountRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable local evaluations under Settings → Account to collect samples with this key.'**
+  String get lbKeyAccountRequired;
+
+  /// No description provided for @lbKeyPersonalRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Collecting benchmark samples requires an active personal API key.'**
+  String get lbKeyPersonalRequired;
+
+  /// No description provided for @lbKeyPoolRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off Use the pool below to collect samples with this key.'**
+  String get lbKeyPoolRequired;
+
+  /// No description provided for @lbKeySettingsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmark settings could not be loaded. Open this editor again to retry.'**
+  String get lbKeySettingsUnavailable;
+
   /// No description provided for @lbKeyNext.
   ///
   /// In en, this message translates to:

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:neorouter/l10n/gen/app_localizations.dart';
 import 'package:neorouter/main_controller.dart';
+import 'package:neorouter/main_keys.dart';
 import 'package:neorouter/main_local_benchmarks.dart';
 import 'package:neorouter/main_theme.dart';
 import 'package:neorouter/src/backend_client.dart';
@@ -29,7 +30,38 @@ class ConsentClient extends BackendClient {
   }
 }
 
-Widget wrap(Widget child) => MaterialApp(
+class BenchmarkKeyClient extends ConsentClient {
+  BenchmarkKeyClient() : super(true);
+
+  final key = <String, dynamic>{
+    'id': 'personal-key',
+    'name': 'Personal key',
+    'prefix': 'nrt_fixture',
+    'mode': 'free_only',
+    'poolAccess': 'pool',
+    'benchmarkEligible': true,
+    'benchmarkCollection': false,
+  };
+
+  @override
+  Future<Map<String, dynamic>> get(String path) async => switch (path) {
+    '/api/v1/keys' => {
+      'keys': [Map<String, dynamic>.of(key)],
+    },
+    '/api/v1/routing/profiles' => {'profiles': []},
+    '/api/v1/routing/groups' => {'groups': []},
+    '/api/v1/models/capabilities' => {'capabilities': []},
+    _ => await super.get(path),
+  };
+
+  @override
+  Future<Map<String, dynamic>> patch(String path, Object body) async {
+    key.addAll(Map<String, dynamic>.from(body as Map));
+    return {'key': Map<String, dynamic>.of(key)};
+  }
+}
+
+Widget wrap(Widget child, {bool scroll = true}) => MaterialApp(
   theme: buildNeoRouterTheme(Brightness.dark),
   locale: const Locale('en'),
   supportedLocales: AppL10n.supportedLocales,
@@ -40,9 +72,11 @@ Widget wrap(Widget child) => MaterialApp(
     GlobalCupertinoLocalizations.delegate,
   ],
   home: Scaffold(
-    body: SingleChildScrollView(
-      child: Padding(padding: const EdgeInsets.all(16), child: child),
-    ),
+    body: scroll
+        ? SingleChildScrollView(
+            child: Padding(padding: const EdgeInsets.all(16), child: child),
+          )
+        : child,
   ),
 );
 void main() {
@@ -138,6 +172,57 @@ void main() {
       expect(find.text('Background evaluator'), findsOneWidget);
       expect(find.text('Waiting for eligible free models'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'the key editor explains consent and allows clearing pool access',
+    (tester) async {
+      final client = BenchmarkKeyClient();
+      final controller = NeoRouterController(client: client);
+      await tester.pumpWidget(
+        wrap(KeysScreen(controller: controller), scroll: false),
+      );
+      await tester.pumpAndSettle();
+
+      Future<void> edit() async {
+        await tester.tap(find.byTooltip('More actions'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Edit'));
+        await tester.pumpAndSettle();
+      }
+
+      final switchLabel = find.text(
+        'Collect completed chats for local evaluation',
+      );
+      await edit();
+      expect(find.textContaining('Settings → Account'), findsOneWidget);
+      expect(switchLabel, findsNothing);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      client.enabled = true;
+      await edit();
+      expect(find.textContaining('Turn off Use the pool'), findsOneWidget);
+      expect(switchLabel, findsNothing);
+      final poolLabel = find.text('Use the pool');
+      await tester.ensureVisible(poolLabel);
+      await tester.tap(poolLabel);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(switchLabel);
+      await tester.tap(switchLabel);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(client.key['poolAccess'], 'own');
+      expect(client.key['benchmarkCollection'], true);
+
+      await edit();
+      expect(switchLabel, findsOneWidget);
+      await tester.tap(switchLabel);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(client.key['benchmarkCollection'], false);
     },
   );
 }

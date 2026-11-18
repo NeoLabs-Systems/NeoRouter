@@ -6295,6 +6295,26 @@ class AppL10nDe extends AppL10n {
       'Nur dieser Key. Geeignete abgeschlossene Chats werden vor der Sammlung bereinigt.';
 
   @override
+  String get lbKeyAdminRequired =>
+      'Ein Administrator muss lokales Benchmarking unter Admin → Server aktivieren.';
+
+  @override
+  String get lbKeyAccountRequired =>
+      'Aktiviere lokale Bewertungen unter Einstellungen → Konto, um Stichproben mit diesem Key zu sammeln.';
+
+  @override
+  String get lbKeyPersonalRequired =>
+      'Zum Sammeln von Benchmark-Stichproben ist ein aktiver persönlicher API-Key erforderlich.';
+
+  @override
+  String get lbKeyPoolRequired =>
+      'Schalte unten „Pool mitbenutzen“ aus, um Stichproben mit diesem Key zu sammeln.';
+
+  @override
+  String get lbKeySettingsUnavailable =>
+      'Die Benchmark-Einstellungen konnten nicht geladen werden. Öffne den Editor erneut, um es noch einmal zu versuchen.';
+
+  @override
   String get lbKeyNext =>
       'Wähle auf der Keys-Seite aus, welche API-Keys beitragen dürfen.';
 

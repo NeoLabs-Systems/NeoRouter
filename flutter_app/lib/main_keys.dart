@@ -502,7 +502,14 @@ class _KeyFormState extends State<_KeyForm> {
   bool _expiryChanged = false;
   late bool _advanced = widget.existing?.rpmLimit != null || widget.existing?.concurrentLimit != null;
   late bool _benchmark = widget.existing?.raw['benchmarkCollection'] == true;
-  bool _benchmarkParent = false;
+  Map<String, dynamic>? _benchmarkSettings;
+  bool _benchmarkLoadFailed = false;
+  bool get _canEditPool => widget.controller.inPool || widget.existing?.usesPool == true;
+  bool get _canCollectBenchmarks =>
+      _benchmarkSettings?['adminEnabled'] == true &&
+      _benchmarkSettings?['enabled'] == true &&
+      widget.existing?.raw['benchmarkEligible'] != false &&
+      !_pool;
   bool _benchmarkChanged = false;
   bool _saving = false;
   String? _error;
@@ -517,15 +524,7 @@ class _KeyFormState extends State<_KeyForm> {
           if (mounted) setState(() => _groups = groups);
         })
         .catchError((_) {});
-    if (!widget.controller.inSharedSpace &&
-        widget.existing?.raw['benchmarkEligible'] != false) {
-      widget.controller.api.benchmarkConsent().then((data) {
-        if (mounted) {
-          setState(() => _benchmarkParent =
-              data['adminEnabled'] == true && data['enabled'] == true);
-        }
-      }).catchError((_) {});
-    }
+    if (!widget.controller.inSharedSpace) unawaited(_loadBenchmarkSettings());
     // The kinds of model this user has connected, for the kind chips.
     widget.controller.api
         .capabilities()
@@ -533,6 +532,50 @@ class _KeyFormState extends State<_KeyForm> {
           if (mounted) setState(() => _available = items.where((item) => item.routable && item.total > 0 && item.id != 'live').map((item) => item.id).toList());
         })
         .catchError((_) {});
+  }
+
+  Future<void> _loadBenchmarkSettings() async {
+    try {
+      final settings = await widget.controller.api.benchmarkConsent();
+      if (mounted) setState(() => _benchmarkSettings = settings);
+    } catch (error) {
+      if (mounted && !(error is ApiException && error.status == 404)) {
+        setState(() => _benchmarkLoadFailed = true);
+      }
+    }
+  }
+
+  Widget? _benchmarkSection(AppL10n t) {
+    final settings = _benchmarkSettings;
+    if (settings == null && !_benchmarkLoadFailed) return null;
+    final String? unavailable;
+    if (settings == null) {
+      unavailable = t.lbKeySettingsUnavailable;
+    } else if (settings['adminEnabled'] != true) {
+      unavailable = t.lbKeyAdminRequired;
+    } else if (settings['enabled'] != true) {
+      unavailable = t.lbKeyAccountRequired;
+    } else if (widget.existing?.raw['benchmarkEligible'] == false) {
+      unavailable = t.lbKeyPersonalRequired;
+    } else if (_pool) {
+      unavailable = t.lbKeyPoolRequired;
+    } else {
+      unavailable = null;
+    }
+    return _FormSection(
+      title: t.lbTitle,
+      child: unavailable != null
+          ? Text(unavailable, style: TextStyle(color: neoRouterPaletteOf(context).textSoft))
+          : _ToggleRow(
+              title: t.lbKeyEnable,
+              hint: t.lbKeyHint,
+              value: _benchmark,
+              onChanged: _saving ? null : (value) => setState(() {
+                _benchmark = value;
+                _benchmarkChanged = true;
+              }),
+            ),
+    );
   }
 
   bool _kindOn(String kind) => _kinds == null || _kinds!.contains(kind);
@@ -634,9 +677,8 @@ class _KeyFormState extends State<_KeyForm> {
       'profile': _profile,
       'routingGroup': _routingGroup.isEmpty ? null : _routingGroup,
       if (_expiryChanged) 'expiresAt': _expiresAt?.toUtc().toIso8601String(),
-      // Only sent while in a pool, so a key keeps its choice if the pool is left and rejoined.
-      if (widget.controller.inPool) 'poolAccess': _pool ? 'pool' : 'own',
-      if (_benchmarkParent && !_pool && _benchmarkChanged)
+      if (_canEditPool) 'poolAccess': _pool ? 'pool' : 'own',
+      if (_canCollectBenchmarks && _benchmarkChanged)
         'benchmarkCollection': _benchmark,
     };
     try {
@@ -658,6 +700,7 @@ class _KeyFormState extends State<_KeyForm> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
+    final benchmarkSection = _benchmarkSection(t);
     final kinds = _available.length > 1
         ? Wrap(
             spacing: 6,
@@ -705,6 +748,7 @@ class _KeyFormState extends State<_KeyForm> {
                       autofocus: widget.existing == null,
                       decoration: InputDecoration(labelText: t.keyName, hintText: t.keyNameHint),
                     ),
+                    ?benchmarkSection,
                     const SizedBox(height: AppSpacing.md),
                     KeyExpiryField(
                       value: _expiresAt,
@@ -736,7 +780,7 @@ class _KeyFormState extends State<_KeyForm> {
                             onPeriod: (value) => setState(() => _period = value),
                             onTokenPeriod: (value) => setState(() => _tokenPeriod = value),
                             pool: _pool,
-                            onPool: widget.controller.inPool ? (value) => setState(() => _pool = value) : null,
+                            onPool: _canEditPool ? (value) => setState(() => _pool = value) : null,
                             kinds: kinds,
                           ),
                           if (_kinds != null && _kinds!.isEmpty) ...<Widget>[const SizedBox(height: AppSpacing.xs), InlineError(message: t.keyKindsNone)],
@@ -821,19 +865,6 @@ class _KeyFormState extends State<_KeyForm> {
                               ],
                             ),
                     ),
-                    if (_benchmarkParent && !_pool)
-                      _FormSection(
-                        title: t.lbTitle,
-                        child: _ToggleRow(
-                          title: t.lbKeyEnable,
-                          hint: t.lbKeyHint,
-                          value: _benchmark,
-                          onChanged: _saving ? null : (value) => setState(() {
-                            _benchmark = value;
-                            _benchmarkChanged = true;
-                          }),
-                        ),
-                      ),
                     if (_error != null) ...<Widget>[const SizedBox(height: AppSpacing.md), InlineError(message: _error!)],
                   ],
                 ),
@@ -989,7 +1020,7 @@ class KeyAccessFields extends StatelessWidget {
   final ValueChanged<String> onTokenPeriod;
 
   /// Whether the key may also use pool partners' free models; the choice is
-  /// shown only while in a pool (onPool set).
+  /// shown while in a pool or when a previous preference can be cleared.
   final bool pool;
   final ValueChanged<bool>? onPool;
 
@@ -1009,8 +1040,8 @@ class KeyAccessFields extends StatelessWidget {
           _ToggleRow(
             title: t.keyPoolLabel,
             hint: t.keyPoolHint,
-            value: pool && free,
-            onChanged: free ? onPool : null,
+            value: pool,
+            onChanged: free || pool ? onPool : null,
             trailing: IconButton(tooltip: t.poolInfoTooltip, icon: const Icon(Icons.info_outline_rounded, size: 18), onPressed: () => showPoolTrustInfo(context)),
           ),
         if (kinds != null) ...<Widget>[const SizedBox(height: AppSpacing.md), Text(t.keyKindsTitle, style: label), const SizedBox(height: AppSpacing.xs), kinds!],

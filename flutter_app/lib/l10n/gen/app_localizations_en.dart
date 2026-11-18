@@ -6249,6 +6249,26 @@ class AppL10nEn extends AppL10n {
       'Only this key. Eligible completed chats are sanitized before collection.';
 
   @override
+  String get lbKeyAdminRequired =>
+      'An administrator must enable local benchmarking under Admin → Server.';
+
+  @override
+  String get lbKeyAccountRequired =>
+      'Enable local evaluations under Settings → Account to collect samples with this key.';
+
+  @override
+  String get lbKeyPersonalRequired =>
+      'Collecting benchmark samples requires an active personal API key.';
+
+  @override
+  String get lbKeyPoolRequired =>
+      'Turn off Use the pool below to collect samples with this key.';
+
+  @override
+  String get lbKeySettingsUnavailable =>
+      'Benchmark settings could not be loaded. Open this editor again to retry.';
+
+  @override
   String get lbKeyNext =>
       'Choose which API keys may contribute on the Keys page.';
 
