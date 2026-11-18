@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:neorouter/l10n/gen/app_localizations.dart';
 import 'package:neorouter/main_controller.dart';
+import 'package:neorouter/main_key_expiry.dart';
 import 'package:neorouter/main_keys.dart';
 import 'package:neorouter/main_local_benchmarks.dart';
 import 'package:neorouter/main_theme.dart';
@@ -202,6 +203,10 @@ void main() {
 
     client.enabled = true;
     await edit();
+    expect(
+      tester.getBottomLeft(find.byType(KeyExpiryField)).dy,
+      lessThan(tester.getTopLeft(find.text('LOCAL EVALUATIONS')).dy),
+    );
     await tester.ensureVisible(switchLabel);
     await tester.tap(switchLabel);
     await tester.pumpAndSettle();

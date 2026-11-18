@@ -61,6 +61,7 @@ function tick(now = Date.now()) {
   if (now - lastPrunedAt >= policy.bucketMs) {
     evidence.prune(now);
     capture.prune(now);
+    transport.prune(now);
     for (const [userId, results] of calibration) {
       for (const [ref, result] of results) if (result.until <= now) results.delete(ref);
       if (!results.size) calibration.delete(userId);
@@ -101,9 +102,12 @@ async function run(sample, signal) {
     const retry = error instanceof transport.Deferred ? error : new transport.Deferred('evaluation_failed', { failed: true });
     lastOutcome = retry.code;
     if (retry.failed) sample.failures++;
-    finished = signal.aborted || retry.code === 'consent_revoked' || sample.failures >= policy.maxFailures;
+    finished = signal.aborted || retry.code === 'consent_revoked';
     const now = Date.now();
-    sample.nextAt = Math.max(retry.retryAt, now + Math.min(policy.maxRetryMs, policy.retryMs * 2 ** sample.failures));
+    const delay = retry.code === 'evaluation_failed'
+      ? Math.min(policy.maxRetryMs, policy.retryMs * 2 ** sample.failures)
+      : retry.failed ? policy.tickMs : policy.retryMs;
+    sample.nextAt = retry.retryAt ? Math.max(retry.retryAt, now + policy.tickMs) : now + delay;
     if (retry.code === 'network_unavailable') networkRetryAt = Math.max(networkRetryAt, sample.nextAt);
   } finally {
     if (finished) capture.remove(sample);
@@ -115,20 +119,10 @@ async function run(sample, signal) {
 async function step(sample, signal) {
   const { canonical, answers } = sample;
   if (answers.length < 2) {
-    const available = transport.candidates(sample, canonical, 'auto', (entry) =>
-      !sample.excluded.has(entry.ref) && !answers.some((answer) => answer.entry.canonicalId === entry.canonicalId));
-    const entry = available[0];
-    if (!entry) {
-      sample.excluded.clear();
-      throw new transport.Deferred('waiting_free_models');
-    }
-    let result;
-    try {
-      result = await transport.call(sample, canonical, { signal, model: entry.id, ref: entry.ref });
-    } catch (error) {
-      if (error.failed) sample.excluded.add(entry.ref);
-      throw error;
-    }
+    const [entry] = transport.candidates(sample, canonical, 'auto', (candidate) =>
+      !answers.some((answer) => answer.entry.canonicalId === candidate.canonicalId));
+    if (!entry) throw new transport.Deferred('waiting_free_models');
+    const result = await transport.call(sample, canonical, { signal, model: entry.id, ref: entry.ref });
     const clean = await privacy.sanitize(sample.userId, canonical, result.message);
     if (!clean) return { rejected: 'privacy_rejected' };
     answers.push({ entry: result.entry, message: clean.response, valid: objective.valid(canonical, result.message) });

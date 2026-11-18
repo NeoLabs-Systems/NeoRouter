@@ -744,7 +744,6 @@ class _KeyFormState extends State<_KeyForm> {
                       autofocus: widget.existing == null,
                       decoration: InputDecoration(labelText: t.keyName, hintText: t.keyNameHint),
                     ),
-                    ?benchmarkSection,
                     const SizedBox(height: AppSpacing.md),
                     KeyExpiryField(
                       value: _expiresAt,
@@ -756,6 +755,7 @@ class _KeyFormState extends State<_KeyForm> {
                         _error = null;
                       }),
                     ),
+                    ?benchmarkSection,
                     _FormSection(
                       title: t.keySectionModels,
                       child: Column(

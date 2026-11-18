@@ -44,7 +44,7 @@ function schedule(input) {
       recent.set(input.userId, seen);
       const sample = {
         userId: input.userId, keyId: input.keyId, ticket: input.ticket, ...clean, task: input.task,
-        source: input.entry.canonicalId, digest, expiresAt, nextAt: 0, failures: 0, answers: [], excluded: new Set(),
+        source: input.entry.canonicalId, digest, expiresAt, nextAt: 0, failures: 0, answers: [],
       };
       expiryTimers.set(sample, setTimeout(() => remove(sample), policy.sampleLifetimeMs).unref());
       samples.set(digest, sample);

@@ -12,7 +12,7 @@ module.exports = Object.freeze({
   judgeConfidence: 0.85,
   retryMs: 30_000,
   maxRetryMs: 900_000,
-  maxFailures: 4,
+  modelTimeoutCooldownMs: 900_000,
   minSamples: 8,
   priorSamples: 32,
   maxRoutingShare: 0.15,

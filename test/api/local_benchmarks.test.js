@@ -181,22 +181,26 @@ test('a failed replay does not discard a completed answer and revocation drops p
   await waitFor(() => capture.count(owner.id) === 1);
   const [sample] = capture.staged.get(owner.id).values();
   const call = transport.call;
-  let failed = false;
+  const maxInjectedFailures = 5;
+  let failed = 0;
   let saved;
   t.mock.method(transport, 'call', async (...args) => {
-    if (!failed && sample.answers.length === 1) {
-      [saved] = sample.answers;
-      failed = true;
+    if (failed < maxInjectedFailures && sample.answers.length === 1) {
+      saved ??= sample.answers[0];
+      failed++;
       throw new transport.Deferred('provider_failure', { failed: true });
     }
     return call(...args);
   });
   worker.tick();
-  await waitFor(() => sample.failures === 1);
-  assert.equal(sample.answers.length, 1);
-  assert.equal(sample.answers[0], saved);
-  sample.nextAt = 0;
-  worker.tick();
+  for (let attempt = 1; attempt <= maxInjectedFailures; attempt++) {
+    await waitFor(() => sample.failures === attempt);
+    assert.equal(sample.answers.length, 1);
+    assert.equal(sample.answers[0], saved);
+    assert.equal(capture.count(owner.id), 1);
+    sample.nextAt = 0;
+    worker.tick();
+  }
   await waitFor(() => capture.count(owner.id) === 0);
   assert.equal(sample.answers[0], saved);
   assert.equal(sample.answers.length, 2);
@@ -250,6 +254,56 @@ test('only sufficiently supported, fresh aggregates influence routing and owners
   assert.equal((await api(owner, 'delete', '/benchmarks/collection')).status, 204);
   assert.equal(totals(), 0);
   assert.equal(evidence.blend(0.5, 'examplea', 'coding', now), 0.5);
+});
+
+test('reasoning progress extends the benchmark answer wait and silent models cool across copies', async (t) => {
+  const accounts = require('../../server/services/providers/account_service');
+  const { KINDS, ProviderError } = require('../../server/providers/provider_error');
+  const duplicate = await api(owner, 'post', '/providers/accounts').send({
+    definitionId: 'custom_openai', slug: 'duplicate', baseUrl: upstream.url, secret: 'good-key', billingMode: 'free_tier',
+  });
+  assert.equal(duplicate.status, 201);
+  const sample = {
+    userId: owner.id, keyId: key.key.id, ticket: consent.ticket(owner.id, key.key.id), expiresAt: Date.now() + 10_000,
+  };
+  const request = { messages: [{ role: 'user', content: 'Explain a triangle.' }] };
+  const signal = new AbortController().signal;
+  const models = catalog.listForUser(owner.id);
+  const timed = models.find((entry) => entry.providerSlug === 'mock' && entry.modelId === 'ok-beta');
+  const slow = models.find((entry) => entry.providerSlug === 'mock' && entry.modelId === 'ok-gamma');
+  const limited = models.find((entry) => entry.providerSlug === 'mock' && entry.modelId === 'ok-delta');
+  const create = accounts.adapterFor;
+  t.mock.method(accounts, 'adapterFor', (runtime) => {
+    const adapter = create(runtime);
+    if (runtime.id !== timed.accountId) return adapter;
+    Object.defineProperty(adapter, 'timeoutMs', { value: 350 });
+    adapter.stream = async function* (_request, options) {
+      if (options.modelId === 'ok-delta') throw new ProviderError(KINDS.RATE_LIMIT, 'Quota temporarily exceeded');
+      if (options.modelId === 'ok-beta') {
+        await pause(900, undefined, { signal: options.signal });
+        return;
+      }
+      for (let i = 0; i < 2; i++) {
+        await pause(220, undefined, { signal: options.signal });
+        yield { choices: [{ delta: { reasoning_content: 'Thinking ' } }] };
+      }
+      await pause(220, undefined, { signal: options.signal });
+      yield { choices: [{ delta: { content: 'Three sides.' }, finish_reason: 'stop' }] };
+    };
+    return adapter;
+  });
+
+  assert.equal((await transport.call(sample, request, { signal, model: slow.id, ref: slow.ref })).message.content, 'Three sides.');
+  assert.equal(transport.candidates(sample, request, 'auto').filter(({ canonicalId }) => canonicalId === timed.canonicalId).length, 2);
+  await assert.rejects(transport.call(sample, request, { signal, model: timed.id, ref: timed.ref }), { code: 'provider_timeout' });
+  await assert.rejects(transport.call(sample, request, { signal, model: limited.id, ref: limited.ref }),
+    (error) => error.code === 'waiting_capacity' && error.retryAt > Date.now());
+  const remaining = transport.candidates(sample, request, 'auto');
+  assert.equal(remaining.filter(({ canonicalId }) => canonicalId === limited.canonicalId).length, 1);
+  assert.ok(remaining.length > 0);
+  assert.ok(!remaining.some(({ canonicalId }) => canonicalId === timed.canonicalId));
+  transport.prune(Date.now() + policy.modelTimeoutCooldownMs);
+  assert.equal(transport.candidates(sample, request, 'auto').filter(({ canonicalId }) => canonicalId === timed.canonicalId).length, 2);
 });
 
 test('judge maps answer order and separates ties from abstention', () => {

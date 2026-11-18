@@ -132,7 +132,7 @@ function toolCallRequired(canonical) {
 
 const missingToolCall = () => new ProviderError(KINDS.INVALID_OUTPUT, 'The model ignored tool_choice and answered without a tool call.');
 
-async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs, sessionId, benchmark }) {
+async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs, sessionId, benchmark, answerBudgetMs = timeoutMs }) {
   const startedAt = Date.now();
   const mustCallTool = toolCallRequired(canonical);
   if (!stream) {
@@ -152,7 +152,8 @@ async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs
   const combined = AbortSignal.any([signal, controller.signal]);
   let headers = null;
   const iterator = adapter.stream(canonical, { modelId: entry.modelId, signal: combined, onHeaders: (value) => { headers = value; }, model: entry, sessionId })[Symbol.asyncIterator]();
-  const firstTimer = setTimeout(() => controller.abort(new ProviderError(KINDS.TIMEOUT, 'No output before the first-token timeout.')), timeoutMs);
+  const answerTimedOut = () => controller.abort(new ProviderError(KINDS.TIMEOUT, 'No output before the first-token timeout.'));
+  let firstTimer = setTimeout(answerTimedOut, timeoutMs);
   const accumulator = new StreamAccumulator();
   const buffered = [];
   let ttftMs = null;
@@ -160,8 +161,17 @@ async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs
     for (;;) {
       const step = await iterator.next();
       if (step.done) break;
+      const reasoningLength = accumulator.reasoning.length;
       accumulator.push(step.value);
-      if (benchmark) checkBenchmarkOutput(accumulator);
+      if (benchmark) {
+        checkBenchmarkOutput(accumulator);
+        // A reasoning stream is making progress even before it has a usable answer.
+        if (accumulator.reasoning.length > reasoningLength) {
+          clearTimeout(firstTimer);
+          const remaining = Math.max(1, startedAt + answerBudgetMs - Date.now());
+          firstTimer = setTimeout(answerTimedOut, Math.min(timeoutMs, remaining));
+        }
+      }
       buffered.push(step.value);
       // Commit on the first real answer token (reasoning is buffered), and
       // with a required tool call only once the call starts.
@@ -487,6 +497,7 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
       billing.observeHeaders(entry, result.headers);
       if (streamError) {
         result.controller.abort();
+        if (!signal.aborted) benchmark.onFailure?.(entry, streamError);
         throw streamError;
       }
       return { entry, message: accumulator.toMessage(), finishReason: accumulator.finishReason,
@@ -545,10 +556,11 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
     };
     quota.recordRequest(entry, inputTokens);
     if (!benchmark) plans.onSent(entry);
-    const timeoutMs = Math.min(adapter.timeoutMs, config.routing.totalBudgetMs - (Date.now() - startedAt));
+    const remainingMs = config.routing.totalBudgetMs - (Date.now() - startedAt);
+    const timeoutMs = Math.min(adapter.timeoutMs, remainingMs);
     // A failed or abandoned partner attempt can still have shared the request.
     if (captureTicket && isPeerEntry(entry)) contactedPool = true;
-    attempt.promise = runAttempt({ entry, adapter, canonical: sent, stream, signal: AbortSignal.any([signal, controller.signal]), timeoutMs, sessionId, benchmark })
+    attempt.promise = runAttempt({ entry, adapter, canonical: sent, stream, signal: AbortSignal.any([signal, controller.signal]), timeoutMs, sessionId, benchmark, answerBudgetMs: benchmark ? remainingMs : timeoutMs })
       .then((result) => ({ attempt, result }), (error) => ({ attempt, error }));
     running.add(attempt);
     attemptsStarted += 1;
@@ -644,6 +656,7 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
       }
       lastError = error;
       trail.push(trailItem(attempt.entry, error.kind, { status: error.status, ms: Date.now() - attempt.started, message: String(error.message).slice(0, 200) }));
+      benchmark?.onFailure?.(attempt.entry, error);
       const policy = benchmark
         ? learning.observeBenchmarkFailure(attempt.entry, error)
         : learning.onFailure(attempt.entry, error, { estimatedTokens: inputTokens, maxTokens: attempt.maxTokens, boosted: attempt.boosted, running: accountInFlight });
