@@ -10,6 +10,7 @@ const scoring = require('./scoring');
 const accountHealth = require('./account_health');
 const profiles = require('./profiles');
 const groups = require('./groups');
+const groupPolicy = require('./group_policy');
 const cacheAffinity = require('./cache_affinity');
 const slotPlans = require('./slot_plans');
 const budget = require('../budget/budget_service');
@@ -163,7 +164,7 @@ const CONNECTION_FAILURES = new Set(['rate_limit', 'quota_exhausted', 'payment',
 // Hard filters. Returns a reason string when the entry cannot serve.
 function rejection(entry, ctx, now) {
   const { key, needs, inputTokens, request, constraints, freeOnly } = ctx;
-  if (!ctx.lastResort && ctx.group && !groups.contains(ctx.group, entry)) return 'outside_routing_group';
+  if (ctx.group && (!ctx.lastResort || !groupPolicy.allowsOutside(ctx.alias, ctx.initialGroup, ctx.group)) && !groups.contains(ctx.group, entry)) return 'outside_routing_group';
   if (!ctx.lastResort && ctx.group?.minIntelligence != null && (entry.intelligence ?? 0) < ctx.group.minIntelligence) return 'below_min_intelligence';
   if (!entry.enabled) return 'model_disabled';
   if (!entry.available) return 'model_unavailable';
@@ -185,6 +186,7 @@ function rejection(entry, ctx, now) {
     if (ctx.keepPrivate) return 'kept_private';
   }
   if (ctx.tokenLimitReached && (entry.isFree || entry.isPlan)) return 'token_limit';
+  if (!groupPolicy.allowsMetered(ctx.alias, ctx.initialGroup, ctx.group) && (modelKind(entry) === 'paid' || (entry.planOverflow && !entry.isFree))) return 'metered_not_allowed';
   // A connection on "Free" has no credits: its models that are not free fail.
   if (needsCredits(entry)) return 'needs_credits';
   if (ctx.onlyKind && modelKind(entry) !== ctx.onlyKind) return 'other_kind';
@@ -346,6 +348,7 @@ const REJECTION_GROUPS = [
   ['profile', ['outside_routing_group', 'below_min_intelligence', 'too_expensive', 'too_slow', 'provider_not_included', 'provider_excluded', 'model_excluded', 'kind_not_in_style'], "are left out by the routing style"],
   ['budget', ['price_unknown', 'budget_exhausted', 'key_too_expensive'], "have no known price or would go past this key's budget or price limit"],
   ['key', ['not_free', 'not_allowed_for_key', 'other_kind', 'not_in_pool', 'not_shared', 'peer_no_forward'], 'are not allowed for this key'],
+  ['metered', ['metered_not_allowed'], 'could incur per-use charges, which this routing group does not allow'],
   ['paced', ['paced'], 'are being spread out so their limits last until they reset (Settings → Usage → even out usage); keys with a high priority still get through'],
   ['private', ['kept_private'], 'are pool partners, and this request holds very sensitive data that stays on your own connections'],
 ];
@@ -426,7 +429,7 @@ class RoutingPlan {
   // taskHint: a task kind the client named (X-NeoRouter-Task).
   // keepPrivate: very sensitive content, kept off pool partners.
   // shareReserve: for a partner's request, the share of capacity kept for the owner.
-  constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null, taskHint = null, keepPrivate = false, shareReserve = null, sharePoolId = null, routingGroup = null, sessionId = null }) {
+  constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null, taskHint = null, keepPrivate = false, shareReserve = null, sharePoolId = null, routingGroup = null, sessionId = null, workload = null }) {
     this.startedAt = Date.now();
     this.slotWaitUntil = null;
     this.capability = capability;
@@ -445,11 +448,13 @@ class RoutingPlan {
     this.parsed = parseModel(requestedModel);
     // "auto:default" is plain auto for apps that cannot send a bare "auto".
     const named = this.parsed.profile === 'default' ? null : this.parsed.profile;
-    this.group = this.parsed.group || routingGroup || (this.parsed.auto ? key.routing_group : null);
-    if (this.group) {
-      this.group = groups.requireGroup(userId, this.group);
-      if (!routeAllowedByKey(`pool:${this.group.name}`, key)) throw new HttpError(403, 'MODEL_NOT_ALLOWED', 'This key may not use this routing group.');
-    }
+    const groupName = this.parsed.group || routingGroup || (this.parsed.auto ? key.routing_group : null);
+    const { group, alias } = groupPolicy.resolve(userId, groupName,
+      this.parsed.auto && capability === 'chat' ? workload : null, (candidate) => {
+        if (!routeAllowedByKey(`pool:${candidate.name}`, key)) throw new HttpError(403, 'MODEL_NOT_ALLOWED', 'This key may not use this routing group.');
+      });
+    this.group = group;
+    this.alias = alias;
     const profileRef = this.group?.profile || named || key.profile || 'balanced';
     this.profile = profiles.resolve(userId, profileRef);
     if (!this.profile) throw new HttpError(400, 'UNKNOWN_PROFILE', `Unknown routing profile "${profileRef}".`);
@@ -475,7 +480,8 @@ class RoutingPlan {
     this.tokenLimitReached = budget.tokenLimitReached(key);
     // Settings → even out usage: allowances are spent at a steady pace.
     this.userId = userId;
-    this.affinityRef = sessionId ? cacheAffinity.affinity(key.id, sessionId) : null;
+    this.affinityScope = alias?.subagentGroup ? JSON.stringify([key.id, alias.id, group.id]) : key.id;
+    this.affinityRef = sessionId ? cacheAffinity.affinity(this.affinityScope, sessionId) : null;
     this.cacheRates = this.affinityRef != null ? cacheAffinity.rates(userId) : new Map();
     this.visitedGroups = new Set(this.group ? [this.group.name] : []);
     this.smoothing = smoothing.active(userId);
@@ -516,7 +522,7 @@ class RoutingPlan {
   }
 
   context() {
-    return { startedAt: this.startedAt, group: this.group, keepPrivate: this.keepPrivate, shareReserve: this.shareReserve, sharePoolId: this.sharePoolId, longShot: this.longShot, lastResort: this.lastResort, accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost, smoothing: this.smoothing, userId: this.userId };
+    return { startedAt: this.startedAt, group: this.group, alias: this.alias, initialGroup: this.initialGroup, keepPrivate: this.keepPrivate, shareReserve: this.shareReserve, sharePoolId: this.sharePoolId, longShot: this.longShot, lastResort: this.lastResort, accountFailures: this.accountFailures, tokenLimitReached: this.tokenLimitReached, onlyKind: this.parsed.kind, key: this.key, needs: this.needs, inputTokens: this.inputTokens, request: this.request, constraints: this.profile.constraints, freeOnly: this.freeOnly, primaryRefs: this.primaryRefs, estimateCost: this.estimateCost, smoothing: this.smoothing, userId: this.userId };
   }
 
   rank({ includeRejected = false, sample = true, now = Date.now() } = {}) {
@@ -579,6 +585,7 @@ class RoutingPlan {
       if (isPeerEntry(item.entry)) value *= PEER_FACTOR;
       // Far too weak for this task: taken only when nothing better can serve.
       if (this.task && item.details.capability < weakBelow(this.need)) value *= WEAK_FOR_TASK_FACTOR;
+      item.preference = this.parsed.auto ? groupPolicy.preference(this.group, item.entry, this.affinityRef) : 0;
       // A custom style's preference between free, subscription and paid models.
       item.tier = this.profile.constraints.kinds ? kindTier(this.profile.constraints.kinds, item.entry) : 0;
       // Explicit style kind tiers still win; within each tier, use paid-for
@@ -621,33 +628,37 @@ class RoutingPlan {
 
   // Softmax draw among the top-k so load spreads across good candidates
   // instead of hammering the single best one.
-  next({ filter = null, now = Date.now(), advancing = false } = {}) {
+  next({ filter = null, now = Date.now(), advancing = false, sample = true } = {}) {
     if (this.initialGroup && !advancing) {
       this.setGroup(this.initialGroup);
       this.visitedGroups = new Set([this.initialGroup.name]);
     }
-    const all = this.rank({ includeRejected: true, now }).filter((item) => !filter || filter(item.entry));
+    const all = this.rank({ includeRejected: true, now, sample }).filter((item) => !filter || filter(item.entry));
     const candidates = all.filter((item) => !item.rejected);
     const busy = all.filter((item) => item.entry.isFlatRate && (this.parsed.auto || this.primaryRefs.has(item.entry.ref)) && item.rejected === 'account_busy').map((item) => item.entry);
-    this.slotWaitUntil = slotPlans.waitUntil(busy, candidates, this.startedAt, now);
+    this.slotWaitUntil = slotPlans.waitUntil(busy, candidates, this.startedAt, now, {
+      preferredAccount: this.group?.preferredAccount,
+    });
     if (this.slotWaitUntil !== null) {
       // Full paid slots and nothing free in this group: a fallback group that
       // can answer now comes before waiting, unless a plan is set to queue.
       const waitUntil = this.slotWaitUntil;
       if (!candidates.length && !busy.some((entry) => entry.overflowPolicy === 'queue') && this.advanceGroup()) {
-        const choice = this.next({ filter, now, advancing: true });
+        const choice = this.next({ filter, now, advancing: true, sample });
         if (choice) return choice;
       }
       this.slotWaitUntil = waitUntil;
       return null;
     }
     if (!candidates.length) {
-      if (this.advanceGroup()) return this.next({ filter, now, advancing: true });
+      if (this.advanceGroup()) return this.next({ filter, now, advancing: true, sample });
       return null;
     }
     // Only the style's first tier of model kinds that still has a candidate.
-    const tier = Math.min(...candidates.map((item) => item.tier ?? 0));
-    const ranked = candidates.filter((item) => (item.tier ?? 0) === tier);
+    const preference = Math.min(...candidates.map((item) => item.preference));
+    const preferred = candidates.filter((item) => item.preference === preference);
+    const tier = Math.min(...preferred.map((item) => item.tier ?? 0));
+    const ranked = preferred.filter((item) => (item.tier ?? 0) === tier);
     let choice = ranked[0];
     // Among copies of the requested model (several accounts) the draw stays
     // within those copies; otherwise among the top-k.
@@ -656,7 +667,7 @@ class RoutingPlan {
     const cheaperFirst = leading.filter((item) => !item.pricierEqual);
     const pool = cheaperFirst.length ? cheaperFirst : leading;
     choice = pool[0];
-    if (pool.length > 1) {
+    if (sample && pool.length > 1) {
       const temperature = Math.max(0.01, this.profile.constraints.exploration ?? 0.08);
       const top = pool[0].score;
       const weights = pool.map((item) => Math.exp((item.score - top) / temperature));
@@ -670,6 +681,7 @@ class RoutingPlan {
         }
       }
     }
+    choice.entry.routingReason = groupPolicy.reason(this.group, choice, all, this.affinityRef);
     choice.entry.routingGroup = this.group && groups.contains(this.group, choice.entry) ? this.group.name : null;
     this.tried.add(choice.entry.ref);
     if (this.lastResort && PREFERENCE_REASONS.has(rejection(choice.entry, { ...this.context(), lastResort: false, longShot: false }, now))) choice.entry.lastResort = true;
@@ -815,13 +827,13 @@ class RoutingPlan {
   }
 }
 
-function preview({ userId, key, requestedModel = 'auto', request, needs, inputTokens, limit = 20 }) {
-  const plan = new RoutingPlan({ userId, key, request, requestedModel, needs, inputTokens });
+function preview({ userId, key, requestedModel = 'auto', request, needs, inputTokens, limit = 20, workload = null }) {
+  const plan = new RoutingPlan({ userId, key, request, requestedModel, needs, inputTokens, workload });
   // In the order the router tries them: a style's preferred kinds first.
   const ranked = plan.rank({ includeRejected: true, sample: false })
-    .sort((a, b) => (a.rejected ? 1 : 0) - (b.rejected ? 1 : 0) || (a.tier ?? 0) - (b.tier ?? 0) || (b.score ?? -1) - (a.score ?? -1));
-  return {
-    group: plan.group?.name || null,
+    .sort((a, b) => (a.rejected ? 1 : 0) - (b.rejected ? 1 : 0) || (a.preference ?? 0) - (b.preference ?? 0) || (a.tier ?? 0) - (b.tier ?? 0) || (b.score ?? -1) - (a.score ?? -1));
+  const result = {
+    group: plan.initialGroup?.name || null,
     profile: plan.profile,
     weights: plan.weights,
     complexity: plan.complexity,
@@ -841,6 +853,8 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
       tier: item.tier ?? 0,
     })).slice(0, limit),
   };
+  const selected = plan.next({ sample: false })?.entry;
+  return { ...result, selection: selected ? { model: selected.id, group: selected.routingGroup } : null };
 }
 
 module.exports = { LONG_SHOT_REASONS, MAX_LONG_SHOTS, LONG_SHOT_GAP_MS, resetLongShotsForTests, needsCredits, RoutingPlan, explainNoModel, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, routeAllowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor, boostedMaxTokens };

@@ -3670,12 +3670,12 @@
   "routingGroups": "Routing groups",
   "createRoutingGroup": "Create group",
   "routingGroupName": "Name",
-  "routingGroupAccounts": "Accounts",
+  "routingGroupAccounts": "Connections",
   "routingGroupFallback": "Fallback group",
   "routingGroupNoKeyDefault": "None: the key routes normally",
   "routingGroupDefault": "Default routing group",
   "navGroups": "Routing groups",
-  "routingGroupsDescription": "Send one kind of work, such as an agent's helpers, to the plans you choose. An app picks a group by asking for pool:name as the model.",
+  "routingGroupsDescription": "Use one model name for the connections you choose.",
   "routingGroupsEmptyTitle": "No routing groups yet",
   "routingGroupUsesStyle": "Style: {name}",
   "@routingGroupUsesStyle": {
@@ -3709,7 +3709,7 @@
       }
     }
   },
-  "routingGroupAccountsHint": "Every model of a chosen account belongs to the group.",
+  "routingGroupAccountsHint": "Choose the subscriptions and connections this group can use.",
   "routingGroupOtherAccounts": "Other accounts",
   "routingGroupSearchAccounts": "Search accounts",
   "routingGroupNoAccounts": "No matching accounts.",
@@ -3740,6 +3740,54 @@
       }
     }
   },
+  "routingGroupPrefer": "Use first",
+  "routingGroupPreferHint": "Switches when this connection can’t take a request.",
+  "routingGroupAutomatic": "Automatic",
+  "routingGroupMore": "More options",
+  "routingGroupSubagents": "Subagent requests",
+  "routingGroupSameGroup": "Same group",
+  "routingGroupSubagentHint": "App setup required for separate routing.",
+  "routingGroupCreateSubagent": "Create subagent group",
+  "routingGroupAllowOutside": "Try other connections as a last resort",
+  "routingGroupAllowMetered": "Allow per-use charges",
+  "routingGroupMeteredHint": "Includes connections set up to charge after an allowance runs out.",
+  "routingGroupUseInApp": "Use in app",
+  "routingGroupAppModel": "Enter this as the model in your app.",
+  "routingGroupAppSubagent": "If your app has a separate subagent model, use this:",
+  "routingGroupAppSubagentHeader": "To keep one model name, send X-NeoRouter-Workload: subagent on child requests.",
+  "routingGroupPreviewSubagent": "Preview a subagent request",
+  "routingGroupPreviewHint": "Uses current limits with a sample request. No provider call.",
+  "routingGroupPreview": "Preview route",
+  "routingGroupPreviewUnavailable": "No model can take this request right now.",
+  "routingGroupPreviewModel": "Would use {model}",
+  "@routingGroupPreviewModel": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupPrefers": "Prefers {name}",
+  "@routingGroupPrefers": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupUsesSubagent": "Subagents use {name}",
+  "@routingGroupUsesSubagent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupReasonSame": "Kept the conversation on the same model and connection.",
+  "routingGroupReasonPreferred": "Used the preferred connection.",
+  "routingGroupReasonBusy": "The preferred connection was busy.",
+  "routingGroupReasonAllowance": "The preferred connection reached a limit.",
+  "routingGroupReasonUnavailable": "The preferred connection couldn’t take this request.",
   "cachedInputTokens": "Cached input tokens",
   "cacheHitRate": "Cache hit rate",
   "planUsageUnknown": "Plan usage unknown",

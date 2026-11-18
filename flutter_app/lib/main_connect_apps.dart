@@ -20,9 +20,10 @@ import 'src/web_media.dart';
 /// the address (loopback, Docker, network, internet) and explains whatever
 /// stands in the way.
 class ConnectAppsPage extends StatefulWidget {
-  const ConnectAppsPage({super.key, required this.controller});
+  const ConnectAppsPage({super.key, required this.controller, this.initialModel = 'auto'});
 
   final NeoRouterController controller;
+  final String initialModel;
 
   @override
   State<ConnectAppsPage> createState() => _ConnectAppsPageState();
@@ -123,6 +124,7 @@ class _ConnectAppsPageState extends State<ConnectAppsPage> {
                         place: _places.firstWhere((place) => place['id'] == _place),
                         onBack: () => _single ? _restart() : setState(() => _placeConfirmed = false),
                         onAnother: _restart,
+                        initialModel: widget.initialModel,
                       ),
                   },
                 ),
@@ -589,13 +591,14 @@ class _PlaceCard extends StatelessWidget {
 // ---------------------------------------------------------------- step 3
 
 class _SetupStep extends StatefulWidget {
-  const _SetupStep({super.key, required this.controller, required this.app, required this.place, required this.onBack, required this.onAnother});
+  const _SetupStep({super.key, required this.controller, required this.app, required this.place, required this.onBack, required this.onAnother, required this.initialModel});
 
   final NeoRouterController controller;
   final Map<String, dynamic> app;
   final Map<String, dynamic> place;
   final VoidCallback onBack;
   final VoidCallback onAnother;
+  final String initialModel;
 
   @override
   State<_SetupStep> createState() => _SetupStepState();
@@ -606,7 +609,7 @@ class _SetupStepState extends State<_SetupStep> {
   String? _secret;
   bool _existingKey = false;
   bool _creating = false;
-  String _model = 'auto';
+  late String _model = widget.initialModel;
   Map<String, dynamic>? _activity;
   Timer? _poll;
   DateTime? _waitingSince;

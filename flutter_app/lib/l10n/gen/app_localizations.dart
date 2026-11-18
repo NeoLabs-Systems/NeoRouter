@@ -10054,7 +10054,7 @@ abstract class AppL10n {
   /// No description provided for @routingGroupAccounts.
   ///
   /// In en, this message translates to:
-  /// **'Accounts'**
+  /// **'Connections'**
   String get routingGroupAccounts;
 
   /// No description provided for @routingGroupFallback.
@@ -10084,7 +10084,7 @@ abstract class AppL10n {
   /// No description provided for @routingGroupsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Send one kind of work, such as an agent\'s helpers, to the plans you choose. An app picks a group by asking for pool:name as the model.'**
+  /// **'Use one model name for the connections you choose.'**
   String get routingGroupsDescription;
 
   /// No description provided for @routingGroupsEmptyTitle.
@@ -10120,7 +10120,7 @@ abstract class AppL10n {
   /// No description provided for @routingGroupAccountsHint.
   ///
   /// In en, this message translates to:
-  /// **'Every model of a chosen account belongs to the group.'**
+  /// **'Choose the subscriptions and connections this group can use.'**
   String get routingGroupAccountsHint;
 
   /// No description provided for @routingGroupOtherAccounts.
@@ -10260,6 +10260,168 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Keys and apps that use pool:{name} will route normally again.'**
   String routingGroupDeleteMessage(String name);
+
+  /// No description provided for @routingGroupPrefer.
+  ///
+  /// In en, this message translates to:
+  /// **'Use first'**
+  String get routingGroupPrefer;
+
+  /// No description provided for @routingGroupPreferHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Switches when this connection can’t take a request.'**
+  String get routingGroupPreferHint;
+
+  /// No description provided for @routingGroupAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get routingGroupAutomatic;
+
+  /// No description provided for @routingGroupMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get routingGroupMore;
+
+  /// No description provided for @routingGroupSubagents.
+  ///
+  /// In en, this message translates to:
+  /// **'Subagent requests'**
+  String get routingGroupSubagents;
+
+  /// No description provided for @routingGroupSameGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Same group'**
+  String get routingGroupSameGroup;
+
+  /// No description provided for @routingGroupSubagentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'App setup required for separate routing.'**
+  String get routingGroupSubagentHint;
+
+  /// No description provided for @routingGroupCreateSubagent.
+  ///
+  /// In en, this message translates to:
+  /// **'Create subagent group'**
+  String get routingGroupCreateSubagent;
+
+  /// No description provided for @routingGroupAllowOutside.
+  ///
+  /// In en, this message translates to:
+  /// **'Try other connections as a last resort'**
+  String get routingGroupAllowOutside;
+
+  /// No description provided for @routingGroupAllowMetered.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow per-use charges'**
+  String get routingGroupAllowMetered;
+
+  /// No description provided for @routingGroupMeteredHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes connections set up to charge after an allowance runs out.'**
+  String get routingGroupMeteredHint;
+
+  /// No description provided for @routingGroupUseInApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Use in app'**
+  String get routingGroupUseInApp;
+
+  /// No description provided for @routingGroupAppModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter this as the model in your app.'**
+  String get routingGroupAppModel;
+
+  /// No description provided for @routingGroupAppSubagent.
+  ///
+  /// In en, this message translates to:
+  /// **'If your app has a separate subagent model, use this:'**
+  String get routingGroupAppSubagent;
+
+  /// No description provided for @routingGroupAppSubagentHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'To keep one model name, send X-NeoRouter-Workload: subagent on child requests.'**
+  String get routingGroupAppSubagentHeader;
+
+  /// No description provided for @routingGroupPreviewSubagent.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview a subagent request'**
+  String get routingGroupPreviewSubagent;
+
+  /// No description provided for @routingGroupPreviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses current limits with a sample request. No provider call.'**
+  String get routingGroupPreviewHint;
+
+  /// No description provided for @routingGroupPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview route'**
+  String get routingGroupPreview;
+
+  /// No description provided for @routingGroupPreviewUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No model can take this request right now.'**
+  String get routingGroupPreviewUnavailable;
+
+  /// No description provided for @routingGroupPreviewModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Would use {model}'**
+  String routingGroupPreviewModel(String model);
+
+  /// No description provided for @routingGroupPrefers.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefers {name}'**
+  String routingGroupPrefers(String name);
+
+  /// No description provided for @routingGroupUsesSubagent.
+  ///
+  /// In en, this message translates to:
+  /// **'Subagents use {name}'**
+  String routingGroupUsesSubagent(String name);
+
+  /// No description provided for @routingGroupReasonSame.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept the conversation on the same model and connection.'**
+  String get routingGroupReasonSame;
+
+  /// No description provided for @routingGroupReasonPreferred.
+  ///
+  /// In en, this message translates to:
+  /// **'Used the preferred connection.'**
+  String get routingGroupReasonPreferred;
+
+  /// No description provided for @routingGroupReasonBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'The preferred connection was busy.'**
+  String get routingGroupReasonBusy;
+
+  /// No description provided for @routingGroupReasonAllowance.
+  ///
+  /// In en, this message translates to:
+  /// **'The preferred connection reached a limit.'**
+  String get routingGroupReasonAllowance;
+
+  /// No description provided for @routingGroupReasonUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The preferred connection couldn’t take this request.'**
+  String get routingGroupReasonUnavailable;
 
   /// No description provided for @cachedInputTokens.
   ///

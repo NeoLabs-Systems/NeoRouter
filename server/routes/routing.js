@@ -36,6 +36,7 @@ router.delete('/profiles/:id', requirePermission('routing.edit'), (req, res) => 
 router.post('/preview', requirePermission('routing.view'), validate(z.object({
   profile: z.string().max(80).optional(),
   mode: z.enum(['free_only', 'paid', 'both']).optional(),
+  workload: z.enum(['subagent']).optional(),
   model: z.string().max(300).optional(),
   prompt: z.string().max(200000).optional(),
   tools: z.boolean().optional(),
@@ -47,7 +48,7 @@ router.post('/preview', requirePermission('routing.view'), validate(z.object({
   });
   const key = { id: 'preview', user_id: req.space.ownerId, mode: req.body.mode || 'both', budget_usd: null, budget_period: 'total', allowed_models_json: '[]', profile: req.body.profile || 'balanced' };
   res.json(router_.preview({
-    userId: req.space.ownerId, key, requestedModel: req.body.model || 'auto', request, needs: requirements(request), inputTokens: estimateInputTokens(request),
+    userId: req.space.ownerId, key, workload: req.body.workload, requestedModel: req.body.model || 'auto', request, needs: requirements(request), inputTokens: estimateInputTokens(request),
   }));
 });
 

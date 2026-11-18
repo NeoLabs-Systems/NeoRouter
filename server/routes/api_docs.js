@@ -155,6 +155,12 @@ lowers the owner's prompt compression level for this request (it can never raise
 Optional request header for chat: \`X-NeoRouter-Task: <kind>\` names the task when you
 know it better than the prompt shows. Kinds: ${taskKinds}. Unknown kinds are ignored.
 
+For a routing group with a separate subagent group, send
+\`X-NeoRouter-Workload: subagent\` on child requests. Use the same
+\`pool:<name>\` model for both requests. The key must permit both groups and
+the models it can use. Apps that set a separate model for subagents can
+use the subagent group's alias directly.
+
 ## Chat
 
 ### POST /v1/chat/completions

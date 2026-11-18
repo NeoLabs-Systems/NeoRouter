@@ -639,6 +639,14 @@ class _RequestDetails extends StatelessWidget {
       if (log.keptPrivate != null) (t.keptPrivateTag, log.keptPrivate!.replaceAll('_', ' ').replaceAll(',', ', ')),
       (t.detailTime, formatTime(log.createdAt)),
     ];
+    final routeReason = switch (log.trail.lastOrNull?['routingReason']) {
+      'same_connection' => t.routingGroupReasonSame,
+      'preferred_connection' => t.routingGroupReasonPreferred,
+      'preferred_busy' => t.routingGroupReasonBusy,
+      'preferred_allowance' => t.routingGroupReasonAllowance,
+      'preferred_unavailable' => t.routingGroupReasonUnavailable,
+      _ => null,
+    };
     return Container(
       color: palette.surfaceMuted,
       padding: const EdgeInsets.fromLTRB(48, 4, 20, 18),
@@ -666,6 +674,10 @@ class _RequestDetails extends StatelessWidget {
                 ),
             ],
           ),
+          if (routeReason != null) ...[
+            const SizedBox(height: 10),
+            Text(routeReason, style: TextStyle(color: palette.textMuted, fontSize: 13)),
+          ],
           if (log.trail.length > 1) ...<Widget>[
             const SizedBox(height: 16),
             Text(t.detailRoute, style: TextStyle(color: palette.textMuted, fontSize: 12)),

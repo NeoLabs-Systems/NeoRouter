@@ -28,12 +28,16 @@ function comparable(candidate, busy) {
 }
 // Explicit queueing waits up to the account's bound. Auto waits only when
 // there is no comparable genuinely free alternative that can serve.
-function waitUntil(busyEntries, available, startedAt, now) {
+function waitUntil(busyEntries, available, startedAt, now, { preferredAccount = null } = {}) {
   if (available.some((item) => item.entry.isFlatRate)) return null;
   let until = null;
   for (const entry of busyEntries) {
     const untilAt = deadline(entry, startedAt);
     if (entry.overflowPolicy === 'overflow' || now >= untilAt) continue;
+    // A smart alias can use another included subscription without waiting
+    // for its preferred connection. An explicit queue policy still applies.
+    if (entry.overflowPolicy !== 'queue' && entry.accountId === preferredAccount
+        && available.some((item) => item.entry.isPlan)) continue;
     if (entry.overflowPolicy !== 'queue' && available.some((item) => item.entry.isFree && comparable(item.entry, entry))) continue;
     until = until === null ? untilAt : Math.min(until, untilAt);
   }

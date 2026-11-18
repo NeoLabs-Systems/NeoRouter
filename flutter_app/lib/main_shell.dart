@@ -14,6 +14,7 @@ import 'main_processing.dart';
 import 'main_providers.dart';
 import 'main_routing.dart';
 import 'main_routing_groups.dart';
+import 'main_connect_apps.dart';
 import 'main_settings.dart';
 import 'main_team.dart';
 import 'main_shared.dart';
@@ -151,7 +152,10 @@ class _NeoRouterShellState extends State<NeoRouterShell> {
         AppPage.providers => ProvidersScreen(controller: controller),
         AppPage.keys => KeysScreen(controller: controller),
         AppPage.routing => RoutingScreen(controller: controller),
-        AppPage.groups => RoutingGroupsScreen(controller: controller),
+        AppPage.groups => RoutingGroupsScreen(
+          controller: controller,
+          appSetup: (model) => ConnectAppsPage(controller: controller, initialModel: model),
+        ),
         AppPage.processing => ProcessingScreen(controller: controller),
         AppPage.team => TeamScreen(controller: controller),
         AppPage.settings => SettingsScreen(controller: controller),

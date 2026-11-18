@@ -98,6 +98,21 @@ test('routing groups are managed, discovered, selected and recorded through the 
   assert.equal(byKey.headers['x-neorouter-group'], 'small-work');
   const logs = await api('get', '/usage/logs');
   assert.ok(logs.body.logs.some((row) => row.routingGroup === 'small-work'));
+  const children = await api('post', '/routing/groups', { name: 'child-work', models: ['mock/ok-beta'] });
+  assert.equal(children.status, 201, children.text);
+  const updated = await api('put', `/routing/groups/${id}`, { ...created.body.group, subagentGroup: 'child-work' });
+  assert.equal(updated.status, 200, updated.text);
+  const childRequest = (secret) => request(app).post('/v1/chat/completions')
+    .set('Authorization', `Bearer ${secret}`).set('X-NeoRouter-Workload', 'subagent')
+    .send({ model: 'pool:small-work', messages: [{ role: 'user', content: 'hi' }] });
+  const child = await childRequest(freeKey);
+  assert.equal(child.status, 200, child.text);
+  assert.equal(child.headers['x-neorouter-group'], 'child-work');
+  assert.equal(child.headers['x-neorouter-model'], 'mock/ok-beta');
+  assert.equal((await childRequest(keyResult.body.secret)).status, 403);
+  const preview = await api('post', '/routing/preview', { model: 'pool:small-work', workload: 'subagent' });
+  assert.deepEqual(preview.body.selection, { group: 'child-work', model: 'mock/ok-beta' });
+  assert.equal((await api('delete', `/routing/groups/${children.body.group.id}`)).status, 409);
   const removed = await api('delete', `/routing/groups/${id}`);
   assert.equal(removed.status, 204);
 });

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
 import 'main_model_picker.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
+import 'routing_group_setup.dart';
 import 'main_theme.dart';
 import 'src/backend_client.dart';
 import 'src/models.dart';
@@ -13,8 +13,13 @@ import 'src/models.dart';
 /// Routing groups: one kind of work (an agent's helpers, heavy jobs) goes to
 /// the plans the person chooses. Apps pick a group with pool:name.
 class RoutingGroupsScreen extends StatefulWidget {
-  const RoutingGroupsScreen({super.key, required this.controller});
+  const RoutingGroupsScreen({
+    super.key,
+    required this.controller,
+    this.appSetup,
+  });
   final NeoRouterController controller;
+  final Widget Function(String model)? appSetup;
 
   @override
   State<RoutingGroupsScreen> createState() => _RoutingGroupsScreenState();
@@ -63,7 +68,7 @@ class _RoutingGroupsScreenState extends State<RoutingGroupsScreen> {
   }
 
   Future<void> _edit([Map<String, dynamic>? group]) async {
-    final changed = await showDialog<bool>(
+    final changed = await showDialog<String>(
       context: context,
       builder: (_) => _GroupEditor(
         controller: widget.controller,
@@ -71,7 +76,31 @@ class _RoutingGroupsScreenState extends State<RoutingGroupsScreen> {
         groups: _groups,
       ),
     );
-    if (changed == true) await _load();
+    if (!mounted) return;
+    await _load();
+    if (group == null && changed != null && changed.isNotEmpty && mounted) {
+      _showSetup(
+        _groups.firstWhere(
+          (item) => item['name'] == changed,
+          orElse: () => {'name': changed},
+        ),
+      );
+    }
+  }
+
+  void _showSetup(Map<String, dynamic> group) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => RoutingGroupSetup(
+        controller: widget.controller,
+        name: group['name'] as String,
+        subagent: group['subagentGroup'] as String?,
+        appSetupBuilder:
+            widget.appSetup == null || !widget.controller.can('keys.view')
+            ? null
+            : (_) => widget.appSetup!('pool:${group['name']}'),
+      ),
+    );
   }
 
   @override
@@ -122,6 +151,7 @@ class _RoutingGroupsScreenState extends State<RoutingGroupsScreen> {
                             width: width,
                             child: _GroupCard(
                               group: group,
+                              onSetup: () => _showSetup(group),
                               profileName: _profileNames[group['profile']],
                               accountNames: _accountNames,
                               onTap: _canEdit ? () => _edit(group) : null,
@@ -142,12 +172,14 @@ class _GroupCard extends StatelessWidget {
     required this.group,
     required this.profileName,
     required this.accountNames,
+    required this.onSetup,
     this.onTap,
   });
   final Map<String, dynamic> group;
   final String? profileName;
   final Map<String, String> accountNames;
   final VoidCallback? onTap;
+  final VoidCallback onSetup;
 
   @override
   Widget build(BuildContext context) {
@@ -165,6 +197,10 @@ class _GroupCard extends StatelessWidget {
     final plans = (group['plans'] as List? ?? []).cast<Map>();
     final minimum = group['minIntelligence'] as num?;
     final details = <String>[
+      if (accountNames[group['preferredAccount']] case final String preferred)
+        t.routingGroupPrefers(preferred),
+      if (group['subagentGroup'] case final String subagent)
+        t.routingGroupUsesSubagent(subagent),
       if (profileName != null) t.routingGroupUsesStyle(profileName!),
       if (minimum != null) t.routingGroupAtLeast('${(minimum * 100).round()}'),
       if (group['fallback'] != null)
@@ -185,7 +221,10 @@ class _GroupCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              _CopyName(value: 'pool:$name'),
+              TextButton(
+                onPressed: onSetup,
+                child: Text(t.routingGroupUseInApp),
+              ),
               if (onTap != null)
                 Icon(Icons.chevron_right, color: palette.textSoft),
             ],
@@ -244,54 +283,17 @@ class _GroupCard extends StatelessWidget {
   }
 }
 
-class _CopyName extends StatelessWidget {
-  const _CopyName({required this.value});
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppL10n.of(context);
-    final palette = neoRouterPaletteOf(context);
-    return Tooltip(
-      message: t.copy,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.tag),
-        onTap: () {
-          Clipboard.setData(ClipboardData(text: value));
-          showSnack(context, t.copied);
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: palette.surfaceRaised,
-            borderRadius: BorderRadius.circular(AppRadius.tag),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                value,
-                style: const TextStyle(fontFamily: 'monospace', fontSize: 12.5),
-              ),
-              const SizedBox(width: 6),
-              Icon(Icons.copy_rounded, size: 14, color: palette.textSoft),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _GroupEditor extends StatefulWidget {
   const _GroupEditor({
     required this.controller,
     required this.groups,
     this.group,
+    this.creatingSubagent = false,
   });
   final NeoRouterController controller;
   final List<Map<String, dynamic>> groups;
   final Map<String, dynamic>? group;
+  final bool creatingSubagent;
 
   @override
   State<_GroupEditor> createState() => _GroupEditorState();
@@ -315,6 +317,14 @@ class _GroupEditorState extends State<_GroupEditor> {
       ?.toDouble();
   late String _profile = widget.group?['profile'] as String? ?? '';
   late String _fallback = widget.group?['fallback'] as String? ?? '';
+  late String _preferred = widget.group?['preferredAccount'] as String? ?? '';
+  late String _subagent = widget.group?['subagentGroup'] as String? ?? '';
+  late bool _allowOutside =
+      widget.group != null && widget.group!['allowOutside'] != false;
+  late bool _allowMetered =
+      widget.group != null && widget.group!['allowMetered'] != false;
+  late List<Map<String, dynamic>> _groups = widget.groups;
+  bool _loadingGroups = false;
   List<ProviderAccount> _accounts = [];
   List<RoutingProfile> _profiles = [];
   bool _loading = true;
@@ -322,6 +332,8 @@ class _GroupEditorState extends State<_GroupEditor> {
   String? _error;
 
   bool get _creating => widget.group == null;
+  String get _aliasName =>
+      _name.text.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '-');
 
   @override
   void initState() {
@@ -358,7 +370,7 @@ class _GroupEditorState extends State<_GroupEditor> {
   }
 
   String? _validate(AppL10n t) {
-    if (_creating && !_namePattern.hasMatch(_name.text.trim())) {
+    if (_creating && !_namePattern.hasMatch(_aliasName)) {
       return t.routingGroupNameInvalid;
     }
     if (_selected.isEmpty && _models.isEmpty) {
@@ -374,7 +386,7 @@ class _GroupEditorState extends State<_GroupEditor> {
       selected: _models.where((item) => !item.contains('*')).toList(),
       multi: true,
     );
-    if (picked == null) return;
+    if (picked == null || !mounted) return;
     setState(() {
       _models
         ..removeWhere((item) => !item.contains('*'))
@@ -404,14 +416,18 @@ class _GroupEditorState extends State<_GroupEditor> {
     });
     try {
       await widget.controller.api.saveRoutingGroup({
-        'name': _creating ? _name.text.trim() : widget.group!['name'],
+        'name': _creating ? _aliasName : widget.group!['name'],
         'accounts': _selected.toList(),
         'models': _models,
         'profile': _profile.isEmpty ? null : _profile,
         'fallback': _fallback.isEmpty ? null : _fallback,
         'minIntelligence': _minimum,
+        'preferredAccount': _preferred.isEmpty ? null : _preferred,
+        'subagentGroup': _subagent.isEmpty ? null : _subagent,
+        'allowOutside': _allowOutside,
+        'allowMetered': _allowMetered,
       }, id: widget.group?['id'] as String?);
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted) Navigator.of(context).pop(_aliasName);
     } catch (error) {
       if (mounted) {
         setState(() {
@@ -437,7 +453,7 @@ class _GroupEditorState extends State<_GroupEditor> {
       await widget.controller.api.deleteRoutingGroup(
         widget.group!['id'] as String,
       );
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted) Navigator.of(context).pop('');
     } catch (error) {
       if (mounted) {
         setState(() {
@@ -540,14 +556,22 @@ class _GroupEditorState extends State<_GroupEditor> {
             children: <Widget>[
               for (final account in entry.value)
                 FilterChip(
-                  label: Text(account.label),
+                  label: Text(
+                    account.label == account.providerName ||
+                            entry.key == account.providerName
+                        ? account.label
+                        : '${account.label} · ${account.providerName}',
+                  ),
                   selected: _selected.contains(account.id),
                   showCheckmark: true,
-                  onSelected: (on) => setState(
-                    () => on
-                        ? _selected.add(account.id)
-                        : _selected.remove(account.id),
-                  ),
+                  onSelected: (on) => setState(() {
+                    if (on) {
+                      _selected.add(account.id);
+                    } else {
+                      _selected.remove(account.id);
+                      if (_preferred == account.id) _preferred = '';
+                    }
+                  }),
                 ),
             ],
           ),
@@ -604,9 +628,108 @@ class _GroupEditorState extends State<_GroupEditor> {
     );
   }
 
+  Widget _preferredPicker(AppL10n t) {
+    final accounts = _accounts
+        .where((account) => _selected.contains(account.id))
+        .toList();
+    if (accounts.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+      child: DropdownButtonFormField<String>(
+        key: ValueKey(_preferred),
+        initialValue: accounts.any((account) => account.id == _preferred)
+            ? _preferred
+            : '',
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: t.routingGroupPrefer,
+          helperText: t.routingGroupPreferHint,
+        ),
+        items: [
+          DropdownMenuItem(value: '', child: Text(t.routingGroupAutomatic)),
+          for (final account in accounts)
+            DropdownMenuItem(
+              value: account.id,
+              child: Text(
+                account.label == account.providerName
+                    ? account.label
+                    : '${account.label} · ${account.providerName}',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+        ],
+        onChanged: (value) => setState(() => _preferred = value ?? ''),
+      ),
+    );
+  }
+
+  Future<void> _createSubagent() async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (_) => _GroupEditor(
+        controller: widget.controller,
+        groups: _groups,
+        creatingSubagent: true,
+      ),
+    );
+    if (name == null || name.isEmpty || !mounted) return;
+    setState(() => _loadingGroups = true);
+    try {
+      final groups = await widget.controller.api.routingGroups();
+      if (!mounted) return;
+      setState(() {
+        _groups = groups;
+        _subagent = name;
+      });
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = error is ApiException ? error.message : '$error',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loadingGroups = false);
+    }
+  }
+
+  Widget _subagentPicker(AppL10n t, List<Map<String, dynamic>> groups) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<String>(
+          key: ValueKey(_subagent),
+          initialValue: _subagent,
+          isExpanded: true,
+          decoration: InputDecoration(labelText: t.routingGroupSubagents),
+          items: [
+            DropdownMenuItem(value: '', child: Text(t.routingGroupSameGroup)),
+            for (final group in groups)
+              DropdownMenuItem(
+                value: group['name'] as String,
+                child: Text('${group['name']}'),
+              ),
+          ],
+          onChanged: _loadingGroups
+              ? null
+              : (value) => setState(() => _subagent = value ?? ''),
+        ),
+        if (_subagent.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.xs),
+            child: Text(t.routingGroupSubagentHint),
+          ),
+        TextButton.icon(
+          onPressed: _loadingGroups ? null : _createSubagent,
+          icon: const Icon(Icons.add, size: 18),
+          label: Text(t.routingGroupCreateSubagent),
+        ),
+      ],
+    );
+  }
+
   Widget _options(AppL10n t) {
     final palette = neoRouterPaletteOf(context);
-    final fallbacks = widget.groups
+    final fallbacks = _groups
         .where((group) => group['id'] != widget.group?['id'])
         .toList();
     return Column(
@@ -665,11 +788,29 @@ class _GroupEditorState extends State<_GroupEditor> {
             for (final group in fallbacks)
               DropdownMenuItem(
                 value: group['name'] as String,
-                child: Text('pool:${group['name']}'),
+                child: Text('${group['name']}'),
               ),
           ],
           onChanged: (value) => setState(() => _fallback = value ?? ''),
         ),
+        const SizedBox(height: AppSpacing.md),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(t.routingGroupAllowOutside),
+          value: _allowOutside,
+          onChanged: (value) => setState(() => _allowOutside = value),
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(t.routingGroupAllowMetered),
+          subtitle: Text(t.routingGroupMeteredHint),
+          value: _allowMetered,
+          onChanged: (value) => setState(() => _allowMetered = value),
+        ),
+        if (!widget.creatingSubagent) ...[
+          const SizedBox(height: AppSpacing.md),
+          _subagentPicker(t, fallbacks),
+        ],
       ],
     );
   }
@@ -696,16 +837,14 @@ class _GroupEditorState extends State<_GroupEditor> {
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      _creating
-                          ? t.createRoutingGroup
-                          : 'pool:${widget.group!['name']}',
+                      _creating ? t.createRoutingGroup : _name.text,
                       style: displayTitleStyle(palette, size: 20),
                     ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
                     tooltip: t.cancel,
-                    onPressed: () => Navigator.of(context).pop(false),
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
@@ -731,9 +870,6 @@ class _GroupEditorState extends State<_GroupEditor> {
                                 autofocus: true,
                                 decoration: InputDecoration(
                                   labelText: t.routingGroupName,
-                                  prefixText: 'pool:',
-                                  helperText: t.routingGroupNameHint,
-                                  helperMaxLines: 2,
                                 ),
                               ),
                             ),
@@ -742,15 +878,23 @@ class _GroupEditorState extends State<_GroupEditor> {
                             t.routingGroupAccountsHint,
                             [_accountPicker(t)],
                           ),
-                          _section(
-                            t.routingGroupModelsTitle,
-                            t.routingGroupModelsHint,
-                            [_modelList(t)],
-                          ),
-                          _section(
-                            t.routingGroupOptions,
-                            t.routingGroupOptionsHint,
-                            [_options(t)],
+                          _preferredPicker(t),
+                          ExpansionTile(
+                            tilePadding: EdgeInsets.zero,
+                            childrenPadding: const EdgeInsets.only(
+                              bottom: AppSpacing.md,
+                            ),
+                            title: Text(t.routingGroupMore),
+                            expandedCrossAxisAlignment:
+                                CrossAxisAlignment.stretch,
+                            children: [
+                              _section(
+                                t.routingGroupModelsTitle,
+                                t.routingGroupModelsHint,
+                                [_modelList(t)],
+                              ),
+                              _options(t),
+                            ],
                           ),
                         ],
                       ),
@@ -779,12 +923,14 @@ class _GroupEditorState extends State<_GroupEditor> {
                   TextButton(
                     onPressed: _saving
                         ? null
-                        : () => Navigator.of(context).pop(false),
+                        : () => Navigator.of(context).pop(),
                     child: Text(t.cancel),
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   FilledButton(
-                    onPressed: _saving || _loading ? null : _save,
+                    onPressed: _saving || _loading || _loadingGroups
+                        ? null
+                        : _save,
                     child: Text(t.save),
                   ),
                 ],

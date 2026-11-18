@@ -5801,7 +5801,7 @@ class AppL10nDe extends AppL10n {
   String get routingGroupName => 'Name';
 
   @override
-  String get routingGroupAccounts => 'Konten';
+  String get routingGroupAccounts => 'Verbindungen';
 
   @override
   String get routingGroupFallback => 'Ausweichgruppe';
@@ -5817,7 +5817,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get routingGroupsDescription =>
-      'Schicke eine Art von Arbeit, etwa die Helfer eines Agenten, an die Tarife deiner Wahl. Eine App wählt eine Gruppe, indem sie pool:name als Modell anfragt.';
+      'Nutze einen Modellnamen für die ausgewählten Verbindungen.';
 
   @override
   String get routingGroupsEmptyTitle => 'Noch keine Routing-Gruppen';
@@ -5844,7 +5844,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get routingGroupAccountsHint =>
-      'Alle Modelle eines gewählten Kontos gehören zur Gruppe.';
+      'Wähle die Abos und Verbindungen für diese Gruppe.';
 
   @override
   String get routingGroupOtherAccounts => 'Weitere Konten';
@@ -5926,6 +5926,107 @@ class AppL10nDe extends AppL10n {
   String routingGroupDeleteMessage(String name) {
     return 'Schlüssel und Apps, die pool:$name nutzen, werden wieder normal geroutet.';
   }
+
+  @override
+  String get routingGroupPrefer => 'Zuerst verwenden';
+
+  @override
+  String get routingGroupPreferHint =>
+      'Wechselt, wenn diese Verbindung keine Anfrage annehmen kann.';
+
+  @override
+  String get routingGroupAutomatic => 'Automatisch';
+
+  @override
+  String get routingGroupMore => 'Weitere Optionen';
+
+  @override
+  String get routingGroupSubagents => 'Anfragen von Subagenten';
+
+  @override
+  String get routingGroupSameGroup => 'Gleiche Gruppe';
+
+  @override
+  String get routingGroupSubagentHint =>
+      'Für getrenntes Routing ist eine Einrichtung in der App nötig.';
+
+  @override
+  String get routingGroupCreateSubagent => 'Gruppe für Subagenten erstellen';
+
+  @override
+  String get routingGroupAllowOutside =>
+      'Im Notfall andere Verbindungen versuchen';
+
+  @override
+  String get routingGroupAllowMetered => 'Nutzungsabhängige Kosten erlauben';
+
+  @override
+  String get routingGroupMeteredHint =>
+      'Umfasst auch Verbindungen, die nach Verbrauch des Kontingents Kosten berechnen.';
+
+  @override
+  String get routingGroupUseInApp => 'In App nutzen';
+
+  @override
+  String get routingGroupAppModel => 'Gib dies in deiner App als Modell ein.';
+
+  @override
+  String get routingGroupAppSubagent =>
+      'Wenn deine App ein eigenes Modell für Subagenten unterstützt:';
+
+  @override
+  String get routingGroupAppSubagentHeader =>
+      'Für denselben Modellnamen sende X-NeoRouter-Workload: subagent bei Anfragen von Subagenten.';
+
+  @override
+  String get routingGroupPreviewSubagent =>
+      'Anfrage eines Subagenten simulieren';
+
+  @override
+  String get routingGroupPreviewHint =>
+      'Prüft aktuelle Limits mit einer Beispielanfrage. Kein Anbieteraufruf.';
+
+  @override
+  String get routingGroupPreview => 'Route prüfen';
+
+  @override
+  String get routingGroupPreviewUnavailable =>
+      'Momentan kann kein Modell diese Anfrage annehmen.';
+
+  @override
+  String routingGroupPreviewModel(String model) {
+    return 'Würde $model verwenden';
+  }
+
+  @override
+  String routingGroupPrefers(String name) {
+    return 'Bevorzugt $name';
+  }
+
+  @override
+  String routingGroupUsesSubagent(String name) {
+    return 'Subagenten nutzen $name';
+  }
+
+  @override
+  String get routingGroupReasonSame =>
+      'Modell und Verbindung wurden beibehalten.';
+
+  @override
+  String get routingGroupReasonPreferred =>
+      'Die bevorzugte Verbindung wurde genutzt.';
+
+  @override
+  String get routingGroupReasonBusy =>
+      'Die bevorzugte Verbindung war ausgelastet.';
+
+  @override
+  String get routingGroupReasonAllowance =>
+      'Die bevorzugte Verbindung hatte ein Limit erreicht.';
+
+  @override
+  String get routingGroupReasonUnavailable =>
+      'Die bevorzugte Verbindung konnte diese Anfrage nicht annehmen.';
 
   @override
   String get cachedInputTokens => 'Eingabetokens aus dem Cache';

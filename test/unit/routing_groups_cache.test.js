@@ -26,8 +26,8 @@ const request = { messages: [{ role: 'user', content: 'hello' }] };
 const makePlan = (model, extra = {}) => new RoutingPlan({ userId: 'u', key, request, needs: {}, inputTokens: 1000, requestedModel: model, random: () => 0, ...extra });
 
 test('groups isolate members, preserve key policy, fall back and reject cross-space access/cycles', () => {
-  const fallback = groups.save('u', { name: 'fallback', accounts: ['b'] });
-  const primary = groups.save('u', { name: 'primary', accounts: ['a'], fallback: 'fallback' });
+  const fallback = groups.save('u', { name: 'fallback', accounts: ['b'], allowMetered: true });
+  const primary = groups.save('u', { name: 'primary', accounts: ['a'], fallback: 'fallback', allowMetered: true });
   const plan = makePlan('pool:primary');
   assert.equal(plan.next().entry.accountId, 'a');
   assert.equal(plan.next().entry.accountId, 'b');
@@ -61,7 +61,7 @@ test('groups isolate members, preserve key policy, fall back and reject cross-sp
   assert.equal(byKey.next().entry.accountId, 'a');
   assert.equal(makePlan('auto', { routingGroup: 'fallback' }).next().entry.accountId, 'b');
   assert.equal(parseModel('pool:primary').auto, true);
-  const unavailable = groups.save('u', { name: 'unavailable', models: ['absent/*'] });
+  const unavailable = groups.save('u', { name: 'unavailable', models: ['absent/*'], allowMetered: true, allowOutside: true });
   const rescue = makePlan(`pool:${unavailable.name}`);
   assert.equal(rescue.next(), null);
   assert.equal(rescue.enableLastResort(), true);
@@ -116,8 +116,8 @@ test('full paid slots with nothing free in the group fall through to the fallbac
   const limits = require('../../server/services/quota/account_limits');
   db.prepare("INSERT INTO provider_accounts (id, user_id, definition_id, slug, label, billing_mode) VALUES ('flat', 'u', 'openai', 'flat', 'flat', 'paid'), ('spare', 'u', 'openai', 'spare', 'spare', 'paid')").run();
   for (const id of ['flat', 'spare']) db.prepare("INSERT INTO models (account_id, model_id, canonical_id, price_in, price_out, available) VALUES (?, 'm', 'm', 1, 2, 1)").run(id);
-  groups.save('u', { name: 'spill', accounts: ['spare'] });
-  groups.save('u', { name: 'slots', accounts: ['flat'], fallback: 'spill' });
+  groups.save('u', { name: 'spill', accounts: ['spare'], allowMetered: true });
+  groups.save('u', { name: 'slots', accounts: ['flat'], fallback: 'spill', allowMetered: true });
   limits.set('flat', { concurrent: 1 });
   const plan = makePlan('pool:slots');
   const flat = plan.entries.find((entry) => entry.accountId === 'flat');
@@ -127,4 +127,44 @@ test('full paid slots with nothing free in the group fall through to the fallbac
     const choice = plan.next();
     assert.equal(choice?.entry.accountId, 'spare');
   } finally { release(); limits.set('flat', { concurrent: null }); }
+});
+
+
+test('a smart alias spills at the account limit and keeps the new conversation route warm', () => {
+  const load = require('../../server/services/routing/load_tracker');
+  const limits = require('../../server/services/quota/account_limits');
+  groups.save('u', { name: 'work', accounts: ['a', 'b'], preferredAccount: 'a', allowMetered: true });
+  const first = makePlan('pool:work').next().entry;
+  assert.equal(first.accountId, 'a');
+  limits.set('a', { concurrent: 1 });
+  const release = load.lease(first);
+  try {
+    const burst = makePlan('pool:work');
+    for (const entry of burst.entries.filter((entry) => ['a', 'b'].includes(entry.accountId))) {
+      entry.isPlan = true;
+      if (entry.accountId === 'a') {
+        entry.isFlatRate = true;
+        entry.overflowPolicy = 'auto';
+      }
+    }
+    const overflow = burst.next().entry;
+    assert.equal(overflow.accountId, 'b');
+    assert.equal(overflow.routingReason, 'preferred_busy');
+    affinity.remember(key.id, 'overflow-session', overflow);
+  } finally {
+    release();
+    limits.set('a', { concurrent: null });
+  }
+  assert.equal(makePlan('pool:work', { sessionId: 'overflow-session' }).next().entry.accountId, 'b');
+  assert.equal(makePlan('pool:work').next().entry.accountId, 'a');
+
+  const strict = groups.save('u', { name: 'strict', accounts: ['a'] });
+  const plan = makePlan('pool:strict');
+  assert.equal(plan.next(), null, 'new groups exclude metered models by default');
+  assert.equal(plan.enableLastResort(), false);
+  groups.save('u', { ...strict, allowMetered: true }, strict.id);
+  const limited = makePlan('pool:strict');
+  assert.equal(limited.next().entry.accountId, 'a');
+  assert.equal(limited.next(), null);
+  assert.equal(limited.enableLastResort(), false, 'a last resort cannot escape the selected connections');
 });

@@ -102,7 +102,7 @@ function hedgeDelay(entry, stream) {
 }
 
 function trailItem(entry, outcome, extra = {}) {
-  return { group: entry.routingGroup || null, model: entry.id, ref: entry.ref, outcome, ...(entry.tryingLuck ? { luck: true } : {}), ...(entry.lastResort ? { lastResort: true } : {}), ...extra };
+  return { group: entry.routingGroup || null, model: entry.id, ref: entry.ref, outcome, ...(entry.routingReason ? { routingReason: entry.routingReason } : {}), ...(entry.tryingLuck ? { luck: true } : {}), ...(entry.lastResort ? { lastResort: true } : {}), ...extra };
 }
 
 // Wraps the remaining upstream iterator so idle gaps abort the attempt.
@@ -285,6 +285,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
   const plan = new RoutingPlan({
     userId: key.user_id, key, request: canonical, requestedModel, needs, inputTokens, freeOnly: freeOnly || budgetExhausted,
     // Apps that know what they ask for can say so (one of the task kinds).
+    workload: peer ? null : req.get?.('x-neorouter-workload') || null,
     taskHint: peer ? null : req.get?.('x-neorouter-task') || null,
     keepPrivate,
     shareReserve,
@@ -385,7 +386,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
         prompt_tokens: inputTokens,
         completion_tokens: Math.ceil(textOf(result.response.choices[0].message.content).length / 4),
       };
-      cacheAffinity.remember(key.id, sessionId, entry);
+      cacheAffinity.remember(plan.affinityScope, sessionId, entry);
       const cost = budget.costOf(entry, tokens);
       reservation.settle(cost, requestId);
       billing.observeCost(entry, reportedCost(result.response.usage));
@@ -446,7 +447,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
     } else if (invalidToolCalls(accumulator.toolCalls)) {
       learning.onFailure(entry, new ProviderError(KINDS.INVALID_OUTPUT, 'Streamed tool-call arguments were not valid JSON.'));
     } else {
-      cacheAffinity.remember(key.id, sessionId, entry);
+      cacheAffinity.remember(plan.affinityScope, sessionId, entry);
       learning.onSuccess(entry, {
         latencyMs: durationMs, ttftMs: result.ttftMs, outputTokens: tokens.completion_tokens, generationMs: durationMs - result.ttftMs,
       }, result.headers);

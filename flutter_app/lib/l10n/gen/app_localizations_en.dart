@@ -5762,7 +5762,7 @@ class AppL10nEn extends AppL10n {
   String get routingGroupName => 'Name';
 
   @override
-  String get routingGroupAccounts => 'Accounts';
+  String get routingGroupAccounts => 'Connections';
 
   @override
   String get routingGroupFallback => 'Fallback group';
@@ -5778,7 +5778,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get routingGroupsDescription =>
-      'Send one kind of work, such as an agent\'s helpers, to the plans you choose. An app picks a group by asking for pool:name as the model.';
+      'Use one model name for the connections you choose.';
 
   @override
   String get routingGroupsEmptyTitle => 'No routing groups yet';
@@ -5805,7 +5805,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get routingGroupAccountsHint =>
-      'Every model of a chosen account belongs to the group.';
+      'Choose the subscriptions and connections this group can use.';
 
   @override
   String get routingGroupOtherAccounts => 'Other accounts';
@@ -5885,6 +5885,104 @@ class AppL10nEn extends AppL10n {
   String routingGroupDeleteMessage(String name) {
     return 'Keys and apps that use pool:$name will route normally again.';
   }
+
+  @override
+  String get routingGroupPrefer => 'Use first';
+
+  @override
+  String get routingGroupPreferHint =>
+      'Switches when this connection can’t take a request.';
+
+  @override
+  String get routingGroupAutomatic => 'Automatic';
+
+  @override
+  String get routingGroupMore => 'More options';
+
+  @override
+  String get routingGroupSubagents => 'Subagent requests';
+
+  @override
+  String get routingGroupSameGroup => 'Same group';
+
+  @override
+  String get routingGroupSubagentHint =>
+      'App setup required for separate routing.';
+
+  @override
+  String get routingGroupCreateSubagent => 'Create subagent group';
+
+  @override
+  String get routingGroupAllowOutside =>
+      'Try other connections as a last resort';
+
+  @override
+  String get routingGroupAllowMetered => 'Allow per-use charges';
+
+  @override
+  String get routingGroupMeteredHint =>
+      'Includes connections set up to charge after an allowance runs out.';
+
+  @override
+  String get routingGroupUseInApp => 'Use in app';
+
+  @override
+  String get routingGroupAppModel => 'Enter this as the model in your app.';
+
+  @override
+  String get routingGroupAppSubagent =>
+      'If your app has a separate subagent model, use this:';
+
+  @override
+  String get routingGroupAppSubagentHeader =>
+      'To keep one model name, send X-NeoRouter-Workload: subagent on child requests.';
+
+  @override
+  String get routingGroupPreviewSubagent => 'Preview a subagent request';
+
+  @override
+  String get routingGroupPreviewHint =>
+      'Uses current limits with a sample request. No provider call.';
+
+  @override
+  String get routingGroupPreview => 'Preview route';
+
+  @override
+  String get routingGroupPreviewUnavailable =>
+      'No model can take this request right now.';
+
+  @override
+  String routingGroupPreviewModel(String model) {
+    return 'Would use $model';
+  }
+
+  @override
+  String routingGroupPrefers(String name) {
+    return 'Prefers $name';
+  }
+
+  @override
+  String routingGroupUsesSubagent(String name) {
+    return 'Subagents use $name';
+  }
+
+  @override
+  String get routingGroupReasonSame =>
+      'Kept the conversation on the same model and connection.';
+
+  @override
+  String get routingGroupReasonPreferred => 'Used the preferred connection.';
+
+  @override
+  String get routingGroupReasonBusy => 'The preferred connection was busy.';
+
+  @override
+  String get routingGroupReasonAllowance =>
+      'The preferred connection reached a limit.';
+
+  @override
+  String get routingGroupReasonUnavailable =>
+      'The preferred connection couldn’t take this request.';
 
   @override
   String get cachedInputTokens => 'Cached input tokens';
