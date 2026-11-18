@@ -3,6 +3,7 @@
 const crypto = require('node:crypto');
 const benchmarkConsent = require('../../services/benchmarks/consent');
 const benchmarkPolicy = require('../../services/benchmarks/policy');
+const evaluatorTraffic = require('../../services/benchmarks/live_traffic');
 const { setTimeout: abortableSleep } = require('node:timers/promises');
 const cacheAffinity = require('../../services/routing/cache_affinity');
 const { clientSession, derivedSession } = require('../../providers/session_id');
@@ -352,7 +353,14 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
   let freesUpAt = null;
 
   const finish = (fields) => {
-    if (benchmark) return;
+    if (benchmark) {
+      if (trail.length && !signal.aborted && benchmark.active()) {
+        evaluatorTraffic.record(key.user_id, key.id, {
+          id: requestId, status: fields.status, trail, latencyMs: Date.now() - startedAt, queuedMs: Math.round(queuedMs),
+        });
+      }
+      return;
+    }
     if (shareOutcome && fields.status === 'success') shareOutcome.answered = true;
     try {
       traffic.recordFinished({ key, accountId: fields.account_id, success: fields.status === 'success', tokens: (fields.input_tokens || 0) + (fields.output_tokens || 0) });
@@ -492,9 +500,11 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
     reservation.settle(cost, requestId);
     billing.observeCost(entry, accumulator.reportedCost);
     quota.recordTokens(entry, tokens.prompt_tokens + tokens.completion_tokens - inputTokens);
+    trail.push(trailItem(entry, streamError ? `stream_${streamError.kind}` : 'success', { ms: durationMs }));
     if (benchmark) {
       quota.observeHeaders(entry, result.headers);
       billing.observeHeaders(entry, result.headers);
+      finish({ status: streamError ? 'error' : 'success' });
       if (streamError) {
         result.controller.abort();
         if (!signal.aborted) benchmark.onFailure?.(entry, streamError);
@@ -516,7 +526,6 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
         latencyMs: durationMs, ttftMs: result.ttftMs, outputTokens: tokens.completion_tokens, generationMs: durationMs - result.ttftMs,
       }, result.headers);
     }
-    trail.push(trailItem(entry, streamError ? `stream_${streamError.kind}` : 'success', { ms: durationMs }));
     finish({
       status: streamError && streamError.kind !== KINDS.ABORTED ? 'error' : 'success',
       http_status: 200,

@@ -6,9 +6,11 @@ import 'package:neorouter/l10n/gen/app_localizations.dart';
 import 'package:neorouter/main_controller.dart';
 import 'package:neorouter/main_key_expiry.dart';
 import 'package:neorouter/main_keys.dart';
+import 'package:neorouter/main_live_traffic.dart';
 import 'package:neorouter/main_local_benchmarks.dart';
 import 'package:neorouter/main_theme.dart';
 import 'package:neorouter/src/backend_client.dart';
+import 'package:neorouter/src/models.dart';
 
 class ConsentClient extends BackendClient {
   ConsentClient(this.adminEnabled);
@@ -80,8 +82,75 @@ Widget wrap(Widget child, {bool scroll = true}) => MaterialApp(
         : child,
   ),
 );
+
+class LiveTrafficClient extends BackendClient {
+  bool enabled = false;
+
+  @override
+  Future<Map<String, dynamic>> get(String path) async => {
+    'logs': [],
+    'evaluatorEnabled': enabled,
+    'evaluatorLogs': [
+      if (enabled)
+        {
+          'id': 'evaluation-1',
+          'createdAt': DateTime.now().millisecondsSinceEpoch,
+          'evaluator': true,
+          'status': 'success',
+          'trail': [
+            {'model': 'example/model', 'outcome': 'success'},
+          ],
+        },
+    ],
+  };
+}
+
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
+  testWidgets('live traffic animates evaluator requests only while enabled', (
+    tester,
+  ) async {
+    final client = LiveTrafficClient();
+    final controller = NeoRouterController(client: client);
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      wrap(
+        LiveTrafficHero(
+          controller: controller,
+          accounts: [
+            ProviderAccount({
+              'slug': 'example',
+              'providerKey': 'example',
+              'providerName': 'Example Provider',
+              'enabled': true,
+            }),
+          ],
+          keys: const [],
+          ready: true,
+          title: 'Home',
+          status: '',
+        ),
+        scroll: false,
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Evaluator'), findsNothing);
+
+    client.enabled = true;
+    await tester.pump(const Duration(seconds: 4));
+    for (var i = 0; i < 4; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Evaluator'), findsOneWidget);
+    expect(find.text('1 requests'), findsOneWidget);
+
+    client.enabled = false;
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pump();
+    expect(find.text('Evaluator'), findsNothing);
+    expect(find.text('0 in flight'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   testWidgets(
     'parent-disabled account controls stay hidden and consent explicitly covers replay',
     (tester) async {

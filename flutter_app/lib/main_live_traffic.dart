@@ -49,6 +49,8 @@ const int _historySize = 40;
 // view starts in the middle of what is happening rather than from nothing.
 const Duration _backfill = Duration(seconds: 15);
 
+enum _TrafficSource { evaluator }
+
 class _Attempt {
   const _Attempt(this.provider, this.ok);
   final int provider;
@@ -151,6 +153,14 @@ class _Scene extends ChangeNotifier {
       appGlow[p.app] = 1;
       appFlash[p.app] = t;
     }
+  }
+
+  void removeApp(int app) {
+    packets.removeWhere((packet) {
+      if (packet.app != app) return false;
+      if (packet.phase == 'work') provBusy[packet.provider] = math.max(0, provBusy[packet.provider] - 1);
+      return true;
+    });
   }
 
   void advance(double dt) {
@@ -347,6 +357,8 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   bool get wantKeepAlive => true;
 
   bool _loaded = false;
+  bool _fetching = false;
+  bool _evaluatorEnabled = false;
 
   // Requests and the connections and keys they go between have all arrived.
   bool get _ready => _loaded && widget.ready;
@@ -357,19 +369,21 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   Timer? _poll;
   final Set<String> _seen = <String>{};
   final List<RequestLog> _history = <RequestLog>[];
+  List<RequestLog> _evaluatorHistory = <RequestLog>[];
+  bool get _hasTraffic => _history.isNotEmpty || _evaluatorHistory.isNotEmpty;
   final List<RequestLog> _queue = <RequestLog>[];
   double _sinceSpawn = 0;
   double _lastLive = -1e9;
   bool _warmed = false;
 
-  List<String> _apps = <String>[];
+  List<Object> _apps = <Object>[];
   List<String> _providers = <String>[];
   // Provider keys of the cards ("*": the rest), and which provider each account slug belongs to.
   List<String> _providerSlugs = <String>[];
   // Where the pool sits among the providers, when this person is in a pool.
   int? _poolIndex;
   Map<String, String> _slugToProvider = <String, String>{};
-  final Map<String, int> _appRequests = <String, int>{};
+  final Map<Object, int> _appRequests = <Object, int>{};
   // The model each provider card answered with last, by card key.
   final Map<String, String> _lastModel = <String, String>{};
 
@@ -387,7 +401,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
     super.didUpdateWidget(oldWidget);
     if (oldWidget.accounts != widget.accounts || oldWidget.keys != widget.keys || oldWidget.ready != widget.ready) {
       _arrange();
-      if (_history.isNotEmpty && !_warmed && widget.ready) _warmUp();
+      if (_hasTraffic && !_warmed && widget.ready) _warmUp();
     }
   }
 
@@ -400,22 +414,42 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   }
 
   Future<void> _fetch() async {
+    if (_fetching) return;
+    _fetching = true;
     try {
-      final logs = await widget.controller.api.logs(limit: _historySize);
+      final traffic = await widget.controller.api.liveTraffic(limit: _historySize);
       if (!mounted) return;
-      _loaded = true;
+      final logs = [...traffic.logs, if (traffic.evaluatorEnabled) ...traffic.evaluatorLogs]
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       final fresh = logs.where((log) => !_seen.contains(log.id)).toList();
-      _seen.addAll(fresh.map((log) => log.id));
-      final first = _history.isEmpty;
-      _history
-        ..insertAll(0, fresh)
-        ..length = math.min(_history.length, _historySize);
-      // The first load is history (only its last seconds play); later arrivals play live.
-      if (!first) _queue.addAll(fresh.reversed.take(30));
-      _arrange();
-      if (first && !_warmed && widget.ready) _warmUp();
+      if (_loaded && fresh.isEmpty && _evaluatorEnabled == traffic.evaluatorEnabled) return;
+      setState(() {
+        _loaded = true;
+        if (_evaluatorEnabled && !traffic.evaluatorEnabled) {
+          _queue.removeWhere((log) => log.evaluator);
+          _appRequests.remove(_TrafficSource.evaluator);
+          _scene.removeApp(_apps.indexOf(_TrafficSource.evaluator));
+        }
+        final first = !_hasTraffic;
+        _evaluatorEnabled = traffic.evaluatorEnabled;
+        _evaluatorHistory = _evaluatorEnabled ? traffic.evaluatorLogs : <RequestLog>[];
+        _seen.addAll(fresh.map((log) => log.id));
+        _history
+          ..insertAll(0, fresh.where((log) => !log.evaluator))
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt))
+          ..length = math.min(_history.length, _historySize);
+        // Give evaluator events room to play even when API keys are busy.
+        if (!first || _warmed) {
+          _queue.insertAll(0, fresh.reversed.where((log) => log.evaluator));
+          _queue.addAll(fresh.reversed.where((log) => !log.evaluator).take(30));
+        }
+        _arrange();
+      });
+      if (!_warmed && widget.ready) _warmUp();
     } catch (_) {
       // The next poll tries again.
+    } finally {
+      _fetching = false;
     }
   }
 
@@ -423,7 +457,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   void _arrange() {
     final keyCounts = <String, int>{};
     final slugCounts = <String, int>{};
-    for (final log in _history) {
+    for (final log in [..._history, ..._evaluatorHistory]) {
       final key = log.keyName ?? '';
       if (key.isNotEmpty) keyCounts[key] = (keyCounts[key] ?? 0) + 1;
       for (final slug in _slugsOf(log)) {
@@ -435,7 +469,11 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
     final keyNames = <String>{...(keyCounts.keys.toList()..sort((a, b) => keyCounts[b]!.compareTo(keyCounts[a]!))), ...widget.keys.map((key) => key.name)}.toList();
     final wide = MediaQuery.maybeSizeOf(context)?.width ?? 1200;
     final maxApps = wide < 640 ? 4 : 6;
-    _apps = _keepOrder(oldApps, keyNames.length > maxApps ? <String>[...keyNames.take(maxApps - 1), _otherLabel] : keyNames);
+    final keySlots = maxApps - (_evaluatorEnabled ? 1 : 0);
+    _apps = _keepOrder(oldApps, <Object>[
+      if (keyNames.length > keySlots) ...[...keyNames.take(keySlots - 1), _otherLabel] else ...keyNames,
+      if (_evaluatorEnabled) _TrafficSource.evaluator,
+    ]);
     // One card per provider, however many of its accounts are connected.
     _slugToProvider = <String, String>{for (final account in widget.accounts) account.slug: account.providerKey};
     final providerCounts = <String, int>{};
@@ -478,10 +516,10 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
 
   // The wanted cards, but those already shown keep their place, so a card
   // does not jump (and lose its label) just because traffic shifted a little.
-  static List<String> _keepOrder(List<String> current, List<String> wanted) {
+  static List<T> _keepOrder<T>(List<T> current, List<T> wanted) {
     final wantedSet = wanted.toSet();
     final kept = current.where(wantedSet.contains).toList();
-    return <String>[...kept, ...wanted.where((name) => !kept.contains(name))];
+    return <T>[...kept, ...wanted.where((name) => !kept.contains(name))];
   }
 
   String get _otherLabel => AppL10n.of(context).liveOther;
@@ -504,7 +542,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   }
 
   _Packet? _packetFor(RequestLog log, {required bool live}) {
-    var app = _apps.indexOf(log.keyName ?? '');
+    var app = _apps.indexOf(log.evaluator ? _TrafficSource.evaluator : log.keyName ?? '');
     if (app < 0) app = _apps.indexOf(_otherLabel);
     if (app < 0) app = 0;
     final attempts = <_Attempt>[];
@@ -543,7 +581,8 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
     _warmed = true;
     final now = DateTime.now();
     final start = now.subtract(_backfill);
-    final recent = _history.where((log) => log.createdAt.isAfter(start)).toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    final recent = [..._history, ..._evaluatorHistory].where((log) => log.createdAt.isAfter(start)).toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     if (recent.isEmpty) return;
     const frame = 16.0;
     var clock = 0.0;
@@ -603,7 +642,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _Header(title: widget.title, status: widget.status, note: widget.note, onStatusTap: widget.onStatusTap, action: widget.action, scene: _scene, liveSince: () => _lastLive, hasTraffic: () => _history.isNotEmpty, loaded: () => _ready, compact: compact),
+              _Header(title: widget.title, status: widget.status, note: widget.note, onStatusTap: widget.onStatusTap, action: widget.action, scene: _scene, liveSince: () => _lastLive, hasTraffic: () => _hasTraffic, loaded: () => _ready, compact: compact),
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, stage) {
@@ -615,7 +654,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
                       for (var j = 0; j < _providerSlugs.length; j++)
                         if (_lastModel[_providerSlugs[j]] != null) j: _lastModel[_providerSlugs[j]]!,
                     };
-                    return _Stage(scene: _scene, layout: layout, apps: _apps, providers: _providers, appRequests: _appRequests, lastModel: lastModels, empty: _history.isEmpty, loaded: _ready, poolIndex: _poolIndex);
+                    return _Stage(scene: _scene, layout: layout, apps: _apps, providers: _providers, appRequests: _appRequests, lastModel: lastModels, empty: !_hasTraffic, loaded: _ready, poolIndex: _poolIndex);
                   },
                 ),
               ),
@@ -802,9 +841,9 @@ class _Stage extends StatelessWidget {
 
   final _Scene scene;
   final _Layout layout;
-  final List<String> apps;
+  final List<Object> apps;
   final List<String> providers;
-  final Map<String, int> appRequests;
+  final Map<Object, int> appRequests;
   final Map<int, String> lastModel;
   final bool empty;
   final bool loaded;
@@ -849,7 +888,7 @@ class _Stage extends StatelessWidget {
                   context,
                   palette,
                   center: layout.appPos[i],
-                  title: appNames[i],
+                  title: appNames[i] == _TrafficSource.evaluator ? t.liveEvaluator : appNames[i] as String,
                   subtitle: apps.isEmpty ? '' : t.liveRequests('${appRequests[appNames[i]] ?? 0}'),
                   glow: i < s.appFlash.length ? (1 - (s.t - s.appFlash[i]) / 700).clamp(0.0, 1.0) : 0,
                   dashed: apps.isEmpty,

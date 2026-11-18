@@ -8941,6 +8941,12 @@ abstract class AppL10n {
   /// **'Others'**
   String get liveOther;
 
+  /// No description provided for @liveEvaluator.
+  ///
+  /// In en, this message translates to:
+  /// **'Evaluator'**
+  String get liveEvaluator;
+
   /// No description provided for @liveYourApp.
   ///
   /// In en, this message translates to:

@@ -184,6 +184,14 @@ class RouterApi {
     'logs',
     RequestLog.new,
   );
+  Future<({List<RequestLog> logs, List<RequestLog> evaluatorLogs, bool evaluatorEnabled})> liveTraffic({required int limit}) async {
+    final data = await client.get('$_base/usage/logs?limit=$limit&live=1');
+    return (
+      logs: _list(data, 'logs', RequestLog.new),
+      evaluatorLogs: _list(data, 'evaluatorLogs', RequestLog.new),
+      evaluatorEnabled: data['evaluatorEnabled'] == true,
+    );
+  }
   Future<List<Map<String, dynamic>>> quotas() async =>
       ((await client.get('$_base/usage/quotas'))['accounts'] as List).map((item) => Map<String, dynamic>.from(item as Map)).toList();
   Future<Map<String, dynamic>> playground(Map<String, Object?> body) => client.post('$_base/playground/chat', _clean(body));

@@ -1531,6 +1531,7 @@ S = {
   'liveLoading': ('Loading…', 'Lädt …'),
   'liveLoadingTraffic': ('loading your traffic…', 'lade deine Anfragen …'),
   'liveOther': ('Others', 'Andere'),
+  'liveEvaluator': ('Evaluator', 'Bewerter'),
   'liveYourApp': ('Your app', 'Deine App'),
   'liveAddProvider': ('Add a connection', 'Verbindung hinzufügen'),
   'liveListening': ('listening', 'wartet'),

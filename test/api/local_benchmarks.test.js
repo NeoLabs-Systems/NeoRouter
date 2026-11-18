@@ -96,9 +96,11 @@ test('all three gates are required and personal collection remains isolated', as
   assert.equal((await api(owner, 'patch', '/admin/settings').send({ localBenchmarksEnabled: true })).status, 200);
   assert.equal((await api(owner, 'patch', `/keys/${key.key.id}`).send({ benchmarkCollection: true })).status, 409);
   assert.equal((await api(owner, 'put', '/benchmarks/settings').send({ enabled: true })).status, 200);
+  assert.equal((await api(owner, 'get', '/usage/logs?live=1')).body.evaluatorEnabled, false);
   assert.equal((await chat(key.secret, 'Give one example of a mammal.')).status, 200);
   assert.equal(capture.count(owner.id), 0);
   assert.equal((await api(owner, 'patch', `/keys/${key.key.id}`).send({ benchmarkCollection: true, poolAccess: 'pool' })).status, 200);
+  assert.equal((await api(owner, 'get', '/usage/logs?live=1')).body.evaluatorEnabled, true);
 
   const address = 'private-benchmark@example.test';
   for (const stream of [false, true]) {
@@ -150,12 +152,23 @@ test('the worker shares the streaming router and quota, while metrics stay separ
   const start = upstream.calls.length;
   const requestCount = analytics();
   const recordQuota = test.mock.method(quota, 'recordRequest');
+  const priorTraffic = (await api(owner, 'get', '/usage/logs?live=1')).body.evaluatorLogs;
   worker.tick();
   await waitFor(() => totals() === 2);
   assert.equal(capture.count(owner.id), 0);
   assert.equal(analytics(), requestCount);
   assert.deepEqual(learned(), before);
   assert.equal(recordQuota.mock.callCount(), 4);
+  const live = (await api(owner, 'get', '/usage/logs?live=1')).body;
+  assert.equal(live.evaluatorEnabled, true);
+  const newTraffic = live.evaluatorLogs.filter((log) => !priorTraffic.some(({ id }) => id === log.id));
+  assert.equal(newTraffic.length, 4, 'replays, calibration and verdict appear in live traffic');
+  assert.ok(newTraffic.every((log) => log.evaluator && log.status === 'success'));
+  assert.ok(newTraffic.every((log) => log.trail.every((step) =>
+    step.model.startsWith('mock/') && Object.keys(step).length === 2)));
+  assert.ok(!JSON.stringify(live.evaluatorLogs).includes(task));
+  assert.equal((await api(owner, 'get', '/usage/logs')).body.evaluatorLogs, undefined);
+  assert.deepEqual((await api(other, 'get', '/usage/logs?live=1')).body.evaluatorLogs, []);
   assert.equal(worker.health().counts.validated, 2);
   assert.equal(worker.health().aggregates, 0);
   assert.ok(upstream.calls.slice(start).every((call) => call.stream));
@@ -218,6 +231,9 @@ test('a failed replay does not discard a completed answer and revocation drops p
     message: { role: 'assistant', content: 'Example response' },
   });
   consent.saveKey(owner.id, key.key.id, false);
+  const live = (await api(owner, 'get', '/usage/logs?live=1')).body;
+  assert.equal(live.evaluatorEnabled, false);
+  assert.deepEqual(live.evaluatorLogs, []);
   consent.saveKey(owner.id, key.key.id, true);
   await pause(20);
   assert.equal(capture.count(owner.id), 0);
@@ -320,12 +336,13 @@ test('candidate replays inherit the opted-in key profile and the judge uses Smar
   const request = { messages: [{ role: 'user', content: 'Explain a triangle.' }] };
   const profiles = require('../../server/services/routing/profiles');
   const resolve = t.mock.method(profiles, 'resolve');
-  const [entry] = transport.candidates(sample, request, 'auto');
+  const freeFixture = (entry) => entry.modelId !== 'cost-unsafe';
+  const [entry] = transport.candidates(sample, request, 'auto', freeFixture);
   assert.equal(resolve.mock.calls.at(-1).arguments[1], 'fast');
   const signal = new AbortController().signal;
   await transport.call(sample, request, { signal, model: entry.id, ref: entry.ref });
   assert.equal(resolve.mock.calls.at(-1).arguments[1], 'fast');
-  await transport.call(sample, request, { signal });
+  await transport.call(sample, request, { signal, filter: freeFixture });
   assert.equal(resolve.mock.calls.at(-1).arguments[1], 'smart');
 });
 

@@ -5117,6 +5117,9 @@ class AppL10nEn extends AppL10n {
   String get liveOther => 'Others';
 
   @override
+  String get liveEvaluator => 'Evaluator';
+
+  @override
   String get liveYourApp => 'Your app';
 
   @override

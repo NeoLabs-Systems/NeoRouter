@@ -2,6 +2,7 @@
 
 const express = require('express');
 const usage = require('../services/usage/usage_service');
+const evaluatorTraffic = require('../services/benchmarks/live_traffic');
 const capabilities = require('../core/capability_registry');
 const concurrency = require('../services/routing/concurrency');
 const catalog = require('../services/catalog/catalog_service');
@@ -27,15 +28,24 @@ router.get('/health', (req, res) => res.json(require('../services/usage/connecti
 // What routing learned from this space's traffic.
 router.get('/learning', (req, res) => res.json(require('../services/usage/learning_stats').learning(req.space.ownerId)));
 
-router.get('/logs', (req, res) => res.json({
-  logs: usage.logs(req.space.ownerId, {
-    limit: Number(req.query.limit) || 100,
+router.get('/logs', (req, res) => {
+  const ownerId = req.space.ownerId;
+  const live = req.query.live === '1';
+  const requestedLimit = Number(req.query.limit) || 100;
+  const limit = live ? Math.min(100, Math.max(1, Math.trunc(requestedLimit))) : requestedLimit;
+  const logs = usage.logs(ownerId, {
+    limit,
     before: req.query.before ? Number(req.query.before) : null,
     keyId: req.query.keyId || null,
     keyIds: keyIdsOf(req),
     status: req.query.status || null,
-  }),
-}));
+  });
+  if (!live) return res.json({ logs });
+  res.set('Cache-Control', 'no-store').json({
+    logs,
+    ...(req.space.isOwner ? evaluatorTraffic.recent(ownerId, limit) : {}),
+  });
+});
 
 // What the free models could take around the clock (home screen).
 router.get('/capacity', (req, res) => res.json(require('../services/quota/capacity').freeCapacity(req.space.ownerId)));
