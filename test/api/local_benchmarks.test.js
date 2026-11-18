@@ -93,10 +93,9 @@ test('all three gates are required and personal collection remains isolated', as
   assert.equal((await api(owner, 'patch', '/admin/settings').send({ localBenchmarksEnabled: true })).status, 200);
   assert.equal((await api(owner, 'patch', `/keys/${key.key.id}`).send({ benchmarkCollection: true })).status, 409);
   assert.equal((await api(owner, 'put', '/benchmarks/settings').send({ enabled: true })).status, 200);
-  assert.equal((await api(owner, 'post', '/keys').send({ name: 'pool', poolAccess: 'pool', benchmarkCollection: true })).status, 409);
   assert.equal((await chat(key.secret, 'Give one example of a mammal.')).status, 200);
   assert.equal(capture.count(owner.id), 0);
-  assert.equal((await api(owner, 'patch', `/keys/${key.key.id}`).send({ benchmarkCollection: true })).status, 200);
+  assert.equal((await api(owner, 'patch', `/keys/${key.key.id}`).send({ benchmarkCollection: true, poolAccess: 'pool' })).status, 200);
 
   const address = 'private-benchmark@example.test';
   for (const stream of [false, true]) {

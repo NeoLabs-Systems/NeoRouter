@@ -6292,7 +6292,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get lbKeyHint =>
-      'Nur dieser Key. Geeignete abgeschlossene Chats werden vor der Sammlung bereinigt.';
+      'Geeignete Chats mit diesem Key werden vor der Sammlung bereinigt. Anfragen an Pool-Partner werden übersprungen.';
 
   @override
   String get lbKeyAdminRequired =>
@@ -6305,10 +6305,6 @@ class AppL10nDe extends AppL10n {
   @override
   String get lbKeyPersonalRequired =>
       'Zum Sammeln von Benchmark-Stichproben ist ein aktiver persönlicher API-Key erforderlich.';
-
-  @override
-  String get lbKeyPoolRequired =>
-      'Schalte unten „Pool mitbenutzen“ aus, um Stichproben mit diesem Key zu sammeln.';
 
   @override
   String get lbKeySettingsUnavailable =>

@@ -327,8 +327,9 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
   const clientAbort = new AbortController();
   res?.on('close', () => { if (!res.writableFinished) clientAbort.abort(new ProviderError(KINDS.ABORTED, 'The client disconnected.')); });
   const signal = benchmark ? AbortSignal.any([clientAbort.signal, benchmark.signal]) : clientAbort.signal;
+  let contactedPool = false;
   const capture = (entry, message, finishReason) => {
-    if (!captureTicket || signal.aborted) return;
+    if (!captureTicket || contactedPool || signal.aborted) return;
     try {
       require('../../services/benchmarks/capture').schedule({ userId: key.user_id, keyId: key.id, ticket: captureTicket, entry,
         canonical, message, finishReason, task: plan.task?.primary, findings: processing.findings, inputTokens, signal });
@@ -545,6 +546,8 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
     quota.recordRequest(entry, inputTokens);
     if (!benchmark) plans.onSent(entry);
     const timeoutMs = Math.min(adapter.timeoutMs, config.routing.totalBudgetMs - (Date.now() - startedAt));
+    // A failed or abandoned partner attempt can still have shared the request.
+    if (captureTicket && isPeerEntry(entry)) contactedPool = true;
     attempt.promise = runAttempt({ entry, adapter, canonical: sent, stream, signal: AbortSignal.any([signal, controller.signal]), timeoutMs, sessionId, benchmark })
       .then((result) => ({ attempt, result }), (error) => ({ attempt, error }));
     running.add(attempt);

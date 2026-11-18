@@ -6246,7 +6246,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get lbKeyHint =>
-      'Only this key. Eligible completed chats are sanitized before collection.';
+      'Eligible chats on this key are sanitized before collection. Requests sent to pool partners are skipped.';
 
   @override
   String get lbKeyAdminRequired =>
@@ -6259,10 +6259,6 @@ class AppL10nEn extends AppL10n {
   @override
   String get lbKeyPersonalRequired =>
       'Collecting benchmark samples requires an active personal API key.';
-
-  @override
-  String get lbKeyPoolRequired =>
-      'Turn off Use the pool below to collect samples with this key.';
 
   @override
   String get lbKeySettingsUnavailable =>

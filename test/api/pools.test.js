@@ -151,6 +151,65 @@ test('a pool key uses a partner’s free model; an own key never does', async ()
   assert.equal((await listed('own')).some((item) => item.id === model), false, 'an own key does not list partner models');
 });
 
+test('pool access and benchmark consent coexist, but any dispatch to a partner excludes the sample', async (t) => {
+  const { setTimeout: wait } = require('node:timers/promises');
+  const accounts = require('../../server/services/providers/account_service');
+  const { KINDS, ProviderError } = require('../../server/providers/provider_error');
+  const { PEER_DEFINITION } = require('../../server/services/pools/links');
+  const queued = async () => (await api('alex', 'get', '/benchmarks/settings')).body.counts.pending;
+
+  assert.equal((await api('alex', 'patch', '/admin/settings', { localBenchmarksEnabled: true })).status, 200);
+  assert.equal((await api('alex', 'put', '/benchmarks/settings', { enabled: true })).status, 200);
+  await addKey('alex', 'benchmark-pool', { poolAccess: 'pool', benchmarkCollection: true });
+  const key = (await api('alex', 'get', '/keys')).body.keys.find(({ name }) => name === 'benchmark-pool');
+  assert.equal(key.poolAccess, 'pool');
+  assert.equal(key.benchmarkCollection, true);
+
+  const own = await chat('alex', 'benchmark-pool', 'mock/ok-alex', 'Explain how a triangle is defined.', { stream: true });
+  assert.equal(own.status, 200);
+  for (let i = 0; i < 20 && !await queued(); i++) await wait(10);
+  assert.equal(await queued(), 1, 'an own-provider response is collected');
+
+  const model = await partnerModel('alex', 'bea', 'ok-bea');
+  const pooled = await chat('alex', 'benchmark-pool', model, 'Explain how a circle is defined.', { stream: true });
+  assert.equal(pooled.status, 200);
+  await wait(30);
+  assert.equal(await queued(), 1, 'a partner response is excluded');
+
+  const localCopy = await createMockProvider({ models: ['ok-bea'] });
+  const connection = await api('alex', 'post', '/providers/accounts', {
+    definitionId: 'custom_openai', slug: 'local-copy', baseUrl: localCopy.url, secret: 'good-key', billingMode: 'free_tier',
+  });
+  assert.equal(connection.status, 201);
+  try {
+    const createAdapter = accounts.adapterFor;
+    const override = t.mock.method(accounts, 'adapterFor', (runtime) => {
+      const adapter = createAdapter(runtime);
+      if (runtime.definitionId === PEER_DEFINITION) {
+        const upstream = adapter.chat.bind(adapter);
+        adapter.chat = async (...args) => {
+          await upstream(...args);
+          throw new ProviderError(KINDS.SERVER, 'Partner response lost');
+        };
+      }
+      return adapter;
+    });
+    const calls = mocks.bea.calls.length;
+    const fallback = await chat('alex', 'benchmark-pool', model, 'Explain how a rectangle is defined.');
+    override.mock.restore();
+    assert.equal(fallback.status, 200, JSON.stringify(fallback.body));
+    assert.equal(fallback.headers['x-neorouter-model'], 'local-copy/ok-bea');
+    assert.equal(mocks.bea.calls.length, calls + 1, 'the request went to the partner before fallback');
+    await wait(30);
+    assert.equal(await queued(), 1, 'a local fallback does not make the pooled request eligible');
+  } finally {
+    await api('alex', 'delete', `/providers/accounts/${connection.body.account.id}`);
+    await localCopy.close();
+    await api('alex', 'put', '/benchmarks/settings', { enabled: false });
+    await api('alex', 'patch', '/admin/settings', { localBenchmarksEnabled: false });
+  }
+});
+
 test('the partner sees counts only: no per-request log, no route headers, no content', async () => {
   const model = await partnerModel('alex', 'bea', 'ok-bea');
   const response = await chat('alex', 'pool', model);

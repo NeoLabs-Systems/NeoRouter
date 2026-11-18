@@ -174,55 +174,48 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
-  testWidgets(
-    'the key editor explains consent and allows clearing pool access',
-    (tester) async {
-      final client = BenchmarkKeyClient();
-      final controller = NeoRouterController(client: client);
-      await tester.pumpWidget(
-        wrap(KeysScreen(controller: controller), scroll: false),
-      );
-      await tester.pumpAndSettle();
+  testWidgets('the key editor explains consent and keeps pool access enabled', (
+    tester,
+  ) async {
+    final client = BenchmarkKeyClient();
+    final controller = NeoRouterController(client: client);
+    await tester.pumpWidget(
+      wrap(KeysScreen(controller: controller), scroll: false),
+    );
+    await tester.pumpAndSettle();
 
-      Future<void> edit() async {
-        await tester.tap(find.byTooltip('More actions'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Edit'));
-        await tester.pumpAndSettle();
-      }
+    Future<void> edit() async {
+      await tester.tap(find.byTooltip('More actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
+    }
 
-      final switchLabel = find.text(
-        'Collect completed chats for local evaluation',
-      );
-      await edit();
-      expect(find.textContaining('Settings → Account'), findsOneWidget);
-      expect(switchLabel, findsNothing);
-      await tester.tap(find.text('Cancel'));
-      await tester.pumpAndSettle();
+    final switchLabel = find.text(
+      'Collect completed chats for local evaluation',
+    );
+    await edit();
+    expect(find.textContaining('Settings → Account'), findsOneWidget);
+    expect(switchLabel, findsNothing);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
 
-      client.enabled = true;
-      await edit();
-      expect(find.textContaining('Turn off Use the pool'), findsOneWidget);
-      expect(switchLabel, findsNothing);
-      final poolLabel = find.text('Use the pool');
-      await tester.ensureVisible(poolLabel);
-      await tester.tap(poolLabel);
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(switchLabel);
-      await tester.tap(switchLabel);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Save'));
-      await tester.pumpAndSettle();
-      expect(client.key['poolAccess'], 'own');
-      expect(client.key['benchmarkCollection'], true);
+    client.enabled = true;
+    await edit();
+    await tester.ensureVisible(switchLabel);
+    await tester.tap(switchLabel);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(client.key['poolAccess'], 'pool');
+    expect(client.key['benchmarkCollection'], true);
 
-      await edit();
-      expect(switchLabel, findsOneWidget);
-      await tester.tap(switchLabel);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Save'));
-      await tester.pumpAndSettle();
-      expect(client.key['benchmarkCollection'], false);
-    },
-  );
+    await edit();
+    expect(switchLabel, findsOneWidget);
+    await tester.tap(switchLabel);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(client.key['benchmarkCollection'], false);
+  });
 }

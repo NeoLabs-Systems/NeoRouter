@@ -63,7 +63,7 @@ function publicKey(row) {
     allowedModels: JSON.parse(row.allowed_models_json || '[]'),
     // 'pool': may also use pool partners' free models; 'own': own connections only.
     benchmarkEligible: Boolean(benchmarkConsent.personalKey(row)),
-    benchmarkCollection: Boolean(row.benchmark_collection) && Boolean(benchmarkConsent.eligibleKey(row)),
+    benchmarkCollection: Boolean(row.benchmark_collection) && Boolean(benchmarkConsent.personalKey(row)),
     poolAccess: row.pool_access === 'pool' ? 'pool' : 'own',
     routingGroup: row.routing_group || null,
     profile: row.profile,
@@ -165,7 +165,7 @@ function update(userId, id, input) {
     if (input.routingGroup !== undefined) getDatabase().prepare('UPDATE router_keys SET routing_group = ? WHERE id = ?').run(input.routingGroup, id);
     const updated = getRow(userId, id);
     if (input.benchmarkCollection !== undefined) benchmarkConsent.saveKey(userId, id, input.benchmarkCollection);
-    else if (updated.benchmark_collection && !benchmarkConsent.eligibleKey(updated)) benchmarkConsent.saveKey(userId, id, false);
+    else if (updated.benchmark_collection && !benchmarkConsent.personalKey(updated)) benchmarkConsent.saveKey(userId, id, false);
     if (input.expiresAt !== undefined && input.expiresAt !== row.expires_at) {
       db.prepare("UPDATE router_keys SET benchmark_revision = ? WHERE id = ?").run(crypto.randomUUID(), id);
       benchmarkConsent.revoke(userId, id);

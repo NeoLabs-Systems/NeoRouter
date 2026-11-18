@@ -10870,7 +10870,7 @@ abstract class AppL10n {
   /// No description provided for @lbKeyHint.
   ///
   /// In en, this message translates to:
-  /// **'Only this key. Eligible completed chats are sanitized before collection.'**
+  /// **'Eligible chats on this key are sanitized before collection. Requests sent to pool partners are skipped.'**
   String get lbKeyHint;
 
   /// No description provided for @lbKeyAdminRequired.
@@ -10890,12 +10890,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Collecting benchmark samples requires an active personal API key.'**
   String get lbKeyPersonalRequired;
-
-  /// No description provided for @lbKeyPoolRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Turn off Use the pool below to collect samples with this key.'**
-  String get lbKeyPoolRequired;
 
   /// No description provided for @lbKeySettingsUnavailable.
   ///
