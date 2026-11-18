@@ -26,7 +26,7 @@ In scope:
 
 ## Design notes
 
-- NeoRouter never stores prompts or completions. Request logs contain metadata only.
+- Request logs contain metadata only. Opt-in local benchmarking holds sanitized prompts and completions in memory for up to 24 hours and may send them to the user’s configured eligible free inference providers. Only scoring totals are kept on disk.
 - Provider accounts are strictly private per user; there is no sharing.
 - Custom base URLs are user-supplied by design. Run NeoRouter on a network
   where that is acceptable, or restrict egress at the network level.

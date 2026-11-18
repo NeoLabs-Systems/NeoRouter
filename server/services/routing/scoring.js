@@ -6,6 +6,7 @@ const concurrency = require('./concurrency');
 const plans = require('./plans');
 const { taskIntelligence, enoughIntelligence } = require('./task/skills');
 const experience = require('./task/experience');
+const benchmarkEvidence = require('../benchmarks/evidence');
 
 // Feature scaling ranges (log scale). Centralized so they can be tuned.
 const TPS_RANGE = [10, 1500];
@@ -136,11 +137,12 @@ function adaptWeights(weights, difficulty, adaptive) {
 // feedback) and reliability lean on the model's track record for this kind
 // of task. `need` is the intelligence the task calls for (skills.js): above
 // it, more intelligence counts only as much as the style weighs it.
-function score(entry, { weights, quotaFactor = 1, random, sample = true, now = Date.now(), task = null, need = null }) {
+function score(entry, { weights, quotaFactor = 1, random, sample = true, now = Date.now(), task = null, need = null, internalEvidence = true }) {
   const snapshot = stats.snapshot(entry.ref, now);
   const learned = experience.adjust(task ? entry.ref : null, task?.primary, reliability(snapshot, { sample, random }), now);
   const totalWeight = weights.intelligence + weights.speed + weights.reliability + weights.cost;
-  const capability = Math.min(1, taskIntelligence(trustedIntelligence(entry), entry.skills, task?.skills) * learned.quality);
+  const prior = Math.min(1, taskIntelligence(trustedIntelligence(entry), entry.skills, task?.skills) * learned.quality);
+  const capability = internalEvidence && task ? benchmarkEvidence.blend(prior, entry.canonicalId, task.primary, now) : prior;
   const features = {
     intelligence: enoughIntelligence(capability, need, weights.intelligence / totalWeight),
     speed: speed(entry, snapshot),

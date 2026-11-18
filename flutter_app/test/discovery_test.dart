@@ -10,6 +10,7 @@ import 'package:neorouter/src/backend_client.dart';
 
 class DiscoveryClient extends BackendClient {
   final requests = <Uri>[];
+  bool showLocalEvidence = false;
   Map<String, dynamic> model(String id, String name, double score) => {
     'id': id,
     'name': name,
@@ -32,6 +33,29 @@ class DiscoveryClient extends BackendClient {
   Future<Map<String, dynamic>> get(String path) async {
     final uri = Uri.parse(path);
     requests.add(uri);
+    if (uri.path.endsWith('/internal-benchmarks')) {
+      return {
+        'enabled': showLocalEvidence,
+        'results': showLocalEvidence
+            ? [
+                {
+                  'model': 'example-local-model',
+                  'task': 'coding',
+                  'samples': 8,
+                  'confidence': 0.85,
+                  'score': 0.75,
+                  'evaluatedAt': 1794954000000,
+                  'evaluators': [
+                    {
+                      'model': 'example-judge',
+                      'version': 'neorouter-blind-pairwise/1',
+                    },
+                  ],
+                },
+              ]
+            : [],
+      };
+    }
     if (uri.path.endsWith('/benchmarks')) {
       return {
         'models': [
@@ -100,10 +124,23 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(
-        client.requests.length,
+        client.requests.where((uri) => uri.path.endsWith('/benchmarks')).length,
         1,
         reason: 'comparison uses already fetched measurements',
       );
     },
   );
+  testWidgets('validated local scores appear alongside external benchmarks', (
+    tester,
+  ) async {
+    final client = DiscoveryClient()..showLocalEvidence = true;
+    final controller = NeoRouterController(client: client);
+    await tester.pumpWidget(wrap(BenchmarksScreen(controller: controller)));
+    await tester.pumpAndSettle();
+    final section = find.text('NeoRouter evaluations');
+    await tester.ensureVisible(section);
+    expect(find.text('example-local-model'), findsOneWidget);
+    expect(find.textContaining('example-judge'), findsOneWidget);
+    expect(find.text('First model'), findsWidgets);
+  });
 }

@@ -5,6 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
+import 'main_local_benchmarks.dart';
 import 'main_connect_apps.dart';
 import 'main_settings_account_data.dart';
 import 'main_settings_smoothing.dart';
@@ -563,6 +564,8 @@ class _AccountPageState extends State<_AccountPage> {
             ),
           ],
         ),
+        const SizedBox(height: 28),
+        LocalBenchmarkSettings(controller: widget.controller),
         const SizedBox(height: 28),
         AccountDataSection(controller: widget.controller),
       ],

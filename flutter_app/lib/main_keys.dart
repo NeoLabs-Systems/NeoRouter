@@ -501,6 +501,9 @@ class _KeyFormState extends State<_KeyForm> {
   late DateTime? _expiresAt = widget.existing?.expiresAt == null ? null : DateTime.tryParse(widget.existing!.expiresAt!);
   bool _expiryChanged = false;
   late bool _advanced = widget.existing?.rpmLimit != null || widget.existing?.concurrentLimit != null;
+  late bool _benchmark = widget.existing?.raw['benchmarkCollection'] == true;
+  bool _benchmarkParent = false;
+  bool _benchmarkChanged = false;
   bool _saving = false;
   String? _error;
 
@@ -514,6 +517,15 @@ class _KeyFormState extends State<_KeyForm> {
           if (mounted) setState(() => _groups = groups);
         })
         .catchError((_) {});
+    if (!widget.controller.inSharedSpace &&
+        widget.existing?.raw['benchmarkEligible'] != false) {
+      widget.controller.api.benchmarkConsent().then((data) {
+        if (mounted) {
+          setState(() => _benchmarkParent =
+              data['adminEnabled'] == true && data['enabled'] == true);
+        }
+      }).catchError((_) {});
+    }
     // The kinds of model this user has connected, for the kind chips.
     widget.controller.api
         .capabilities()
@@ -624,6 +636,8 @@ class _KeyFormState extends State<_KeyForm> {
       if (_expiryChanged) 'expiresAt': _expiresAt?.toUtc().toIso8601String(),
       // Only sent while in a pool, so a key keeps its choice if the pool is left and rejoined.
       if (widget.controller.inPool) 'poolAccess': _pool ? 'pool' : 'own',
+      if (_benchmarkParent && !_pool && _benchmarkChanged)
+        'benchmarkCollection': _benchmark,
     };
     try {
       if (widget.existing != null) {
@@ -807,6 +821,19 @@ class _KeyFormState extends State<_KeyForm> {
                               ],
                             ),
                     ),
+                    if (_benchmarkParent && !_pool)
+                      _FormSection(
+                        title: t.lbTitle,
+                        child: _ToggleRow(
+                          title: t.lbKeyEnable,
+                          hint: t.lbKeyHint,
+                          value: _benchmark,
+                          onChanged: _saving ? null : (value) => setState(() {
+                            _benchmark = value;
+                            _benchmarkChanged = true;
+                          }),
+                        ),
+                      ),
                     if (_error != null) ...<Widget>[const SizedBox(height: AppSpacing.md), InlineError(message: _error!)],
                   ],
                 ),
@@ -901,7 +928,7 @@ class _ToggleRow extends StatelessWidget {
             ),
             ?trailing,
             const SizedBox(width: AppSpacing.sm),
-            Switch(value: value, onChanged: onChanged),
+            Semantics(label: title, child: Switch(value: value, onChanged: onChanged)),
           ],
         ),
       ),

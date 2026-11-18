@@ -5,6 +5,7 @@
 // before any of them finishes and updates the learned stats.
 const byModel = new Map();
 const byAccount = new Map();
+const background = new Map();
 
 function increment(map, key, delta) {
   const next = (map.get(key) || 0) + delta;
@@ -12,17 +13,20 @@ function increment(map, key, delta) {
   else map.set(key, next);
 }
 
-function lease(entry) {
+function lease(entry, { benchmark = false } = {}) {
+  const foregroundCount = (byAccount.get(entry.accountId) || 0) - (background.get(entry.accountId) || 0);
   increment(byModel, entry.ref, 1);
   increment(byAccount, entry.accountId, 1);
-  require('./slot_utilization').transition(entry, byAccount.get(entry.accountId) || 0);
+  if (benchmark) increment(background, entry.accountId, 1);
+  else require('./slot_utilization').transition(entry, foregroundCount + 1);
   let released = false;
   return () => {
     if (released) return;
     released = true;
     increment(byModel, entry.ref, -1);
     increment(byAccount, entry.accountId, -1);
-    require('./slot_utilization').transition(entry, byAccount.get(entry.accountId) || 0);
+    if (benchmark) increment(background, entry.accountId, -1);
+    else require('./slot_utilization').transition(entry, (byAccount.get(entry.accountId) || 0) - (background.get(entry.accountId) || 0));
   };
 }
 

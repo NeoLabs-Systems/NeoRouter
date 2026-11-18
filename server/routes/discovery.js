@@ -5,6 +5,9 @@ const { requirePermission } = require('../middleware/space');
 const { HttpError } = require('../middleware/error_handler');
 const benchmarks = require('../services/discovery/benchmark_service');
 const news = require('../services/discovery/news_service');
+const benchmarkEvidence = require('../services/benchmarks/evidence');
+const benchmarkConsent = require('../services/benchmarks/consent');
+const benchmarkPolicy = require('../services/benchmarks/policy');
 const POLICY = require('../services/discovery/policy');
 const query = z.object({
   query: z.string().max(200).default(''), capability: z.string().max(50).default('chat'),
@@ -21,5 +24,11 @@ function options(req) {
   return { ...result.data, free: result.data.free === '1', compare: result.data.compare.split(',').filter(Boolean) };
 }
 router.get('/benchmarks', (req, res) => res.json(benchmarks.list(options(req))));
+router.get('/internal-benchmarks', (req, res) => {
+  const { limit, offset } = options(req);
+  const rows = benchmarkEvidence.list();
+  res.json({ enabled: benchmarkConsent.globalSettings().enabled, minSamples: benchmarkPolicy.minSamples,
+    total: rows.length, limit, offset, results: rows.slice(offset, offset + limit) });
+});
 router.get('/news', (req, res) => res.json(news.list(options(req))));
 module.exports = router;

@@ -3933,5 +3933,92 @@
   },
   "proxyTest": "Test connection",
   "proxyTestOk": "Proxy connection succeeded.",
-  "proxyTestFailed": "Proxy connection failed; it is cooling down."
+  "proxyTestFailed": "Proxy connection failed; it is cooling down.",
+  "lbTitle": "Local evaluations",
+  "lbAdminHint": "Allow users to opt in to private, autonomous model evaluation. Uses confirmed free capacity.",
+  "lbAdminEnable": "Enable local benchmarking",
+  "lbAccountHint": "Sanitized tasks and candidate answers may be sent to any eligible free inference provider you have configured, including providers that did not serve the original request. Samples stay in memory for up to 24 hours. Validated aggregate evidence can influence routing. Turning collection off clears queued samples. Completed contributions remain until you delete them or they expire.",
+  "lbUserEnable": "Allow private collection and replay to my free providers",
+  "lbKeyEnable": "Collect completed chats for local evaluation",
+  "lbKeyHint": "Only this key. Eligible completed chats are sanitized before collection.",
+  "lbKeyNext": "Choose which API keys may contribute on the Keys page.",
+  "lbPrivateCount": "{count} private samples waiting",
+  "@lbPrivateCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lbContributions": "{count} validated model results",
+  "@lbContributions": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lbDelete": "Delete my evaluation data",
+  "lbDeleteConfirm": "Delete your private samples and contributions? Published aggregates will be recalculated. This cannot be undone.",
+  "lbWorker": "Background evaluator",
+  "lbIdle": "Idle",
+  "lbWorking": "Evaluating",
+  "lbWaitingModels": "Waiting for eligible free models",
+  "lbWaitingQuota": "Waiting for free capacity to reset",
+  "lbRetrying": "Waiting to retry",
+  "lbHealth": "{queued} queued · {published} published model/task results",
+  "@lbHealth": {
+    "placeholders": {
+      "queued": {
+        "type": "String"
+      },
+      "published": {
+        "type": "String"
+      }
+    }
+  },
+  "lbResults": "NeoRouter evaluations",
+  "lbEvidenceHint": "Validated aggregate results from sanitized tasks, using objective checks or blind comparisons by a calibrated evaluator. These results supplement existing routing intelligence.",
+  "lbNoEvidence": "Results appear after at least {count} validated tasks per model and task category.",
+  "@lbNoEvidence": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lbResultMeta": "{task} · {count} tasks · confidence {confidence}%",
+  "@lbResultMeta": {
+    "placeholders": {
+      "task": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      },
+      "confidence": {
+        "type": "String"
+      }
+    }
+  },
+  "lbPreference": "Preference rate {score}%",
+  "@lbPreference": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "lbPreferenceHint": "Ties count as half a preference. Sparse or older evidence has less influence on routing.",
+  "lbRubric": "Evaluator: {version} · updated {date}",
+  "@lbRubric": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }

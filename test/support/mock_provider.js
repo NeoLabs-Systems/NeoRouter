@@ -17,7 +17,7 @@ const WebSocket = require('ws');
 // for models starting with fail-, like chat.
 // Live sockets (/v1/live/sessions, /v1/realtime) refuse fail-* models with
 // HTTP 500, echo every client event and report usage for audio appends.
-function createMockProvider({ models, prices = {}, port = 0, failSearch = false, failWeather = false, maxConcurrent = null } = {}) {
+function createMockProvider({ models, prices = {}, port = 0, failSearch = false, failWeather = false, maxConcurrent = null, answer = null } = {}) {
   const app = express();
   app.use(express.json());
   const calls = [];
@@ -62,7 +62,7 @@ function createMockProvider({ models, prices = {}, port = 0, failSearch = false,
     }
     const searchAnswer = model.startsWith('searcher-') ? `Answer from: ${String((req.body.messages || []).find((message) => message.role === 'tool')?.content || 'nothing').split('\n')[0]}` : null;
     const plain = searchAnswer ?? (model.startsWith('echo-') ? String(lastUser?.content || '') : model.startsWith('empty-') || model.startsWith('think-') ? '' : model.startsWith('room-') ? `hello with ${req.body.max_tokens}` : `hello from ${model}`);
-    const content = guard ?? plain;
+    const content = answer?.(req.body) ?? guard ?? plain;
     if ((model.startsWith('trunc-') || (model.startsWith('room-') && (req.body.max_tokens || 0) < 100)) && !stream) {
       return res.json({ id: 'cmpl-1', object: 'chat.completion', created: 1, model, choices: [{ index: 0, message: { role: 'assistant', content: '', reasoning: 'thinking and thinking' }, finish_reason: 'length' }], usage: { prompt_tokens: 5, completion_tokens: 50, total_tokens: 55 } });
     }

@@ -8,6 +8,8 @@ const metadata = require('../services/catalog/metadata_service');
 const quota = require('../services/quota/quota_service');
 const usage = require('../services/usage/usage_service');
 const updates = require('../services/updates/update_service');
+const benchmarks = require('../services/benchmarks/worker');
+const benchmarkPolicy = require('../services/benchmarks/policy');
 const PLAN_PROBE_MS = 5 * 60_000;
 const { createLogger } = require('../utils/logger');
 
@@ -18,6 +20,7 @@ const UPDATE_CHECK_MS = 6 * 60 * 60_000;
 const LOG_RETENTION_DAYS = 90;
 const POOL_SYNC_MS = 10 * 60_000;
 const timers = [];
+let benchmarkTimer;
 
 function jitter(ms) {
   return Math.round(ms * (0.8 + Math.random() * 0.4));
@@ -62,6 +65,10 @@ function start() {
   const config = getConfig();
   setInterval(() => quota.flush(), QUOTA_FLUSH_MS).unref();
   if (!config.workersEnabled) return;
+  benchmarkTimer = setInterval(() => {
+    try { benchmarks.tick(); } catch { logger.warn('Benchmark scheduler failed'); }
+  }, benchmarkPolicy.tickMs);
+  benchmarkTimer.unref();
   every('validate-keys', config.sync.validateIntervalMs, () => forEachAccount((id) => accounts.validateAccount(id)));
   every('verify-billing', BILLING_CHECK_MS, () => forEachAccount((id) => billing.verifyAccount(id)), { runAtStart: true });
   every('sync-models', config.sync.modelSyncIntervalMs, () => forEachAccount((id) => catalog.syncAccount(id)));
@@ -83,6 +90,8 @@ function start() {
 }
 
 function stop() {
+  clearInterval(benchmarkTimer);
+  benchmarks.stop();
   for (const timer of timers.splice(0)) clearTimeout(timer);
   quota.flush();
 }

@@ -6267,4 +6267,106 @@ class AppL10nDe extends AppL10n {
   @override
   String get proxyTestFailed =>
       'Proxy-Verbindung fehlgeschlagen; pausiert vorübergehend.';
+
+  @override
+  String get lbTitle => 'Lokale Bewertungen';
+
+  @override
+  String get lbAdminHint =>
+      'Erlaubt Nutzern, private, automatische Modellbewertungen zu aktivieren. Verwendet nur bestätigte kostenlose Kapazität.';
+
+  @override
+  String get lbAdminEnable => 'Lokales Benchmarking aktivieren';
+
+  @override
+  String get lbAccountHint =>
+      'Bereinigte Aufgaben und Antwortvarianten können an alle von dir eingerichteten, geeigneten kostenlosen Inferenzanbieter gesendet werden. Dazu gehören auch Anbieter, die die ursprüngliche Anfrage nicht bearbeitet haben. Stichproben bleiben bis zu 24 Stunden im Arbeitsspeicher. Validierte Gesamtergebnisse können das Routing beeinflussen. Beim Ausschalten werden wartende Stichproben gelöscht. Abgeschlossene Beiträge bleiben bis zur Löschung oder bis zum Ablauf erhalten.';
+
+  @override
+  String get lbUserEnable =>
+      'Private Sammlung und Wiederholung bei meinen kostenlosen Anbietern erlauben';
+
+  @override
+  String get lbKeyEnable =>
+      'Abgeschlossene Chats für lokale Bewertungen sammeln';
+
+  @override
+  String get lbKeyHint =>
+      'Nur dieser Key. Geeignete abgeschlossene Chats werden vor der Sammlung bereinigt.';
+
+  @override
+  String get lbKeyNext =>
+      'Wähle auf der Keys-Seite aus, welche API-Keys beitragen dürfen.';
+
+  @override
+  String lbPrivateCount(String count) {
+    return '$count private Beispiele warten';
+  }
+
+  @override
+  String lbContributions(String count) {
+    return '$count validierte Modellergebnisse';
+  }
+
+  @override
+  String get lbDelete => 'Meine Bewertungsdaten löschen';
+
+  @override
+  String get lbDeleteConfirm =>
+      'Deine privaten Beispiele und Beiträge löschen? Veröffentlichte Zusammenfassungen werden neu berechnet. Dies kann nicht rückgängig gemacht werden.';
+
+  @override
+  String get lbWorker => 'Hintergrund-Bewertung';
+
+  @override
+  String get lbIdle => 'Bereit';
+
+  @override
+  String get lbWorking => 'Bewertet';
+
+  @override
+  String get lbWaitingModels => 'Warten auf geeignete kostenlose Modelle';
+
+  @override
+  String get lbWaitingQuota =>
+      'Wartet auf die Erneuerung kostenloser Kapazität';
+
+  @override
+  String get lbRetrying => 'Wartet auf einen neuen Versuch';
+
+  @override
+  String lbHealth(String queued, String published) {
+    return '$queued vorgemerkt · $published veröffentlichte Modell-/Aufgabenergebnisse';
+  }
+
+  @override
+  String get lbResults => 'NeoRouter-Bewertungen';
+
+  @override
+  String get lbEvidenceHint =>
+      'Validierte Gesamtergebnisse aus bereinigten Aufgaben, geprüft durch objektive Kriterien oder Blindvergleiche mit einem kalibrierten Bewerter. Diese Ergebnisse ergänzen das bestehende Routing.';
+
+  @override
+  String lbNoEvidence(String count) {
+    return 'Ergebnisse erscheinen ab $count validierten Aufgaben pro Modell und Aufgabenkategorie.';
+  }
+
+  @override
+  String lbResultMeta(String task, String count, String confidence) {
+    return '$task · $count Aufgaben · Konfidenz $confidence%';
+  }
+
+  @override
+  String lbPreference(String score) {
+    return 'Bevorzugungsrate $score%';
+  }
+
+  @override
+  String get lbPreferenceHint =>
+      'Ein Gleichstand zählt als halbe Präferenz. Wenige oder ältere Ergebnisse beeinflussen das Routing weniger.';
+
+  @override
+  String lbRubric(String version, String date) {
+    return 'Bewerter: $version · aktualisiert $date';
+  }
 }

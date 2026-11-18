@@ -74,7 +74,7 @@ async function apply(userId, canonical, options = {}) {
   if (config.privacy.enabled) {
     let entitiesFor = () => [];
     if (config.privacy.ai.enabled && privacyModel.enabled()) {
-      entitiesFor = await aiDetector.detectEntities(result);
+      entitiesFor = await aiDetector.detectEntities(result, { isolated: options.isolatedPrivacy === true });
       aiUsed = true;
     }
     const redacted = redaction.redactRequest(result, { modes: config.privacy.modes, customTerms: config.privacy.customTerms, allowTerms: config.privacy.allowTerms, entitiesFor });

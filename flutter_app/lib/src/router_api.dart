@@ -55,6 +55,12 @@ class RouterApi {
         'query': query, 'capability': capability, 'source': source, 'free': free ? '1' : '0', 'offset': '$offset', 'compare': compare.join(','),
       }).toString()));
 
+  Future<Map<String, dynamic>> benchmarkConsent() => client.get('$_base/benchmarks/settings');
+  Future<Map<String, dynamic>> setBenchmarkConsent(bool enabled) =>
+      client.putJson('$_base/benchmarks/settings', {'enabled': enabled});
+  Future<void> deleteBenchmarkCollection() => client.delete('$_base/benchmarks/collection');
+  Future<Map<String, dynamic>> internalBenchmarkResults({int offset = 0}) => client.get('$_base/discovery/internal-benchmarks?offset=$offset');
+
   // ---- providers ------------------------------------------------------------
   Future<List<ProviderDefinition>> definitions() async => _list(await client.get('$_base/providers/definitions'), 'definitions', ProviderDefinition.new);
   Future<List<ProviderAccount>> accounts() async => _list(await client.get('$_base/providers/accounts'), 'accounts', ProviderAccount.new);

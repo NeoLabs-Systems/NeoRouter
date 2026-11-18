@@ -6222,4 +6222,104 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get proxyTestFailed => 'Proxy connection failed; it is cooling down.';
+
+  @override
+  String get lbTitle => 'Local evaluations';
+
+  @override
+  String get lbAdminHint =>
+      'Allow users to opt in to private, autonomous model evaluation. Uses confirmed free capacity.';
+
+  @override
+  String get lbAdminEnable => 'Enable local benchmarking';
+
+  @override
+  String get lbAccountHint =>
+      'Sanitized tasks and candidate answers may be sent to any eligible free inference provider you have configured, including providers that did not serve the original request. Samples stay in memory for up to 24 hours. Validated aggregate evidence can influence routing. Turning collection off clears queued samples. Completed contributions remain until you delete them or they expire.';
+
+  @override
+  String get lbUserEnable =>
+      'Allow private collection and replay to my free providers';
+
+  @override
+  String get lbKeyEnable => 'Collect completed chats for local evaluation';
+
+  @override
+  String get lbKeyHint =>
+      'Only this key. Eligible completed chats are sanitized before collection.';
+
+  @override
+  String get lbKeyNext =>
+      'Choose which API keys may contribute on the Keys page.';
+
+  @override
+  String lbPrivateCount(String count) {
+    return '$count private samples waiting';
+  }
+
+  @override
+  String lbContributions(String count) {
+    return '$count validated model results';
+  }
+
+  @override
+  String get lbDelete => 'Delete my evaluation data';
+
+  @override
+  String get lbDeleteConfirm =>
+      'Delete your private samples and contributions? Published aggregates will be recalculated. This cannot be undone.';
+
+  @override
+  String get lbWorker => 'Background evaluator';
+
+  @override
+  String get lbIdle => 'Idle';
+
+  @override
+  String get lbWorking => 'Evaluating';
+
+  @override
+  String get lbWaitingModels => 'Waiting for eligible free models';
+
+  @override
+  String get lbWaitingQuota => 'Waiting for free capacity to reset';
+
+  @override
+  String get lbRetrying => 'Waiting to retry';
+
+  @override
+  String lbHealth(String queued, String published) {
+    return '$queued queued · $published published model/task results';
+  }
+
+  @override
+  String get lbResults => 'NeoRouter evaluations';
+
+  @override
+  String get lbEvidenceHint =>
+      'Validated aggregate results from sanitized tasks, using objective checks or blind comparisons by a calibrated evaluator. These results supplement existing routing intelligence.';
+
+  @override
+  String lbNoEvidence(String count) {
+    return 'Results appear after at least $count validated tasks per model and task category.';
+  }
+
+  @override
+  String lbResultMeta(String task, String count, String confidence) {
+    return '$task · $count tasks · confidence $confidence%';
+  }
+
+  @override
+  String lbPreference(String score) {
+    return 'Preference rate $score%';
+  }
+
+  @override
+  String get lbPreferenceHint =>
+      'Ties count as half a preference. Sparse or older evidence has less influence on routing.';
+
+  @override
+  String lbRubric(String version, String date) {
+    return 'Evaluator: $version · updated $date';
+  }
 }

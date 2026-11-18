@@ -27,30 +27,42 @@ function remember(key, value) {
 }
 
 // Entities per message index; texts already seen come from the cache.
-async function detectEntities(canonical, { timeoutMs = DEADLINE_MS } = {}) {
-  const deadline = Date.now() + timeoutMs;
+async function detectEntities(canonical, { timeoutMs = DEADLINE_MS, isolated = false } = {}) {
   const results = new Map();
   const jobs = [];
   canonical.messages.forEach((message, index) => {
-    if (message.role === 'system' || message.role === 'assistant') return;
+    if (!isolated && (message.role === 'system' || message.role === 'assistant')) return;
     const text = typeof message.content === 'string'
       ? message.content
       : (Array.isArray(message.content) ? message.content.filter((part) => part.type === 'text').map((part) => part.text || '').join('\n') : '');
     if (text.trim().length < MIN_TEXT) return;
-    const key = cacheKey(text);
-    if (cache.has(key)) {
+    const key = isolated ? null : cacheKey(text);
+    if (key && cache.has(key)) {
       results.set(index, cache.get(key));
       return;
     }
     jobs.push(privacyModel.detect(text).then((items) => {
-      if (items) remember(key, items);
+      if (key && items) remember(key, items);
+      if (isolated && !items) throw new Error('Privacy detector unavailable');
       results.set(index, items || []);
     }).catch((error) => {
+      if (isolated) throw new Error('Privacy detection failed');
       logger.warn('AI detection failed', { error: error.message });
       results.set(index, []);
     }));
   });
-  await Promise.race([Promise.all(jobs), new Promise((resolve) => setTimeout(resolve, Math.max(0, deadline - Date.now()) + 50))]);
+  let timer;
+  try {
+    const deadline = new Promise((resolve, reject) => {
+      timer = setTimeout(() => {
+        if (isolated) reject(new Error('Privacy detection timed out'));
+        else resolve();
+      }, timeoutMs);
+    });
+    await Promise.race([Promise.all(jobs), deadline]);
+  } finally {
+    clearTimeout(timer);
+  }
   return (index) => results.get(index) || [];
 }
 
