@@ -21,7 +21,7 @@ const chat = (model = 'auto') => request(app).post('/v1/chat/completions').set('
 
 test.before(async () => {
   app = createApp();
-  capped = await createMockProvider({ models: ['slow-shared'], maxConcurrent: 1 });
+  capped = await createMockProvider({ models: ['slow-shared'], maxConcurrent: 2 });
   roomy = await createMockProvider({ models: ['slow-shared'] });
   session = (await request(app).post('/api/v1/auth/register').send({ username: 'multi', email: 'multi@example.test', password: 'correct-horse-battery' })).body.session.token;
   const add = (url) => api('post', '/providers/accounts').send({ definitionId: 'custom_openai', baseUrl: url, secret: 'good-key', billingMode: 'free_tier' });
@@ -48,7 +48,7 @@ test('a concurrency 429 teaches the account its limit and the sibling takes the 
   for (const response of first) assert.equal(response.status, 200, JSON.stringify(response.body));
   const learned = concurrency.limitFor({ accountId: cappedAccount.id, definitionId: 'custom_openai' });
   assert.ok(capped.calls.some((call) => call.rejected), 'the burst overloaded the capped account once');
-  assert.deepEqual(learned, { limit: 1, source: 'learned' });
+  assert.deepEqual(learned, { limit: 2, source: 'learned' });
 
   // With the limit learned, the next burst never overloads that account.
   capped.calls.length = 0;
@@ -56,7 +56,7 @@ test('a concurrency 429 teaches the account its limit and the sibling takes the 
   const second = await Promise.all([chat(pinned), chat(pinned), chat(pinned), chat(pinned)]);
   for (const response of second) assert.equal(response.status, 200, JSON.stringify(response.body));
   assert.equal(capped.calls.filter((call) => call.rejected).length, 0, 'no more 429s from the capped account');
-  assert.ok(roomy.calls.length >= 3, `roomy took ${roomy.calls.length} of 4`);
+  assert.ok(roomy.calls.length >= 2, `roomy took ${roomy.calls.length} of 4`);
 });
 
 test('a concurrency 429 does not cool the model down like a used-up rate limit', async () => {

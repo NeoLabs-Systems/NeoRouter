@@ -10084,8 +10084,38 @@ abstract class AppL10n {
   /// No description provided for @routingGroupsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Use one model name for the connections you choose.'**
+  /// **'Use one model name across your subscriptions.'**
   String get routingGroupsDescription;
+
+  /// No description provided for @routingGroupOptionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'About {option}'**
+  String routingGroupOptionHelp(String option);
+
+  /// No description provided for @routingGroupFallbackHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a backup group. If none of the models in this group can take a request, NeoRouter can try the backup group.'**
+  String get routingGroupFallbackHelp;
+
+  /// No description provided for @routingGroupOutsideHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn this on to let NeoRouter try connections outside your selected groups when it has run out of options. Your key’s permissions and spending settings still apply.'**
+  String get routingGroupOutsideHelp;
+
+  /// No description provided for @routingGroupsHelpSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'For example, choose two subscriptions and pick one under “Use first”. NeoRouter can use the other if the first is busy or has reached its limit.'**
+  String get routingGroupsHelpSwitch;
+
+  /// No description provided for @routingGroupsHelpSubagents.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose “Same group” to share these connections, or pick another group for your app’s helpers. Your app needs to send subagent requests separately. See “Use in app” after saving.'**
+  String get routingGroupsHelpSubagents;
 
   /// No description provided for @routingGroupsEmptyTitle.
   ///

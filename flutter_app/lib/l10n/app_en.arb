@@ -3675,7 +3675,19 @@
   "routingGroupNoKeyDefault": "None: the key routes normally",
   "routingGroupDefault": "Default routing group",
   "navGroups": "Routing groups",
-  "routingGroupsDescription": "Use one model name for the connections you choose.",
+  "routingGroupsDescription": "Use one model name across your subscriptions.",
+  "routingGroupOptionHelp": "About {option}",
+  "@routingGroupOptionHelp": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupFallbackHelp": "Choose a backup group. If none of the models in this group can take a request, NeoRouter can try the backup group.",
+  "routingGroupOutsideHelp": "Turn this on to let NeoRouter try connections outside your selected groups when it has run out of options. Your key’s permissions and spending settings still apply.",
+  "routingGroupsHelpSwitch": "For example, choose two subscriptions and pick one under “Use first”. NeoRouter can use the other if the first is busy or has reached its limit.",
+  "routingGroupsHelpSubagents": "Choose “Same group” to share these connections, or pick another group for your app’s helpers. Your app needs to send subagent requests separately. See “Use in app” after saving.",
   "routingGroupsEmptyTitle": "No routing groups yet",
   "routingGroupUsesStyle": "Style: {name}",
   "@routingGroupUsesStyle": {

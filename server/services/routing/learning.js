@@ -105,7 +105,7 @@ const TRUNCATED_HEADROOM = 2;
 // requestSpecific: the request carries its own options (a voice, size or
 // format) that one model may not offer, so a refusal of it is not the model's
 // fault: it is noted, but leaves no cooldown, penalty or breaker count.
-function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, boosted = false, requestSpecific = false, now = Date.now() } = {}) {
+function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, boosted = false, requestSpecific = false, running, now = Date.now() } = {}) {
   const policy = policyFor(error);
   if (error.kind === KINDS.ABORTED) return policy;
   if (requestSpecific && error.kind === KINDS.BAD_REQUEST) {
@@ -129,7 +129,7 @@ function onFailure(entry, error, { estimatedTokens = 0, maxTokens = null, booste
   }
   // "Too many concurrent requests" says nothing about the per-minute rate:
   // the account is busy, not used up, so no cooldown and no exhausted rpm.
-  const busy = error.kind === KINDS.RATE_LIMIT && concurrency.onRateLimited(entry, error, { now });
+  const busy = error.kind === KINDS.RATE_LIMIT && concurrency.onRateLimited(entry, error, { running, now });
   // A connection a person marked as fixed gets a few failures forgiven: they
   // leave no cooldown, rest or penalty, so it is really tried again.
   const forgiven = !busy && policy.perAccount !== false && accountHealth.takeChance(entry.accountId);

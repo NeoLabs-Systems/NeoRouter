@@ -425,6 +425,12 @@ function editDistance(a, b) {
   return previous[b.length];
 }
 
+function compareRoutingPriority(a, b) {
+  return (a.styleTier ?? 0) - (b.styleTier ?? 0)
+    || (a.preference ?? 0) - (b.preference ?? 0)
+    || (a.tier ?? 0) - (b.tier ?? 0);
+}
+
 class RoutingPlan {
   // taskHint: a task kind the client named (X-NeoRouter-Task).
   // keepPrivate: very sensitive content, kept off pool partners.
@@ -480,7 +486,8 @@ class RoutingPlan {
     this.tokenLimitReached = budget.tokenLimitReached(key);
     // Settings → even out usage: allowances are spent at a steady pace.
     this.userId = userId;
-    this.affinityScope = alias?.subagentGroup ? JSON.stringify([key.id, alias.id, group.id]) : key.id;
+    this.affinityScope = alias?.subagentGroup || alias?.preferredAccount
+      ? JSON.stringify([key.id, alias.id, group.id]) : key.id;
     this.affinityRef = sessionId ? cacheAffinity.affinity(this.affinityScope, sessionId) : null;
     this.cacheRates = this.affinityRef != null ? cacheAffinity.rates(userId) : new Map();
     this.visitedGroups = new Set(this.group ? [this.group.name] : []);
@@ -587,7 +594,8 @@ class RoutingPlan {
       if (this.task && item.details.capability < weakBelow(this.need)) value *= WEAK_FOR_TASK_FACTOR;
       item.preference = this.parsed.auto ? groupPolicy.preference(this.group, item.entry, this.affinityRef) : 0;
       // A custom style's preference between free, subscription and paid models.
-      item.tier = this.profile.constraints.kinds ? kindTier(this.profile.constraints.kinds, item.entry) : 0;
+      item.styleTier = this.profile.constraints.kinds ? kindTier(this.profile.constraints.kinds, item.entry) : 0;
+      item.tier = item.styleTier;
       // Explicit style kind tiers still win; within each tier, use paid-for
       // slots and expiring allowances before consuming other sources.
       if (slotPriority) item.tier = item.tier * slotPlans.SOURCE_TIERS + slotPlans.sourceTier(item.entry, now);
@@ -637,7 +645,7 @@ class RoutingPlan {
     const candidates = all.filter((item) => !item.rejected);
     const busy = all.filter((item) => item.entry.isFlatRate && (this.parsed.auto || this.primaryRefs.has(item.entry.ref)) && item.rejected === 'account_busy').map((item) => item.entry);
     this.slotWaitUntil = slotPlans.waitUntil(busy, candidates, this.startedAt, now, {
-      preferredAccount: this.group?.preferredAccount,
+      useAvailablePlan: this.parsed.auto && this.group != null,
     });
     if (this.slotWaitUntil !== null) {
       // Full paid slots and nothing free in this group: a fallback group that
@@ -654,11 +662,9 @@ class RoutingPlan {
       if (this.advanceGroup()) return this.next({ filter, now, advancing: true, sample });
       return null;
     }
-    // Only the style's first tier of model kinds that still has a candidate.
-    const preference = Math.min(...candidates.map((item) => item.preference));
-    const preferred = candidates.filter((item) => item.preference === preference);
-    const tier = Math.min(...preferred.map((item) => item.tier ?? 0));
-    const ranked = preferred.filter((item) => (item.tier ?? 0) === tier);
+    // Keep learned scores and exploration within the best eligible tier.
+    const firstTier = candidates.reduce((best, item) => compareRoutingPriority(item, best) < 0 ? item : best);
+    const ranked = candidates.filter((item) => compareRoutingPriority(item, firstTier) === 0);
     let choice = ranked[0];
     // Among copies of the requested model (several accounts) the draw stays
     // within those copies; otherwise among the top-k.
@@ -681,7 +687,7 @@ class RoutingPlan {
         }
       }
     }
-    choice.entry.routingReason = groupPolicy.reason(this.group, choice, all, this.affinityRef);
+    choice.entry.routingReason = this.parsed.auto ? groupPolicy.reason(this.group, choice, all, this.affinityRef) : null;
     choice.entry.routingGroup = this.group && groups.contains(this.group, choice.entry) ? this.group.name : null;
     this.tried.add(choice.entry.ref);
     if (this.lastResort && PREFERENCE_REASONS.has(rejection(choice.entry, { ...this.context(), lastResort: false, longShot: false }, now))) choice.entry.lastResort = true;
@@ -831,7 +837,7 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
   const plan = new RoutingPlan({ userId, key, request, requestedModel, needs, inputTokens, workload });
   // In the order the router tries them: a style's preferred kinds first.
   const ranked = plan.rank({ includeRejected: true, sample: false })
-    .sort((a, b) => (a.rejected ? 1 : 0) - (b.rejected ? 1 : 0) || (a.preference ?? 0) - (b.preference ?? 0) || (a.tier ?? 0) - (b.tier ?? 0) || (b.score ?? -1) - (a.score ?? -1));
+    .sort((a, b) => (a.rejected ? 1 : 0) - (b.rejected ? 1 : 0) || compareRoutingPriority(a, b) || (b.score ?? -1) - (a.score ?? -1));
   const result = {
     group: plan.initialGroup?.name || null,
     profile: plan.profile,

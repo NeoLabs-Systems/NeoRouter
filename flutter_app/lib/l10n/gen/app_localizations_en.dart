@@ -5778,7 +5778,28 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get routingGroupsDescription =>
-      'Use one model name for the connections you choose.';
+      'Use one model name across your subscriptions.';
+
+  @override
+  String routingGroupOptionHelp(String option) {
+    return 'About $option';
+  }
+
+  @override
+  String get routingGroupFallbackHelp =>
+      'Choose a backup group. If none of the models in this group can take a request, NeoRouter can try the backup group.';
+
+  @override
+  String get routingGroupOutsideHelp =>
+      'Turn this on to let NeoRouter try connections outside your selected groups when it has run out of options. Your key’s permissions and spending settings still apply.';
+
+  @override
+  String get routingGroupsHelpSwitch =>
+      'For example, choose two subscriptions and pick one under “Use first”. NeoRouter can use the other if the first is busy or has reached its limit.';
+
+  @override
+  String get routingGroupsHelpSubagents =>
+      'Choose “Same group” to share these connections, or pick another group for your app’s helpers. Your app needs to send subagent requests separately. See “Use in app” after saving.';
 
   @override
   String get routingGroupsEmptyTitle => 'No routing groups yet';

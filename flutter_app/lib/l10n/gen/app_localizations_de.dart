@@ -5817,7 +5817,28 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get routingGroupsDescription =>
-      'Nutze einen Modellnamen für die ausgewählten Verbindungen.';
+      'Nutze einen Modellnamen für mehrere Abos.';
+
+  @override
+  String routingGroupOptionHelp(String option) {
+    return 'Info: $option';
+  }
+
+  @override
+  String get routingGroupFallbackHelp =>
+      'Wähle eine Ausweichgruppe. Wenn kein Modell in dieser Gruppe die Anfrage annehmen kann, kann NeoRouter die Ausweichgruppe versuchen.';
+
+  @override
+  String get routingGroupOutsideHelp =>
+      'Erlaube NeoRouter, im Notfall auch Verbindungen außerhalb der ausgewählten Gruppen zu versuchen. Die Berechtigungen und Ausgaberegeln deines Schlüssels gelten weiterhin.';
+
+  @override
+  String get routingGroupsHelpSwitch =>
+      'Wähle zum Beispiel zwei Abos und lege eines unter „Zuerst verwenden“ fest. NeoRouter kann das andere nutzen, wenn das erste ausgelastet ist oder sein Limit erreicht hat.';
+
+  @override
+  String get routingGroupsHelpSubagents =>
+      'Wähle „Gleiche Gruppe“, um diese Verbindungen zu teilen, oder wähle eine andere Gruppe für die Helfer deiner App. Deine App muss Anfragen von Subagenten getrennt senden. Die Anleitung findest du nach dem Speichern unter „In App nutzen“.';
 
   @override
   String get routingGroupsEmptyTitle => 'Noch keine Routing-Gruppen';

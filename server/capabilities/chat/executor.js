@@ -572,13 +572,15 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
     }
     const { attempt } = outcome;
     if (outcome.error) {
+      // The provider rejected the attempt while it still occupied a slot.
+      const accountInFlight = loadTracker.inflight(attempt.entry).account;
       settle(attempt);
       attempt.reservation.release();
       const error = outcome.error instanceof ProviderError ? outcome.error : fromNetworkError(outcome.error);
       if (error.kind === KINDS.ABORTED && clientAbort.signal.aborted) break;
       lastError = error;
       trail.push(trailItem(attempt.entry, error.kind, { status: error.status, ms: Date.now() - attempt.started, message: String(error.message).slice(0, 200) }));
-      const policy = learning.onFailure(attempt.entry, error, { estimatedTokens: inputTokens, maxTokens: attempt.maxTokens, boosted: attempt.boosted });
+      const policy = learning.onFailure(attempt.entry, error, { estimatedTokens: inputTokens, maxTokens: attempt.maxTokens, boosted: attempt.boosted, running: accountInFlight });
       // A partner counts only the requests it answered, so a refused one does not use up our share of it here either.
       if (isPeerEntry(attempt.entry)) quota.refundRequest(attempt.entry, inputTokens);
       if (isPeerEntry(attempt.entry)) reachability.noteFailure(attempt.entry.accountId, error.kind);

@@ -35,7 +35,7 @@ function reason(group, choice, ranked, affinityRef) {
   if (choice.entry.ref === affinityRef) return 'same_connection';
   if (choice.entry.accountId === group.preferredAccount) return 'preferred_connection';
   const skipped = ranked.filter((item) => item.entry.accountId === group.preferredAccount);
-  if (!skipped.length) return null;
+  if (!skipped.length || skipped.some((item) => !item.rejected)) return null;
   if (skipped.some((item) => ['account_busy', 'slot_overflow'].includes(item.rejected))) return 'preferred_busy';
   if (skipped.some((item) => item.rejected === 'plan_used_up' || item.rejected?.startsWith('quota_'))) return 'preferred_allowance';
   return 'preferred_unavailable';

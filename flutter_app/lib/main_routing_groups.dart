@@ -628,6 +628,42 @@ class _GroupEditorState extends State<_GroupEditor> {
     );
   }
 
+  Widget _withOptionHelp({
+    required String title,
+    required String explanation,
+    required Widget child,
+  }) {
+    final t = AppL10n.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: child),
+        IconButton(
+          tooltip: t.routingGroupOptionHelp(title),
+          icon: Icon(
+            Icons.info_outline,
+            size: 18,
+            color: neoRouterPaletteOf(context).textMuted,
+          ),
+          onPressed: () => showDialog<void>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text(title),
+              scrollable: true,
+              content: SizedBox(width: 360, child: Text(explanation)),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(t.close),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _preferredPicker(AppL10n t) {
     final accounts = _accounts
         .where((account) => _selected.contains(account.id))
@@ -635,30 +671,34 @@ class _GroupEditorState extends State<_GroupEditor> {
     if (accounts.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-      child: DropdownButtonFormField<String>(
-        key: ValueKey(_preferred),
-        initialValue: accounts.any((account) => account.id == _preferred)
-            ? _preferred
-            : '',
-        isExpanded: true,
-        decoration: InputDecoration(
-          labelText: t.routingGroupPrefer,
-          helperText: t.routingGroupPreferHint,
-        ),
-        items: [
-          DropdownMenuItem(value: '', child: Text(t.routingGroupAutomatic)),
-          for (final account in accounts)
-            DropdownMenuItem(
-              value: account.id,
-              child: Text(
-                account.label == account.providerName
-                    ? account.label
-                    : '${account.label} · ${account.providerName}',
-                overflow: TextOverflow.ellipsis,
+      child: _withOptionHelp(
+        title: t.routingGroupPrefer,
+        explanation: t.routingGroupsHelpSwitch,
+        child: DropdownButtonFormField<String>(
+          key: ValueKey(_preferred),
+          initialValue: accounts.any((account) => account.id == _preferred)
+              ? _preferred
+              : '',
+          isExpanded: true,
+          decoration: InputDecoration(
+            labelText: t.routingGroupPrefer,
+            helperText: t.routingGroupPreferHint,
+          ),
+          items: [
+            DropdownMenuItem(value: '', child: Text(t.routingGroupAutomatic)),
+            for (final account in accounts)
+              DropdownMenuItem(
+                value: account.id,
+                child: Text(
+                  account.label == account.providerName
+                      ? account.label
+                      : '${account.label} · ${account.providerName}',
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
-        ],
-        onChanged: (value) => setState(() => _preferred = value ?? ''),
+          ],
+          onChanged: (value) => setState(() => _preferred = value ?? ''),
+        ),
       ),
     );
   }
@@ -696,22 +736,26 @@ class _GroupEditorState extends State<_GroupEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DropdownButtonFormField<String>(
-          key: ValueKey(_subagent),
-          initialValue: _subagent,
-          isExpanded: true,
-          decoration: InputDecoration(labelText: t.routingGroupSubagents),
-          items: [
-            DropdownMenuItem(value: '', child: Text(t.routingGroupSameGroup)),
-            for (final group in groups)
-              DropdownMenuItem(
-                value: group['name'] as String,
-                child: Text('${group['name']}'),
-              ),
-          ],
-          onChanged: _loadingGroups
-              ? null
-              : (value) => setState(() => _subagent = value ?? ''),
+        _withOptionHelp(
+          title: t.routingGroupSubagents,
+          explanation: t.routingGroupsHelpSubagents,
+          child: DropdownButtonFormField<String>(
+            key: ValueKey(_subagent),
+            initialValue: _subagent,
+            isExpanded: true,
+            decoration: InputDecoration(labelText: t.routingGroupSubagents),
+            items: [
+              DropdownMenuItem(value: '', child: Text(t.routingGroupSameGroup)),
+              for (final group in groups)
+                DropdownMenuItem(
+                  value: group['name'] as String,
+                  child: Text('${group['name']}'),
+                ),
+            ],
+            onChanged: _loadingGroups
+                ? null
+                : (value) => setState(() => _subagent = value ?? ''),
+          ),
         ),
         if (_subagent.isNotEmpty)
           Padding(
@@ -773,32 +817,43 @@ class _GroupEditorState extends State<_GroupEditor> {
           onChanged: (value) => setState(() => _profile = value ?? ''),
         ),
         const SizedBox(height: AppSpacing.lg),
-        DropdownButtonFormField<String>(
-          initialValue: fallbacks.any((group) => group['name'] == _fallback)
-              ? _fallback
-              : '',
-          isExpanded: true,
-          decoration: InputDecoration(
-            labelText: t.routingGroupFallback,
-            helperText: t.routingGroupFallbackHint,
-            helperMaxLines: 2,
-          ),
-          items: [
-            DropdownMenuItem(value: '', child: Text(t.routingGroupNoFallback)),
-            for (final group in fallbacks)
+        _withOptionHelp(
+          title: t.routingGroupFallback,
+          explanation: t.routingGroupFallbackHelp,
+          child: DropdownButtonFormField<String>(
+            initialValue: fallbacks.any((group) => group['name'] == _fallback)
+                ? _fallback
+                : '',
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: t.routingGroupFallback,
+              helperText: t.routingGroupFallbackHint,
+              helperMaxLines: 2,
+            ),
+            items: [
               DropdownMenuItem(
-                value: group['name'] as String,
-                child: Text('${group['name']}'),
+                value: '',
+                child: Text(t.routingGroupNoFallback),
               ),
-          ],
-          onChanged: (value) => setState(() => _fallback = value ?? ''),
+              for (final group in fallbacks)
+                DropdownMenuItem(
+                  value: group['name'] as String,
+                  child: Text('${group['name']}'),
+                ),
+            ],
+            onChanged: (value) => setState(() => _fallback = value ?? ''),
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(t.routingGroupAllowOutside),
-          value: _allowOutside,
-          onChanged: (value) => setState(() => _allowOutside = value),
+        _withOptionHelp(
+          title: t.routingGroupAllowOutside,
+          explanation: t.routingGroupOutsideHelp,
+          child: SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(t.routingGroupAllowOutside),
+            value: _allowOutside,
+            onChanged: (value) => setState(() => _allowOutside = value),
+          ),
         ),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,

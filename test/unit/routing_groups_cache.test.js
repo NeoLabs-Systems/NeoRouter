@@ -150,7 +150,7 @@ test('a smart alias spills at the account limit and keeps the new conversation r
     const overflow = burst.next().entry;
     assert.equal(overflow.accountId, 'b');
     assert.equal(overflow.routingReason, 'preferred_busy');
-    affinity.remember(key.id, 'overflow-session', overflow);
+    affinity.remember(burst.affinityScope, 'overflow-session', overflow);
   } finally {
     release();
     limits.set('a', { concurrent: null });
@@ -167,4 +167,50 @@ test('a smart alias spills at the account limit and keeps the new conversation r
   assert.equal(limited.next().entry.accountId, 'a');
   assert.equal(limited.next(), null);
   assert.equal(limited.enableLastResort(), false, 'a last resort cannot escape the selected connections');
+});
+
+
+test('an explicit routing style takes priority over the preferred account', () => {
+  const profiles = require('../../server/services/routing/profiles');
+  const style = profiles.create('u', {
+    name: 'Subscriptions first',
+    weights: profiles.PRESETS.balanced.weights,
+    constraints: { kinds: { free: 0.5, plan: 1, paid: 0.5 } },
+  });
+  groups.save('u', { name: 'styled-work', accounts: ['a', 'b'], preferredAccount: 'a', profile: style.id, allowMetered: true });
+  const plan = makePlan('pool:styled-work');
+  plan.entries.find((entry) => entry.accountId === 'b').isPlan = true;
+  assert.equal(plan.next().entry.accountId, 'b');
+});
+
+test('a subagent group uses its available subscription before waiting for a busy flat-rate plan', () => {
+  const load = require('../../server/services/routing/load_tracker');
+  const limits = require('../../server/services/quota/account_limits');
+  groups.save('u', { name: 'helpers', accounts: ['a', 'b'] });
+  groups.save('u', { name: 'parent', accounts: ['a'], subagentGroup: 'helpers' });
+  limits.set('a', { concurrent: 4 });
+  const leases = [];
+  try {
+    const counts = { a: 0, b: 0 };
+    for (let i = 0; i < 10; i += 1) {
+      const plan = i % 2 === 0
+        ? makePlan('pool:parent', { workload: 'subagent' })
+        : makePlan('pool:helpers');
+      for (const entry of plan.entries.filter((entry) => ['a', 'b'].includes(entry.accountId))) {
+        entry.isPlan = true;
+        if (entry.accountId === 'a') {
+          entry.isFlatRate = true;
+          entry.overflowPolicy = 'auto';
+        }
+      }
+      const choice = plan.next().entry;
+      assert.equal(choice.routingGroup, 'helpers');
+      counts[choice.accountId] += 1;
+      leases.push(load.lease(choice));
+    }
+    assert.deepEqual(counts, { a: 4, b: 6 });
+  } finally {
+    for (const release of leases) release();
+    limits.set('a', { concurrent: null });
+  }
 });

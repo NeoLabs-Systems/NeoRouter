@@ -62,6 +62,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.info_outline), findsNothing);
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
     expect(find.text('Allow per-use charges'), findsNothing);
@@ -71,6 +72,21 @@ void main() {
     await tester.tap(find.text('Automatic'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('My subscription · provider').last);
+    await tester.pumpAndSettle();
+    final more = find.text('More options');
+    await tester.ensureVisible(more);
+    await tester.tap(more);
+    await tester.pumpAndSettle();
+    final subagentHelp = find.byTooltip('About Subagent requests');
+    await tester.ensureVisible(subagentHelp);
+    await tester.pumpAndSettle();
+    await tester.tap(subagentHelp);
+    await tester.pumpAndSettle();
+    expect(
+      find.widgetWithText(AlertDialog, 'Subagent requests'),
+      findsOneWidget,
+    );
+    await tester.tap(find.widgetWithText(TextButton, 'Close'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
