@@ -86,7 +86,7 @@ function candidates(sample, request, requestedModel, filter = () => true) {
   return plan.rank({ sample: false }).map(({ entry }) => entry);
 }
 
-async function call(sample, request, { signal, model = 'auto:smart', ref, filter = () => true } = {}) {
+async function call(sample, request, { signal, model = 'auto:smart', ref, stage = 'replay', filter = () => true } = {}) {
   if (!active(sample, signal)) throw new Deferred('consent_revoked');
   const started = Date.now();
   let result;
@@ -107,7 +107,7 @@ async function call(sample, request, { signal, model = 'auto:smart', ref, filter
     if (!active(sample, signal)) throw new Deferred('consent_revoked');
     const trail = error.details?.trail?.map(({ outcome, ms }) => ({ outcome, ms })) || [];
     const kind = error.kind || trail.at(-1)?.outcome;
-    logger.info('Benchmark attempt', { model, code: kind || error.code || 'failed', ms: Date.now() - started, trail });
+    logger.info('Benchmark attempt', { stage, model, code: kind || error.code || 'failed', ms: Date.now() - started, trail });
     if (kind === KINDS.NETWORK) throw new Deferred('network_unavailable');
     if (quotaKinds.has(kind)) throw new Deferred('waiting_capacity', { retryAt: Date.now() + policy.tickMs });
     if (error.status === 503 || error.status === 429) {
@@ -127,7 +127,7 @@ async function call(sample, request, { signal, model = 'auto:smart', ref, filter
     recordFailure(sample.userId, result.entry, { kind: KINDS.INVALID_OUTPUT });
     throw new Deferred('oversized_output', { failed: true });
   }
-  logger.info('Benchmark attempt', { model: result.entry.canonicalId, maxTokens: result.maxTokens, code: 'completed', ms: Date.now() - started });
+  logger.info('Benchmark attempt', { stage, model: result.entry.canonicalId, outputLimit: result.maxTokens, code: 'completed', ms: Date.now() - started });
   return { entry: result.entry, message };
 }
 

@@ -3970,10 +3970,13 @@
   "lbWaitingModels": "Waiting for eligible free models",
   "lbWaitingQuota": "Waiting for free capacity to reset",
   "lbRetrying": "Waiting to retry",
-  "lbHealth": "{queued} queued · {published} published model/task results",
+  "lbHealth": "{queued} queued · {validated} validated model scores · {published} published model/task groups",
   "@lbHealth": {
     "placeholders": {
       "queued": {
+        "type": "String"
+      },
+      "validated": {
         "type": "String"
       },
       "published": {

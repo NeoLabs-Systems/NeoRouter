@@ -1879,7 +1879,7 @@ S = {
   'lbWaitingModels': ('Waiting for eligible free models', 'Warten auf geeignete kostenlose Modelle'),
   'lbWaitingQuota': ('Waiting for free capacity to reset', 'Wartet auf die Erneuerung kostenloser Kapazität'),
   'lbRetrying': ('Waiting to retry', 'Wartet auf einen neuen Versuch'),
-  'lbHealth': ('{queued} queued · {published} published model/task results', '{queued} vorgemerkt · {published} veröffentlichte Modell-/Aufgabenergebnisse'),
+  'lbHealth': ('{queued} queued · {validated} validated model scores · {published} published model/task groups', '{queued} vorgemerkt · {validated} validierte Modellbewertungen · {published} veröffentlichte Modell-/Aufgabengruppen'),
   'lbResults': ('NeoRouter evaluations', 'NeoRouter-Bewertungen'),
   'lbEvidenceHint': ('Validated aggregate results from sanitized tasks, using objective checks or blind comparisons by a calibrated evaluator. These results supplement existing routing intelligence.', 'Validierte Gesamtergebnisse aus bereinigten Aufgaben, geprüft durch objektive Kriterien oder Blindvergleiche mit einem kalibrierten Bewerter. Diese Ergebnisse ergänzen das bestehende Routing.'),
   'lbNoEvidence': ('Results appear after at least {count} validated tasks per model and task category.', 'Ergebnisse erscheinen ab {count} validierten Aufgaben pro Modell und Aufgabenkategorie.'),

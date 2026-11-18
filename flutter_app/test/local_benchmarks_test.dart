@@ -161,7 +161,7 @@ void main() {
             health: const {
               'enabled': true,
               'lastCode': 'waiting_free_models',
-              'counts': {'pending': 2},
+              'counts': {'pending': 2, 'validated': 4},
               'aggregates': 0,
             },
             onChanged: (_) {},
@@ -171,6 +171,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Background evaluator'), findsOneWidget);
+      expect(find.textContaining('4 validated model scores'), findsOneWidget);
       expect(find.text('Waiting for eligible free models'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },

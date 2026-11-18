@@ -138,6 +138,7 @@ class LocalBenchmarkAdmin extends StatelessWidget {
             'network_unavailable' => t.lbRetrying,
             'provider_failure' ||
             'provider_timeout' ||
+            'judge_invalid' ||
             'evaluation_failed' => t.lbRetrying,
             _ => t.lbIdle,
           };
@@ -161,6 +162,7 @@ class LocalBenchmarkAdmin extends StatelessWidget {
             label: t.lbWorker,
             description: t.lbHealth(
               '${counts['pending'] ?? 0}',
+              '${counts['validated'] ?? 0}',
               '${health['aggregates'] ?? 0}',
             ),
             control: Row(

@@ -75,6 +75,12 @@ function snapshot(now) {
   return cache;
 }
 
+function countScores(userId = null, now = Date.now()) {
+  return getDatabase().prepare(`SELECT COALESCE(SUM(samples), 0) count FROM benchmark_evidence
+    WHERE bucket > ? AND version IN (?, ?) AND (? IS NULL OR user_id = ?)`)
+    .get(now - policy.evidenceLifetimeMs, ...EVALUATOR_VERSIONS, userId, userId).count;
+}
+
 function list(now = Date.now()) {
   return [...snapshot(now).groups.values()].map(({ model, task, samples, score, confidence, evaluatedAt, evaluators }) => ({
     model, task, samples, score, confidence, evaluatedAt,
@@ -98,4 +104,4 @@ function blend(prior, canonicalId, task, now = Date.now()) {
   }
 }
 
-module.exports = { add, purge, prune, list, blend, invalidate };
+module.exports = { add, purge, prune, countScores, list, blend, invalidate };

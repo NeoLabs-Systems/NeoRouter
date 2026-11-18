@@ -10966,8 +10966,8 @@ abstract class AppL10n {
   /// No description provided for @lbHealth.
   ///
   /// In en, this message translates to:
-  /// **'{queued} queued · {published} published model/task results'**
-  String lbHealth(String queued, String published);
+  /// **'{queued} queued · {validated} validated model scores · {published} published model/task groups'**
+  String lbHealth(String queued, String validated, String published);
 
   /// No description provided for @lbResults.
   ///

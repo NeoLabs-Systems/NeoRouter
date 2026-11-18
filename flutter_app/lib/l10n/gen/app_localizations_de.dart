@@ -6351,8 +6351,8 @@ class AppL10nDe extends AppL10n {
   String get lbRetrying => 'Wartet auf einen neuen Versuch';
 
   @override
-  String lbHealth(String queued, String published) {
-    return '$queued vorgemerkt · $published veröffentlichte Modell-/Aufgabenergebnisse';
+  String lbHealth(String queued, String validated, String published) {
+    return '$queued vorgemerkt · $validated validierte Modellbewertungen · $published veröffentlichte Modell-/Aufgabengruppen';
   }
 
   @override

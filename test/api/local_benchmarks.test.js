@@ -52,15 +52,18 @@ async function waitFor(check) {
 
 test.before(async () => {
   upstream = await createMockProvider({ models, answer(body) {
-    if (body.messages[0]?.content !== judge.request({}, [{}, {}], false).messages[0].content) return null;
-    const { task, A, B } = JSON.parse(body.messages[1].content);
-    const question = task.messages.at(-1).content;
-    const arithmetic = question.match(/(\d+) \+ (\d+)/);
-    let verdict = 'tie';
-    if (arithmetic) verdict = JSON.parse(A.content).value === Number(arithmetic[1]) + Number(arithmetic[2]) ? 'A' : 'B';
-    if (question.includes('private random generator')) verdict = A.content.includes('cannot be determined') ? 'A' : 'B';
-    assert.ok(A && B);
-    return JSON.stringify({ verdict, confidence: 'high' });
+    if (!body.messages[0]?.content.startsWith('Compare anonymous answers A and B')) return null;
+    const data = JSON.parse(body.messages[1].content);
+    const choose = ({ task, A, B }) => {
+      const question = task.messages.at(-1).content;
+      const arithmetic = question.match(/(\d+) \+ (\d+)/);
+      let verdict = 'tie';
+      if (arithmetic) verdict = JSON.parse(A.content).value === Number(arithmetic[1]) + Number(arithmetic[2]) ? 'A' : 'B';
+      if (question.includes('private random generator')) verdict = A.content.includes('cannot be determined') ? 'A' : 'B';
+      assert.ok(A && B);
+      return { verdict, confidence: 'high' };
+    };
+    return JSON.stringify(data.pairs ? { verdicts: data.pairs.map(choose) } : choose(data));
   } });
   owner = await register('benchmark-owner');
   assert.equal((await api(owner, 'patch', '/admin/settings').send({ registrationOpen: true })).status, 200);
@@ -152,7 +155,9 @@ test('the worker shares the streaming router and quota, while metrics stay separ
   assert.equal(capture.count(owner.id), 0);
   assert.equal(analytics(), requestCount);
   assert.deepEqual(learned(), before);
-  assert.equal(recordQuota.mock.callCount(), 7);
+  assert.equal(recordQuota.mock.callCount(), 4);
+  assert.equal(worker.health().counts.validated, 2);
+  assert.equal(worker.health().aggregates, 0);
   assert.ok(upstream.calls.slice(start).every((call) => call.stream));
   assert.equal(new Set(sample.answers.map(({ entry }) => entry.canonicalId)).size, 2);
   const firstJudge = upstream.calls.at(-1).model;
@@ -326,9 +331,21 @@ test('candidate replays inherit the opted-in key profile and the judge uses Smar
 
 test('judge maps answer order and separates ties from abstention', () => {
   const result = (verdict, confidence = 'high') => ({ content: JSON.stringify({ verdict, confidence }) });
-  assert.equal(judge.verdict(result('A'), false), 1);
-  assert.equal(judge.verdict(result('A'), true), 0);
-  assert.equal(judge.verdict(result('tie'), true), 0.5);
-  assert.equal(judge.verdict(result('abstain'), false), null);
-  assert.equal(judge.verdict(result('B', 'low'), false), null);
+  assert.deepEqual(judge.verdict(result('A'), false), { score: 1 });
+  assert.deepEqual(judge.verdict(result('A'), true), { score: 0 });
+  assert.deepEqual(judge.verdict(result('tie'), true), { score: 0.5 });
+  assert.deepEqual(judge.verdict(result('abstain'), false), { code: 'judge_abstained' });
+  assert.deepEqual(judge.verdict(result('B', 'low'), false), { code: 'judge_low_confidence' });
+  const fenced = { content: '```json\n' + result('A').content + '\n```' };
+  assert.deepEqual(judge.verdict(fenced, false), { score: 1 });
+  assert.deepEqual(judge.verdict({ content: 'no verdict' }, false), { code: 'judge_invalid' });
+});
+
+test('batched calibration still requires both answer orders and all known answers', () => {
+  const batch = judge.calibration(objective.calibration(), false);
+  const verdicts = ['A', 'B', 'B', 'A'].map((verdict) => ({ verdict, confidence: 'high' }));
+  assert.equal(batch.passes({ content: JSON.stringify({ verdicts }) }), true);
+  assert.equal(batch.passes({ content: JSON.stringify({ verdicts: verdicts.slice(0, 3) }) }), false);
+  verdicts[1].verdict = 'A';
+  assert.equal(batch.passes({ content: JSON.stringify({ verdicts }) }), false);
 });

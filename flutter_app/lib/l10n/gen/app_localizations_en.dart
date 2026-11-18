@@ -6304,8 +6304,8 @@ class AppL10nEn extends AppL10n {
   String get lbRetrying => 'Waiting to retry';
 
   @override
-  String lbHealth(String queued, String published) {
-    return '$queued queued · $published published model/task results';
+  String lbHealth(String queued, String validated, String published) {
+    return '$queued queued · $validated validated model scores · $published published model/task groups';
   }
 
   @override

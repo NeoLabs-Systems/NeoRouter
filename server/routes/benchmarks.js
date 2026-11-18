@@ -4,7 +4,6 @@ const router = require('express').Router();
 const { z } = require('zod');
 const { validate } = require('../middleware/validate');
 const { requireOwnSpace } = require('../middleware/space');
-const { getDatabase } = require('../db/database');
 const consent = require('../services/benchmarks/consent');
 const capture = require('../services/benchmarks/capture');
 const evidence = require('../services/benchmarks/evidence');
@@ -15,7 +14,7 @@ function status(userId) {
     adminEnabled: consent.globalSettings().enabled,
     enabled: consent.userSettings(userId).enabled,
     counts: { pending: capture.count(userId) },
-    contributions: getDatabase().prepare('SELECT COALESCE(SUM(samples), 0) count FROM benchmark_evidence WHERE user_id = ?').get(userId).count,
+    contributions: evidence.countScores(userId),
   };
 }
 

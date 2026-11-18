@@ -1811,7 +1811,7 @@
   "lbWaitingModels": "Warten auf geeignete kostenlose Modelle",
   "lbWaitingQuota": "Wartet auf die Erneuerung kostenloser Kapazität",
   "lbRetrying": "Wartet auf einen neuen Versuch",
-  "lbHealth": "{queued} vorgemerkt · {published} veröffentlichte Modell-/Aufgabenergebnisse",
+  "lbHealth": "{queued} vorgemerkt · {validated} validierte Modellbewertungen · {published} veröffentlichte Modell-/Aufgabengruppen",
   "lbResults": "NeoRouter-Bewertungen",
   "lbEvidenceHint": "Validierte Gesamtergebnisse aus bereinigten Aufgaben, geprüft durch objektive Kriterien oder Blindvergleiche mit einem kalibrierten Bewerter. Diese Ergebnisse ergänzen das bestehende Routing.",
   "lbNoEvidence": "Ergebnisse erscheinen ab {count} validierten Aufgaben pro Modell und Aufgabenkategorie.",

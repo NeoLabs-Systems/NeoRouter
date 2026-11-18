@@ -9,6 +9,8 @@ const transport = require('./transport');
 const objective = require('./evaluation/objective');
 const judge = require('./evaluation/judge');
 const policy = require('./policy');
+const logger = require('../../utils/logger').createLogger('local-benchmarks');
+const judgeIdentity = (entry) => JSON.stringify([entry.providerKey, entry.modelId]);
 
 const running = new Map();
 const calibration = new Map();
@@ -63,7 +65,7 @@ function tick(now = Date.now()) {
     capture.prune(now);
     transport.prune(now);
     for (const [userId, results] of calibration) {
-      for (const [ref, result] of results) if (result.until <= now) results.delete(ref);
+      for (const [model, result] of results) if (result.until <= now) results.delete(model);
       if (!results.size) calibration.delete(userId);
     }
     lastPrunedAt = now;
@@ -81,7 +83,7 @@ function stop() {
 function health() {
   const available = capture.count();
   return { enabled: consent.globalSettings().enabled, active: running.size > 0, running: running.size,
-    counts: { pending: Math.max(0, available - running.size), running: running.size },
+    counts: { pending: Math.max(0, available - running.size), running: running.size, validated: evidence.countScores() },
     lastRunAt, lastCode: lastOutcome, aggregates: evidence.list().length };
 }
 
@@ -96,11 +98,13 @@ async function run(sample, signal) {
     if (result) {
       finished = true;
       lastOutcome = result.rejected || (evidence.add(sample, sample.answers.map(({ entry }) => entry), result) ? 'validated' : 'consent_revoked');
+      logger.info('Benchmark evaluation', { stage: 'sample', code: lastOutcome });
     }
     sample.failures = 0;
   } catch (error) {
     const retry = error instanceof transport.Deferred ? error : new transport.Deferred('evaluation_failed', { failed: true });
     lastOutcome = retry.code;
+    if (retry.code === 'judge_invalid') logger.info('Benchmark evaluation', { stage: 'verdict', code: retry.code });
     if (retry.failed) sample.failures++;
     finished = signal.aborted || retry.code === 'consent_revoked';
     const now = Date.now();
@@ -139,38 +143,34 @@ async function step(sample, signal) {
   const byModel = calibration.get(sample.userId) || new Map();
   calibration.set(sample.userId, byModel);
   const now = Date.now();
-  for (const [ref, result] of byModel) if (result.until <= now || result.version !== judge.VERSION) byModel.delete(ref);
-  const calibrated = (entry) => independent(entry) && byModel.get(entry.ref)?.passed === true;
+  for (const [model, result] of byModel) if (result.until <= now || result.version !== judge.VERSION) byModel.delete(model);
+  const calibrated = (entry) => independent(entry) && byModel.get(judgeIdentity(entry))?.passed === true;
 
   if (!transport.candidates(sample, request, 'auto:smart', calibrated).length) {
-    const available = transport.candidates(sample, request, 'auto:smart', (candidate) => independent(candidate) && !byModel.has(candidate.ref));
-    const entry = available.find((candidate) => candidate.ref === sample.calibration?.ref) || available[0];
+    const available = transport.candidates(sample, request, 'auto:smart', (candidate) => independent(candidate) && !byModel.has(judgeIdentity(candidate)));
+    const [entry] = available;
     if (!entry) throw new transport.Deferred('waiting_calibrated_judge');
     await calibrate(sample, entry, byModel, signal);
     return null;
   }
 
-  const result = await transport.call(sample, request, { signal, filter: calibrated });
-  const score = judge.verdict(result.message, flipped);
-  return score === null ? { rejected: 'judge_abstained' }
-    : { score, confidence: policy.judgeConfidence, evaluator: result.entry.canonicalId, version: judge.VERSION };
+  const result = await transport.call(sample, request, { signal, stage: 'verdict', filter: calibrated });
+  const verdict = judge.verdict(result.message, flipped);
+  if (verdict.code === 'judge_invalid') {
+    byModel.set(judgeIdentity(result.entry), { passed: false, version: judge.VERSION, until: Date.now() + policy.retryMs });
+    throw new transport.Deferred(verdict.code, { failed: true });
+  }
+  return verdict.code ? { rejected: verdict.code }
+    : { score: verdict.score, confidence: policy.judgeConfidence, evaluator: result.entry.canonicalId, version: judge.VERSION };
 }
 
 async function calibrate(sample, entry, byModel, signal) {
-  const pending = sample.calibration?.ref === entry.ref ? sample.calibration
-    : { ref: entry.ref, cases: objective.calibration(), flipped: Boolean(randomInt(2)), step: 0 };
-  sample.calibration = pending;
-  const fixture = pending.cases[Math.floor(pending.step / 2)];
-  const flipped = pending.step % 2 ? !pending.flipped : pending.flipped;
-  const result = await transport.call(sample, judge.request(fixture.canonical, fixture.answers, flipped), {
-    signal, model: 'auto:smart', ref: entry.ref,
-  });
-  const passed = judge.verdict(result.message, flipped) === fixture.expected;
-  pending.step++;
-  if (!passed || pending.step === pending.cases.length * 2) {
-    byModel.set(entry.ref, { passed, version: judge.VERSION, until: Date.now() + (passed ? policy.sampleLifetimeMs : policy.maxRetryMs) });
-    sample.calibration = null;
-  }
+  const calibration = judge.calibration(objective.calibration(), Boolean(randomInt(2)));
+  const result = await transport.call(sample, calibration.request, { signal, stage: 'calibration', ref: entry.ref });
+  const passed = calibration.passes(result.message);
+  byModel.set(judgeIdentity(entry), { passed, version: judge.VERSION,
+    until: Date.now() + (passed ? policy.sampleLifetimeMs : policy.maxRetryMs) });
+  logger.info('Benchmark judge calibration', { stage: 'calibration', model: entry.canonicalId, code: passed ? 'passed' : 'rejected' });
 }
 
 module.exports = { tick, stop, health };
