@@ -11,9 +11,11 @@ Check each answer against the original task and its material constraints. Favor 
 
 Judge each answer on its own merits. Ignore answer order, guessed model identity, polish, and length except where they affect a stated requirement or materially change usefulness. Use tie when the answers are materially equivalent and abstain when the evidence cannot support a reliable comparison.`;
 
+const VERDICT_FIELDS = 'Each verdict object must have verdict set to A, B, tie, or abstain, and confidence set to high or low. Use high only when the evidence supports a clear winner or a reliable tie.';
+
 const RUBRIC = `${CRITERIA}
 
-Return only a JSON object with verdict set to A, B, tie, or abstain, and confidence set to high or low. Use high only when the evidence supports a clear winner or a reliable tie.`;
+Return only one JSON verdict object. ${VERDICT_FIELDS}`;
 
 const schema = z.object({ verdict: z.enum(['A', 'B', 'tie', 'abstain']), confidence: z.enum(['high', 'low']) }).strict();
 
@@ -64,8 +66,12 @@ function calibration(cases, firstFlipped) {
   return {
     request: buildRequest(`${CRITERIA}
 
-For this calibration, the data contains a pairs array. Judge each pair independently. Return only a JSON object with a verdicts array containing one verdict object per pair, in input order.`,
+The data contains a pairs array. Judge each pair independently. Return only a JSON object with a verdicts array containing one verdict object per pair, in input order. ${VERDICT_FIELDS}`,
       { pairs: checks.map(({ fixture, flipped }) => pair(fixture.canonical, fixture.answers, flipped)) }),
+    checks: checks.map(({ fixture, flipped }) => ({
+      request: request(fixture.canonical, fixture.answers, flipped),
+      passes: (message) => verdict(message, flipped).score === fixture.expected,
+    })),
     passes(message) {
       const answers = parse(message, batchSchema)?.verdicts;
       return answers?.length === checks.length && checks.every(({ fixture, flipped }, index) =>

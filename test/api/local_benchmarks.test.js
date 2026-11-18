@@ -349,3 +349,27 @@ test('batched calibration still requires both answer orders and all known answer
   verdicts[1].verdict = 'A';
   assert.equal(batch.passes({ content: JSON.stringify({ verdicts }) }), false);
 });
+
+test('a judge that fails batch calibration can qualify through the four individual checks', async (t) => {
+  worker.stop();
+  const before = totals();
+  const candidates = transport.candidates;
+  t.mock.method(transport, 'candidates', (...args) => candidates(...args).filter((entry) => entry.modelId !== 'cost-unsafe'));
+  const call = transport.call;
+  const calibrationCalls = [];
+  t.mock.method(transport, 'call', async (sample, request, options) => {
+    const result = await call(sample, request, options);
+    if (options.stage !== 'calibration') return result;
+    const input = JSON.parse(request.messages[1].content);
+    calibrationCalls.push({ input, ref: options.ref });
+    return input.pairs ? { ...result, message: { content: '{"verdict":"A","confidence":"high"}' } } : result;
+  });
+
+  assert.equal((await chat(key.secret, 'Explain what the center of a circle represents.', true)).status, 200);
+  await waitFor(() => capture.count(owner.id) === 1);
+  worker.tick();
+  await waitFor(() => totals() === before + 2);
+  assert.equal(calibrationCalls.length, 5);
+  assert.deepEqual(calibrationCalls.slice(1).map(({ input }) => input), calibrationCalls[0].input.pairs);
+  assert.equal(new Set(calibrationCalls.map(({ ref }) => ref)).size, 1);
+});

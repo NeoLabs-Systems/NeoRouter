@@ -147,7 +147,10 @@ async function step(sample, signal) {
   const calibrated = (entry) => independent(entry) && byModel.get(judgeIdentity(entry))?.passed === true;
 
   if (!transport.candidates(sample, request, 'auto:smart', calibrated).length) {
-    const available = transport.candidates(sample, request, 'auto:smart', (candidate) => independent(candidate) && !byModel.has(judgeIdentity(candidate)));
+    const available = transport.candidates(sample, request, 'auto:smart', (candidate) => {
+      const state = byModel.get(judgeIdentity(candidate));
+      return independent(candidate) && (!state || state.pending);
+    });
     const [entry] = available;
     if (!entry) throw new transport.Deferred('waiting_calibrated_judge');
     await calibrate(sample, entry, byModel, signal);
@@ -165,10 +168,18 @@ async function step(sample, signal) {
 }
 
 async function calibrate(sample, entry, byModel, signal) {
-  const calibration = judge.calibration(objective.calibration(), Boolean(randomInt(2)));
+  const identity = judgeIdentity(entry);
+  const pending = byModel.get(identity)?.pending;
+  const calibration = pending?.[0] || judge.calibration(objective.calibration(), Boolean(randomInt(2)));
   const result = await transport.call(sample, calibration.request, { signal, stage: 'calibration', ref: entry.ref });
   const passed = calibration.passes(result.message);
-  byModel.set(judgeIdentity(entry), { passed, version: judge.VERSION,
+  const remaining = pending ? (passed ? pending.slice(1) : []) : (passed ? [] : calibration.checks);
+  if (remaining.length) {
+    byModel.set(identity, { pending: remaining, version: judge.VERSION, until: Date.now() + policy.sampleLifetimeMs });
+    if (!pending) logger.info('Benchmark judge calibration', { stage: 'calibration', model: entry.canonicalId, code: 'single_check_fallback' });
+    return;
+  }
+  byModel.set(identity, { passed, version: judge.VERSION,
     until: Date.now() + (passed ? policy.sampleLifetimeMs : policy.maxRetryMs) });
   logger.info('Benchmark judge calibration', { stage: 'calibration', model: entry.canonicalId, code: passed ? 'passed' : 'rejected' });
 }
