@@ -12,6 +12,8 @@ const { WeatherAdapter } = require('./adapters/weather');
 const { DeepgramAdapter } = require('./adapters/deepgram');
 const { ElevenLabsAdapter } = require('./adapters/elevenlabs');
 const { CodexAdapter } = require('./adapters/codex');
+const { NousAdapter } = require('./adapters/nous');
+const { LocalRuntimeAdapter } = require('./adapters/local_runtime');
 
 const ADAPTERS = {
   openai_compatible: OpenAICompatibleAdapter,
@@ -23,6 +25,8 @@ const ADAPTERS = {
   deepgram: DeepgramAdapter,
   elevenlabs: ElevenLabsAdapter,
   codex: CodexAdapter,
+  nous: NousAdapter,
+  local_runtime: LocalRuntimeAdapter,
 };
 
 const limitSchema = z.object({
@@ -38,10 +42,10 @@ const definitionSchema = z.object({
   id: z.string().regex(/^[a-z0-9][a-z0-9_-]*$/),
   label: z.string().min(1),
   description: z.string().default(''),
-  category: z.enum(['free', 'paid', 'aggregator', 'plan', 'local', 'custom', 'community', 'search', 'weather']),
+  category: z.enum(['free', 'paid', 'aggregator', 'plan', 'local', 'custom', 'search', 'weather', 'pool']),
   // Web search engines: which dialect the search adapter speaks.
   // Connected by signing in instead of pasting a key.
-  connect: z.enum(['codex_device']).optional(),
+  connect: z.enum(['codex_device', 'nous_device']).optional(),
   search: z.object({ engine: z.enum(['tavily', 'exa', 'linkup', 'parallel', 'firecrawl', 'serper', 'brave', 'jina', 'searxng']) }).optional(),
   // Weather services: which dialect the weather adapter speaks.
   weather: z.object({ service: z.enum(['open_meteo', 'openweathermap', 'weatherapi', 'tomorrow', 'visual_crossing']) }).optional(),
@@ -67,6 +71,8 @@ const definitionSchema = z.object({
   live: z.array(z.enum(['openai_live', 'openai_realtime', 'gemini_live'])).default([]),
   baseUrl: z.string().default(''),
   editableBaseUrl: z.boolean().default(false),
+  // Address schemes a base URL may use; relay:// only for pool partners behind their host.
+  baseUrlSchemes: z.array(z.enum(['http', 'https', 'relay'])).default(['http', 'https']),
   auth: z.object({
     type: z.enum(['bearer', 'header', 'none']).default('bearer'),
     header: z.string().optional(),
@@ -75,16 +81,34 @@ const definitionSchema = z.object({
   keyOptional: z.boolean().default(false),
   fields: z.array(z.object({ key: z.string(), label: z.string(), required: z.boolean().default(true), placeholder: z.string().optional() })).default([]),
   headers: z.record(z.string()).default({}),
+  // A header that carries the conversation id of each request (see session_id.js).
+  sessionHeader: z.string().optional(),
   chatPath: z.string().optional(),
   // extraPaths: further listings, e.g. OpenRouter's /embeddings/models.
-  models: z.object({ path: z.string().optional(), static: z.array(z.any()).optional(), extraPaths: z.array(z.string()).default([]) }).default({}),
+  // excludeFree: leave out models the listing prices at zero, for hosts whose free
+  // models only work in their own app. optIn: models (matching these patterns)
+  // that are listed but start switched off, because using them has a catch such
+  // as training on the prompts.
+  models: z.object({
+    path: z.string().optional(),
+    static: z.array(z.any()).optional(),
+    extraPaths: z.array(z.string()).default([]),
+    excludeFree: z.boolean().optional(),
+    optIn: z.array(z.string()).default([]),
+  }).default({}),
   // Models a provider serves but does not list (NVIDIA's FLUX endpoints).
   extraModels: z.array(z.object({ id: z.string(), name: z.string().optional(), type: z.string().optional() })).default([]),
-  validate: z.union([z.literal(false), z.object({ path: z.string().optional(), chatProbe: z.boolean().optional() })]).optional(),
+  // chatProbe: check the key with a 1-token chat request, for hosts whose /models is public.
+  // probeModels: the cheap models to try for it first.
+  validate: z.union([z.literal(false), z.object({ path: z.string().optional(), chatProbe: z.boolean().optional(), probeModels: z.array(z.string()).optional() })]).optional(),
   billing: z.object({
-    defaultMode: z.enum(['free_tier', 'paid', 'plan', 'plan_paid']),
+    defaultMode: z.enum(['free_tier', 'paid', 'plan', 'plan_paid', 'flat_rate']),
     // A subscription with an included allowance this provider sells for API use.
     plan: z.object({ note: z.string() }).optional(),
+    flatRate: z.object({
+      defaultPlan: z.string(),
+      plans: z.array(z.object({ id: z.string(), label: z.string(), concurrent: z.number().int().positive() })).min(1),
+    }).optional(),
     // With billing_mode=free_tier the account has no payment method, so
     // nothing it can call is ever charged. freeTierAll covers every model;
     // freeTierModels (patterns) only the models the free tier includes.
@@ -136,8 +160,21 @@ const definitionSchema = z.object({
     noImageResponseFormat: z.boolean().optional(),
     defaultVoice: z.string().optional(),
     voices: z.array(z.string()).optional(),
+    // Voices per model where models differ (Groq's English and Arabic Orpheus); the first match wins over `voices`.
+    modelVoices: z.array(z.object({ match: z.string(), voices: z.array(z.string()), defaultVoice: z.string() })).optional(),
+    // The formats the speech endpoint produces, preferred first; a format the model refuses is retried with the next.
     speechFormats: z.array(z.string()).optional(),
+    // A listing whose models name their voices in `supported_voices` (OpenRouter).
+    speechVoicesPath: z.string().optional(),
+    // The most text one speech request takes (Groq's Orpheus: 200); longer input is spoken in parts and joined.
+    maxSpeechChars: z.number().int().positive().optional(),
+    // Speech in NVIDIA Riva's HTTP dialect instead of OpenAI's (OVHcloud's nvr-tts models).
+    speechApi: z.enum(['openai', 'riva']).optional(),
     transcriptionJson: z.boolean().optional(),
+    // The field that asks an embedder for fewer dimensions (Mistral: output_dimension).
+    embeddingDimensionsField: z.string().optional(),
+    // Video length as a whole-number `duration` instead of OpenAI's `seconds` string (OpenRouter).
+    videoDuration: z.boolean().optional(),
   }).default({}),
 });
 
@@ -201,7 +238,13 @@ function publicDefinition(definition) {
       verified: Boolean(definition.billing.verify),
       hasAlwaysFreeModels: definition.billing.alwaysFree.length > 0,
       note: definition.billing.note,
+      // Where the free/paid facts were checked, and when.
+      source: definition.billing.source || null,
+      checkedAt: definition.billing.checkedAt || null,
       // Prepaid plans: offered by the provider, or possible on any custom endpoint.
+      flatRate: definition.billing.flatRate || null,
+      slotWaitMs: require('../config/env').getConfig().routing.slotQueueWaitMs,
+      slotMaxWaitMs: require('../config/env').getConfig().routing.slotMaxWaitMs,
       planAvailable: Boolean(definition.billing.plan) || definition.editableBaseUrl,
       planNote: definition.billing.plan?.note || null,
     },

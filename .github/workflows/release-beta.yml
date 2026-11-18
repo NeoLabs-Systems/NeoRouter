@@ -1,0 +1,75 @@
+# Every push to beta gets a version: package.json is bumped to the next
+# X.Y.Z-beta.N, committed and tagged. Installs and the admin UI's updater compare
+# that version to decide whether an update is waiting.
+name: Release Beta
+
+on:
+  push:
+    branches:
+      - beta
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-beta
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Version and tag beta
+    # The release commit is pushed with the workflow token, which does not
+    # start another run; this guard only matters for a bot-authored merge.
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: beta
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Resolve next beta version
+        id: beta_version
+        run: |
+          git fetch origin beta --tags --force
+          node scripts/next_release_version.js beta
+
+      - name: Set package version
+        run: npm version "${{ steps.beta_version.outputs.version }}" --no-git-tag-version --allow-same-version
+
+      - name: Commit and tag
+        run: |
+          set -euo pipefail
+          git add package.json package-lock.json
+          git commit -m "chore(beta-release): v${{ steps.beta_version.outputs.version }} [skip ci]"
+          git tag "${{ steps.beta_version.outputs.release_tag }}" -m "chore(beta-release): v${{ steps.beta_version.outputs.version }}"
+
+      - name: Push release commit and tag
+        run: |
+          set -euo pipefail
+          remote_sha="$(git ls-remote origin refs/heads/beta | awk '{print $1}')"
+          if [[ "$remote_sha" != "$(git rev-parse HEAD~1)" ]]; then
+            echo "::error::beta advanced to $remote_sha while this release was being prepared."
+            exit 1
+          fi
+          git push --atomic origin HEAD:refs/heads/beta "refs/tags/${{ steps.beta_version.outputs.release_tag }}"
+
+      - name: Create GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.beta_version.outputs.release_tag }}
+        run: |
+          gh release view "$RELEASE_TAG" >/dev/null 2>&1 || gh release create "$RELEASE_TAG" \
+            --verify-tag --title "Beta $RELEASE_TAG" --generate-notes --prerelease --latest=false

@@ -62,24 +62,7 @@
   "range24h": "24 h",
   "range7d": "7 days",
   "range30d": "30 days",
-  "statRequests": "Requests",
-  "statSuccessRate": "Success rate",
-  "statCost": "Spent",
-  "statTokens": "Tokens",
-  "statFreeShare": "Served free",
-  "statLatency": "Avg. latency",
-  "statFallbacks": "With fallback",
-  "statInOut": "{input} in · {output} out",
-  "@statInOut": {
-    "placeholders": {
-      "input": {
-        "type": "String"
-      },
-      "output": {
-        "type": "String"
-      }
-    }
-  },
+  "statRequests": "Requests today",
   "topModels": "Top models",
   "requestsShort": "{count} req.",
   "@requestsShort": {
@@ -115,6 +98,9 @@
   "homeOpenPlayground": "Open Playground",
   "homeProblemHint": "Requests skip it until this is fixed.",
   "homeFix": "Fix",
+  "homeAttentionTitle": "Needs your attention",
+  "homeAttentionHint": "These connections are giving trouble. Requests use the others meanwhile.",
+  "homeAttentionOpen": "Go to connections",
   "homeConnectTitle": "Connect your app",
   "homeConnectHint": "Works with any OpenAI or Anthropic SDK. Ask for \"auto\" and NeoRouter picks the model.",
   "homeKeyHint": "Use a router key, e.g. {name} ({prefix}…).",
@@ -161,7 +147,6 @@
   "categoryPaid": "Paid APIs",
   "categoryLocal": "Local",
   "categoryCustom": "Custom",
-  "categoryCommunity": "Community",
   "categorySearch": "Web search",
   "categoryPlan": "Subscriptions",
   "kindFree": "Free models",
@@ -185,6 +170,22 @@
   "chatgptWaiting": "Waiting for you to confirm…",
   "chatgptExpired": "The code expired. Start again.",
   "chatgptConnected": "ChatGPT connected",
+  "nousSignIn": "Sign in with Nous Portal",
+  "nousSignInAgain": "Sign in again",
+  "nousSignInHint": "NeoRouter shows a code. Enter it in Nous Portal to let it use your subscription and credits.",
+  "nousEnterCode": "Enter this code in Nous Portal",
+  "nousOpenPage": "Open Nous Portal",
+  "nousWaiting": "Waiting for you to confirm…",
+  "nousExpired": "The code expired. Start again.",
+  "nousConnected": "Nous Portal connected",
+  "nousSignedInAs": "Signed in as {email}",
+  "@nousSignedInAs": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
   "apiKey": "API key",
   "apiKeyOptional": "API key (optional)",
   "apiKeyKeep": "API key (leave empty to keep the current one)",
@@ -241,6 +242,16 @@
   "revalidate": "Check key",
   "syncModels": "Refresh models",
   "probeQuota": "Check balance",
+  "markFixed": "Mark as fixed",
+  "markFixedDone": "Fresh start: NeoRouter forgot the cooldowns and will try this connection again.",
+  "markFixedStillFailing": "Fresh start, but the key check says: {message}",
+  "@markFixedStillFailing": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "removeProvider": "Remove connection",
   "removeProviderConfirm": "Remove {name}? Its models are no longer used. You can add it again at any time.",
   "@removeProviderConfirm": {
@@ -641,7 +652,212 @@
   "settingsScopeServer": "This server",
   "settingsAccountDescription": "Your name, email and password.",
   "settingsAppearanceDescription": "Theme and language of this dashboard.",
-  "settingsConnectDescription": "Ready-to-paste setup for your SDKs and tools.",
+  "settingsUsage": "Usage",
+  "settingsUsageDescription": "Spread free and plan limits evenly until they reset.",
+  "smoothTitle": "Even out usage",
+  "smoothHint": "Free and metered plan allowances follow observed balances, reset times and your learned demand. When every eligible source needs to save allowance, requests wait or return a retry time.",
+  "smoothSwitch": "Spread limits until they reset",
+  "smoothOn": "On. Limits are spread over their whole period.",
+  "smoothOff": "Off. Requests use limits as fast as they come.",
+  "smoothLearning": "NeoRouter is still learning how you use it. This unlocks by itself once there is enough to go by.",
+  "smoothPausedLearning": "On, but paused until there is enough data again.",
+  "smoothHomeNote": "Limits are being spread until they reset. Keys with a high priority are not held back.",
+  "smoothStatusActive": "Active",
+  "smoothStatusOff": "Off",
+  "smoothStatusLearning": "Learning",
+  "smoothNeedDays": "Days of history",
+  "smoothNeedActiveDays": "Days with requests (last 14)",
+  "smoothNeedRequests": "Answered requests (last 14 days)",
+  "smoothNeedCoverage": "Free and plan requests on connections with known limits (last 7 days)",
+  "smoothProgress": "{have} of {need}",
+  "@smoothProgress": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "smoothHowTitle": "How it works",
+  "smoothHowDaily": "Daily limits: track the remaining balance and real reset time, reserving room for the hours when you usually need it. Token estimates include learned output sizes.",
+  "smoothHowPlans": "Metered plans: learn how much requests spend and reserve that allowance between provider updates. Paid concurrency slots have no allowance to spread.",
+  "smoothHowPriority": "High-priority keys bypass pacing. Pay-per-use models and flat-rate slots are unaffected; provider limits and key budgets still apply.",
+  "caIntro": "Pick your app and NeoRouter gives you exactly what to paste, then checks that it works.",
+  "caStepApp": "App",
+  "caStepPlace": "Where it runs",
+  "caStepSetup": "Set up",
+  "caSearch": "Search apps",
+  "caGroupAll": "All",
+  "caGroupCoding": "Coding",
+  "caGroupChat": "Chat",
+  "caGroupAutomation": "Automation",
+  "caGroupDeveloper": "Your own code",
+  "caNoApps": "No app matches. \"Other app (OpenAI-compatible)\" works with almost any app.",
+  "caWhereTitle": "Where does {app} run?",
+  "@caWhereTitle": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caPlaceLocal": "On this computer",
+  "caPlaceLocalHint": "Installed on the same computer as NeoRouter.",
+  "caPlaceDocker": "In Docker on this computer",
+  "caPlaceDockerHint": "In a container on the same computer as NeoRouter.",
+  "caPlaceNetwork": "On another device at home",
+  "caPlaceNetworkHint": "Another computer, phone or server in the same network.",
+  "caPlaceInternet": "Somewhere on the internet",
+  "caPlaceInternetHint": "A cloud service, or an app that calls through its own servers.",
+  "caUsual": "Usual for this app",
+  "caReachable": "Works",
+  "caNotReachable": "Not reachable yet",
+  "caCloudOnly": "{app} sends requests through its own servers, so only an internet address works.",
+  "@caCloudOnly": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caOpenTitle": "NeoRouter only lets this computer in",
+  "caOpenHint": "Containers and other devices cannot reach it yet. Opening it lets them in; every request still needs a NeoRouter key.",
+  "caOpenButton": "Let containers and devices in",
+  "caOpenAskAdmin": "Ask an admin of this NeoRouter to let containers and devices in (Settings → Connect your apps).",
+  "caRestarting": "NeoRouter is restarting to apply this …",
+  "caRestartBack": "Done: containers and devices can reach NeoRouter now.",
+  "caRestartManual": "Saved. Restart NeoRouter once to apply it:",
+  "caPublicUrlHint": "NeoRouter has no internet address yet. Put it behind a domain (for example with a reverse proxy or a tunnel) and set NEOROUTER_PUBLIC_URL to it.",
+  "caDockerLinuxHint": "On Linux, the app’s container also needs this, so the address works:",
+  "caNoLanAddress": "No network address found on this computer.",
+  "caContinue": "Continue",
+  "caBack": "Back",
+  "caKeyTitle": "Key for {app}",
+  "@caKeyTitle": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caKeyCreate": "Create a key for {app}",
+  "@caKeyCreate": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caKeyCreateHint": "Its own key, so you can see its usage and switch it off on its own.",
+  "caKeyCreated": "Created. It is shown only now; it is already filled in below.",
+  "caKeyExisting": "Use a key I already have",
+  "caKeyExistingHint": "Put your nrt_ key where it says nrt_… below.",
+  "caModelTitle": "Model",
+  "caModelAuto": "auto: NeoRouter picks the best model for each request",
+  "caModelChange": "Change",
+  "caModelAutoRoute": "Automatic",
+  "caInApp": "In {app}",
+  "@caInApp": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caDownload": "Download",
+  "caWaiting": "Waiting for the first request from {app} …",
+  "@caWaiting": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caWaitingHint": "Send a message in {app}; this updates by itself.",
+  "@caWaitingHint": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caConnected": "{app} is connected",
+  "@caConnected": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caConnectedDetail": "Last answer from {model}{time}.",
+  "@caConnectedDetail": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "caSeen": "{app} reached NeoRouter",
+  "@caSeen": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caSeenHint": "The key works. Send a message in {app} to try a real answer.",
+  "@caSeenHint": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caFailed": "{app} got through, but the request failed",
+  "@caFailed": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caUnknownModel": "{app} asked for the model \"{model}\", which does not exist here.",
+  "@caUnknownModel": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      },
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "caDidYouMean": "Did you mean one of these? Copy it into {app}, or use \"auto\".",
+  "@caDidYouMean": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caNothingYet": "Nothing has arrived yet. Check that:",
+  "caCheckAddress": "the address is exactly the one above, including /v1",
+  "caCheckKey": "the key was copied completely (it starts with nrt_)",
+  "caCheckDocker": "if {app} runs in Docker, you picked \"In Docker on this computer\"",
+  "@caCheckDocker": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "caAnother": "Connect another app",
+  "settingsConnectDescription": "Connect any app step by step, with a check that it works.",
   "settingsServerDescription": "Sign-ups, people and model metadata. Only admins see this page.",
   "settingsAppliesInstantly": "Changes apply instantly",
   "serverTitle": "Server",
@@ -662,6 +878,61 @@
   "saveProfileButton": "Save profile",
   "changePassword": "Change password",
   "securityTitle": "Security",
+  "accountDataTitle": "Your data",
+  "accountExportTitle": "Export account data",
+  "accountExportHint": "Your profile, connections, settings, pools and usage history as one file. Passwords and API keys are not included.",
+  "accountExport": "Export",
+  "accountKeysTitle": "Export saved API keys",
+  "accountKeysHint": "The keys of your connections in plain text, as a separate file. Needs two-factor authentication.",
+  "accountKeysNeedTwoFactor": "Turn on two-factor authentication under Security first. The keys leave the server in plain text, so this needs more than your password.",
+  "accountKeysWarning": "Anyone with this file can use your providers on your bill. Keep it somewhere safe and delete it when you no longer need it.",
+  "accountImportTitle": "Import API keys",
+  "accountImportHint": "Adds the connections from a key file exported from NeoRouter. Each key is checked with its provider; keys you already have are skipped.",
+  "accountImport": "Import",
+  "accountImportConfirm": "{count} keys found: {names}",
+  "@accountImportConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "accountImportNotAFile": "This is not a NeoRouter key file.",
+  "accountImportWorking": "Checking the keys with their providers …",
+  "accountImportDone": "Import finished",
+  "accountImportImported": "Added: {names}",
+  "@accountImportImported": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "accountImportSkipped": "Already there: {names}",
+  "@accountImportSkipped": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "accountImportFailed": "Not added:",
+  "accountImportNothing": "Nothing was added.",
+  "accountDeleteTitle": "Delete account",
+  "accountDeleteHint": "Deletes your account with all connections, keys, settings and history. Your pools are told you left. This cannot be undone.",
+  "accountDelete": "Delete account",
+  "accountDeleteConfirm": "Everything in this account is deleted for good. Export your data first if you want to keep it.",
+  "accountDeleted": "Your account was deleted.",
+  "accountConfirmPassword": "Enter your password to continue.",
+  "accountConfirmPasswordCode": "Enter your password and a code from your authenticator app.",
+  "accountExported": "Downloaded.",
+  "accountLastAdmin": "You are the only admin. Make someone else an admin first.",
+  "accountWrongPassword": "The password is not correct.",
+  "accountTooManyTries": "Too many wrong tries. Wait a few minutes and try again.",
+  "accountWrongCode": "The code is not valid.",
   "twoFactorTitle": "Two-factor authentication",
   "twoFactorOn": "2FA on",
   "twoFactorOff": "2FA off",
@@ -821,7 +1092,7 @@
     }
   },
   "navAdmin": "Admin",
-  "adminDescription": "Run this server: accounts, sign-ups, server details and model metadata.",
+  "adminDescription": "Run this server: accounts, sign-ups, server details, local models and model metadata.",
   "adminSearchHint": "Search admin settings, e.g. registration",
   "nothingMatches": "Nothing matches",
   "registrationTitle": "Sign-ups",
@@ -976,7 +1247,8 @@
       }
     }
   },
-  "homeStatusIssues": "{count} connection needs your attention. Requests use the others meanwhile.",
+  "homeStatusIssue": "1 connection needs your attention. Requests use the others meanwhile.",
+  "homeStatusIssues": "{count} connections need your attention. Requests use the others meanwhile.",
   "@homeStatusIssues": {
     "placeholders": {
       "count": {
@@ -1043,6 +1315,37 @@
       }
     }
   },
+  "problemFailingTitle": "{name} is not answering",
+  "@problemFailingTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "problemFailing": "{successes} of {attempts} attempts worked in the last day.",
+  "@problemFailing": {
+    "placeholders": {
+      "successes": {
+        "type": "String"
+      },
+      "attempts": {
+        "type": "String"
+      }
+    }
+  },
+  "problemCapacityTitle": "Many requests go unanswered",
+  "problemCapacity": "{failed} of {requests} failed in the last day. Your connections cannot keep up: connect more, or send less.",
+  "@problemCapacity": {
+    "placeholders": {
+      "failed": {
+        "type": "String"
+      },
+      "requests": {
+        "type": "String"
+      }
+    }
+  },
   "problemKeyRejected": "The provider rejected the key. Update it to use this connection again.",
   "requestFailed": "Failed: {reason}",
   "@requestFailed": {
@@ -1072,6 +1375,224 @@
   "activityDescription": "What your apps asked for and how NeoRouter answered. Only metadata is kept – never your messages.",
   "tabOverview": "Overview",
   "tabRequests": "Requests",
+  "keyMaxPriceTitle": "Max price per million tokens",
+  "keyMaxPricePerMillion": "per million tokens",
+  "tabLearned": "Learned",
+  "learnedEmptyTitle": "Nothing learned yet",
+  "learnedEmptyMessage": "NeoRouter learns from every answer. Send a few requests and watch this fill up.",
+  "learnedExperience": "Experience",
+  "learnedExperienceCaption": "recent answers",
+  "learnedKnowHow": "Kinds of work",
+  "learnedKnowHowCaption": "{count} models compared",
+  "@learnedKnowHowCaption": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedRescued": "Rescued",
+  "learnedRescuedCaption": "by a backup, 30 days",
+  "learnedFirstTry": "First choice answered",
+  "learnedFirstTryCaption": "when a model was free",
+  "learnedUpFrom": "up from {value}",
+  "@learnedUpFrom": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedWas": "was {value}",
+  "@learnedWas": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCurveTitle": "How often its first choice answers",
+  "learnedNoCapacity": "{count} requests found no model free in 30 days",
+  "@learnedNoCapacity": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedMapTitle": "What works for what",
+  "learnedMapHelp": "Every model you can use right now, scored out of 100 for each kind of work: benchmarks first, then your ratings, measured speed and how reliably it answered. Move the slider to weigh them differently. Price is not part of it.",
+  "learnedSources": "Benchmarks: Artificial Analysis; OpenRouter (openrouter.ai), CC BY 4.0.",
+  "learnedNotTried": "Not tried yet: benchmarks only",
+  "learnedBestLineNew": "{score} of 100 · not tried yet, benchmarks only",
+  "@learnedBestLineNew": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedTuneTitle": "Best for what you need",
+  "learnedTuneFast": "Speed",
+  "learnedTuneBalanced": "Balanced",
+  "learnedTuneSmart": "Quality",
+  "learnedTuneFree": "Free only",
+  "learnedTuneNoFree": "No free model has answered yet.",
+  "learnedLegendWorse": "Lower",
+  "learnedLegendBetter": "Higher",
+  "learnedLegendBest": "Best",
+  "learnedLegendEstimated": "~ partly estimated, no benchmark",
+  "learnedLegendFails": "Often fails for you",
+  "learnedCellScore": "Score: {value} of 100",
+  "@learnedCellScore": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCellBenchmark": "Benchmarks and ratings: {value}",
+  "@learnedCellBenchmark": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCellEstimate": "Estimated quality: {value}, no benchmark yet",
+  "@learnedCellEstimate": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCellSpeed": "Speed: {value}",
+  "@learnedCellSpeed": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedBestLine": "{score} of 100 · {rate} worked · {answers} answers",
+  "@learnedBestLine": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      },
+      "answers": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCellLine": "{rate} worked · {answers} answers",
+  "@learnedCellLine": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "answers": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedCellVotes": "Rated {liked} up, {disliked} down",
+  "@learnedCellVotes": {
+    "placeholders": {
+      "liked": {
+        "type": "String"
+      },
+      "disliked": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedBestTitle": "Best for each kind of work",
+  "learnedFastestTitle": "Fastest it has measured",
+  "learnedWorked": "{rate} worked",
+  "@learnedWorked": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedFoundTitle": "Found out on its own",
+  "learnedLimitRpm": "{name} allows {value} requests a minute",
+  "@learnedLimitRpm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedLimitRpd": "{name} allows {value} requests a day",
+  "@learnedLimitRpd": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedLimitTpm": "{name} allows {value} tokens a minute",
+  "@learnedLimitTpm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedLimitTpd": "{name} allows {value} tokens a day",
+  "@learnedLimitTpd": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedRoom": "{name} needs room for {value} tokens to finish",
+  "@learnedRoom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedResting": "{name} is resting until {time}",
+  "@learnedResting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "learnedReasonLimit": "It reached its limit",
+  "learnedReasonAccount": "The account needs attention",
+  "learnedReasonMissing": "It isn't available right now",
+  "learnedReasonIncompatible": "It can't handle these requests",
+  "learnedReasonFailing": "It kept failing",
   "metricTokens": "{count} tokens",
   "@metricTokens": {
     "placeholders": {
@@ -1093,6 +1614,156 @@
   "chartTypical": "Typical",
   "chartSlowest": "Slowest 5 %",
   "topModelsTitle": "Most used models",
+  "keySectionModels": "Models",
+  "keySectionRouting": "Routing",
+  "discoveryBenchmarks": "Benchmarks",
+  "discoveryBenchHint": "Measured model performance, brought together. Explore the evidence and compare two models side by side.",
+  "discoveryMeasuredModels": "Measured models",
+  "discoveryMethod": "How scores are combined",
+  "discoveryMethodHint": "Raw scores stay on their original scales. Each test becomes a percentile among models measured by that source, within the same model kind. Test percentiles are averaged per source, then sources receive equal weight. Missing tests are excluded, never scored as zero. Coverage differs: compare shared tests for a fairer view. This is a relative ranking, not an accuracy percentage.",
+  "discoverySources": "Sources",
+  "discoverySourceHint": "Uses the latest successfully collected data. Refresh reloads this view; source collection follows the instance sync schedule.",
+  "discoveryNotSynced": "Not collected yet",
+  "discoveryUpdated": "Updated {date}",
+  "@discoveryUpdated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "discoveryCoverage": "{sources} sources · {tests} tests",
+  "@discoveryCoverage": {
+    "placeholders": {
+      "sources": {
+        "type": "String"
+      },
+      "tests": {
+        "type": "String"
+      }
+    }
+  },
+  "discoveryScore": "Combined score",
+  "discoverySourceFilter": "Benchmark source",
+  "discoveryAllSources": "All sources",
+  "discoveryKind": "Model kind",
+  "discoveryFreeHint": "Verified zero-price OpenRouter listings. Provider free tiers depend on your connected accounts.",
+  "discoveryFreeOnly": "Confirmed free only",
+  "discoveryFree": "Free listing",
+  "discoverySearchModels": "Search models",
+  "discoveryCompare": "Compare two models",
+  "discoveryCompareHint": "Choose up to two models from the ranking. They must be the same kind.",
+  "discoverySelectCompare": "Compare {name}",
+  "@discoverySelectCompare": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "discoveryRemoveCompare": "Remove {name} from comparison",
+  "@discoveryRemoveCompare": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "discoveryCompareLimit": "Remove a selection first, or choose the same model kind.",
+  "discoveryChartScore": "Score",
+  "discoveryChartValue": "Score vs price",
+  "discoveryPriceAxis": "Price per 1M tokens (log)",
+  "discoveryNoPrices": "No prices known for these models.",
+  "proxyCheckNow": "Check all now",
+  "proxyLastCheck": "Checked {ago} · {ok} of {count} working · every hour",
+  "@proxyLastCheck": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      },
+      "ok": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyNotChecked": "Checked automatically every hour",
+  "proxySelectAll": "Select all",
+  "proxySelected": "{count} selected",
+  "@proxySelected": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyEnableAction": "Enable",
+  "proxyDisableAction": "Disable",
+  "proxyDeleteSelected": "Delete {count} proxies? This cannot be undone.",
+  "@proxyDeleteSelected": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyHealthy": "Ready",
+  "proxyResting": "Resting",
+  "proxyOff": "Off",
+  "proxyLatencyChart": "Fastest proxies",
+  "discoveryShared": "{count} shared tests",
+  "@discoveryShared": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "discoveryBreakdown": "Benchmark breakdown",
+  "discoveryNoShared": "These models have no shared tests in the collected data. Their overall rankings use different evidence.",
+  "discoveryTestScale": "Raw score · percentile bar · {count} measured peers",
+  "@discoveryTestScale": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "discoveryEmpty": "No measured results yet",
+  "discoveryEmptyHint": "Results appear after metadata sources have been collected. Try a different search or filter if sources are already available.",
+  "discoveryOwnTitle": "NeoRouter benchmarks",
+  "discoveryOwnHint": "Coming later. A preview of our own evaluations — no results yet.",
+  "discoveryPrevious": "Previous page",
+  "discoveryNext": "Next page",
+  "discoveryPage": "Page {page} · {count} models",
+  "@discoveryPage": {
+    "placeholders": {
+      "page": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mostUsedProviders": "Most used providers",
+  "providerUsageTotal": "Total",
+  "providerUsageAverage": "Average per key",
+  "providerUsageAverageHint": "Requests divided by provider keys used in this period and filter. Unused keys are excluded.",
+  "providerUsageUnavailable": "Average unavailable: missing connection history",
+  "providerUsageAverageLine": "{requests} / key · keys: {keys}",
+  "@providerUsageAverageLine": {
+    "placeholders": {
+      "requests": {
+        "type": "String"
+      },
+      "keys": {
+        "type": "String"
+      }
+    }
+  },
   "byConnection": "By connection",
   "byKey": "By API key",
   "rankingLine": "{count} · {latency}",
@@ -1158,7 +1829,6 @@
   "accountNotVerified": "Free plan, not verified yet",
   "moreActions": "More actions",
   "chooseProviderHint": "Pick the service you have a key for. Providers marked \"Free models\" can be used without paying.",
-  "providerFreeTag": "Free models",
   "getKeyAt": "Get a key at {name}",
   "@getKeyAt": {
     "placeholders": {
@@ -1194,7 +1864,8 @@
       }
     }
   },
-  "limitsDescription": "What is left of each provider's allowance today. Per-minute limits reset on their own and NeoRouter routes around them, so only daily allowances and models running low are shown.",
+  "limitsDescription": "Each provider's limits and what is left of today's allowance. To change a limit, open the connection’s menu on the Providers tab.",
+  "limitRenewed": "renewed, counts again from the next request",
   "limitResets": "resets {time}",
   "@limitResets": {
     "placeholders": {
@@ -1216,6 +1887,73 @@
   "@limitConcurrentDocumented": {
     "placeholders": {
       "count": {
+        "type": "String"
+      }
+    }
+  },
+  "limitsSectionTitle": "Limits",
+  "limitsInvalid": "Enter a whole number, 1 or more.",
+  "providerLimitsChooseConnection": "Choose which connection to edit.",
+  "trafficLimitsTitle": "Traffic limits",
+  "providerTrafficLimitsHint": "Applies to all models on this connection. Enter a limit to override NeoRouter’s estimate, or leave it blank for automatic limits. Provider restrictions still apply.",
+  "keyTrafficLimitsHint": "Applies only to this key. Leave a field blank to use the connections’ limits.",
+  "limitAutomatic": "automatic",
+  "limitSharedValue": "{value} for all models",
+  "@limitSharedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "limitPerModelValue": "{value} per model",
+  "@limitPerModelValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "limitSourceCurated": "documented",
+  "limitSourceHeader": "reported by the provider",
+  "limitSourceLearned": "learned from its answers",
+  "limitSourceManual": "set by you",
+  "limitsPerModelTitle": "Limits per model ({count})",
+  "@limitsPerModelTitle": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "limitShortRpm": "{value}/min",
+  "@limitShortRpm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "limitShortRpd": "{value}/day",
+  "@limitShortRpd": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "limitShortTpm": "{value} tokens/min",
+  "@limitShortTpm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "limitShortTpd": "{value} tokens/day",
+  "@limitShortTpd": {
+    "placeholders": {
+      "value": {
         "type": "String"
       }
     }
@@ -1560,8 +2298,8 @@
     }
   },
   "unitKind": "Billed",
-  "navTeam": "Team",
-  "teamTitle": "Team",
+  "navTeam": "Network",
+  "teamTitle": "Network",
   "teamDescription": "Let other people help manage your NeoRouter. You decide per person what they may see and change. Everything they create stays yours.",
   "inviteSomeone": "Invite someone",
   "teamMembersTitle": "People in your team",
@@ -1715,6 +2453,463 @@
   "teamActivityTitle": "Team activity",
   "teamActivityHint": "Invites, joins and changed rights across the server.",
   "teamActivityEmpty": "Nothing has happened yet.",
+  "teamTabPeople": "Team",
+  "teamTabPool": "Pools",
+  "poolDescription": "Share free capacity with friends who run their own NeoRouter. Nobody hands out keys: each request runs on the server of whoever shares it.",
+  "poolEmptyTitle": "Not in a pool yet",
+  "poolEmptyMessage": "Start one and invite others, or join with a link someone sent you.",
+  "poolCreate": "Start a pool",
+  "poolJoin": "Join with a link",
+  "poolTrustNotice": "Requests through the pool run on a partner's server. NeoRouter keeps no content there and hides secrets first, but whoever runs that server could technically see what is sent. Only share with people you trust.",
+  "poolTosNotice": "Some providers do not allow sharing free access with others. Check their terms before you share a connection.",
+  "poolInvite": "Invite",
+  "poolInviteTitle": "Pool invite link",
+  "poolInviteBody": "Send this link, or the ready-made text below, to someone with their own NeoRouter. The link opens a page that takes them to their own NeoRouter to join. It works once and expires in 7 days.",
+  "poolStateOnline": "Online",
+  "poolStateOffline": "Not reachable",
+  "poolStateConnecting": "Connecting",
+  "poolStatePaused": "Paused",
+  "poolBalanceNew": "New",
+  "poolBalanceBalanced": "Balanced",
+  "poolBalanceGiving": "You give more",
+  "poolBalanceTaking": "You take more",
+  "poolPausePartner": "Pause this partner",
+  "poolResumePartner": "Resume this partner",
+  "poolRemoveMember": "Remove from pool",
+  "poolRemoveConfirm": "{name} loses access to the pool right away.",
+  "@poolRemoveConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolShareTitle": "What you share",
+  "poolShareHint": "Free models from the connections you pick; with ⋯ you choose for each one whether its subscription or paid models are shared too. Your own requests always come first.",
+  "classificationTitle": "Free or paid",
+  "classificationAuto": "Automatic",
+  "classificationFree": "All free",
+  "classificationPaid": "All paid",
+  "classificationHint": "Automatic uses what NeoRouter worked out for each model. Set it yourself if that is wrong; a choice on a single model still wins.",
+  "classificationFreeWarning": "Only if this connection never charges you: every model is then treated as free, including for keys that may only use free models.",
+  "poolActivityGiven": "What partners used of yours",
+  "poolActivityTaken": "What you used of partners",
+  "poolActivityGivenMetric": "Given",
+  "poolActivityTakenMetric": "Taken",
+  "poolActivityCost": "Cost to you",
+  "poolActivityCostCaption": "from paid models you share",
+  "poolActivityByPartner": "By partner",
+  "poolActivityEmptyTitle": "Nothing shared yet",
+  "poolActivityEmpty": "Once partners use your connections, or you theirs, it shows up here. Only counts are kept, never content.",
+  "poolRankingLine": "{requests} · {tokens} tokens",
+  "@poolRankingLine": {
+    "placeholders": {
+      "requests": {
+        "type": "String"
+      },
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
+  "poolKindsMenu": "Choose what to share",
+  "poolKindsTitle": "What {name} shares",
+  "@poolKindsTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolKindsHint": "Partners use free models first, then subscription, then paid ones.",
+  "poolKindFreeHint": "Never cost you anything.",
+  "poolKindPlanHint": "Use up your subscription’s limits. Many subscriptions do not allow sharing.",
+  "poolKindPaidBilled": "Billed to you per use.",
+  "poolKindPaidBalance": "Spend your prepaid balance.",
+  "poolKindNone": "This connection has none.",
+  "poolKindsApply": "Apply",
+  "poolPlanModels": "{count} subscription models",
+  "@poolPlanModels": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidModels": "{count} paid models",
+  "@poolPaidModels": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPlanConfirmTitle": "Share the subscription of {name}?",
+  "@poolPlanConfirmTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPlanConfirmBody": "Partners in {pool} can then also use this subscription when no free model can serve them. That uses up your plan’s limits, and many subscriptions do not allow sharing. Your daily limits for partners still apply.",
+  "@poolPlanConfirmBody": {
+    "placeholders": {
+      "pool": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPlanConfirm": "Share subscription",
+  "filterPool": "Pool",
+  "modelsPoolHint": "What your pool partners share with you. Only keys with pool access use these, and it costs you nothing.",
+  "poolViaPartner": "via {name}",
+  "@poolViaPartner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidConfirmTitle": "Share paid models of {name}?",
+  "@poolPaidConfirmTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidConfirmBilled": "Partners in {pool} can then use this connection’s paid models. That costs you real money, billed by the provider. Your daily limits for partners still apply.",
+  "@poolPaidConfirmBilled": {
+    "placeholders": {
+      "pool": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidConfirmPrepaid": "Partners in {pool} can then use this connection’s paid models. That spends your prepaid balance. Your daily limits for partners still apply.",
+  "@poolPaidConfirmPrepaid": {
+    "placeholders": {
+      "pool": {
+        "type": "String"
+      }
+    }
+  },
+  "poolPaidConfirm": "Share paid models",
+  "poolShareNone": "None of your connections has free models yet.",
+  "poolFreeModels": "{count} free models",
+  "@poolFreeModels": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "poolLimitsTitle": "Share per partner",
+  "poolLimitsAutoHint": "Automatic and fair: every partner gets the same share; one who gives you more gets up to three times as much, one who only takes half. Of each connection you keep what you usually still need that day, judged from your last week; partners use the rest.",
+  "poolPartnerCaps": "Today: {requests} requests · {tokens} tokens · {concurrent} at once",
+  "@poolPartnerCaps": {
+    "placeholders": {
+      "requests": {
+        "type": "String"
+      },
+      "tokens": {
+        "type": "String"
+      },
+      "concurrent": {
+        "type": "String"
+      }
+    }
+  },
+  "poolLimitsNoPartners": "Limits show up here once someone joins.",
+  "poolLimitsAdvanced": "Fixed limits (advanced)",
+  "poolLimitsAdvancedHint": "Leave a field empty to keep it automatic. A value you set applies to every partner in this pool, whatever they give.",
+  "poolLimitAutomatic": "Automatic",
+  "poolLimitRequests": "Requests per day",
+  "poolLimitTokens": "Tokens per day",
+  "poolLimitConcurrent": "Requests at once",
+  "poolLimitReserve": "Kept for you (%)",
+  "poolLimitReserveHint": "Empty: as much as you usually still need today, from your last week. A number keeps that share of every allowance.",
+  "poolLeave": "Leave pool",
+  "poolClose": "Close pool",
+  "poolLeaveConfirm": "Leave {name}? Partners lose access to your connections at once, and you to theirs.",
+  "@poolLeaveConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolCloseConfirm": "Close {name}? As its host, leaving ends the pool for everyone.",
+  "@poolCloseConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolCreateTitle": "Start a pool",
+  "poolNameLabel": "Pool name",
+  "poolSelfNameLabel": "Your name in the pool",
+  "poolSelfNameHint": "Partners see this name.",
+  "poolJoinTitle": "Join a pool",
+  "poolLinkLabel": "Invite link",
+  "poolCheckLink": "Check link",
+  "poolJoinPreview": "Join {name}?",
+  "@poolJoinPreview": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolJoinMembers": "Hosted by {host} · {count} members",
+  "@poolJoinMembers": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "poolInfoTooltip": "About the pool",
+  "keyPoolLabel": "Use the pool",
+  "keyPoolHint": "Also uses partners' free models, mostly when yours are busy.",
+  "keyPoolChip": "Pool",
+  "settingsPoolTitle": "Pool",
+  "settingsKeepSensitive": "Keep very sensitive requests off the pool",
+  "settingsKeepSensitiveHint": "Requests with passwords, keys, card or ID numbers, or many people's personal data stay on your own connections. Clear cases are caught, not every secret.",
+  "homePoolPaused": "Paused for now: you neither use nor give.",
+  "keptPrivateTag": "Kept private",
+  "poolHostYou": "you host it",
+  "poolPartnersCount": "{count} partners · {online} online",
+  "@poolPartnersCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "online": {
+        "type": "String"
+      }
+    }
+  },
+  "poolNoPartnersShort": "No partners yet",
+  "poolTabSharing": "Sharing",
+  "poolTabSettings": "Settings",
+  "pickerSelected": "{selected} of {total} selected",
+  "@pickerSelected": {
+    "placeholders": {
+      "selected": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "pickerAll": "All",
+  "pickerNone": "None",
+  "pickerSearch": "Find a connection",
+  "poolDiscard": "Discard",
+  "poolAgreeCreate": "Understood, start pool",
+  "poolAgreeJoin": "Understood, join",
+  "poolShareDialogTitle": "Share {name} in",
+  "@poolShareDialogTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "poolShareInPools": "Share in pools…",
+  "homePoolsTitle": "Pools",
+  "poolInviteText": "Hi! {host} is inviting you to the NeoRouter pool \"{pool}\", where our NeoRouters share AI capacity. Open this link and enter the address of your own NeoRouter: {link}\n(It works once and expires in 7 days.)",
+  "@poolInviteText": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "pool": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "poolInviteCopyText": "Copy invite text",
+  "poolInviteTextLanguage": "Language of the text",
+  "galleryFilterAll": "All",
+  "galleryFilterFree": "Free",
+  "galleryFilterPlans": "Subscriptions",
+  "galleryFilterPayg": "Pay as you go",
+  "galleryFilterTools": "Search & weather",
+  "galleryFilterOwn": "Local & custom",
+  "galleryCount": "{count} providers",
+  "@galleryCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "galleryNoMatch": "No provider matches. A custom OpenAI-compatible endpoint works with almost any service.",
+  "costTagFree": "Free",
+  "costTagFreeModels": "Free models",
+  "costTagPlan": "Subscription",
+  "costTagPayg": "Pay as you go",
+  "costTagConnected": "Connected",
+  "costSummaryFree": "Free tier without a card",
+  "costSummaryFreeModels": "Some models are free",
+  "costSummaryPlan": "A subscription you already pay for",
+  "costSummaryPayg": "You pay for what you use",
+  "costChecked": "Checked {date}",
+  "@costChecked": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "costSource": "Source",
+  "providerWebsite": "Website",
+  "providerGetKey": "Get a key",
+  "statSuccessRate": "Success rate",
+  "statCost": "Spent",
+  "statTokens": "Tokens",
+  "statFreeShare": "Served free",
+  "statLatency": "Avg. latency",
+  "statFallbacks": "With fallback",
+  "statInOut": "{input} in · {output} out",
+  "@statInOut": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      }
+    }
+  },
+  "poolAlreadyMember": "You are already in this pool.",
+  "poolLoadFailed": "Pools could not be loaded.",
+  "networkDescription": "Share free capacity with other NeoRouters, and let people help you manage this one.",
+  "statBalance": "Your balance",
+  "statModels": "Shared models",
+  "statOnlineValue": "{online} of {total}",
+  "@statOnlineValue": {
+    "placeholders": {
+      "online": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "statOnline": "Members online",
+  "balanceTheyTake": "Takes more",
+  "balanceTheyGive": "Gives more",
+  "panelEditSharing": "Change what you share",
+  "panelBalance": "Balance this week",
+  "panelRequests": "{count} requests",
+  "@panelRequests": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "panelTook": "Took today",
+  "panelGave": "Gave today",
+  "panelSharesPartner": "Shares {models} models with you, free for you, {percent} % of the models in this pool.",
+  "@panelSharesPartner": {
+    "placeholders": {
+      "models": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "panelSharesYou": "You share {connections} connections with {models} models, {percent} % of the models in this pool.",
+  "@panelSharesYou": {
+    "placeholders": {
+      "connections": {
+        "type": "String"
+      },
+      "models": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "memberCaptionPartner": "{models} models",
+  "@memberCaptionPartner": {
+    "placeholders": {
+      "models": {
+        "type": "String"
+      }
+    }
+  },
+  "memberCaptionYou": "{connections} conn. · {models} models",
+  "@memberCaptionYou": {
+    "placeholders": {
+      "connections": {
+        "type": "String"
+      },
+      "models": {
+        "type": "String"
+      }
+    }
+  },
+  "poolMemberYou": "{name} (you)",
+  "@poolMemberYou": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "legendRing": "ring: share of the shared models",
+  "legendOffline": "not reachable",
+  "legendTakes": "takes from the pool",
+  "legendGives": "gives to the pool",
+  "graphRequestsToday": "{count} requests today",
+  "@graphRequestsToday": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "graphShareUsed": "{used} of {total} requests used",
+  "@graphShareUsed": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "graphFreeToday": "FREE TODAY",
+  "poolTabOverview": "Overview",
+  "poolViaHost": "Via the host",
+  "poolRelayDown": "Not connected to the host right now; it reconnects by itself.",
+  "poolRelayLabel": "Connect partners through me",
+  "poolRelayHint": "Members without a public address take part through your NeoRouter. Their requests pass through your internet connection, sealed end to end, so you cannot read them.",
+  "poolRelaySelfLabel": "How you take part",
+  "poolRelaySelfVia": "Through the host: your NeoRouter needs no public address. Requests pass through the host sealed, so the host cannot read them.",
+  "poolRelaySelfDirect": "Directly, at your NeoRouter’s own address.",
+  "poolLeaveHint": "Partners lose access to your connections at once, and you to theirs.",
+  "poolCloseHint": "Ends the pool for every partner.",
   "teamEventInviteCreate": "{actor} created an invite link",
   "@teamEventInviteCreate": {
     "placeholders": {
@@ -1840,6 +3035,17 @@
   "@homeCapacityUnknown": {
     "placeholders": {
       "models": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCapacityObserved": "Actually used: {best} on your busiest free day, {average} on an average day (last 30 days).",
+  "@homeCapacityObserved": {
+    "placeholders": {
+      "best": {
+        "type": "String"
+      },
+      "average": {
         "type": "String"
       }
     }
@@ -1988,7 +3194,7 @@
   "keyKindsNone": "Pick at least one kind.",
   "pickModelAllKinds": "All kinds",
   "liveNow": "Live",
-  "liveReplay": "Replaying recent requests",
+  "liveQuiet": "No traffic right now",
   "liveWaiting": "Waiting for the first request",
   "liveWaitingChip": "waiting for a free model",
   "liveQueued": "{count} waiting for a free model",
@@ -2216,5 +3422,516 @@
   "priorityLowHint": "Lets the others go first.",
   "priorityHighLabel": "High priority",
   "priorityNormalLabel": "Normal priority",
-  "priorityLowLabel": "Low priority"
+  "priorityLowLabel": "Low priority",
+  "lmTab": "Local models",
+  "lmIntro": "Run AI models on this server. NeoRouter shows what fits, downloads it, keeps it running and fixes problems by itself.",
+  "lmThisServer": "This server",
+  "lmProcessor": "Processor",
+  "lmProcessorValue": "{name} · {cores} cores",
+  "@lmProcessorValue": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "cores": {
+        "type": "String"
+      }
+    }
+  },
+  "lmMemory": "Memory",
+  "lmMemoryModels": "Local models: {size}",
+  "@lmMemoryModels": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "lmMemoryOthers": "Everything else: about {size} on average",
+  "@lmMemoryOthers": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "lmMemoryMeasuring": "Everything else: still measuring",
+  "lmMemoryFree": "Free for models: {size}",
+  "@lmMemoryFree": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "lmMemoryLimited": "Limited by the container.",
+  "lmGraphics": "Graphics",
+  "lmGraphicsValue": "{name} · {memory} usable",
+  "@lmGraphicsValue": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "memory": {
+        "type": "String"
+      }
+    }
+  },
+  "lmNoGraphics": "None found. Models run on the processor.",
+  "lmDisk": "Free disk space",
+  "lmTextUnsupported": "Text, safety and embedding models need macOS or Linux. Speech and transcription models work here.",
+  "lmInstalledTitle": "Your models",
+  "lmInstalledEmpty": "No models yet. Pick one below: NeoRouter downloads it and starts it for you.",
+  "lmRunning": "Running",
+  "lmRunningGpu": "Running on the graphics card",
+  "lmRunningCpu": "Running on the processor",
+  "lmStarting": "Starting …",
+  "lmRestarting": "Restarting after a problem …",
+  "lmStopped": "Stopped",
+  "lmPreparing": "Getting ready …",
+  "lmDownloading": "Downloading · {done} of {total}",
+  "@lmDownloading": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "lmGettingEngine": "Setting up the engine · {done} of {total}",
+  "@lmGettingEngine": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "lmChecking": "Checking the files …",
+  "lmDownloadFailed": "Download stopped. {reason}",
+  "@lmDownloadFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "lmFailed": "Stopped. {reason}",
+  "@lmFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "lmProblemMemory": "Not enough free memory: stop another model first.",
+  "lmProblemDisk": "Not enough free disk space.",
+  "lmProblemCrashed": "It kept stopping unexpectedly. Repair checks its files and starts it again.",
+  "lmProblemNotAnswering": "It stopped answering. Repair checks its files and starts it again.",
+  "lmProblemStart": "It would not start. Repair checks its files and starts it again.",
+  "lmProblemDownload": "Check the internet connection and try again.",
+  "lmRepair": "Repair",
+  "lmRemove": "Remove",
+  "lmCancelDownload": "Cancel download",
+  "lmRemoveTitle": "Remove {name}?",
+  "@lmRemoveTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lmRemoveConfirm": "Its files are deleted from this server. You can install it again any time.",
+  "lmAccessTitle": "Who can use them",
+  "lmAccessEveryone": "Everyone on this server",
+  "lmAccessHint": "Off: only admins. On: every user can add \"NeoRouter Local\" under Connections. All requests share this machine.",
+  "lmAddTitle": "Add a model",
+  "lmAddHint": "Picked for this server. The size is the download; memory is what the model needs while it runs.",
+  "lmKindAll": "All",
+  "lmKindChat": "Text",
+  "lmKindModeration": "Safety",
+  "lmKindEmbedding": "Embeddings",
+  "lmKindTranscription": "Transcription",
+  "lmKindSpeech": "Speech",
+  "lmRatingGreat": "Runs great",
+  "lmRatingGood": "Runs well",
+  "lmRatingSlow": "Runs, but slowly",
+  "lmRatingTight": "Tight on memory",
+  "lmRatingTooBig": "Needs more memory",
+  "lmRatingUnsupported": "Not on this system",
+  "lmSizes": "{download} · needs {memory} memory",
+  "@lmSizes": {
+    "placeholders": {
+      "download": {
+        "type": "String"
+      },
+      "memory": {
+        "type": "String"
+      }
+    }
+  },
+  "lmSizesMeasured": "{download} · used {memory} here",
+  "@lmSizesMeasured": {
+    "placeholders": {
+      "download": {
+        "type": "String"
+      },
+      "memory": {
+        "type": "String"
+      }
+    }
+  },
+  "lmTightHint": "Fits this server, but other programs here usually use so much memory that it may not start.",
+  "lmRecommended": "Recommended",
+  "lmReadsImages": "Reads images",
+  "lmManyLanguages": "Many languages",
+  "lmInstall": "Install",
+  "lmInstalled": "Installed",
+  "lmNoDisk": "Not enough disk space",
+  "lmInstallTitle": "Install {name}?",
+  "@lmInstallTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lmInstallConfirm": "NeoRouter downloads about {size} and starts the model when it is ready. You can keep working in the meantime.",
+  "@lmInstallConfirm": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "lmShowTooBig": "Show {count} more that need a bigger server",
+  "@lmShowTooBig": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lmHideTooBig": "Hide models that do not fit",
+  "lmTurnOff": "Turn off",
+  "lmLeftSeconds": "less than a minute left",
+  "lmLeftMinutes": "about {count} min left",
+  "@lmLeftMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lmLeftHours": "about {hours} h {minutes} min left",
+  "@lmLeftHours": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "lmStarterTitle": "Quick start",
+  "lmStarterHint": "{models}, chosen for this server. Downloads {size} and starts by itself.",
+  "@lmStarterHint": {
+    "placeholders": {
+      "models": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "lmStarterInstall": "Install all",
+  "lmDetails": "Details",
+  "lmLess": "Less",
+  "lmLanguages": "Languages",
+  "lmLicense": "License",
+  "lmErrTooBig": "This server does not have enough memory for this model.",
+  "lmErrNoDisk": "There is not enough free disk space for this model.",
+  "lmErrUnsupported": "This system cannot run this model.",
+  "lmErrInstalled": "This model is already installed.",
+  "lmErrNoStarter": "No starter set fits this server.",
+  "lmNothingFits": "Nothing of this kind fits this server.",
+  "routingGroups": "Routing groups",
+  "createRoutingGroup": "Create group",
+  "routingGroupName": "Name",
+  "routingGroupAccounts": "Connections",
+  "routingGroupFallback": "Fallback group",
+  "routingGroupNoKeyDefault": "None: the key routes normally",
+  "routingGroupDefault": "Default routing group",
+  "navGroups": "Routing groups",
+  "routingGroupsDescription": "Use one model name across your subscriptions.",
+  "routingGroupOptionHelp": "About {option}",
+  "@routingGroupOptionHelp": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupFallbackHelp": "Choose a backup group. If none of the models in this group can take a request, NeoRouter can try the backup group.",
+  "routingGroupOutsideHelp": "Turn this on to let NeoRouter try connections outside your selected groups when it has run out of options. Your key’s permissions and spending settings still apply.",
+  "routingGroupsHelpSwitch": "For example, choose two subscriptions and pick one under “Use first”. NeoRouter can use the other if the first is busy or has reached its limit.",
+  "routingGroupsHelpSubagents": "Choose “Same group” to share these connections, or pick another group for your app’s helpers. Your app needs to send subagent requests separately. See “Use in app” after saving.",
+  "routingGroupsEmptyTitle": "No routing groups yet",
+  "routingGroupUsesStyle": "Style: {name}",
+  "@routingGroupUsesStyle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupAtLeast": "At least {percent} % intelligence",
+  "@routingGroupAtLeast": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupFallsBackTo": "Then {name}",
+  "@routingGroupFallsBackTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupPlanUsed": "{percent} % used",
+  "@routingGroupPlanUsed": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupAccountsHint": "Choose the subscriptions and connections this group can use.",
+  "routingGroupOtherAccounts": "Other accounts",
+  "routingGroupSearchAccounts": "Search accounts",
+  "routingGroupNoAccounts": "No matching accounts.",
+  "routingGroupModelsTitle": "Models",
+  "routingGroupModelsHint": "Single models from any account. A pattern with * takes several, e.g. groq/*.",
+  "routingGroupPickModels": "Choose models",
+  "routingGroupPatternHint": "or type a pattern, e.g. groq/*",
+  "routingGroupAddPattern": "Add pattern",
+  "routingGroupOptions": "Options",
+  "routingGroupOptionsHint": "How the group picks among its models, and where requests go when it is full.",
+  "routingGroupMinimumTitle": "Minimum intelligence",
+  "routingGroupMinimumOff": "Any model in the group may answer.",
+  "routingGroupStyle": "Routing style",
+  "routingGroupStyleHint": "What counts most when the group picks a model.",
+  "routingGroupStyleKey": "The key's own style",
+  "routingGroupFallbackHint": "Used when every model in this group is busy or failing.",
+  "routingGroupNoFallback": "None: wait, then any model",
+  "routingGroupsEmpty": "No groups yet. A group sends one kind of work, such as an agent's helpers, to the plans you choose.",
+  "routingGroupNameHint": "Lowercase letters, digits, - and _. Cannot be changed later.",
+  "routingGroupNameInvalid": "Use lowercase letters, digits, - and _ only, starting with a letter or digit.",
+  "routingGroupMembersMissing": "Choose at least one account or model pattern.",
+  "routingGroupDeleteTitle": "Delete this group?",
+  "routingGroupDeleteMessage": "Keys and apps that use pool:{name} will route normally again.",
+  "@routingGroupDeleteMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupPrefer": "Use first",
+  "routingGroupPreferHint": "Switches when this connection can’t take a request.",
+  "routingGroupAutomatic": "Automatic",
+  "routingGroupMore": "More options",
+  "routingGroupSubagents": "Subagent requests",
+  "routingGroupSameGroup": "Same group",
+  "routingGroupSubagentHint": "App setup required for separate routing.",
+  "routingGroupCreateSubagent": "Create subagent group",
+  "routingGroupAllowOutside": "Try other connections as a last resort",
+  "routingGroupAllowMetered": "Allow per-use charges",
+  "routingGroupMeteredHint": "Includes connections set up to charge after an allowance runs out.",
+  "routingGroupUseInApp": "Use in app",
+  "routingGroupAppModel": "Enter this as the model in your app.",
+  "routingGroupAppSubagent": "If your app has a separate subagent model, use this:",
+  "routingGroupAppSubagentHeader": "To keep one model name, send X-NeoRouter-Workload: subagent on child requests.",
+  "routingGroupPreviewSubagent": "Preview a subagent request",
+  "routingGroupPreviewHint": "Uses current limits with a sample request. No provider call.",
+  "routingGroupPreview": "Preview route",
+  "routingGroupPreviewUnavailable": "No model can take this request right now.",
+  "routingGroupPreviewModel": "Would use {model}",
+  "@routingGroupPreviewModel": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupPrefers": "Prefers {name}",
+  "@routingGroupPrefers": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupUsesSubagent": "Subagents use {name}",
+  "@routingGroupUsesSubagent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "routingGroupReasonSame": "Kept the conversation on the same model and connection.",
+  "routingGroupReasonPreferred": "Used the preferred connection.",
+  "routingGroupReasonBusy": "The preferred connection was busy.",
+  "routingGroupReasonAllowance": "The preferred connection reached a limit.",
+  "routingGroupReasonUnavailable": "The preferred connection couldn’t take this request.",
+  "cachedInputTokens": "Cached input tokens",
+  "cacheHitRate": "Cache hit rate",
+  "planUsageUnknown": "Plan usage unknown",
+  "planUsage": "Plan usage",
+  "flatRateBilling": "Flat rate / concurrency slots",
+  "flatRateHint": "A paid subscription with no incremental charge. Fill available slots before using other sources.",
+  "slotPlan": "Subscription plan",
+  "slotOverflowPolicy": "When slots are busy",
+  "slotOverflowAuto": "Automatic: overflow to a comparable free source, otherwise wait",
+  "slotOverflowNow": "Overflow immediately",
+  "slotOverflowQueue": "Wait for a slot first",
+  "slotMaxWait": "Maximum slot wait (seconds)",
+  "slotCurrent": "Busy slots now",
+  "slotAverage": "Average busy slots",
+  "slotPeak": "Peak busy slots",
+  "slotIdle": "Idle capacity",
+  "slotObserved": "Observed slot usage over the last 24 hours",
+  "allowancePace": "Allowance pace (above 1 means ahead of schedule)",
+  "keyExpiryTitle": "Expiration",
+  "keyExpiryHint": "This key stops accepting new requests at the selected time. Times are shown in your local time zone.",
+  "keyExpiryNever": "No expiration",
+  "keyExpiryDays": "{days} days from now",
+  "@keyExpiryDays": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "keyExpiryCustom": "Custom date and time",
+  "keyExpiryChange": "Change date and time",
+  "keyExpiryAt": "Expires {date}",
+  "@keyExpiryAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "keyExpiredAt": "Expired {date}",
+  "@keyExpiredAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "keyExpired": "Expired",
+  "keyExpiringSoon": "Expires soon",
+  "keyExpiryInvalid": "Choose a date and time in the future.",
+  "keyExpiryRenewHint": "Choose a future expiry or no expiration to use this key again. Its secret stays the same.",
+  "keyExpiryRenewSave": "Saving this change reactivates the existing key.",
+  "expiredKeys": "Expired keys ({count})",
+  "@expiredKeys": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "keyRenewEdit": "Renew / edit",
+  "noActiveKeysTitle": "No active API keys",
+  "noActiveKeysHint": "Create a key or renew an expired key below.",
+  "proxyChooseFile": "Load text or CSV file",
+  "proxyFileError": "Choose a UTF-8 text file smaller than 1 MB.",
+  "proxyDeleteConfirm": "Delete {endpoint}? Import it again to restore it.",
+  "@proxyDeleteConfirm": {
+    "placeholders": {
+      "endpoint": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyActivity": "Active requests: {active} · assigned: {served}",
+  "@proxyActivity": {
+    "placeholders": {
+      "active": {
+        "type": "String"
+      },
+      "served": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyPrevious": "Previous proxies",
+  "proxyNext": "Next proxies",
+  "proxyPage": "{page} / {pages} · {count} proxies",
+  "@proxyPage": {
+    "placeholders": {
+      "page": {
+        "type": "String"
+      },
+      "pages": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyTitle": "Outbound proxies",
+  "proxyHint": "Optional proxy rotation for public provider HTTP requests, including streams. Local/private destinations and relayed or WebSocket traffic keep their existing transport. Credentials are encrypted and never shown back.",
+  "proxyEnable": "Use outbound proxies",
+  "proxyDirect": "Allow direct fallback",
+  "proxyDirectHint": "If proxies cannot connect, requests may use your server’s direct connection. Turn off to require a proxy for public provider HTTP requests.",
+  "proxyImport": "Import proxies",
+  "proxyFormats": "Paste one proxy per line: scheme://user:password@host:port, user:password@host:port, host:port, or host:port:user:password. CSV/tab-separated host, port, user, password also works. Use URL-encoding for special characters in URL credentials. Duplicate entries are skipped.",
+  "proxyProtocol": "Default protocol for entries without a scheme",
+  "proxyPaste": "Proxy list",
+  "proxyImportResult": "Added {added}; duplicates {duplicates}; invalid lines: {lines} (kept below for correction)",
+  "@proxyImportResult": {
+    "placeholders": {
+      "added": {
+        "type": "String"
+      },
+      "duplicates": {
+        "type": "String"
+      },
+      "lines": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyList": "Configured proxies",
+  "proxyTestUrl": "Public test URL",
+  "proxyTestHint": "Tests send a GET without provider credentials. Any origin HTTP response proves connectivity.",
+  "proxyEmpty": "No proxies configured. Import a list to get started.",
+  "proxyCooling": "Cooling down after a connection failure",
+  "proxyUnmeasured": "Not measured yet",
+  "proxyLatency": "Measured latency: {ms} ms",
+  "@proxyLatency": {
+    "placeholders": {
+      "ms": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyTest": "Test connection",
+  "proxyTestOk": "Proxy connection succeeded.",
+  "proxyTestFailed": "Proxy connection failed; it is cooling down."
 }

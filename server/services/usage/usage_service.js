@@ -15,15 +15,26 @@ function savedUsd(entry) {
   return ((entry.input_tokens || 0) * (price.price_in || 0) + (entry.output_tokens || 0) * (price.price_out || 0)) / 1e6;
 }
 
+// A model or connection removed while the request ran (a pool partner left)
+// is recorded without the link to it, rather than not at all.
 function record(entry) {
+  try {
+    insert(entry);
+  } catch (error) {
+    if (error.code !== 'SQLITE_CONSTRAINT_FOREIGNKEY' || (entry.model_ref == null && entry.account_id == null)) throw error;
+    insert({ ...entry, model_ref: null, account_id: null });
+  }
+}
+
+function insert(entry) {
   getDatabase().prepare(`INSERT INTO requests (id, user_id, router_key_id, created_at, api_format, requested_model, model_ref, model_label,
       account_id, status, http_status, error_code, error_message, input_tokens, output_tokens, cost_usd, is_free, latency_ms, ttft_ms,
-      attempts, stream, trail_json, saved_usd, redacted_count, compression_saved_tokens, capability, units, task, queued_ms)
+      attempts, stream, trail_json, saved_usd, redacted_count, compression_saved_tokens, capability, units, task, queued_ms, kept_private, routing_group, cached_input_tokens, cache_creation_tokens)
     VALUES (@id, @user_id, @router_key_id, @created_at, @api_format, @requested_model, @model_ref, @model_label, @account_id, @status,
       @http_status, @error_code, @error_message, @input_tokens, @output_tokens, @cost_usd, @is_free, @latency_ms, @ttft_ms, @attempts,
-      @stream, @trail_json, @saved_usd, @redacted_count, @compression_saved_tokens, @capability, @units, @task, @queued_ms)`).run({
+      @stream, @trail_json, @saved_usd, @redacted_count, @compression_saved_tokens, @capability, @units, @task, @queued_ms, @kept_private, @routing_group, @cached_input_tokens, @cache_creation_tokens)`).run({
     model_ref: null, model_label: null, account_id: null, error_code: null, error_message: null, ttft_ms: null,
-    redacted_count: 0, compression_saved_tokens: 0, capability: 'chat', units: 0, task: null, queued_ms: 0, ...entry,
+    redacted_count: 0, compression_saved_tokens: 0, capability: 'chat', units: 0, task: null, queued_ms: 0, kept_private: null, routing_group: null, cached_input_tokens: 0, cache_creation_tokens: 0, ...entry,
     saved_usd: savedUsd(entry),
   });
 }
@@ -32,7 +43,24 @@ function rangeStart(range, now = Date.now()) {
   return now - (RANGES[range] || RANGES['24h']);
 }
 
-function summary(userId, range = '24h', now = Date.now()) {
+function totalsOf(totals) {
+  return {
+    requests: totals.requests || 0,
+    successes: totals.successes || 0,
+    successRate: totals.requests ? (totals.successes || 0) / totals.requests : null,
+    costUsd: totals.cost || 0,
+    savedUsd: totals.saved || 0,
+    inputTokens: totals.input_tokens || 0,
+    outputTokens: totals.output_tokens || 0,
+    freeRequests: totals.free_requests || 0,
+    avgLatencyMs: totals.avg_latency,
+    avgTtftMs: totals.avg_ttft,
+    fallbacks: totals.fallbacks || 0,
+  };
+}
+
+// onlyTotals: just the totals (the home page needs no series or breakdowns).
+function summary(userId, range = '24h', now = Date.now(), { onlyTotals = false } = {}) {
   const db = getDatabase();
   const since = rangeStart(range, now);
   const totals = db.prepare(`SELECT COUNT(*) requests, SUM(status = 'success') successes, SUM(cost_usd) cost, SUM(saved_usd) saved,
@@ -41,6 +69,7 @@ function summary(userId, range = '24h', now = Date.now()) {
       SUM(attempts > 1) fallbacks
     FROM requests WHERE user_id = ? AND created_at >= ?`).get(userId, since);
   const bucketMs = range === '24h' ? 3_600_000 : 86_400_000;
+  if (onlyTotals) return { range, bucketMs, totals: totalsOf(totals) };
   const rows = db.prepare(`SELECT CAST(created_at / ? AS INTEGER) * ? bucket, COUNT(*) requests, SUM(status = 'success') successes,
       SUM(cost_usd) cost, SUM(input_tokens + output_tokens) tokens
     FROM requests WHERE user_id = ? AND created_at >= ? GROUP BY bucket ORDER BY bucket`).all(bucketMs, bucketMs, userId, since);
@@ -62,19 +91,7 @@ function summary(userId, range = '24h', now = Date.now()) {
   return {
     range,
     bucketMs,
-    totals: {
-      requests: totals.requests || 0,
-      successes: totals.successes || 0,
-      successRate: totals.requests ? (totals.successes || 0) / totals.requests : null,
-      costUsd: totals.cost || 0,
-      savedUsd: totals.saved || 0,
-      inputTokens: totals.input_tokens || 0,
-      outputTokens: totals.output_tokens || 0,
-      freeRequests: totals.free_requests || 0,
-      avgLatencyMs: totals.avg_latency,
-      avgTtftMs: totals.avg_ttft,
-      fallbacks: totals.fallbacks || 0,
-    },
+    totals: totalsOf(totals),
     series,
     topModels,
     byKey,
@@ -88,7 +105,7 @@ function percentile(sorted, p) {
 }
 
 function newGroup() {
-  return { requests: 0, successes: 0, errors: 0, inputTokens: 0, outputTokens: 0, costUsd: 0, savedUsd: 0, freeRequests: 0, fallbacks: 0, latencies: [], ttfts: [] };
+  return { requests: 0, successes: 0, errors: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheHits: 0, costUsd: 0, savedUsd: 0, freeRequests: 0, fallbacks: 0, latencies: [], ttfts: [] };
 }
 
 function addRow(group, row) {
@@ -97,6 +114,8 @@ function addRow(group, row) {
   else group.errors += 1;
   group.inputTokens += row.input_tokens;
   group.outputTokens += row.output_tokens;
+  group.cachedInputTokens += row.cached_input_tokens || 0;
+  if (row.status === 'success' && row.cached_input_tokens > 0) group.cacheHits += 1;
   group.costUsd += row.cost_usd;
   group.savedUsd += row.saved_usd || 0;
   if (row.is_free && row.status === 'success') group.freeRequests += 1;
@@ -111,6 +130,7 @@ function finishGroup(group) {
   const { latencies: _l, ttfts: _t, ...rest } = group;
   return {
     ...rest,
+    cacheHitRate: group.successes ? group.cacheHits / group.successes : null,
     successRate: group.requests ? group.successes / group.requests : null,
     latencyP50: percentile(latencies, 0.5),
     latencyP95: percentile(latencies, 0.95),
@@ -120,20 +140,32 @@ function finishGroup(group) {
 
 // Rows counted under a key each, e.g. per provider; the largest kept.
 // nameOf (optional) gives each group a readable name when the key is an id.
-function grouper(keyOf, nameOf = null) {
+function grouper(keyOf, nameOf = null, memberOf = null) {
   const groups = new Map();
   const names = new Map();
+  const members = new Map();
   return {
     add(row) {
       const key = keyOf(row);
       if (key === null || key === undefined) return;
       if (!groups.has(key)) groups.set(key, newGroup());
       if (nameOf && !names.has(key)) names.set(key, nameOf(row));
+      if (memberOf) {
+        if (!members.has(key)) members.set(key, new Set());
+        members.get(key).add(memberOf(row));
+      }
       addRow(groups.get(key), row);
     },
-    top(limit) {
-      return [...groups.entries()].map(([key, group]) => ({ key, ...(names.has(key) ? { name: names.get(key) } : {}), ...finishGroup(group) }))
-        .sort((a, b) => b.requests - a.requests).slice(0, limit);
+    top(limit, average = false) {
+      return [...groups.entries()].map(([key, group]) => ({
+        key, ...(names.has(key) ? { name: names.get(key) } : {}), ...finishGroup(group),
+        ...(memberOf ? {
+          accountCount: members.get(key).size - (members.get(key).has(null) ? 1 : 0),
+          // Deleted/missing account links cannot produce a reliable divisor.
+          requestsPerAccount: members.get(key).has(null) ? null : group.requests / members.get(key).size,
+        } : {}),
+      }))
+        .sort((a, b) => average ? (b.requestsPerAccount ?? -1) - (a.requestsPerAccount ?? -1) || b.requests - a.requests : b.requests - a.requests).slice(0, limit);
     },
   };
 }
@@ -155,8 +187,8 @@ function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}
   const keys = keyFilter(keyIds);
   const since = rangeStart(range, now);
   const bucketMs = range === '24h' ? 3_600_000 : range === '7d' ? 6 * 3_600_000 : 86_400_000;
-  const rows = db.prepare(`SELECT r.created_at, r.status, r.error_code, r.input_tokens, r.output_tokens, r.cost_usd, r.saved_usd, r.is_free,
-      r.latency_ms, r.ttft_ms, r.attempts, r.stream, r.api_format, r.model_label, r.router_key_id, r.trail_json, r.capability, k.name key_name,
+  const rows = db.prepare(`SELECT r.cached_input_tokens, r.routing_group, r.created_at, r.status, r.error_code, r.input_tokens, r.output_tokens, r.cost_usd, r.saved_usd, r.is_free,
+      r.latency_ms, r.ttft_ms, r.attempts, r.stream, r.api_format, r.model_label, r.account_id, r.router_key_id, r.trail_json, r.capability, k.name key_name,
       a.definition_id, a.slug account_slug, a.label account_label, a.base_url account_base_url, m.canonical_id
     FROM requests r LEFT JOIN router_keys k ON k.id = r.router_key_id LEFT JOIN provider_accounts a ON a.id = r.account_id
       LEFT JOIN models m ON m.id = r.model_ref
@@ -173,7 +205,10 @@ function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}
     ? providerIdentity({ definitionId: row.definition_id, slug: row.account_slug, label: row.account_label, baseUrl: row.account_base_url }).providerName
     : row.model_label ? row.model_label.split('/')[0] : null);
   const groups = {
-    byProvider: grouper(providerOf),
+    // Count distinct provider connections, never downstream router keys. A
+    // historical request without its account link makes the average unavailable.
+    byProvider: grouper(providerOf, null, (row) => row.account_id || null),
+    byRoutingGroup: grouper((row) => row.routing_group),
     byModel: grouper(modelKeyOf, modelNameOf),
     byKey: grouper((row) => row.key_name || row.router_key_id),
     byFormat: grouper((row) => `${row.api_format}${row.stream ? ' · stream' : ''}`),
@@ -196,6 +231,8 @@ function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}
     totals: finishGroup(total),
     series: [...buckets.entries()].sort((a, b) => a[0] - b[0]).map(([bucket, group]) => ({ bucket, ...finishGroup(group) })),
     byProvider: groups.byProvider.top(20),
+    byProviderAverage: groups.byProvider.top(20, true),
+    byRoutingGroup: groups.byRoutingGroup.top(100),
     byModel: groups.byModel.top(15),
     byKey: groups.byKey.top(20),
     byFormat: groups.byFormat.top(10),
@@ -209,7 +246,7 @@ function analytics(userId, range = '24h', now = Date.now(), { keyIds = [] } = {}
 function logs(userId, { limit = 100, before = null, keyId = null, keyIds = [], status = null } = {}) {
   const keys = keyFilter(keyId ? [keyId, ...keyIds] : keyIds);
   return getDatabase().prepare(`SELECT r.*, k.name key_name FROM requests r LEFT JOIN router_keys k ON k.id = r.router_key_id
-    WHERE r.user_id = ? AND (? IS NULL OR r.created_at < ?)${keys.sql} AND (? IS NULL OR r.status = ?)
+    WHERE r.user_id = ? AND k.peer_link_id IS NULL AND (? IS NULL OR r.created_at < ?)${keys.sql} AND (? IS NULL OR r.status = ?)
     ORDER BY r.created_at DESC LIMIT ?`)
     .all(userId, before, before, ...keys.ids, status, status, Math.min(500, limit))
     .map((row) => ({
@@ -224,6 +261,8 @@ function logs(userId, { limit = 100, before = null, keyId = null, keyIds = [], s
       httpStatus: row.http_status,
       errorCode: row.error_code,
       errorMessage: row.error_message,
+      routingGroup: row.routing_group || null,
+      cachedInputTokens: row.cached_input_tokens || 0,
       inputTokens: row.input_tokens,
       outputTokens: row.output_tokens,
       costUsd: row.cost_usd,
@@ -237,6 +276,7 @@ function logs(userId, { limit = 100, before = null, keyId = null, keyIds = [], s
       capability: row.capability || 'chat',
       task: row.task || null,
       units: row.units || 0,
+      keptPrivate: row.kept_private || null,
     }));
 }
 

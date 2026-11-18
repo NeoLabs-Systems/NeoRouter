@@ -73,6 +73,51 @@ test('router key lists auto profiles and catalog models', async () => {
   assert.ok(ids.includes('mock/ok-beta'));
 });
 
+test('routing groups are managed, discovered, selected and recorded through the gateway', async () => {
+  const created = await api('post', '/routing/groups', { name: 'small-work', models: ['mock/ok-alpha'] });
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  const id = created.body.group.id;
+  const listed = await request(app).get('/v1/models').set('Authorization', `Bearer ${freeKey}`);
+  assert.ok(listed.body.data.some((model) => model.id === 'pool:small-work'));
+  for (const stream of [false, true]) {
+    const response = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${freeKey}`)
+      .send({ model: 'pool:small-work', messages: [{ role: 'user', content: 'hi' }], stream });
+    assert.equal(response.status, 200, response.text);
+    assert.equal(response.headers['x-neorouter-group'], 'small-work');
+    assert.equal(response.headers['x-neorouter-model'], 'mock/ok-alpha');
+  }
+  const header = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${freeKey}`).set('X-NeoRouter-Group', 'small-work')
+    .send({ model: 'auto', messages: [{ role: 'user', content: 'hi' }] });
+  assert.equal(header.status, 200);
+  assert.equal(header.headers['x-neorouter-group'], 'small-work');
+  const keyResult = await api('post', '/keys', { name: 'group-key', mode: 'free_only', routingGroup: 'small-work', allowedModels: ['pool:small-work'] });
+  assert.equal(keyResult.status, 201);
+  const byKey = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${keyResult.body.secret}`)
+    .send({ model: 'auto', messages: [{ role: 'user', content: 'hi' }] });
+  assert.equal(byKey.status, 200, byKey.text);
+  assert.equal(byKey.headers['x-neorouter-group'], 'small-work');
+  const logs = await api('get', '/usage/logs');
+  assert.ok(logs.body.logs.some((row) => row.routingGroup === 'small-work'));
+  const children = await api('post', '/routing/groups', { name: 'child-work', models: ['mock/ok-beta'] });
+  assert.equal(children.status, 201, children.text);
+  const updated = await api('put', `/routing/groups/${id}`, { ...created.body.group, subagentGroup: 'child-work' });
+  assert.equal(updated.status, 200, updated.text);
+  const childRequest = (secret) => request(app).post('/v1/chat/completions')
+    .set('Authorization', `Bearer ${secret}`).set('X-NeoRouter-Workload', 'subagent')
+    .send({ model: 'pool:small-work', messages: [{ role: 'user', content: 'hi' }] });
+  const child = await childRequest(freeKey);
+  assert.equal(child.status, 200, child.text);
+  assert.equal(child.headers['x-neorouter-group'], 'child-work');
+  assert.equal(child.headers['x-neorouter-model'], 'mock/ok-beta');
+  assert.equal((await childRequest(keyResult.body.secret)).status, 403);
+  const preview = await api('post', '/routing/preview', { model: 'pool:small-work', workload: 'subagent' });
+  assert.deepEqual(preview.body.selection, { group: 'child-work', model: 'mock/ok-beta' });
+  assert.equal((await api('delete', `/routing/groups/${children.body.group.id}`)).status, 409);
+  const removed = await api('delete', `/routing/groups/${id}`);
+  assert.equal(removed.status, 204);
+});
+
+
 test('explicit model, non-streaming OpenAI chat', async () => {
   const response = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${freeKey}`)
     .send({ model: 'mock/ok-alpha', messages: [{ role: 'user', content: 'hi' }] });
@@ -113,6 +158,29 @@ test('streaming OpenAI chat replays SSE chunks and ends with [DONE]', async () =
   assert.match(text, /data: \[DONE\]/);
 });
 
+test('answers carry routing stats and pacing limits without breaking the OpenAI shape', async () => {
+  const created = await api('post', '/keys', { name: 'paced', mode: 'free_only', rpmLimit: 30 });
+  const paced = created.body.token || created.body.key?.token || created.body.secret;
+  assert.ok(paced, JSON.stringify(created.body));
+  const response = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${paced}`)
+    .send({ model: 'mock/ok-alpha', messages: [{ role: 'user', content: 'hi' }] });
+  assert.equal(response.status, 200, JSON.stringify(response.body));
+  assert.equal(response.body.object, 'chat.completion');
+  assert.equal(response.body.neorouter.model, 'mock/ok-alpha');
+  assert.deepEqual(response.body.neorouter.trail, ['mock/ok-alpha']);
+  assert.equal(response.body.neorouter.limits.requests.perMinute, 30);
+  assert.equal(response.headers['x-ratelimit-limit-requests'], '30');
+  assert.equal(response.headers['x-ratelimit-remaining-requests'], '29');
+  const streamed = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${paced}`)
+    .send({ model: 'mock/ok-beta', stream: true, messages: [{ role: 'user', content: 'hi' }] });
+  assert.match(streamed.text, /\n: neorouter \{"request_id"/);
+  const limits = await request(app).get('/v1/limits').set('Authorization', `Bearer ${paced}`);
+  assert.equal(limits.status, 200);
+  assert.equal(limits.body.requests.remaining, 28);
+  assert.equal(limits.body.requests.intervalMs, 2000);
+  assert.ok('available' in limits.body.concurrent);
+});
+
 test('streaming falls back when a stream ends without output', async () => {
   const response = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${freeKey}`)
     .send({ model: 'mock/empty-zeta', stream: true, messages: [{ role: 'user', content: 'hi' }] });
@@ -139,6 +207,22 @@ test('reasoning that exhausts max_tokens falls back and is learned', async () =>
   const learned = models.find((model) => model.id === 'reasoner/trunc-thinker');
   const db = require('../../server/db/database').getDatabase();
   assert.equal(db.prepare('SELECT min_output_tokens FROM model_stats WHERE model_ref = ?').get(learned.ref).min_output_tokens, 100);
+  await api('delete', `/providers/accounts/${added.body.account.id}`);
+});
+
+test('a free reasoning model that needed more room gets it next time and answers', async () => {
+  const added = await api('post', '/providers/accounts', { definitionId: 'custom_openai', slug: 'roomy', baseUrl: mock.url, secret: 'good-key', billingMode: 'free_tier', options: { manualModels: ['room-thinker'] } });
+  const body = { model: 'roomy/room-thinker', max_tokens: 50, messages: [{ role: 'user', content: 'hi' }] };
+  const first = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${freeKey}`).send(body);
+  assert.equal(first.body.error.details.trail[0].outcome, 'truncated');
+  const db = require('../../server/db/database').getDatabase();
+  const ref = db.prepare("SELECT id FROM models WHERE model_id = 'room-thinker'").get().id;
+  const row = db.prepare('SELECT failures, penalty FROM model_stats WHERE model_ref = ?').get(ref);
+  assert.equal(row.failures, 0, 'running out of a small client budget is not unreliability');
+  assert.equal(row.penalty, 0);
+  const second = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${freeKey}`).send(body);
+  assert.equal(second.status, 200, JSON.stringify(second.body));
+  assert.equal(second.body.choices[0].message.content, 'hello with 100', 'sent with the learned room');
   await api('delete', `/providers/accounts/${added.body.account.id}`);
 });
 
@@ -283,7 +367,11 @@ test('routing preview ranks candidates without calling providers', async () => {
 
 test('web files are served for revalidation so new releases are picked up', async () => {
   const response = await request(app).get('/');
-  if (response.status === 200) assert.equal(response.headers['cache-control'], 'private, no-cache');
+  if (response.status !== 200) return;
+  assert.equal(response.headers['cache-control'], 'private, no-cache');
+  // An unchanged page costs a 304, not a download.
+  const again = await request(app).get('/').set('If-None-Match', response.headers.etag);
+  assert.equal(again.status, 304);
 });
 
 test('several accounts of one provider count as one provider', async () => {

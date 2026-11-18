@@ -1,13 +1,18 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const cacheAffinity = require('../../services/routing/cache_affinity');
+const { clientSession, derivedSession } = require('../../providers/session_id');
 const { getConfig } = require('../../config/env');
 const webSearch = require('./web_search');
 const { HttpError } = require('../../middleware/error_handler');
 const { ProviderError, KINDS, fromNetworkError } = require('../../providers/provider_error');
 const accounts = require('../../services/providers/account_service');
-const { RoutingPlan, explainNoModel, maxOutputFor } = require('../../services/routing/router');
+const { RoutingPlan, explainNoModel, maxOutputFor, boostedMaxTokens } = require('../../services/routing/router');
 const learning = require('../../services/routing/learning');
+const capacity = require('../../services/routing/capacity');
+const experience = require('../../services/routing/task/experience');
+const retries = require('../../services/routing/task/retries');
 const stats = require('../../services/routing/stats_store');
 const loadTracker = require('../../services/routing/load_tracker');
 const plans = require('../../services/routing/plans');
@@ -17,7 +22,15 @@ const usage = require('../../services/usage/usage_service');
 const billing = require('../../services/providers/billing_check');
 const requestProcessing = require('../../services/processing/processing_service');
 const { restoreResponse, StreamRestorer } = require('../../services/processing/redaction');
+const requestBudget = require('../../services/routing/request_budget');
+const keyConcurrency = require('../../services/router_keys/key_concurrency');
 const routerKeys = require('../../services/router_keys/router_key_service');
+const sharePolicy = require('../../services/pools/share_policy');
+const peerPrivacy = require('../../services/pools/peer_privacy');
+const traffic = require('../../services/pools/traffic');
+const reachability = require('../../services/pools/reachability');
+const { isPeerEntry } = require('../../services/pools/links');
+const sensitivity = require('../../services/processing/sensitivity');
 const { createLogger } = require('../../utils/logger');
 const {
   requirements, estimateInputTokens, normalizeUsage, reportedCost, StreamAccumulator, invalidToolCalls, textOf,
@@ -41,9 +54,12 @@ const QUEUE_MIN_POLL_MS = 200;
 
 const KEY_POLICY_REJECTIONS = new Set(['not_free', 'not_allowed_for_key', 'price_unknown']);
 // Rejections that do not change within the lifetime of one request.
-const PERMANENT_REJECTIONS = new Set(['model_disabled', 'model_unavailable', 'account_unavailable', 'no_tools', 'no_vision', 'not_available', 'no_free_quota', 'incompatible', 'payment_required', 'auth_failed', 'model_excluded', 'provider_excluded', 'provider_not_included', 'below_min_intelligence', 'too_expensive', 'budget_exhausted', 'needs_more_tokens']);
+const PERMANENT_REJECTIONS = new Set(['needs_action', 'model_disabled', 'model_unavailable', 'account_unavailable', 'no_tools', 'no_vision', 'not_available', 'no_free_quota', 'incompatible', 'payment_required', 'auth_failed', 'model_excluded', 'provider_excluded', 'provider_not_included', 'below_min_intelligence', 'too_expensive', 'budget_exhausted', 'needs_more_tokens']);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// A pool partner's request waits only briefly for capacity: the owner's own
+// requests come first, and the partner's router has other places to try.
+const PEER_QUEUE_MS = 2000;
 const MAX_CONSECUTIVE_BAD_REQUESTS = 3;
 
 // No answer at all: a reasoning model that spent max_tokens on thinking is
@@ -87,7 +103,7 @@ function hedgeDelay(entry, stream) {
 }
 
 function trailItem(entry, outcome, extra = {}) {
-  return { model: entry.id, ref: entry.ref, outcome, ...extra };
+  return { group: entry.routingGroup || null, model: entry.id, ref: entry.ref, outcome, ...(entry.routingReason ? { routingReason: entry.routingReason } : {}), ...(entry.tryingLuck ? { luck: true } : {}), ...(entry.lastResort ? { lastResort: true } : {}), ...extra };
 }
 
 // Wraps the remaining upstream iterator so idle gaps abort the attempt.
@@ -113,11 +129,11 @@ function toolCallRequired(canonical) {
 
 const missingToolCall = () => new ProviderError(KINDS.INVALID_OUTPUT, 'The model ignored tool_choice and answered without a tool call.');
 
-async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs }) {
+async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs, sessionId }) {
   const startedAt = Date.now();
   const mustCallTool = toolCallRequired(canonical);
   if (!stream) {
-    const { response, headers } = await adapter.chat(canonical, { modelId: entry.modelId, signal, timeoutMs, model: entry });
+    const { response, headers } = await adapter.chat(canonical, { modelId: entry.modelId, signal, timeoutMs, model: entry, sessionId });
     const choice = response?.choices?.[0];
     const message = choice?.message;
     // A reasoning model can spend a small max_tokens entirely on thinking;
@@ -132,7 +148,7 @@ async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs
   const controller = new AbortController();
   const combined = AbortSignal.any([signal, controller.signal]);
   let headers = null;
-  const iterator = adapter.stream(canonical, { modelId: entry.modelId, signal: combined, onHeaders: (value) => { headers = value; }, model: entry })[Symbol.asyncIterator]();
+  const iterator = adapter.stream(canonical, { modelId: entry.modelId, signal: combined, onHeaders: (value) => { headers = value; }, model: entry, sessionId })[Symbol.asyncIterator]();
   const firstTimer = setTimeout(() => controller.abort(new ProviderError(KINDS.TIMEOUT, 'No output before the first-token timeout.')), timeoutMs);
   const accumulator = new StreamAccumulator();
   const buffered = [];
@@ -163,10 +179,50 @@ async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs
  * canonical: an already translated request (web search turns); internal:
  * a turn of a request that already passed the key's rate limit.
  */
-async function execute({ req, res, key, format, body, freeOnly = false, canonical: preset = null, internal = false }) {
+async function execute(options) {
+  const { req, res, key } = options;
+  // X-NeoRouter-Hop marks a request a pool partner passed on. Only a partner's
+  // key may carry it, so nothing travels further than one partner.
+  if (req.get?.('x-neorouter-hop') && !key.peer_link_id) {
+    throw new HttpError(403, 'POOL_HOP_REFUSED', 'Requests passed on by a pool partner are only accepted with a partner key.');
+  }
+  if (!key.peer_link_id) return options.internal ? run(options) : keyConcurrency.run(key, () => run(options));
+  // A partner's request: admitted within its share, and announced to the
+  // partner's router as rate-limit headers.
+  const share = sharePolicy.admit(key);
+  const outcome = { answered: false };
+  try {
+    res.set(share.headers);
+    return await run({ ...options, shareReserve: share.reserve, sharePoolId: share.poolId, shareOutcome: outcome });
+  } catch (error) {
+    throw peerSafeError(error);
+  } finally {
+    // Only a request this side actually answered counts against the day's
+    // share: not one that failed, nor one the partner cancelled first (its
+    // router races several partners and drops the slower ones).
+    share.release({ served: outcome.answered });
+  }
+}
+
+// What a partner learns when its request fails here: a code and a plain
+// message, never which connections or models this instance has.
+function peerSafeError(error) {
+  if (!(error instanceof HttpError)) return new HttpError(502, 'POOL_PARTNER_FAILED', 'The partner could not answer this request.');
+  if (error.status >= 500 || error.code === 'NO_MODEL_AVAILABLE' || error.code === 'ALL_ATTEMPTS_FAILED') {
+    const retryAfterSeconds = error.details?.retryAfterSeconds;
+    return new HttpError(error.status >= 500 ? error.status : 503, error.code || 'POOL_PARTNER_FAILED', 'No shared model can take this request right now.', retryAfterSeconds ? { retryAfterSeconds } : undefined);
+  }
+  return new HttpError(error.status, error.code, error.message, error.details?.retryAfterSeconds ? { retryAfterSeconds: error.details.retryAfterSeconds } : undefined);
+}
+
+async function run({ req, res, key, format, body, freeOnly = false, canonical: preset = null, internal = false, shareReserve = null, sharePoolId = null, shareOutcome = null }) {
   const translator = translators[format];
+  // A partner's request leaves no trace beyond counts: no headers about the
+  // route, no stored error texts, no repeat detection, none of the owner's
+  // request processing (the partner already applied its own).
+  const peer = Boolean(key.peer_link_id);
   // Built-in web search runs the request as several turns (web_search.js).
-  if (!preset) {
+  if (!preset && !peer) {
     const search = webSearch.requested(format, body || {});
     if (search && webSearch.available(key.user_id)) {
       const rpm = routerKeys.consumeRpm(key);
@@ -190,8 +246,12 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     throw new HttpError(400, 'INVALID_REQUEST', `The request body could not be read: ${error.message}`);
   }
   if (!canonical.messages.length) throw new HttpError(400, 'INVALID_REQUEST', 'The request contains no messages.');
+  const sessionId = clientSession(req) || derivedSession(canonical, key.id);
+  if (!canonical.prompt_cache_key) canonical.prompt_cache_key = sessionId;
 
   const rpm = internal ? { allowed: true } : routerKeys.consumeRpm(key);
+  // What the key may still send, so clients pace themselves (not for partners).
+  if (!internal && !peer) res.set(requestBudget.headers(requestBudget.forKey(key)));
   if (!rpm.allowed) {
     res.set('Retry-After', String(rpm.retryAfterSeconds));
     throw new HttpError(429, 'KEY_RATE_LIMITED', 'This router key exceeded its requests-per-minute limit.', { retryAfterSeconds: rpm.retryAfterSeconds });
@@ -203,9 +263,19 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     throw new HttpError(402, 'BUDGET_EXHAUSTED', `This router key has used its ${key.budget_period} budget of ${key.budget_usd} USD.`);
   }
 
+  // A key that may use the pool: very sensitive requests stay on own
+  // connections (when the owner wants that), judged on the original text.
+  const poolKey = peerPrivacy.mayUsePool(key);
+  const keptPrivate = poolKey && peerPrivacy.getSettings(key.user_id).keepSensitivePrivate
+    ? sensitivity.assess(canonical) : null;
+  const keepPrivate = keptPrivate?.level === 'high';
+
   // Compression and the privacy shield run before routing, so the router sees
-  // the real request size and providers never see hidden values.
-  const processing = await requestProcessing.apply(key.user_id, canonical, { compressionLevel: req.get?.('x-neorouter-compression') || null });
+  // the real request size and providers never see hidden values. A request
+  // that may reach a pool partner gets at least the pool's shield.
+  const processing = peer
+    ? { canonical, vault: null, stats: { redacted: 0, compression: { level: 'off', savedTokens: 0 } } }
+    : await requestProcessing.apply(key.user_id, canonical, { compressionLevel: req.get?.('x-neorouter-compression') || null, poolMinimum: poolKey });
   canonical = processing.canonical;
   const { vault } = processing;
   const processingStats = processing.stats;
@@ -216,10 +286,20 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   const plan = new RoutingPlan({
     userId: key.user_id, key, request: canonical, requestedModel, needs, inputTokens, freeOnly: freeOnly || budgetExhausted,
     // Apps that know what they ask for can say so (one of the task kinds).
-    taskHint: req.get?.('x-neorouter-task') || null,
+    workload: peer ? null : req.get?.('x-neorouter-workload') || null,
+    taskHint: peer ? null : req.get?.('x-neorouter-task') || null,
+    keepPrivate,
+    shareReserve,
+    sharePoolId,
+    sessionId,
+    routingGroup: peer ? null : req.get?.('x-neorouter-group') || null,
   });
-  if (plan.pacing) res.set('X-NeoRouter-Budget-Pace', plan.pacing.state);
-  if (plan.task) res.set('X-NeoRouter-Task', `${plan.task.primary}; difficulty=${plan.task.difficulty}`);
+  // The same conversation again right after an answer: that answer was no good.
+  const retryId = internal || peer ? null : retries.fingerprint(key.id, canonical.messages);
+  const repeated = retryId && retries.repeatedAnswer(retryId);
+  if (repeated) experience.recordFeedback(repeated.ref, repeated.task, false);
+  if (plan.pacing && !peer) res.set('X-NeoRouter-Budget-Pace', plan.pacing.state);
+  if (plan.task && !peer) res.set('X-NeoRouter-Task', `${plan.task.primary}; difficulty=${plan.task.difficulty}`);
 
   const config = getConfig();
   const clientAbort = new AbortController();
@@ -231,6 +311,15 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   let freesUpAt = null;
 
   const finish = (fields) => {
+    if (shareOutcome && fields.status === 'success') shareOutcome.answered = true;
+    try {
+      traffic.recordFinished({ key, accountId: fields.account_id, success: fields.status === 'success', tokens: (fields.input_tokens || 0) + (fields.output_tokens || 0) });
+    } catch (error) {
+      logger.error('Failed to count pool traffic', { requestId, error });
+    }
+    // A partner's request keeps codes only: provider error texts can carry
+    // account details, and the trail names this instance's connections.
+    if (peer) fields = { ...fields, error_message: null };
     try {
       usage.record({
         id: requestId,
@@ -241,11 +330,13 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
         requested_model: requestedModel,
         attempts: Math.max(1, trail.length),
         stream: stream ? 1 : 0,
-        trail_json: JSON.stringify(trail),
+        trail_json: JSON.stringify(peer ? trail.map(({ message, ...item }) => item) : trail),
+        kept_private: keepPrivate ? keptPrivate.reasons.join(',') : null,
         queued_ms: Math.round(queuedMs),
         redacted_count: processingStats.redacted,
         compression_saved_tokens: processingStats.compression.savedTokens,
         task: plan.task?.primary ?? null,
+        routing_group: trail.at(-1)?.group || plan.group?.name || null,
         latency_ms: Date.now() - startedAt,
         input_tokens: 0,
         output_tokens: 0,
@@ -258,11 +349,37 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     }
   };
 
+  // Routing facts about one answer, sent alongside it (never the prompt).
+  const stats = (attempt, { durationMs, ttftMs, tokens, cost }) => {
+    const generationMs = durationMs - (ttftMs || 0);
+    const tried = trail.map((item) => item.model);
+    if (tried.at(-1) !== attempt.entry.id) tried.push(attempt.entry.id);
+    return {
+      request_id: requestId,
+      model: attempt.entry.id,
+      routing_group: attempt.entry.routingGroup || null,
+      task: plan.task?.primary ?? null,
+      attempts: attemptsStarted,
+      trail: tried,
+      latency_ms: Date.now() - startedAt,
+      ttft_ms: ttftMs,
+      tokens_per_second: generationMs > 0 && tokens.completion_tokens ? Math.round(tokens.completion_tokens / (generationMs / 1000)) : null,
+      free: Boolean(attempt.entry.isFree),
+      cost_usd: cost,
+      max_tokens_raised_to: attempt.boosted ? attempt.maxTokens : null,
+      limits: requestBudget.forKey(key),
+    };
+  };
+
   // Commits a successful attempt to the client (JSON or SSE) and records it.
   const commit = async (attempt, result) => {
     const { entry, reservation } = attempt;
-    res.set('X-NeoRouter-Model', entry.id);
-    res.set('X-NeoRouter-Trail', [...trail.map((item) => item.model), entry.id].join(','));
+    if (!peer) {
+      res.set('X-NeoRouter-Model', entry.id);
+      if (entry.routingGroup) res.set('X-NeoRouter-Group', entry.routingGroup);
+      res.set('X-NeoRouter-Trail', [...trail.map((item) => item.model), entry.id].join(','));
+    }
+    if (keepPrivate) res.set('X-NeoRouter-Kept-Private', keptPrivate.reasons.join(','));
     if (processingStats.compression.level !== 'off') res.set('X-NeoRouter-Compression', `${processingStats.compression.level}; saved~=${processingStats.compression.savedTokens}`);
     if (processingStats.redacted) res.set('X-NeoRouter-Redacted', String(processingStats.redacted));
     if (!stream) {
@@ -270,6 +387,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
         prompt_tokens: inputTokens,
         completion_tokens: Math.ceil(textOf(result.response.choices[0].message.content).length / 4),
       };
+      cacheAffinity.remember(plan.affinityScope, sessionId, entry);
       const cost = budget.costOf(entry, tokens);
       reservation.settle(cost, requestId);
       billing.observeCost(entry, reportedCost(result.response.usage));
@@ -278,10 +396,14 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
       trail.push(trailItem(entry, 'success', { ms: result.latencyMs }));
       finish({
         status: 'success', http_status: 200, model_ref: entry.ref, model_label: entry.id, account_id: entry.accountId,
+        routing_group: entry.routingGroup || null, cached_input_tokens: cacheAffinity.cachedTokens(tokens), cache_creation_tokens: tokens.cache_creation_input_tokens || 0,
         input_tokens: tokens.prompt_tokens, output_tokens: tokens.completion_tokens, cost_usd: cost, is_free: entry.isFree ? 1 : 0,
       });
       const response = vault ? restoreResponse(result.response, vault) : result.response;
-      res.json(translator.responseFromCanonical({ ...response, usage: tokens }, entry.id));
+      const body = translator.responseFromCanonical({ ...response, usage: tokens }, entry.id);
+      // An extra top-level field: OpenAI and Anthropic SDKs ignore what they do not know.
+      if (!peer) body.neorouter = stats(attempt, { durationMs: result.latencyMs, ttftMs: null, tokens, cost });
+      res.json(body);
       return;
     }
     res.status(200);
@@ -312,10 +434,12 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
       streamError = result.controller.signal.reason instanceof ProviderError ? result.controller.signal.reason : fromNetworkError(error);
       if (streamError.kind !== KINDS.ABORTED) writeSse(res, streamErrorEvent(format, streamError));
     }
-    res.end();
     const durationMs = Date.now() - attempt.started;
     const tokens = accumulator.usage || { prompt_tokens: inputTokens, completion_tokens: estimateOutputTokens(accumulator) };
     const cost = budget.costOf(entry, tokens);
+    // An SSE comment line: every SSE parser skips it, readers who want it can parse it.
+    if (!peer && !streamError && !res.writableEnded) res.write(`: neorouter ${JSON.stringify(stats(attempt, { durationMs, ttftMs: result.ttftMs, tokens, cost }))}\n\n`);
+    res.end();
     reservation.settle(cost, requestId);
     billing.observeCost(entry, accumulator.reportedCost);
     quota.recordTokens(entry, tokens.prompt_tokens + tokens.completion_tokens - inputTokens);
@@ -324,6 +448,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     } else if (invalidToolCalls(accumulator.toolCalls)) {
       learning.onFailure(entry, new ProviderError(KINDS.INVALID_OUTPUT, 'Streamed tool-call arguments were not valid JSON.'));
     } else {
+      cacheAffinity.remember(plan.affinityScope, sessionId, entry);
       learning.onSuccess(entry, {
         latencyMs: durationMs, ttftMs: result.ttftMs, outputTokens: tokens.completion_tokens, generationMs: durationMs - result.ttftMs,
       }, result.headers);
@@ -335,6 +460,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
       error_code: streamError ? (streamError.kind === KINDS.ABORTED ? 'client_closed' : streamError.kind) : null,
       error_message: streamError?.message || null,
       model_ref: entry.ref, model_label: entry.id, account_id: entry.accountId,
+      routing_group: entry.routingGroup || null, cached_input_tokens: cacheAffinity.cachedTokens(tokens), cache_creation_tokens: tokens.cache_creation_input_tokens || 0,
       input_tokens: tokens.prompt_tokens, output_tokens: tokens.completion_tokens, cost_usd: cost, is_free: entry.isFree ? 1 : 0,
       ttft_ms: result.ttftMs,
     });
@@ -352,8 +478,13 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     if (!runtime) return false;
     const adapter = accounts.adapterFor(runtime);
     const controller = new AbortController();
+    // A free reasoning model that needs more room than the client allowed gets it.
+    const boost = boostedMaxTokens(entry, canonical);
+    const sent = boost ? { ...canonical, max_tokens: boost } : canonical;
     const attempt = {
       entry,
+      maxTokens: sent.max_tokens,
+      boosted: Boolean(boost),
       controller,
       started: Date.now(),
       reservation: budget.reserve(key, budget.estimateMaxCost(entry, inputTokens, maxOutputFor(canonical, entry)) || 0),
@@ -362,7 +493,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     quota.recordRequest(entry, inputTokens);
     plans.onSent(entry);
     const timeoutMs = Math.min(adapter.timeoutMs, config.routing.totalBudgetMs - (Date.now() - startedAt));
-    attempt.promise = runAttempt({ entry, adapter, canonical, stream, signal: AbortSignal.any([clientAbort.signal, controller.signal]), timeoutMs })
+    attempt.promise = runAttempt({ entry, adapter, canonical: sent, stream, signal: AbortSignal.any([clientAbort.signal, controller.signal]), timeoutMs, sessionId })
       .then((result) => ({ attempt, result }), (error) => ({ attempt, error }));
     running.add(attempt);
     attemptsStarted += 1;
@@ -383,16 +514,28 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   // It only waits when a candidate frees up within the window: a model out
   // for the day is no reason to keep the client hanging.
   const ensureRunning = async () => {
-    const waitUntil = Math.min(Date.now() + config.routing.queueWaitMs, startedAt + config.routing.totalBudgetMs);
+    const configuredQueueMs = plan.queueWaitMs(config.routing.queueWaitMs);
+    const queueMs = peer ? PEER_QUEUE_MS : capacity.queueWaitMs(key, configuredQueueMs);
+    const waitUntil = Math.min(Date.now() + queueMs, startedAt + config.routing.totalBudgetMs);
+    // A model that works and is only full right now is worth the full wait
+    // even when requests are short of capacity: its slots free as it answers.
+    const busyUntil = peer ? waitUntil : Math.min(Date.now() + configuredQueueMs, startedAt + config.routing.totalBudgetMs);
     try {
       while (!running.size) {
         if (startNext()) return true;
         if (clientAbort.signal.aborted || attemptsStarted >= config.routing.maxAttempts) return false;
         const now = Date.now();
         freesUpAt = plan.freesUpAt(now);
-        if (freesUpAt === null || freesUpAt > waitUntil) return false;
+        const until = busyUntil > waitUntil && plan.waitingOnBusy(now) ? busyUntil : waitUntil;
+        if (freesUpAt === null || freesUpAt > until) {
+          // Better to try what may work again than to answer "no model available".
+          // A slow or weaker model that works comes before connections known to refuse.
+          if (plan.enableLastResort({ now })) continue;
+          if (plan.enableLongShots({ now })) continue;
+          return false;
+        }
         plan.joinQueue(now);
-        const pause = Math.min(waitUntil - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random()));
+        const pause = Math.min(until - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random()));
         await sleep(pause);
         queuedMs += Date.now() - now;
       }
@@ -410,7 +553,10 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
   await ensureRunning();
   while (running.size) {
     const newest = [...running].reduce((a, b) => (b.started > a.started ? b : a));
-    const canHedge = config.routing.hedging && running.size < config.routing.maxParallel
+    // Short of capacity: one attempt on the side at most. That still rescues a
+    // stuck request, but does not spend free quota others are queueing for.
+    const parallel = capacity.isShort(key.user_id) ? Math.min(2, config.routing.maxParallel) : config.routing.maxParallel;
+    const canHedge = config.routing.hedging && running.size < parallel
       && attemptsStarted < config.routing.maxAttempts && [...running].every((item) => item.entry.isFree);
     let timer = null;
     const contenders = [...running].map((item) => item.promise);
@@ -427,13 +573,19 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     }
     const { attempt } = outcome;
     if (outcome.error) {
+      // The provider rejected the attempt while it still occupied a slot.
+      const accountInFlight = loadTracker.inflight(attempt.entry).account;
       settle(attempt);
       attempt.reservation.release();
       const error = outcome.error instanceof ProviderError ? outcome.error : fromNetworkError(outcome.error);
       if (error.kind === KINDS.ABORTED && clientAbort.signal.aborted) break;
       lastError = error;
       trail.push(trailItem(attempt.entry, error.kind, { status: error.status, ms: Date.now() - attempt.started, message: String(error.message).slice(0, 200) }));
-      const policy = learning.onFailure(attempt.entry, error, { estimatedTokens: inputTokens, maxTokens: canonical.max_tokens });
+      const policy = learning.onFailure(attempt.entry, error, { estimatedTokens: inputTokens, maxTokens: attempt.maxTokens, boosted: attempt.boosted, running: accountInFlight });
+      // A partner counts only the requests it answered, so a refused one does not use up our share of it here either.
+      if (isPeerEntry(attempt.entry)) quota.refundRequest(attempt.entry, inputTokens);
+      if (isPeerEntry(attempt.entry)) reachability.noteFailure(attempt.entry.accountId, error.kind);
+      plan.noteFailure(attempt.entry, error.kind);
       if (error.kind === KINDS.AUTH) accounts.validateAccount(attempt.entry.accountId).catch(() => {});
       badRequests = error.kind === KINDS.BAD_REQUEST ? badRequests + 1 : 0;
       if (!policy.fallback || badRequests >= MAX_CONSECUTIVE_BAD_REQUESTS) {
@@ -456,6 +608,9 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
       learning.onSlow(other.entry, Date.now() - other.started);
     }
     running.delete(attempt);
+    capacity.record(key.user_id, true);
+    if (isPeerEntry(attempt.entry)) reachability.noteSuccess(attempt.entry.accountId);
+    if (retryId && plan.task) retries.rememberAnswer(retryId, { ref: attempt.entry.ref, task: plan.task.primary });
     try {
       await commit(attempt, outcome.result);
     } finally {
@@ -494,6 +649,7 @@ async function execute({ req, res, key, format, body, freeOnly = false, canonica
     ? explainNoModel(rejected)
     : `All ${trail.length} attempt(s) failed. Last error: ${lastError?.message || 'unknown'}`;
   finish({ status: 'error', http_status: status, error_code: code, error_message: message });
+  capacity.record(key.user_id, false);
   // When a model frees up later, say when to come back.
   const retryAfterSeconds = freesUpAt ? Math.max(1, Math.ceil((freesUpAt - Date.now()) / 1000)) : null;
   if (retryAfterSeconds && !res.headersSent) res.set('Retry-After', String(retryAfterSeconds));

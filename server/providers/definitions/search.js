@@ -25,9 +25,9 @@ module.exports = [
     billing: {
       defaultMode: 'free_tier',
       freeTierAll: true,
-      note: '1,000 free credits a month on the Researcher plan, no card needed (a basic search costs 1). With pay-as-you-go turned on, searches beyond that are billed.',
+      note: '1,000 free credits a month on the Researcher plan, no card needed (a basic search costs 1, an advanced one 2); requests stop at zero until the 1st. With pay-as-you-go turned on, searches beyond are billed at about 0.008 USD a credit.',
       source: 'https://www.tavily.com/pricing',
-      checkedAt: '2026-10-29',
+      checkedAt: '2026-11-07',
     },
   },
   {
@@ -42,9 +42,9 @@ module.exports = [
     billing: {
       defaultMode: 'free_tier',
       freeTierAll: true,
-      note: 'Free credits every month without a payment method; with a card on file, usage beyond them is billed.',
+      note: '10 USD of free credit every month, no card needed (about 1,400 to 2,500 searches; first team only). At zero, requests fail; a card is only charged if auto recharge is on.',
       source: 'https://exa.ai/pricing',
-      checkedAt: '2026-10-29',
+      checkedAt: '2026-11-07',
     },
   },
   {
@@ -58,9 +58,9 @@ module.exports = [
     billing: {
       defaultMode: 'free_tier',
       freeTierAll: true,
-      note: 'Monthly free credits without a card; requests fail when they run out.',
+      note: '20 USD of free credit a month (about 4,000 standard searches) for accounts with a work email; requests fail when it runs out. Top-ups are manual.',
       source: 'https://www.linkup.so/pricing',
-      checkedAt: '2026-10-29',
+      checkedAt: '2026-11-07',
     },
   },
   {
@@ -73,11 +73,11 @@ module.exports = [
     auth: { type: 'header', header: 'x-api-key' },
     ...search('parallel', { id: 'parallel-search', name: 'Parallel Search' }),
     billing: {
-      defaultMode: 'free_tier',
+      defaultMode: 'paid',
       freeTierAll: true,
-      note: 'Monthly free credits; with a payment method, usage beyond them is billed.',
+      note: 'Up to 80 USD of credit once at sign-up. The 5 USD monthly credit needs a card on file, and use beyond it is billed to that card: choose free only for a key without a card.',
       source: 'https://parallel.ai/pricing',
-      checkedAt: '2026-10-29',
+      checkedAt: '2026-11-07',
     },
   },
   {
@@ -88,12 +88,13 @@ module.exports = [
     keyUrl: 'https://www.firecrawl.dev/app/api-keys',
     baseUrl: 'https://api.firecrawl.dev/v2',
     ...search('firecrawl', { id: 'firecrawl-search', name: 'Firecrawl Search' }),
+    limits: { pool: 'account', account: { rpm: 10 } },
     billing: {
       defaultMode: 'free_tier',
       freeTierAll: true,
-      note: 'Free plan with monthly credits (about 500 searches); requests fail when they run out.',
+      note: 'Free plan: 1,000 credits a month, no card (a search of 10 results costs 2, so about 500 searches), 10 searches a minute. Requests fail when credits run out.',
       source: 'https://www.firecrawl.dev/pricing',
-      checkedAt: '2026-10-29',
+      checkedAt: '2026-11-07',
     },
   },
   {
@@ -108,9 +109,9 @@ module.exports = [
     billing: {
       defaultMode: 'free_tier',
       freeTierAll: true,
-      note: '2,500 free queries once at sign-up, then prepaid credits: it never bills automatically.',
+      note: '2,500 free queries once at sign-up, then prepaid credit packs: it never bills automatically. Paid credits expire after 6 months.',
       source: 'https://serper.dev',
-      checkedAt: '2026-10-29',
+      checkedAt: '2026-11-07',
     },
   },
   {
@@ -123,11 +124,10 @@ module.exports = [
     auth: { type: 'header', header: 'X-Subscription-Token' },
     ...search('brave', { id: 'brave-web-search', name: 'Brave Web Search', price_per_search: 0.005 }),
     billing: {
-      defaultMode: 'free_tier',
-      freeTierAll: true,
-      note: 'Free on the Free plan (monthly allowance, requests fail beyond it). On a paid plan searches are billed (about 5 USD per 1,000): choose paid for such keys.',
+      defaultMode: 'paid',
+      note: 'No free plan any more: a card is required. Every plan includes 5 USD of credit a month (about 1,000 searches, if Brave is credited on your site); searches beyond are billed at about 5 USD per 1,000.',
       source: 'https://brave.com/search/api',
-      checkedAt: '2026-10-29',
+      checkedAt: '2026-11-07',
     },
   },
   {
@@ -141,9 +141,9 @@ module.exports = [
     billing: {
       defaultMode: 'free_tier',
       freeTierAll: true,
-      note: 'A new key comes with 10M free tokens (a search costs from 10,000); afterwards only prepaid tokens, never automatic billing.',
+      note: 'A new key comes with 10M free tokens, once (a search costs from 10,000). After that, prepaid top-ups; a saved card is only charged automatically if auto recharge is on.',
       source: 'https://jina.ai/reader',
-      checkedAt: '2026-10-29',
+      checkedAt: '2026-11-07',
     },
   },
   {

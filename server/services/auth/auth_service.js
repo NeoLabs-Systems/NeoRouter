@@ -130,10 +130,7 @@ function logoutAll(userId) {
 
 async function changePassword(userId, currentPassword, newPassword) {
   const db = getDatabase();
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
-  if (!user || !(await verifyPassword(currentPassword, user.password_hash))) {
-    throw new HttpError(401, 'INVALID_PASSWORD', 'The current password is incorrect.');
-  }
+  await twoFactor.assertPassword(userId, currentPassword);
   assertPassword(newPassword);
   db.prepare("UPDATE users SET password_hash = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?")
     .run(await hashPassword(newPassword), userId);

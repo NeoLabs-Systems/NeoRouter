@@ -27,21 +27,52 @@ async function readBody(response) {
 
 const MAX_REDIRECTS = 5;
 
+// Addresses that are not reached over the internet directly (a pool partner
+// behind its host: relay://), handled by the module that registered them.
+// handler(url, init, { owner }) resolves with a fetch Response.
+const transports = new Map();
+
+function registerTransport(protocol, handler) {
+  transports.set(protocol, handler);
+}
+
+function transportFor(url) {
+  try {
+    return transports.get(new URL(url).protocol) || null;
+  } catch {
+    return null;
+  }
+}
+
 // With publicOnly, every hop (the URL and each redirect) must resolve to a
 // public address, so an account cannot reach the server's own network.
-async function send(url, init, publicOnly) {
-  if (!publicOnly) return fetch(url, { ...init, redirect: 'follow' });
+async function send(url, init, publicOnly, owner) {
+  const transport = transportFor(url);
+  if (transport) return transport(url, init, { owner });
+
+  const proxies = require('../services/proxies/pool');
+  if (!publicOnly && !proxies.config().enabled) return fetch(url, { ...init, redirect: 'follow' });
+
   let current = url;
   let options = init;
   for (let hop = 0; ; hop += 1) {
-    if (await isPrivateDestination(current)) {
+    const privateDestination = await isPrivateDestination(current);
+    if (publicOnly && privateDestination) {
       throw new ProviderError(KINDS.BAD_REQUEST, 'This address is on a local or private network. Only the instance admin can use those.');
     }
-    const response = await fetch(current, { ...options, redirect: 'manual' });
+    const sendFetch = privateDestination ? fetch : proxies.fetch;
+    const response = await sendFetch(current, { ...options, redirect: 'manual' });
     const location = response.status >= 300 && response.status < 400 ? response.headers.get('location') : null;
     if (!location) return response;
+    await response.body?.cancel();
     if (hop >= MAX_REDIRECTS) throw new ProviderError(KINDS.NETWORK, 'Too many redirects.');
-    current = new URL(location, current).toString();
+    const next = new URL(location, current).toString();
+    if (new URL(next).origin !== new URL(current).origin) {
+      const headers = new Headers(options.headers);
+      for (const name of ['authorization', 'x-api-key', 'x-goog-api-key', 'cookie']) headers.delete(name);
+      options = { ...options, headers };
+    }
+    current = next;
     if (response.status === 303 || ((response.status === 301 || response.status === 302) && options.method === 'POST')) {
       options = { ...options, method: 'GET', body: undefined };
     }
@@ -50,7 +81,8 @@ async function send(url, init, publicOnly) {
 
 // Performs one upstream HTTP call. Non-2xx responses become classified
 // ProviderErrors; network failures and timeouts are classified too.
-async function request(url, { method = 'GET', headers = {}, body, signal, timeoutMs, raw = false, publicOnly = false } = {}) {
+// owner: the person the call is made for (a relayed pool partner needs it).
+async function request(url, { method = 'GET', headers = {}, body, signal, timeoutMs, raw = false, publicOnly = false, owner = null } = {}) {
   let response;
   try {
     response = await send(url, {
@@ -59,7 +91,7 @@ async function request(url, { method = 'GET', headers = {}, body, signal, timeou
       headers: body !== undefined && !isRawBody(body) ? { 'Content-Type': 'application/json', ...headers } : headers,
       body: body === undefined ? undefined : isRawBody(body) ? body : JSON.stringify(body),
       signal: combineSignals(signal, timeoutMs),
-    }, publicOnly);
+    }, publicOnly, owner);
   } catch (error) {
     if (error instanceof ProviderError) throw error;
     throw fromNetworkError(error);
@@ -127,4 +159,4 @@ function emptyResponseError() {
   return new ProviderError(KINDS.EMPTY, 'The provider returned an empty response.');
 }
 
-module.exports = { request, readSse, assertNoEmbeddedError, emptyResponseError, combineSignals };
+module.exports = { request, readSse, assertNoEmbeddedError, emptyResponseError, combineSignals, registerTransport };

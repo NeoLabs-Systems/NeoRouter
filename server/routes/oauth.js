@@ -6,8 +6,8 @@ const openrouter = require('../services/oauth/openrouter_oauth');
 const { requireSession } = require('../middleware/auth');
 const { resolveSpace, requirePermission } = require('../middleware/space');
 const { validate } = require('../middleware/validate');
-const { getConfig } = require('../config/env');
 const { asyncRoute } = require('./helpers');
+const { publicOrigin } = require('../utils/public_origin');
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ router.get('/openrouter/callback/:state', asyncRoute(async (req, res) => {
 }));
 
 router.post('/openrouter/start', requireSession, resolveSpace, requirePermission('providers.manage'), validate(z.object({ returnTo: z.string().url().max(2048) })), (req, res) => {
-  const origin = getConfig().publicUrl || `${req.protocol}://${req.get('host')}`;
+  const origin = publicOrigin(req);
   res.json(openrouter.start({ userId: req.space.ownerId, createdBy: req.space.actorId, origin, requestHost: req.get('host'), returnTo: req.body.returnTo }));
 });
 

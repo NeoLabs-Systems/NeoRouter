@@ -21,6 +21,7 @@ function errorHandler(error, req, res, _next) {
   const status = error.status || 500;
   const code = error.code || 'INTERNAL_ERROR';
   if (status >= 500) logger.error('Request failed', { requestId: req.id, method: req.method, path: req.path, error });
+  if (error.retryAfter) res.set('Retry-After', String(error.retryAfter));
   res.status(status).json({
     error: {
       code,

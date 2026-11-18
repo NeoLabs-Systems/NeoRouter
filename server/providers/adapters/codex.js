@@ -10,7 +10,7 @@ const { BaseAdapter } = require('./base_adapter');
 const { readSse } = require('../http');
 const { normalizeModel } = require('../model_info');
 const { ProviderError, KINDS, classifyHttpError } = require('../provider_error');
-const { completionId, buildChunk, buildResponse, textOf, contentParts, StreamAccumulator } = require('../../capabilities/chat/canonical');
+const { normalizeUsage, completionId, buildChunk, buildResponse, textOf, contentParts, StreamAccumulator } = require('../../capabilities/chat/canonical');
 const oauth = require('../../services/providers/codex_oauth');
 
 // The backend may require Codex's own instructions; neutral ones are tried first.
@@ -71,6 +71,7 @@ function buildBody(canonical, modelId, instructions) {
     stream: true,
     include: ['reasoning.encrypted_content'],
   };
+  if (canonical.prompt_cache_key) body.prompt_cache_key = canonical.prompt_cache_key;
   if (canonical.tools?.length) {
     body.tools = canonical.tools.map((tool) => ({ type: 'function', name: tool.function.name, description: tool.function.description || '', parameters: tool.function.parameters || { type: 'object', properties: {} }, strict: false }));
     body.tool_choice = toolChoice(canonical.tool_choice) ?? 'auto';
@@ -118,7 +119,7 @@ async function* toChunks(events, modelId) {
       case 'response.completed':
       case 'response.incomplete': {
         const raw = event.response?.usage;
-        if (raw) usage = { prompt_tokens: raw.input_tokens || 0, completion_tokens: raw.output_tokens || 0, total_tokens: (raw.input_tokens || 0) + (raw.output_tokens || 0) };
+        if (raw) usage = normalizeUsage(raw);
         if (event.type === 'response.incomplete') finish = 'length';
         break;
       }

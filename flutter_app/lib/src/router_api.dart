@@ -1,3 +1,4 @@
+import '../discovery/models.dart';
 import 'backend_client.dart';
 import 'capabilities.dart';
 import 'models.dart';
@@ -26,6 +27,14 @@ class RouterApi {
       client.post('$_base/auth/2fa/disable', <String, Object>{'currentPassword': currentPassword, 'code': code});
   Future<Map<String, dynamic>> twoFactorRecoveryCodes(String currentPassword, String code) =>
       client.post('$_base/auth/2fa/recovery-codes', <String, Object>{'currentPassword': currentPassword, 'code': code});
+  // Your own account; each asks for the password again and a code when 2FA is on.
+  Map<String, Object> _confirmation(String password, String? code) =>
+      <String, Object>{'currentPassword': password, if (code != null && code.isNotEmpty) 'code': code};
+  Future<Map<String, dynamic>> exportAccountData(String password, String? code) => client.post('$_base/auth/account/export', _confirmation(password, code));
+  Future<Map<String, dynamic>> exportSavedKeys(String password, String code) => client.post('$_base/auth/account/export-keys', _confirmation(password, code));
+  /// Adds connections from a key file exported from NeoRouter; returns imported, skipped and failed.
+  Future<Map<String, dynamic>> importKeys(Map<String, dynamic> file) => client.post('$_base/providers/accounts/import', file);
+  Future<void> deleteMyAccount(String password, String? code) => client.post('$_base/auth/account/delete', _confirmation(password, code));
   Future<AppUser> me() async => AppUser(Map<String, dynamic>.from((await client.get('$_base/auth/me'))['user'] as Map));
   Future<void> logout() => client.post('$_base/auth/logout');
   Future<void> changePassword(String current, String next) =>
@@ -41,6 +50,11 @@ class RouterApi {
   );
   Future<Map<String, dynamic>> info() => client.get('$_base/info');
 
+  Future<BenchmarkPageData> benchmarks({String query = '', String capability = 'chat', String source = '', bool free = false, int offset = 0, List<String> compare = const []}) async =>
+      BenchmarkPageData(await client.get(Uri(path: '$_base/discovery/benchmarks', queryParameters: {
+        'query': query, 'capability': capability, 'source': source, 'free': free ? '1' : '0', 'offset': '$offset', 'compare': compare.join(','),
+      }).toString()));
+
   // ---- providers ------------------------------------------------------------
   Future<List<ProviderDefinition>> definitions() async => _list(await client.get('$_base/providers/definitions'), 'definitions', ProviderDefinition.new);
   Future<List<ProviderAccount>> accounts() async => _list(await client.get('$_base/providers/accounts'), 'accounts', ProviderAccount.new);
@@ -50,8 +64,12 @@ class RouterApi {
   Future<Map<String, dynamic>> createAccount(Map<String, Object?> body) => client.post('$_base/providers/accounts', _clean(body));
   Future<ProviderAccount> updateAccount(String id, Map<String, Object?> body) async =>
       ProviderAccount(Map<String, dynamic>.from((await client.patch('$_base/providers/accounts/$id', _clean(body)))['account'] as Map));
+  /// A number sets a limit the person states for the account, null clears it, absent keeps it.
+  Future<void> setAccountLimits(String id, Map<String, int?> limits) => client.put('$_base/providers/accounts/$id/limits', limits);
   Future<void> deleteAccount(String id) => client.delete('$_base/providers/accounts/$id');
   Future<Map<String, dynamic>> validateAccount(String id) => client.post('$_base/providers/accounts/$id/validate');
+  /// The person fixed what was wrong: the router forgets what it held against the connection and tries it again.
+  Future<Map<String, dynamic>> markAccountFixed(String id) => client.post('$_base/providers/accounts/$id/mark-fixed');
   Future<Map<String, dynamic>> syncAccount(String id) => client.post('$_base/providers/accounts/$id/sync');
   Future<Map<String, dynamic>> probeQuota(String id) => client.post('$_base/providers/accounts/$id/quota');
 
@@ -59,6 +77,11 @@ class RouterApi {
   Future<Map<String, dynamic>> chatgptLoginStart({String? accountId, String? billingMode}) =>
       client.post('$_base/providers/chatgpt/login', _clean(<String, Object?>{'accountId': accountId, 'billingMode': billingMode}));
   Future<Map<String, dynamic>> chatgptLoginPoll(String loginId) => client.post('$_base/providers/chatgpt/login/$loginId');
+
+  /// Nous Portal device sign-in: start, then poll until approved.
+  Future<Map<String, dynamic>> nousLoginStart({String? accountId}) =>
+      client.post('$_base/providers/nous/login', _clean(<String, Object?>{'accountId': accountId}));
+  Future<Map<String, dynamic>> nousLoginPoll(String loginId) => client.post('$_base/providers/nous/login/$loginId');
 
   // ---- catalog ---------------------------------------------------------------
   Future<List<CatalogModel>> models({String capability = 'chat'}) async =>
@@ -98,6 +121,25 @@ class RouterApi {
   Future<void> deleteKey(String id) => client.delete('$_base/keys/$id');
 
   // ---- routing ----------------------------------------------------------------
+  /// Settings → Usage → even out usage: { enabled, active, readiness }.
+  Future<Map<String, dynamic>> smoothing() => client.get('$_base/routing/smoothing');
+  Future<Map<String, dynamic>> setSmoothing(bool enabled) => client.putJson('$_base/routing/smoothing', <String, Object>{'enabled': enabled});
+  /// Settings → Connect your apps: { apps, places, network }.
+  Future<Map<String, dynamic>> connectApps() => client.get('$_base/apps');
+  /// What last happened with a key: { lastUsedAt, request }.
+  Future<Map<String, dynamic>> keyActivity(String keyId) => client.get('$_base/apps/keys/$keyId/activity');
+  /// Admins: 'local' or 'network'; returns { restarting, restartNeeded, places, ... }.
+  Future<Map<String, dynamic>> setNetworkScope(String scope) => client.putJson('$_base/apps/network', <String, Object>{'scope': scope});
+  Future<List<Map<String, dynamic>>> routingGroups() async => ((await client.get('$_base/routing/groups'))['groups'] as List).map((row) => Map<String, dynamic>.from(row as Map)).toList();
+  Future<void> saveRoutingGroup(Map<String, Object?> body, {String? id}) async {
+    if (id == null) {
+      await client.post('$_base/routing/groups', body);
+    } else {
+      await client.put('$_base/routing/groups/$id', body);
+    }
+  }
+  Future<void> deleteRoutingGroup(String id) => client.delete('$_base/routing/groups/$id');
+
   Future<List<RoutingProfile>> profiles() async => _list(await client.get('$_base/routing/profiles'), 'profiles', RoutingProfile.new);
   Future<RoutingProfile> createProfile(String name, RoutingWeights weights, Map<String, Object?> constraints) async => RoutingProfile(
     Map<String, dynamic>.from(
@@ -128,7 +170,9 @@ class RouterApi {
   // ---- usage ------------------------------------------------------------------
   Future<Map<String, dynamic>> analytics(String range, {List<String> keyIds = const <String>[]}) =>
       client.get('$_base/usage/analytics?range=$range${keyIds.isEmpty ? '' : '&keyIds=${keyIds.map(Uri.encodeQueryComponent).join(',')}'}');
-  Future<Map<String, dynamic>> summary(String range) => client.get('$_base/usage/summary?range=$range');
+  Future<Map<String, dynamic>> usageHealth() => client.get('$_base/usage/health');
+  Future<Map<String, dynamic>> learning() => client.get('$_base/usage/learning');
+  Future<Map<String, dynamic>> summary(String range, {bool onlyTotals = false}) => client.get('$_base/usage/summary?range=$range${onlyTotals ? '&only=totals' : ''}');
   Future<List<RequestLog>> logs({int limit = 100, String? status, List<String> keyIds = const <String>[]}) async => _list(
     await client.get('$_base/usage/logs?limit=$limit${status == null ? '' : '&status=$status'}${keyIds.isEmpty ? '' : '&keyIds=${keyIds.map(Uri.encodeQueryComponent).join(',')}'}'),
     'logs',
@@ -150,6 +194,32 @@ class RouterApi {
 
   // ---- teams --------------------------------------------------------------------
   Future<TeamSummary> team() async => TeamSummary(await client.get('$_base/teams'));
+
+  // Pools (other NeoRouters sharing free capacity)
+  Future<PoolsSummary> pools() async => PoolsSummary(await client.get('$_base/pools'));
+  Future<PoolsSummary> createPool(String name, String selfName, List<String> sharedAccountIds) async =>
+      PoolsSummary(await client.post('$_base/pools', <String, Object>{'name': name, 'selfName': selfName, 'sharedAccountIds': sharedAccountIds}));
+  Future<Map<String, dynamic>> previewPool(String link) => client.post('$_base/pools/preview', <String, Object>{'link': link});
+  Future<PoolsSummary> joinPool(String link, String selfName, List<String> sharedAccountIds) async =>
+      PoolsSummary(await client.post('$_base/pools/join', <String, Object>{'link': link, 'selfName': selfName, 'sharedAccountIds': sharedAccountIds}));
+  Future<String> createPoolInvite(String poolId) async => (await client.post('$_base/pools/$poolId/invites'))['link'] as String;
+  Future<void> revokePoolInvite(String poolId, String id) => client.delete('$_base/pools/$poolId/invites/$id');
+  /// Not cleaned: a null limit means "back to automatic".
+  Future<PoolsSummary> updatePoolShare(String poolId, Map<String, Object?> body) async => PoolsSummary(await client.putJson('$_base/pools/$poolId/share', body));
+  /// [shared]: the connection's free models; [paid]: its paid ones. One left out stays as it was.
+  Future<PoolsSummary> setAccountPoolShare(String poolId, String accountId, {bool? shared, bool? paid}) async => PoolsSummary(
+    await client.putJson('$_base/pools/$poolId/accounts/$accountId/share', <String, Object>{if (shared != null) 'shared': shared, if (paid != null) 'paid': paid}),
+  );
+  /// Counts by connection, model and partner for one pool over [days] (7 or 30).
+  Future<Map<String, dynamic>> poolActivity(String poolId, int days) => client.get('$_base/pools/$poolId/activity?days=$days');
+  Future<PoolsSummary> setPoolPaused(String poolId, bool paused) async => PoolsSummary(await client.putJson('$_base/pools/$poolId/paused', <String, Object>{'paused': paused}));
+  /// The host's switch: pass traffic for members without a public address.
+  Future<PoolsSummary> setPoolRelay(String poolId, bool enabled) async => PoolsSummary(await client.putJson('$_base/pools/$poolId/relay', <String, Object>{'enabled': enabled}));
+  Future<PoolsSummary> setPartnerPaused(String linkId, bool paused) async =>
+      PoolsSummary(await client.putJson('$_base/pools/partners/$linkId/paused', <String, Object>{'paused': paused}));
+  Future<PoolsSummary> removePoolMember(String poolId, String memberId) async => PoolsSummary(await client.deleteJson('$_base/pools/$poolId/members/$memberId'));
+  Future<PoolsSummary> leavePool(String poolId) async => PoolsSummary(await client.post('$_base/pools/$poolId/leave'));
+  Future<void> setPoolPrivacy(bool keepSensitivePrivate) => client.put('$_base/pools/privacy', <String, Object>{'keepSensitivePrivate': keepSensitivePrivate});
   Future<Map<String, dynamic>> previewInvite(String link) => client.post('$_base/teams/invites/preview', <String, Object>{'link': link});
   Future<TeamSummary> redeemInvite(String link) async => TeamSummary(await client.post('$_base/teams/invites/redeem', <String, Object>{'link': link}));
   Future<String> createInvite({required String label, required List<String> permissions, int? expiresInHours, required bool singleUse}) async =>
@@ -176,6 +246,19 @@ class RouterApi {
   Future<Map<String, dynamic>> adminSettings() => client.get('$_base/admin/settings');
   Future<Map<String, dynamic>> updateAdminSettings(Map<String, Object?> body) => client.patch('$_base/admin/settings', body);
   Future<Map<String, dynamic>> refreshMetadata() => client.post('$_base/admin/metadata/refresh');
+
+  // ---- local models ---------------------------------------------------------
+  String _localModel(String id) => '$_base/admin/local-models/${Uri.encodeComponent(id)}';
+  Future<LocalModelsOverview> localModels() async => LocalModelsOverview(await client.get('$_base/admin/local-models'));
+  /// action: install · start · stop · retry · repair
+  Future<LocalModelsOverview> localModelAction(String id, String action) async => LocalModelsOverview(await client.post('${_localModel(id)}/$action'));
+  Future<LocalModelsOverview> installLocalStarter() async => LocalModelsOverview(await client.post('$_base/admin/local-models/starter'));
+  Future<LocalModelsOverview> removeLocalModel(String id) async => LocalModelsOverview(await client.deleteJson(_localModel(id)));
+  Future<LocalModelsOverview> setLocalModelsAccess({required bool everyone}) async =>
+      LocalModelsOverview(await client.putJson('$_base/admin/local-models/access', <String, Object>{'level': everyone ? 'everyone' : 'admins'}));
+
+  Future<LocalModelsOverview> setPrivacyFilter({required bool enabled}) async =>
+      LocalModelsOverview(await client.putJson('$_base/admin/local-models/privacy-filter', <String, Object>{'enabled': enabled}));
 
   // ---- updates --------------------------------------------------------------
   Future<Map<String, dynamic>> updateStatus() => client.get('$_base/admin/update');

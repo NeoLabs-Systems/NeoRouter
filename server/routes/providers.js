@@ -5,8 +5,17 @@ const { z } = require('zod');
 const registry = require('../providers/registry');
 const billing = require('../services/providers/billing_check');
 const accounts = require('../services/providers/account_service');
+const { finishSetup } = require('../services/providers/account_setup');
+const keyImport = require('../services/providers/key_import');
+const { slidingWindow } = require('../middleware/rate_limit');
+const { markAccountFixed } = require('../services/routing/fixed');
+const accountLimits = require('../services/quota/account_limits');
 const codexOAuth = require('../services/providers/codex_oauth');
+const nousOAuth = require('../services/providers/nous_oauth');
+const { ProviderError, KINDS } = require('../providers/provider_error');
+const { HttpError } = require('../middleware/error_handler');
 const catalog = require('../services/catalog/catalog_service');
+const localAccess = require('../services/local_models/access');
 const { validate } = require('../middleware/validate');
 const { requirePermission } = require('../middleware/space');
 const { asyncRoute } = require('./helpers');
@@ -18,9 +27,19 @@ const router = express.Router();
 // Who is changing an account, for the checks on where its key may be sent.
 const actorOf = (req) => ({ role: req.user.role, isOwner: req.space.isOwner });
 
-router.get('/definitions', (_req, res) => res.json({ definitions: registry.list().map(registry.publicDefinition) }));
+// Pool partners are added by joining a pool, not by hand; this server's local
+// models only when there are some and an admin lets this person use them.
+router.get('/definitions', (req, res) => res.json({
+  definitions: registry.list()
+    .filter((definition) => definition.category !== 'pool')
+    .filter((definition) => definition.id !== localAccess.DEFINITION_ID || localAccess.offered(req.space.ownerId))
+    .map(registry.publicDefinition),
+}));
 
 router.get('/accounts', requirePermission('providers.view'), (req, res) => res.json({ accounts: accounts.list(req.space.ownerId) }));
+
+const limitValue = z.number().int().min(1).max(10_000_000_000).nullable().optional();
+const accountLimitsInput = z.object({ rpm: limitValue, rpd: limitValue, tpm: limitValue, tpd: limitValue, concurrent: limitValue }).strict();
 
 const accountInput = z.object({
   definitionId: z.string().min(1),
@@ -35,7 +54,13 @@ const accountInput = z.object({
   }).catchall(z.string().max(512)).optional(),
   headers: z.record(z.string().max(2048)).optional(),
   // 'plan': a prepaid subscription; 'plan_paid': the plan, then pay per use.
-  billingMode: z.enum(['free_tier', 'paid', 'plan', 'plan_paid']).optional(),
+  billingMode: z.enum(['free_tier', 'paid', 'plan', 'plan_paid', 'flat_rate']).optional(),
+  // Overrides what NeoRouter worked out for all its models.
+  classification: z.enum(['auto', 'free', 'paid']).optional(),
+  overflowPolicy: z.enum(['auto', 'overflow', 'queue']).optional(),
+  slotWaitMs: z.number().int().min(0).max(require('../config/env').getConfig().routing.slotMaxWaitMs).nullable().optional(),
+  concurrent: limitValue,
+  limits: accountLimitsInput.optional(),
 });
 
 // ChatGPT (Codex) sign-in with a device code: start, then poll until the
@@ -74,28 +99,94 @@ router.post('/chatgpt/login/:loginId', requirePermission('providers.manage'), as
   return res.json({ status: 'done', plan: result.plan, account: accounts.get(pending.ownerId, account.id) });
 }));
 
+// Nous Portal sign-in with a device code: start, then poll until the user
+// approved it in the Portal. Same rules as the ChatGPT sign-in above.
+const nousLogins = new Map();
+const nousPolls = new Map();
+
+// A refused or failed Nous sign-in is told to the person as it is, not as an internal error.
+function nousSignInError(error) {
+  if (!(error instanceof ProviderError)) return error;
+  return new HttpError(error.kind === KINDS.AUTH ? 400 : 502, 'NOUS_SIGN_IN_FAILED', error.message);
+}
+
+router.post('/nous/login', requirePermission('providers.manage'), asyncRoute(async (req, res) => {
+  const login = await nousOAuth.startDeviceLogin().catch((error) => { throw nousSignInError(error); });
+  nousLogins.set(login.loginId, { ownerId: req.space.ownerId, actorId: req.space.actorId, accountId: req.body?.accountId || null });
+  nousPolls.delete(login.loginId);
+  res.json(login);
+}));
+
+router.post('/nous/login/:loginId', requirePermission('providers.manage'), asyncRoute(async (req, res) => {
+  const pending = nousLogins.get(req.params.loginId);
+  if (!pending || pending.ownerId !== req.space.ownerId) return res.status(404).json({ error: { code: 'LOGIN_NOT_FOUND', message: 'This sign-in expired. Start again.' } });
+  const result = await nousOAuth.pollDeviceLogin(req.params.loginId).catch((error) => {
+    nousLogins.delete(req.params.loginId);
+    throw nousSignInError(error);
+  });
+  if (result.status !== 'done') {
+    if (result.status === 'expired') nousLogins.delete(req.params.loginId);
+    // slow_down: the Portal asked for a longer interval, so the app must wait.
+    if (result.status === 'slow_down') nousPolls.set(req.params.loginId, (nousPolls.get(req.params.loginId) || 5) + 5);
+    return res.json({ status: result.status === 'slow_down' ? 'pending' : result.status, interval: nousPolls.get(req.params.loginId) || null });
+  }
+  nousLogins.delete(req.params.loginId);
+  nousPolls.delete(req.params.loginId);
+  let account;
+  if (pending.accountId) {
+    account = await accounts.update(pending.ownerId, pending.accountId, { secret: result.secret });
+  } else {
+    ({ account } = await accounts.create(pending.ownerId, { definitionId: 'nous', secret: result.secret, billingMode: 'paid' }, pending.actorId));
+  }
+  try {
+    await catalog.syncAccount(account.id);
+  } catch (error) {
+    logger.warn('Nous Portal model sync failed', { accountId: account.id, error: error.message });
+  }
+  return res.json({ status: 'done', email: result.email, tier: result.tier, account: accounts.get(pending.ownerId, account.id) });
+}));
+
 router.post('/probe', requirePermission('providers.manage'), validate(accountInput), asyncRoute(async (req, res) => res.json(await accounts.probe(req.space.ownerId, req.body, actorOf(req)))));
 
 router.post('/accounts', requirePermission('providers.manage'), validate(accountInput), asyncRoute(async (req, res) => {
-  const { account, validation } = await accounts.create(req.space.ownerId, req.body, req.space.actorId, actorOf(req));
-  let sync = null;
-  try {
-    sync = await catalog.syncAccount(account.id);
-  } catch (error) {
-    sync = { error: error.message };
-    logger.warn('Initial model sync failed', { accountId: account.id, error: error.message });
+  if (req.body.definitionId === localAccess.DEFINITION_ID && !localAccess.allowed(req.space.ownerId)) {
+    throw new HttpError(403, 'LOCAL_MODELS_NOT_SHARED', 'An admin has not shared this server’s local models with you.');
   }
-  await billing.verifyAccount(account.id);
-  // A plan's allowance should be known before the first request.
-  await accounts.probeQuota(account.id).catch(() => {});
+  const { account, validation } = await accounts.create(req.space.ownerId, req.body, req.space.actorId, actorOf(req));
+  const sync = await finishSetup(account.id);
   res.status(201).json({ account: accounts.get(req.space.ownerId, account.id), validation, sync });
 }));
+
+// A key file exported from NeoRouter (Settings → export saved API keys).
+const importedKey = accountInput.pick({ definitionId: true, label: true, baseUrl: true, options: true, headers: true, billingMode: true, classification: true, concurrent: true, limits: true, overflowPolicy: true, slotWaitMs: true })
+  .extend({ secret: z.string().min(1).max(4096) });
+router.post('/accounts/import', requirePermission('providers.manage'), slidingWindow({ windowMs: 60_000, limit: 5 }), validate(z.object({
+  kind: z.literal(keyImport.KIND),
+  keys: z.array(importedKey.passthrough()).min(1).max(keyImport.MAX_KEYS),
+}).passthrough()), asyncRoute(async (req, res) => res.json(await keyImport.importKeys(req.space.ownerId, req.space.actorId, actorOf(req), req.body))));
 
 router.patch('/accounts/:id', requirePermission('providers.manage'), validate(accountInput.omit({ definitionId: true }).extend({ enabled: z.boolean().optional() })), asyncRoute(async (req, res) => {
   const account = await accounts.update(req.space.ownerId, req.params.id, req.body, actorOf(req));
   catalog.reclassifyAccount(req.params.id);
   if (req.body.billingMode !== undefined || req.body.secret !== undefined) await billing.verifyAccount(req.params.id);
   res.json({ account: accounts.get(req.space.ownerId, account.id) });
+}));
+
+// States what this account can take; a number wins over everything the router
+// infers, null clears it. Absent fields stay as they are.
+router.put('/accounts/:id/limits', requirePermission('providers.manage'), validate(accountLimitsInput), (req, res) => {
+  accounts.getRow(req.space.ownerId, req.params.id);
+  accountLimits.set(req.params.id, req.body);
+  res.json({ account: accounts.get(req.space.ownerId, req.params.id) });
+});
+
+// The person fixed what was wrong: forget the cooldowns, rests and failures held
+// against this connection, check the key again and give it fresh chances.
+router.post('/accounts/:id/mark-fixed', requirePermission('providers.manage'), asyncRoute(async (req, res) => {
+  accounts.getRow(req.space.ownerId, req.params.id);
+  const fixed = markAccountFixed(req.params.id);
+  const validation = await accounts.validateAccount(req.params.id).catch((error) => ({ status: 'unknown', message: error.message }));
+  res.json({ fixed, validation, account: accounts.get(req.space.ownerId, req.params.id) });
 }));
 
 router.delete('/accounts/:id', requirePermission('providers.delete'), (req, res) => { accounts.remove(req.space.ownerId, req.params.id); res.status(204).end(); });

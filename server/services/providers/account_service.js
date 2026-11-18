@@ -1,6 +1,7 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const { FLAT_RATE, storedBilling, publicBilling } = require('./billing_modes');
 const { getDatabase } = require('../../db/database');
 const { HttpError } = require('../../middleware/error_handler');
 const { encryptString, decryptString } = require('../../utils/crypto');
@@ -71,17 +72,10 @@ function rowToRuntime(row) {
     options: JSON.parse(row.options_json || '{}'),
     billingMode: row.billing_mode,
     prepaid: Boolean(row.prepaid),
+    isFlatRate: row.prepaid === FLAT_RATE,
     enabled: Boolean(row.enabled),
     status: row.status,
   };
-}
-
-// A prepaid plan is billed (so never free), but its allowance is already
-// paid for. prepaid: 1 = the plan only, 2 = the plan, then pay per use.
-const PLAN_MODES = { plan: 1, plan_paid: 2 };
-
-function storedBilling(mode) {
-  return PLAN_MODES[mode] ? { billing: 'paid', prepaid: PLAN_MODES[mode] } : { billing: mode, prepaid: 0 };
 }
 
 function publicAccount(row) {
@@ -100,13 +94,18 @@ function publicAccount(row) {
     baseUrl: row.base_url || definition?.baseUrl || null,
     keyPreview: maskSecret(runtime.secret),
     options: runtime.options,
-    billingMode: row.prepaid === 2 ? 'plan_paid' : row.prepaid ? 'plan' : row.billing_mode,
+    billingMode: publicBilling(row),
+    overflowPolicy: row.overflow_policy || 'auto',
+    slotWaitMs: row.slot_wait_ms ?? getConfig().routing.slotQueueWaitMs,
+    slotMaxWaitMs: getConfig().routing.slotMaxWaitMs,
     planNote: definition?.billing.plan?.note || null,
     billingState: row.billing_state,
     billingMessage: row.billing_message,
     billingCheckedAt: row.billing_checked_at,
     billingNote: definition?.billing.note || null,
     billingVerifiable: Boolean(definition?.billing.verify),
+    // The person's call for all its models: auto, free or paid.
+    classification: row.classification || 'auto',
     enabled: Boolean(row.enabled),
     status: row.status,
     statusMessage: row.status_message,
@@ -119,6 +118,11 @@ function publicAccount(row) {
     freeAvailable: Boolean(definition && (declaresFreeModels(definition.billing) || counts.free > 0)),
     // On "Free": every model is in the free tier, or only some are.
     freeTierAll: Boolean(definition?.billing.freeTierAll),
+    // What the person stated, and the in-flight limit in force with its source (manual, learned or documented).
+    limits: require('../quota/account_limits').get(row.id),
+    concurrency: require('../routing/concurrency').limitFor({ accountId: row.id, definitionId: row.definition_id }),
+    // The pools its free models are shared in.
+    sharedInPools: getDatabase().prepare('SELECT pool_id FROM pool_shared_accounts WHERE account_id = ?').all(row.id).map((item) => item.pool_id),
   };
 }
 
@@ -144,6 +148,15 @@ function adapterFor(runtime) {
   return registry.createAdapter(definitionOrThrow(runtime.definitionId), runtime);
 }
 
+// Whether this connection's adapter can do `method` (speech, embed, …): some
+// providers list a kind of model through an API NeoRouter does not speak.
+function canServe(accountId, method) {
+  const runtime = getRuntime(accountId);
+  if (!runtime) return false;
+  const adapter = adapterFor(runtime);
+  return typeof adapter[method] === 'function' && adapter.supports(method);
+}
+
 function validateInput(definition, { secret, baseUrl, options = {} }) {
   if (!definition.keyOptional && !secret) throw new HttpError(400, 'KEY_REQUIRED', `${definition.label} requires an API key.`);
   if (definition.editableBaseUrl && !baseUrl && !definition.baseUrl) {
@@ -152,7 +165,7 @@ function validateInput(definition, { secret, baseUrl, options = {} }) {
   if (baseUrl) {
     let parsed;
     try { parsed = new URL(baseUrl); } catch { throw new HttpError(400, 'INVALID_BASE_URL', 'The base URL is not a valid URL.'); }
-    if (!/^https?:$/.test(parsed.protocol)) throw new HttpError(400, 'INVALID_BASE_URL', 'The base URL must use http or https.');
+    if (!definition.baseUrlSchemes.includes(parsed.protocol.replace(/:$/, ''))) throw new HttpError(400, 'INVALID_BASE_URL', `The base URL must use ${definition.baseUrlSchemes.join(' or ')}.`);
   }
   // A full URL here would send the key to another host than the base URL.
   if (options.modelsPath && !/^\/(?!\/)/.test(options.modelsPath)) {
@@ -189,6 +202,20 @@ async function validateAccount(accountId) {
   return result;
 }
 
+function assertSlotPlan(definition, options) {
+  if (options.slotPlan && definition.billing.flatRate && !definition.billing.flatRate.plans.some((plan) => plan.id === options.slotPlan)) {
+    throw new HttpError(400, 'UNKNOWN_SLOT_PLAN', 'This concurrency plan does not exist.');
+  }
+}
+
+function configureTraffic(accountId, input) {
+  const manual = { ...(input.concurrent !== undefined ? { concurrent: input.concurrent } : {}), ...input.limits };
+  if (Object.keys(manual).length) require('../quota/account_limits').set(accountId, manual);
+  if (input.overflowPolicy !== undefined) getDatabase().prepare('UPDATE provider_accounts SET overflow_policy = ? WHERE id = ?').run(input.overflowPolicy, accountId);
+  if (input.slotWaitMs !== undefined) getDatabase().prepare('UPDATE provider_accounts SET slot_wait_ms = ? WHERE id = ?').run(input.slotWaitMs, accountId);
+  require('../routing/slot_utilization').watch(accountId);
+}
+
 // actor ({ role, isOwner }) is the signed-in user acting through the API;
 // it is absent for trusted local callers such as the CLI.
 async function create(userId, input, createdBy = userId, actor = null) {
@@ -197,13 +224,15 @@ async function create(userId, input, createdBy = userId, actor = null) {
   const options = { ...(input.options || {}) };
   if (input.headers) options.headers = input.headers;
   validateInput(definition, { secret: input.secret, baseUrl, options });
+  assertSlotPlan(definition, options);
   const requestedMode = input.billingMode && (input.billingMode !== 'free_tier' || declaresFreeModels(definition.billing) || definition.billing.trustListingFree)
     ? input.billingMode : definition.billing.defaultMode;
   const { billing: billingMode, prepaid } = storedBilling(requestedMode);
 
   const restricted = publicOnly(userId, actor);
   await assertDestination(baseUrl, restricted);
-  const probe = { secret: input.secret || null, baseUrl, options, publicOnly: restricted };
+  // userId: some addresses (a pool partner behind its host) are reached on the owner's behalf.
+  const probe = { userId, secret: input.secret || null, baseUrl, options, publicOnly: restricted };
   const result = await registry.createAdapter(definition, probe).validate();
   if (result.status === 'invalid') {
     throw new HttpError(422, 'KEY_REJECTED', `${definition.label} rejected this key: ${result.message}`);
@@ -219,6 +248,8 @@ async function create(userId, input, createdBy = userId, actor = null) {
     .run(id, userId, definition.id, slug, label, baseUrl,
       input.secret ? encryptString(input.secret) : null, JSON.stringify(options), billingMode,
       result.status === 'healthy' ? 'healthy' : 'error', result.message || null, createdBy, prepaid);
+  if (input.classification && input.classification !== 'auto') getDatabase().prepare('UPDATE provider_accounts SET classification = ? WHERE id = ?').run(input.classification, id);
+  configureTraffic(id, input);
   return { account: publicAccount(getRow(userId, id)), validation: result };
 }
 
@@ -241,6 +272,7 @@ async function update(userId, accountId, input, actor = null) {
     throw new HttpError(400, 'SECRET_REQUIRED', 'Enter the API key again to change where this provider is reached.');
   }
   next.publicOnly = publicOnly(userId, actor);
+  assertSlotPlan(definition, next.options);
   const credentialsChanged = input.secret !== undefined || input.baseUrl !== undefined || input.options !== undefined;
   if (credentialsChanged) {
     validateInput(definition, next);
@@ -275,6 +307,8 @@ async function update(userId, accountId, input, actor = null) {
       accountId,
     );
   if (input.billingMode !== undefined) db.prepare('UPDATE provider_accounts SET prepaid = ? WHERE id = ?').run(storedBilling(input.billingMode).prepaid, accountId);
+  if (input.classification !== undefined) db.prepare('UPDATE provider_accounts SET classification = ? WHERE id = ?').run(input.classification === 'auto' ? null : input.classification, accountId);
+  configureTraffic(accountId, input);
   return publicAccount(getRow(userId, accountId));
 }
 
@@ -286,6 +320,7 @@ async function probe(userId, input, actor = null) {
   const options = { ...(input.options || {}) };
   if (input.headers) options.headers = input.headers;
   validateInput(definition, { secret: input.secret, baseUrl, options });
+  assertSlotPlan(definition, options);
   const restricted = publicOnly(userId, actor);
   await assertDestination(baseUrl, restricted);
   const adapter = registry.createAdapter(definition, { secret: input.secret || null, baseUrl, options, publicOnly: restricted });
@@ -305,8 +340,9 @@ function remove(userId, accountId) {
   getDatabase().prepare('DELETE FROM provider_accounts WHERE id = ?').run(accountId);
 }
 
+// Pool partners (services/pools) are managed on the pool page, not listed as connections.
 function list(userId) {
-  return getDatabase().prepare('SELECT * FROM provider_accounts WHERE user_id = ? ORDER BY created_at').all(userId).map(publicAccount);
+  return getDatabase().prepare("SELECT * FROM provider_accounts WHERE user_id = ? AND definition_id != 'neorouter_peer' ORDER BY created_at").all(userId).map(publicAccount);
 }
 
 function get(userId, accountId) {
@@ -340,10 +376,12 @@ module.exports = {
   getRow,
   getRuntime,
   adapterFor,
+  canServe,
   validateAccount,
   recordValidation,
   allEnabledIds,
   prepaidIds,
   probeQuota,
   AUTH_FAILURES_BEFORE_DISABLE,
+  publicOnly,
 };

@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
 import 'main_dashboard.dart';
+import 'main_learning.dart';
 import 'main_routing.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
@@ -17,9 +18,11 @@ import 'src/models.dart';
 double _num(Object? value) => value is num ? value.toDouble() : 0;
 double? _maybe(Object? value) => value is num ? value.toDouble() : null;
 
-enum _ActivityTab { overview, requests }
+enum _ActivityTab { overview, learned, requests }
+enum _ProviderUsage { total, average }
 
-/// What happened: an overview with a few charts, and the request list.
+/// What happened: an overview with a few charts, what routing learned from
+/// it, and the request list.
 class ActivityScreen extends StatefulWidget {
   const ActivityScreen({super.key, required this.controller});
 
@@ -30,8 +33,9 @@ class ActivityScreen extends StatefulWidget {
 }
 
 class _ActivityScreenState extends State<ActivityScreen> {
-  _ActivityTab _tab = _ActivityTab.overview;
+  late _ActivityTab _tab = widget.controller.savedTab('activity', _ActivityTab.values, _ActivityTab.overview);
   String _range = '7d';
+  late _ProviderUsage _providerUsage = widget.controller.savedTab('activityProviderUsage', _ProviderUsage.values, _ProviderUsage.total);
   // Keys the numbers are limited to; empty means all of them.
   Set<String> _keyIds = <String>{};
   List<RouterKey> _keys = <RouterKey>[];
@@ -68,14 +72,24 @@ class _ActivityScreenState extends State<ActivityScreen> {
         PageTabs<_ActivityTab>(
           tabs: <({_ActivityTab value, String label, int? count})>[
             (value: _ActivityTab.overview, label: t.tabOverview, count: null),
+            (value: _ActivityTab.learned, label: t.tabLearned, count: null),
             (value: _ActivityTab.requests, label: t.tabRequests, count: null),
           ],
           selected: _tab,
-          onChanged: (value) => setState(() => _tab = value),
+          onChanged: (value) {
+            widget.controller.rememberChoice('activity', value);
+            setState(() => _tab = value);
+          },
         ),
-        if (_keys.length > 1) _KeyFilter(keys: _keys, selected: _keyIds, onChanged: (value) => setState(() => _keyIds = value)),
+        // What it learned belongs to the models, not to any one key.
+        if (_keys.length > 1 && _tab != _ActivityTab.learned) _KeyFilter(keys: _keys, selected: _keyIds, onChanged: (value) => setState(() => _keyIds = value)),
         if (_tab == _ActivityTab.overview)
-          _Overview(key: ValueKey<String>('$_range|${(_keyIds.toList()..sort()).join(',')}'), controller: widget.controller, range: _range, keyIds: _keyIds.toList())
+          _Overview(key: ValueKey<String>('$_range|${(_keyIds.toList()..sort()).join(',')}'), controller: widget.controller, range: _range, keyIds: _keyIds.toList(), providerUsage: _providerUsage, onProviderUsageChanged: (value) {
+            widget.controller.rememberChoice('activityProviderUsage', value);
+            setState(() => _providerUsage = value);
+          })
+        else if (_tab == _ActivityTab.learned)
+          LearnedView(controller: widget.controller)
         else
           _RequestList(controller: widget.controller, keyIds: _keyIds.toList()),
       ],
@@ -84,11 +98,13 @@ class _ActivityScreenState extends State<ActivityScreen> {
 }
 
 class _Overview extends StatefulWidget {
-  const _Overview({super.key, required this.controller, required this.range, this.keyIds = const <String>[]});
+  const _Overview({super.key, required this.controller, required this.range, this.keyIds = const <String>[], required this.providerUsage, required this.onProviderUsageChanged});
 
   final NeoRouterController controller;
   final String range;
   final List<String> keyIds;
+  final _ProviderUsage providerUsage;
+  final ValueChanged<_ProviderUsage> onProviderUsageChanged;
 
   @override
   State<_Overview> createState() => _OverviewState();
@@ -172,14 +188,44 @@ class _OverviewState extends State<_Overview> {
           ),
         ),
         const SizedBox(height: 28),
+        if ((data['byRoutingGroup'] as List? ?? []).isNotEmpty) ...<Widget>[
+          ActivityRanking(title: t.routingGroups, rows: (data['byRoutingGroup'] as List).cast<Map>()),
+          const SizedBox(height: 28),
+        ],
         LayoutBuilder(
           builder: (context, constraints) {
-            final models = _Ranking(title: t.topModelsTitle, rows: (data['byModel'] as List).cast<Map>(), label: shortModelName);
-            final providers = _Ranking(title: t.byConnection, rows: (data['byProvider'] as List).cast<Map>());
-            final keys = _Ranking(title: t.byKey, rows: (data['byKey'] as List).cast<Map>());
+            final models = ActivityRanking(title: t.topModelsTitle, rows: (data['byModel'] as List).cast<Map>(), label: shortModelName);
+            final average = widget.providerUsage == _ProviderUsage.average;
+            final providers = ActivityRanking(
+              title: t.mostUsedProviders,
+              description: average ? t.providerUsageAverageHint : null,
+              controls: Align(
+                alignment: Alignment.centerLeft,
+                child: SegmentedButton<_ProviderUsage>(
+                  showSelectedIcon: false,
+                  segments: [
+                    ButtonSegment(value: _ProviderUsage.total, label: Text(t.providerUsageTotal)),
+                    ButtonSegment(value: _ProviderUsage.average, label: Text(t.providerUsageAverage)),
+                  ],
+                  selected: {widget.providerUsage},
+                  onSelectionChanged: (values) => widget.onProviderUsageChanged(values.first),
+                ),
+              ),
+              rows: ((average ? data['byProviderAverage'] : data['byProvider']) as List? ?? const []).cast<Map>(),
+              value: (row) => _num(row[average ? 'requestsPerAccount' : 'requests']),
+              detail: (row) {
+                if (average && row['requestsPerAccount'] == null) return t.providerUsageUnavailable;
+                final requests = _num(row[average ? 'requestsPerAccount' : 'requests']);
+                final count = average && requests < 1000 ? requests.toStringAsFixed(requests == requests.roundToDouble() ? 0 : 1) : formatCount(requests);
+                return average
+                    ? t.providerUsageAverageLine(count, '${row['accountCount']}')
+                    : '$count · ${t.cacheHitRate}: ${row['cacheHitRate'] == null ? '—' : '${(_num(row['cacheHitRate']) * 100).round()} %'}';
+              },
+            );
+            final keys = ActivityRanking(title: t.byKey, rows: (data['byKey'] as List).cast<Map>());
             // Shown once more than one kind of model (chat, embeddings, …) was used.
             final kindRows = ((data['byCapability'] as List?) ?? const <Object>[]).cast<Map>();
-            final kinds = kindRows.length > 1 ? _Ranking(title: t.activityKind, rows: kindRows, label: (id) => capabilityInfo(id).label(t)) : null;
+            final kinds = kindRows.length > 1 ? ActivityRanking(title: t.activityKind, rows: kindRows, label: (id) => capabilityInfo(id).label(t)) : null;
             if (constraints.maxWidth < 860) {
               return Column(
                 children: <Widget>[
@@ -214,24 +260,34 @@ class _OverviewState extends State<_Overview> {
   }
 }
 
-/// Top entries with a thin neutral bar for their share.
-class _Ranking extends StatelessWidget {
-  const _Ranking({required this.title, required this.rows, this.label});
+/// Top entries with a thin neutral bar for their share (rows carry key,
+/// name and requests). [detail] says what the right side shows per row.
+class ActivityRanking extends StatelessWidget {
+  const ActivityRanking({super.key, required this.title, required this.rows, this.label, this.detail, this.controls, this.description, this.value});
 
   final String title;
   final List<Map> rows;
   final String Function(String)? label;
+  final String Function(Map row)? detail;
+  final Widget? controls;
+  final String? description;
+  final double Function(Map row)? value;
 
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final top = rows.take(6).toList();
-    final max = top.fold<double>(0, (value, row) => math.max(value, _num(row['requests'])));
+    double amount(Map row) => value?.call(row) ?? _num(row['requests']);
+    final max = top.fold<double>(0, (value, row) => math.max(value, amount(row)));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        SettingsHeading(title: title),
+        SettingsHeading(title: title, description: description),
+        if (controls != null) ...[
+          controls!,
+          const SizedBox(height: 12),
+        ],
         SettingsCardList(
           children: <Widget>[
             for (final row in top)
@@ -250,9 +306,14 @@ class _Ranking extends StatelessWidget {
                             style: TextStyle(fontSize: 13.5, color: palette.text, fontWeight: FontWeight.w500),
                           ),
                         ),
-                        Text(
-                          t.rankingLine(formatCount(_num(row['requests'])), formatMs(_maybe(row['latencyP50']))),
-                          style: TextStyle(fontSize: 12.5, color: palette.textMuted),
+                        Flexible(
+                          child: Text(
+                            detail?.call(row) ?? t.rankingLine(formatCount(_num(row['requests'])), formatMs(_maybe(row['latencyP50']))),
+                            textAlign: TextAlign.right,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 12.5, color: palette.textMuted),
+                          ),
                         ),
                       ],
                     ),
@@ -261,7 +322,7 @@ class _Ranking extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppRadius.pill),
                       child: LinearProgressIndicator(
                         minHeight: 4,
-                        value: max == 0 ? 0 : _num(row['requests']) / max,
+                        value: max == 0 ? 0 : amount(row) / max,
                         backgroundColor: palette.surfaceRaised,
                         valueColor: AlwaysStoppedAnimation<Color>(palette.textSoft.withValues(alpha: 0.6)),
                       ),
@@ -564,6 +625,8 @@ class _RequestDetails extends StatelessWidget {
     final palette = neoRouterPaletteOf(context);
     final facts = <(String, String)>[
       (t.detailRequested, log.requestedModel),
+      if (log.routingGroup != null) (t.routingGroups, log.routingGroup!),
+      (t.cachedInputTokens, formatCount(log.cachedInputTokens)),
       if (log.keyName != null) (t.detailKey, log.keyName!),
       (t.detailResponse, formatMs(log.latencyMs)),
       if (log.ttftMs != null) (t.detailFirstToken, formatMs(log.ttftMs)),
@@ -572,8 +635,18 @@ class _RequestDetails extends StatelessWidget {
       if (log.capability != 'chat') (t.activityKind, capabilityInfo(log.capability).label(t)),
       if (log.task != null) (t.detailTask, taskLabel(t, log.task)),
       (t.detailFormat, '${log.apiFormat}${log.stream ? ' · stream' : ''}'),
+      // Very sensitive content: kept off pool partners (what kind, never the value).
+      if (log.keptPrivate != null) (t.keptPrivateTag, log.keptPrivate!.replaceAll('_', ' ').replaceAll(',', ', ')),
       (t.detailTime, formatTime(log.createdAt)),
     ];
+    final routeReason = switch (log.trail.lastOrNull?['routingReason']) {
+      'same_connection' => t.routingGroupReasonSame,
+      'preferred_connection' => t.routingGroupReasonPreferred,
+      'preferred_busy' => t.routingGroupReasonBusy,
+      'preferred_allowance' => t.routingGroupReasonAllowance,
+      'preferred_unavailable' => t.routingGroupReasonUnavailable,
+      _ => null,
+    };
     return Container(
       color: palette.surfaceMuted,
       padding: const EdgeInsets.fromLTRB(48, 4, 20, 18),
@@ -601,6 +674,10 @@ class _RequestDetails extends StatelessWidget {
                 ),
             ],
           ),
+          if (routeReason != null) ...[
+            const SizedBox(height: 10),
+            Text(routeReason, style: TextStyle(color: palette.textMuted, fontSize: 13)),
+          ],
           if (log.trail.length > 1) ...<Widget>[
             const SizedBox(height: 16),
             Text(t.detailRoute, style: TextStyle(color: palette.textMuted, fontSize: 12)),

@@ -200,30 +200,7 @@ class AppL10nEn extends AppL10n {
   String get range30d => '30 days';
 
   @override
-  String get statRequests => 'Requests';
-
-  @override
-  String get statSuccessRate => 'Success rate';
-
-  @override
-  String get statCost => 'Spent';
-
-  @override
-  String get statTokens => 'Tokens';
-
-  @override
-  String get statFreeShare => 'Served free';
-
-  @override
-  String get statLatency => 'Avg. latency';
-
-  @override
-  String get statFallbacks => 'With fallback';
-
-  @override
-  String statInOut(String input, String output) {
-    return '$input in · $output out';
-  }
+  String get statRequests => 'Requests today';
 
   @override
   String get topModels => 'Top models';
@@ -287,6 +264,16 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get homeFix => 'Fix';
+
+  @override
+  String get homeAttentionTitle => 'Needs your attention';
+
+  @override
+  String get homeAttentionHint =>
+      'These connections are giving trouble. Requests use the others meanwhile.';
+
+  @override
+  String get homeAttentionOpen => 'Go to connections';
 
   @override
   String get homeConnectTitle => 'Connect your app';
@@ -364,9 +351,6 @@ class AppL10nEn extends AppL10n {
   String get categoryCustom => 'Custom';
 
   @override
-  String get categoryCommunity => 'Community';
-
-  @override
   String get categorySearch => 'Web search';
 
   @override
@@ -438,6 +422,36 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get chatgptConnected => 'ChatGPT connected';
+
+  @override
+  String get nousSignIn => 'Sign in with Nous Portal';
+
+  @override
+  String get nousSignInAgain => 'Sign in again';
+
+  @override
+  String get nousSignInHint =>
+      'NeoRouter shows a code. Enter it in Nous Portal to let it use your subscription and credits.';
+
+  @override
+  String get nousEnterCode => 'Enter this code in Nous Portal';
+
+  @override
+  String get nousOpenPage => 'Open Nous Portal';
+
+  @override
+  String get nousWaiting => 'Waiting for you to confirm…';
+
+  @override
+  String get nousExpired => 'The code expired. Start again.';
+
+  @override
+  String get nousConnected => 'Nous Portal connected';
+
+  @override
+  String nousSignedInAs(String email) {
+    return 'Signed in as $email';
+  }
 
   @override
   String get apiKey => 'API key';
@@ -523,6 +537,18 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get probeQuota => 'Check balance';
+
+  @override
+  String get markFixed => 'Mark as fixed';
+
+  @override
+  String get markFixedDone =>
+      'Fresh start: NeoRouter forgot the cooldowns and will try this connection again.';
+
+  @override
+  String markFixedStillFailing(String message) {
+    return 'Fresh start, but the key check says: $message';
+  }
 
   @override
   String get removeProvider => 'Remove connection';
@@ -1150,8 +1176,317 @@ class AppL10nEn extends AppL10n {
       'Theme and language of this dashboard.';
 
   @override
+  String get settingsUsage => 'Usage';
+
+  @override
+  String get settingsUsageDescription =>
+      'Spread free and plan limits evenly until they reset.';
+
+  @override
+  String get smoothTitle => 'Even out usage';
+
+  @override
+  String get smoothHint =>
+      'Free and metered plan allowances follow observed balances, reset times and your learned demand. When every eligible source needs to save allowance, requests wait or return a retry time.';
+
+  @override
+  String get smoothSwitch => 'Spread limits until they reset';
+
+  @override
+  String get smoothOn => 'On. Limits are spread over their whole period.';
+
+  @override
+  String get smoothOff => 'Off. Requests use limits as fast as they come.';
+
+  @override
+  String get smoothLearning =>
+      'NeoRouter is still learning how you use it. This unlocks by itself once there is enough to go by.';
+
+  @override
+  String get smoothPausedLearning =>
+      'On, but paused until there is enough data again.';
+
+  @override
+  String get smoothHomeNote =>
+      'Limits are being spread until they reset. Keys with a high priority are not held back.';
+
+  @override
+  String get smoothStatusActive => 'Active';
+
+  @override
+  String get smoothStatusOff => 'Off';
+
+  @override
+  String get smoothStatusLearning => 'Learning';
+
+  @override
+  String get smoothNeedDays => 'Days of history';
+
+  @override
+  String get smoothNeedActiveDays => 'Days with requests (last 14)';
+
+  @override
+  String get smoothNeedRequests => 'Answered requests (last 14 days)';
+
+  @override
+  String get smoothNeedCoverage =>
+      'Free and plan requests on connections with known limits (last 7 days)';
+
+  @override
+  String smoothProgress(String have, String need) {
+    return '$have of $need';
+  }
+
+  @override
+  String get smoothHowTitle => 'How it works';
+
+  @override
+  String get smoothHowDaily =>
+      'Daily limits: track the remaining balance and real reset time, reserving room for the hours when you usually need it. Token estimates include learned output sizes.';
+
+  @override
+  String get smoothHowPlans =>
+      'Metered plans: learn how much requests spend and reserve that allowance between provider updates. Paid concurrency slots have no allowance to spread.';
+
+  @override
+  String get smoothHowPriority =>
+      'High-priority keys bypass pacing. Pay-per-use models and flat-rate slots are unaffected; provider limits and key budgets still apply.';
+
+  @override
+  String get caIntro =>
+      'Pick your app and NeoRouter gives you exactly what to paste, then checks that it works.';
+
+  @override
+  String get caStepApp => 'App';
+
+  @override
+  String get caStepPlace => 'Where it runs';
+
+  @override
+  String get caStepSetup => 'Set up';
+
+  @override
+  String get caSearch => 'Search apps';
+
+  @override
+  String get caGroupAll => 'All';
+
+  @override
+  String get caGroupCoding => 'Coding';
+
+  @override
+  String get caGroupChat => 'Chat';
+
+  @override
+  String get caGroupAutomation => 'Automation';
+
+  @override
+  String get caGroupDeveloper => 'Your own code';
+
+  @override
+  String get caNoApps =>
+      'No app matches. \"Other app (OpenAI-compatible)\" works with almost any app.';
+
+  @override
+  String caWhereTitle(String app) {
+    return 'Where does $app run?';
+  }
+
+  @override
+  String get caPlaceLocal => 'On this computer';
+
+  @override
+  String get caPlaceLocalHint => 'Installed on the same computer as NeoRouter.';
+
+  @override
+  String get caPlaceDocker => 'In Docker on this computer';
+
+  @override
+  String get caPlaceDockerHint =>
+      'In a container on the same computer as NeoRouter.';
+
+  @override
+  String get caPlaceNetwork => 'On another device at home';
+
+  @override
+  String get caPlaceNetworkHint =>
+      'Another computer, phone or server in the same network.';
+
+  @override
+  String get caPlaceInternet => 'Somewhere on the internet';
+
+  @override
+  String get caPlaceInternetHint =>
+      'A cloud service, or an app that calls through its own servers.';
+
+  @override
+  String get caUsual => 'Usual for this app';
+
+  @override
+  String get caReachable => 'Works';
+
+  @override
+  String get caNotReachable => 'Not reachable yet';
+
+  @override
+  String caCloudOnly(String app) {
+    return '$app sends requests through its own servers, so only an internet address works.';
+  }
+
+  @override
+  String get caOpenTitle => 'NeoRouter only lets this computer in';
+
+  @override
+  String get caOpenHint =>
+      'Containers and other devices cannot reach it yet. Opening it lets them in; every request still needs a NeoRouter key.';
+
+  @override
+  String get caOpenButton => 'Let containers and devices in';
+
+  @override
+  String get caOpenAskAdmin =>
+      'Ask an admin of this NeoRouter to let containers and devices in (Settings → Connect your apps).';
+
+  @override
+  String get caRestarting => 'NeoRouter is restarting to apply this …';
+
+  @override
+  String get caRestartBack =>
+      'Done: containers and devices can reach NeoRouter now.';
+
+  @override
+  String get caRestartManual => 'Saved. Restart NeoRouter once to apply it:';
+
+  @override
+  String get caPublicUrlHint =>
+      'NeoRouter has no internet address yet. Put it behind a domain (for example with a reverse proxy or a tunnel) and set NEOROUTER_PUBLIC_URL to it.';
+
+  @override
+  String get caDockerLinuxHint =>
+      'On Linux, the app’s container also needs this, so the address works:';
+
+  @override
+  String get caNoLanAddress => 'No network address found on this computer.';
+
+  @override
+  String get caContinue => 'Continue';
+
+  @override
+  String get caBack => 'Back';
+
+  @override
+  String caKeyTitle(String app) {
+    return 'Key for $app';
+  }
+
+  @override
+  String caKeyCreate(String app) {
+    return 'Create a key for $app';
+  }
+
+  @override
+  String get caKeyCreateHint =>
+      'Its own key, so you can see its usage and switch it off on its own.';
+
+  @override
+  String get caKeyCreated =>
+      'Created. It is shown only now; it is already filled in below.';
+
+  @override
+  String get caKeyExisting => 'Use a key I already have';
+
+  @override
+  String get caKeyExistingHint =>
+      'Put your nrt_ key where it says nrt_… below.';
+
+  @override
+  String get caModelTitle => 'Model';
+
+  @override
+  String get caModelAuto =>
+      'auto: NeoRouter picks the best model for each request';
+
+  @override
+  String get caModelChange => 'Change';
+
+  @override
+  String get caModelAutoRoute => 'Automatic';
+
+  @override
+  String caInApp(String app) {
+    return 'In $app';
+  }
+
+  @override
+  String get caDownload => 'Download';
+
+  @override
+  String caWaiting(String app) {
+    return 'Waiting for the first request from $app …';
+  }
+
+  @override
+  String caWaitingHint(String app) {
+    return 'Send a message in $app; this updates by itself.';
+  }
+
+  @override
+  String caConnected(String app) {
+    return '$app is connected';
+  }
+
+  @override
+  String caConnectedDetail(String model, String time) {
+    return 'Last answer from $model$time.';
+  }
+
+  @override
+  String caSeen(String app) {
+    return '$app reached NeoRouter';
+  }
+
+  @override
+  String caSeenHint(String app) {
+    return 'The key works. Send a message in $app to try a real answer.';
+  }
+
+  @override
+  String caFailed(String app) {
+    return '$app got through, but the request failed';
+  }
+
+  @override
+  String caUnknownModel(String app, String model) {
+    return '$app asked for the model \"$model\", which does not exist here.';
+  }
+
+  @override
+  String caDidYouMean(String app) {
+    return 'Did you mean one of these? Copy it into $app, or use \"auto\".';
+  }
+
+  @override
+  String get caNothingYet => 'Nothing has arrived yet. Check that:';
+
+  @override
+  String get caCheckAddress =>
+      'the address is exactly the one above, including /v1';
+
+  @override
+  String get caCheckKey =>
+      'the key was copied completely (it starts with nrt_)';
+
+  @override
+  String caCheckDocker(String app) {
+    return 'if $app runs in Docker, you picked \"In Docker on this computer\"';
+  }
+
+  @override
+  String get caAnother => 'Connect another app';
+
+  @override
   String get settingsConnectDescription =>
-      'Ready-to-paste setup for your SDKs and tools.';
+      'Connect any app step by step, with a check that it works.';
 
   @override
   String get settingsServerDescription =>
@@ -1215,6 +1550,115 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get securityTitle => 'Security';
+
+  @override
+  String get accountDataTitle => 'Your data';
+
+  @override
+  String get accountExportTitle => 'Export account data';
+
+  @override
+  String get accountExportHint =>
+      'Your profile, connections, settings, pools and usage history as one file. Passwords and API keys are not included.';
+
+  @override
+  String get accountExport => 'Export';
+
+  @override
+  String get accountKeysTitle => 'Export saved API keys';
+
+  @override
+  String get accountKeysHint =>
+      'The keys of your connections in plain text, as a separate file. Needs two-factor authentication.';
+
+  @override
+  String get accountKeysNeedTwoFactor =>
+      'Turn on two-factor authentication under Security first. The keys leave the server in plain text, so this needs more than your password.';
+
+  @override
+  String get accountKeysWarning =>
+      'Anyone with this file can use your providers on your bill. Keep it somewhere safe and delete it when you no longer need it.';
+
+  @override
+  String get accountImportTitle => 'Import API keys';
+
+  @override
+  String get accountImportHint =>
+      'Adds the connections from a key file exported from NeoRouter. Each key is checked with its provider; keys you already have are skipped.';
+
+  @override
+  String get accountImport => 'Import';
+
+  @override
+  String accountImportConfirm(String count, String names) {
+    return '$count keys found: $names';
+  }
+
+  @override
+  String get accountImportNotAFile => 'This is not a NeoRouter key file.';
+
+  @override
+  String get accountImportWorking => 'Checking the keys with their providers …';
+
+  @override
+  String get accountImportDone => 'Import finished';
+
+  @override
+  String accountImportImported(String names) {
+    return 'Added: $names';
+  }
+
+  @override
+  String accountImportSkipped(String names) {
+    return 'Already there: $names';
+  }
+
+  @override
+  String get accountImportFailed => 'Not added:';
+
+  @override
+  String get accountImportNothing => 'Nothing was added.';
+
+  @override
+  String get accountDeleteTitle => 'Delete account';
+
+  @override
+  String get accountDeleteHint =>
+      'Deletes your account with all connections, keys, settings and history. Your pools are told you left. This cannot be undone.';
+
+  @override
+  String get accountDelete => 'Delete account';
+
+  @override
+  String get accountDeleteConfirm =>
+      'Everything in this account is deleted for good. Export your data first if you want to keep it.';
+
+  @override
+  String get accountDeleted => 'Your account was deleted.';
+
+  @override
+  String get accountConfirmPassword => 'Enter your password to continue.';
+
+  @override
+  String get accountConfirmPasswordCode =>
+      'Enter your password and a code from your authenticator app.';
+
+  @override
+  String get accountExported => 'Downloaded.';
+
+  @override
+  String get accountLastAdmin =>
+      'You are the only admin. Make someone else an admin first.';
+
+  @override
+  String get accountWrongPassword => 'The password is not correct.';
+
+  @override
+  String get accountTooManyTries =>
+      'Too many wrong tries. Wait a few minutes and try again.';
+
+  @override
+  String get accountWrongCode => 'The code is not valid.';
 
   @override
   String get twoFactorTitle => 'Two-factor authentication';
@@ -1528,7 +1972,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get adminDescription =>
-      'Run this server: accounts, sign-ups, server details and model metadata.';
+      'Run this server: accounts, sign-ups, server details, local models and model metadata.';
 
   @override
   String get adminSearchHint => 'Search admin settings, e.g. registration';
@@ -1789,8 +2233,12 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String get homeStatusIssue =>
+      '1 connection needs your attention. Requests use the others meanwhile.';
+
+  @override
   String homeStatusIssues(String count) {
-    return '$count connection needs your attention. Requests use the others meanwhile.';
+    return '$count connections need your attention. Requests use the others meanwhile.';
   }
 
   @override
@@ -1880,6 +2328,24 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String problemFailingTitle(String name) {
+    return '$name is not answering';
+  }
+
+  @override
+  String problemFailing(String successes, String attempts) {
+    return '$successes of $attempts attempts worked in the last day.';
+  }
+
+  @override
+  String get problemCapacityTitle => 'Many requests go unanswered';
+
+  @override
+  String problemCapacity(String failed, String requests) {
+    return '$failed of $requests failed in the last day. Your connections cannot keep up: connect more, or send less.';
+  }
+
+  @override
   String get problemKeyRejected =>
       'The provider rejected the key. Update it to use this connection again.';
 
@@ -1912,6 +2378,212 @@ class AppL10nEn extends AppL10n {
   String get tabRequests => 'Requests';
 
   @override
+  String get keyMaxPriceTitle => 'Max price per million tokens';
+
+  @override
+  String get keyMaxPricePerMillion => 'per million tokens';
+
+  @override
+  String get tabLearned => 'Learned';
+
+  @override
+  String get learnedEmptyTitle => 'Nothing learned yet';
+
+  @override
+  String get learnedEmptyMessage =>
+      'NeoRouter learns from every answer. Send a few requests and watch this fill up.';
+
+  @override
+  String get learnedExperience => 'Experience';
+
+  @override
+  String get learnedExperienceCaption => 'recent answers';
+
+  @override
+  String get learnedKnowHow => 'Kinds of work';
+
+  @override
+  String learnedKnowHowCaption(String count) {
+    return '$count models compared';
+  }
+
+  @override
+  String get learnedRescued => 'Rescued';
+
+  @override
+  String get learnedRescuedCaption => 'by a backup, 30 days';
+
+  @override
+  String get learnedFirstTry => 'First choice answered';
+
+  @override
+  String get learnedFirstTryCaption => 'when a model was free';
+
+  @override
+  String learnedUpFrom(String value) {
+    return 'up from $value';
+  }
+
+  @override
+  String learnedWas(String value) {
+    return 'was $value';
+  }
+
+  @override
+  String get learnedCurveTitle => 'How often its first choice answers';
+
+  @override
+  String learnedNoCapacity(String count) {
+    return '$count requests found no model free in 30 days';
+  }
+
+  @override
+  String get learnedMapTitle => 'What works for what';
+
+  @override
+  String get learnedMapHelp =>
+      'Every model you can use right now, scored out of 100 for each kind of work: benchmarks first, then your ratings, measured speed and how reliably it answered. Move the slider to weigh them differently. Price is not part of it.';
+
+  @override
+  String get learnedSources =>
+      'Benchmarks: Artificial Analysis; OpenRouter (openrouter.ai), CC BY 4.0.';
+
+  @override
+  String get learnedNotTried => 'Not tried yet: benchmarks only';
+
+  @override
+  String learnedBestLineNew(String score) {
+    return '$score of 100 · not tried yet, benchmarks only';
+  }
+
+  @override
+  String get learnedTuneTitle => 'Best for what you need';
+
+  @override
+  String get learnedTuneFast => 'Speed';
+
+  @override
+  String get learnedTuneBalanced => 'Balanced';
+
+  @override
+  String get learnedTuneSmart => 'Quality';
+
+  @override
+  String get learnedTuneFree => 'Free only';
+
+  @override
+  String get learnedTuneNoFree => 'No free model has answered yet.';
+
+  @override
+  String get learnedLegendWorse => 'Lower';
+
+  @override
+  String get learnedLegendBetter => 'Higher';
+
+  @override
+  String get learnedLegendBest => 'Best';
+
+  @override
+  String get learnedLegendEstimated => '~ partly estimated, no benchmark';
+
+  @override
+  String get learnedLegendFails => 'Often fails for you';
+
+  @override
+  String learnedCellScore(String value) {
+    return 'Score: $value of 100';
+  }
+
+  @override
+  String learnedCellBenchmark(String value) {
+    return 'Benchmarks and ratings: $value';
+  }
+
+  @override
+  String learnedCellEstimate(String value) {
+    return 'Estimated quality: $value, no benchmark yet';
+  }
+
+  @override
+  String learnedCellSpeed(String value) {
+    return 'Speed: $value';
+  }
+
+  @override
+  String learnedBestLine(String score, String rate, String answers) {
+    return '$score of 100 · $rate worked · $answers answers';
+  }
+
+  @override
+  String learnedCellLine(String rate, String answers) {
+    return '$rate worked · $answers answers';
+  }
+
+  @override
+  String learnedCellVotes(String liked, String disliked) {
+    return 'Rated $liked up, $disliked down';
+  }
+
+  @override
+  String get learnedBestTitle => 'Best for each kind of work';
+
+  @override
+  String get learnedFastestTitle => 'Fastest it has measured';
+
+  @override
+  String learnedWorked(String rate) {
+    return '$rate worked';
+  }
+
+  @override
+  String get learnedFoundTitle => 'Found out on its own';
+
+  @override
+  String learnedLimitRpm(String name, String value) {
+    return '$name allows $value requests a minute';
+  }
+
+  @override
+  String learnedLimitRpd(String name, String value) {
+    return '$name allows $value requests a day';
+  }
+
+  @override
+  String learnedLimitTpm(String name, String value) {
+    return '$name allows $value tokens a minute';
+  }
+
+  @override
+  String learnedLimitTpd(String name, String value) {
+    return '$name allows $value tokens a day';
+  }
+
+  @override
+  String learnedRoom(String name, String value) {
+    return '$name needs room for $value tokens to finish';
+  }
+
+  @override
+  String learnedResting(String name, String time) {
+    return '$name is resting until $time';
+  }
+
+  @override
+  String get learnedReasonLimit => 'It reached its limit';
+
+  @override
+  String get learnedReasonAccount => 'The account needs attention';
+
+  @override
+  String get learnedReasonMissing => 'It isn\'t available right now';
+
+  @override
+  String get learnedReasonIncompatible => 'It can\'t handle these requests';
+
+  @override
+  String get learnedReasonFailing => 'It kept failing';
+
+  @override
   String metricTokens(String count) {
     return '$count tokens';
   }
@@ -1935,6 +2607,213 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get topModelsTitle => 'Most used models';
+
+  @override
+  String get keySectionModels => 'Models';
+
+  @override
+  String get keySectionRouting => 'Routing';
+
+  @override
+  String get discoveryBenchmarks => 'Benchmarks';
+
+  @override
+  String get discoveryBenchHint =>
+      'Measured model performance, brought together. Explore the evidence and compare two models side by side.';
+
+  @override
+  String get discoveryMeasuredModels => 'Measured models';
+
+  @override
+  String get discoveryMethod => 'How scores are combined';
+
+  @override
+  String get discoveryMethodHint =>
+      'Raw scores stay on their original scales. Each test becomes a percentile among models measured by that source, within the same model kind. Test percentiles are averaged per source, then sources receive equal weight. Missing tests are excluded, never scored as zero. Coverage differs: compare shared tests for a fairer view. This is a relative ranking, not an accuracy percentage.';
+
+  @override
+  String get discoverySources => 'Sources';
+
+  @override
+  String get discoverySourceHint =>
+      'Uses the latest successfully collected data. Refresh reloads this view; source collection follows the instance sync schedule.';
+
+  @override
+  String get discoveryNotSynced => 'Not collected yet';
+
+  @override
+  String discoveryUpdated(String date) {
+    return 'Updated $date';
+  }
+
+  @override
+  String discoveryCoverage(String sources, String tests) {
+    return '$sources sources · $tests tests';
+  }
+
+  @override
+  String get discoveryScore => 'Combined score';
+
+  @override
+  String get discoverySourceFilter => 'Benchmark source';
+
+  @override
+  String get discoveryAllSources => 'All sources';
+
+  @override
+  String get discoveryKind => 'Model kind';
+
+  @override
+  String get discoveryFreeHint =>
+      'Verified zero-price OpenRouter listings. Provider free tiers depend on your connected accounts.';
+
+  @override
+  String get discoveryFreeOnly => 'Confirmed free only';
+
+  @override
+  String get discoveryFree => 'Free listing';
+
+  @override
+  String get discoverySearchModels => 'Search models';
+
+  @override
+  String get discoveryCompare => 'Compare two models';
+
+  @override
+  String get discoveryCompareHint =>
+      'Choose up to two models from the ranking. They must be the same kind.';
+
+  @override
+  String discoverySelectCompare(String name) {
+    return 'Compare $name';
+  }
+
+  @override
+  String discoveryRemoveCompare(String name) {
+    return 'Remove $name from comparison';
+  }
+
+  @override
+  String get discoveryCompareLimit =>
+      'Remove a selection first, or choose the same model kind.';
+
+  @override
+  String get discoveryChartScore => 'Score';
+
+  @override
+  String get discoveryChartValue => 'Score vs price';
+
+  @override
+  String get discoveryPriceAxis => 'Price per 1M tokens (log)';
+
+  @override
+  String get discoveryNoPrices => 'No prices known for these models.';
+
+  @override
+  String get proxyCheckNow => 'Check all now';
+
+  @override
+  String proxyLastCheck(String ago, String ok, String count) {
+    return 'Checked $ago · $ok of $count working · every hour';
+  }
+
+  @override
+  String get proxyNotChecked => 'Checked automatically every hour';
+
+  @override
+  String get proxySelectAll => 'Select all';
+
+  @override
+  String proxySelected(String count) {
+    return '$count selected';
+  }
+
+  @override
+  String get proxyEnableAction => 'Enable';
+
+  @override
+  String get proxyDisableAction => 'Disable';
+
+  @override
+  String proxyDeleteSelected(String count) {
+    return 'Delete $count proxies? This cannot be undone.';
+  }
+
+  @override
+  String get proxyHealthy => 'Ready';
+
+  @override
+  String get proxyResting => 'Resting';
+
+  @override
+  String get proxyOff => 'Off';
+
+  @override
+  String get proxyLatencyChart => 'Fastest proxies';
+
+  @override
+  String discoveryShared(String count) {
+    return '$count shared tests';
+  }
+
+  @override
+  String get discoveryBreakdown => 'Benchmark breakdown';
+
+  @override
+  String get discoveryNoShared =>
+      'These models have no shared tests in the collected data. Their overall rankings use different evidence.';
+
+  @override
+  String discoveryTestScale(String count) {
+    return 'Raw score · percentile bar · $count measured peers';
+  }
+
+  @override
+  String get discoveryEmpty => 'No measured results yet';
+
+  @override
+  String get discoveryEmptyHint =>
+      'Results appear after metadata sources have been collected. Try a different search or filter if sources are already available.';
+
+  @override
+  String get discoveryOwnTitle => 'NeoRouter benchmarks';
+
+  @override
+  String get discoveryOwnHint =>
+      'Coming later. A preview of our own evaluations — no results yet.';
+
+  @override
+  String get discoveryPrevious => 'Previous page';
+
+  @override
+  String get discoveryNext => 'Next page';
+
+  @override
+  String discoveryPage(String page, String count) {
+    return 'Page $page · $count models';
+  }
+
+  @override
+  String get mostUsedProviders => 'Most used providers';
+
+  @override
+  String get providerUsageTotal => 'Total';
+
+  @override
+  String get providerUsageAverage => 'Average per key';
+
+  @override
+  String get providerUsageAverageHint =>
+      'Requests divided by provider keys used in this period and filter. Unused keys are excluded.';
+
+  @override
+  String get providerUsageUnavailable =>
+      'Average unavailable: missing connection history';
+
+  @override
+  String providerUsageAverageLine(String requests, String keys) {
+    return '$requests / key · keys: $keys';
+  }
 
   @override
   String get byConnection => 'By connection';
@@ -2041,9 +2920,6 @@ class AppL10nEn extends AppL10n {
       'Pick the service you have a key for. Providers marked \"Free models\" can be used without paying.';
 
   @override
-  String get providerFreeTag => 'Free models';
-
-  @override
   String getKeyAt(String name) {
     return 'Get a key at $name';
   }
@@ -2118,7 +2994,10 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get limitsDescription =>
-      'What is left of each provider\'s allowance today. Per-minute limits reset on their own and NeoRouter routes around them, so only daily allowances and models running low are shown.';
+      'Each provider\'s limits and what is left of today\'s allowance. To change a limit, open the connection’s menu on the Providers tab.';
+
+  @override
+  String get limitRenewed => 'renewed, counts again from the next request';
 
   @override
   String limitResets(String time) {
@@ -2136,6 +3015,77 @@ class AppL10nEn extends AppL10n {
   @override
   String limitConcurrentDocumented(String count) {
     return 'up to $count';
+  }
+
+  @override
+  String get limitsSectionTitle => 'Limits';
+
+  @override
+  String get limitsInvalid => 'Enter a whole number, 1 or more.';
+
+  @override
+  String get providerLimitsChooseConnection =>
+      'Choose which connection to edit.';
+
+  @override
+  String get trafficLimitsTitle => 'Traffic limits';
+
+  @override
+  String get providerTrafficLimitsHint =>
+      'Applies to all models on this connection. Enter a limit to override NeoRouter’s estimate, or leave it blank for automatic limits. Provider restrictions still apply.';
+
+  @override
+  String get keyTrafficLimitsHint =>
+      'Applies only to this key. Leave a field blank to use the connections’ limits.';
+
+  @override
+  String get limitAutomatic => 'automatic';
+
+  @override
+  String limitSharedValue(String value) {
+    return '$value for all models';
+  }
+
+  @override
+  String limitPerModelValue(String value) {
+    return '$value per model';
+  }
+
+  @override
+  String get limitSourceCurated => 'documented';
+
+  @override
+  String get limitSourceHeader => 'reported by the provider';
+
+  @override
+  String get limitSourceLearned => 'learned from its answers';
+
+  @override
+  String get limitSourceManual => 'set by you';
+
+  @override
+  String limitsPerModelTitle(String count) {
+    return 'Limits per model ($count)';
+  }
+
+  @override
+  String limitShortRpm(String value) {
+    return '$value/min';
+  }
+
+  @override
+  String limitShortRpd(String value) {
+    return '$value/day';
+  }
+
+  @override
+  String limitShortTpm(String value) {
+    return '$value tokens/min';
+  }
+
+  @override
+  String limitShortTpd(String value) {
+    return '$value tokens/day';
   }
 
   @override
@@ -2870,10 +3820,10 @@ class AppL10nEn extends AppL10n {
   String get unitKind => 'Billed';
 
   @override
-  String get navTeam => 'Team';
+  String get navTeam => 'Network';
 
   @override
-  String get teamTitle => 'Team';
+  String get teamTitle => 'Network';
 
   @override
   String get teamDescription =>
@@ -3116,6 +4066,640 @@ class AppL10nEn extends AppL10n {
   String get teamActivityEmpty => 'Nothing has happened yet.';
 
   @override
+  String get teamTabPeople => 'Team';
+
+  @override
+  String get teamTabPool => 'Pools';
+
+  @override
+  String get poolDescription =>
+      'Share free capacity with friends who run their own NeoRouter. Nobody hands out keys: each request runs on the server of whoever shares it.';
+
+  @override
+  String get poolEmptyTitle => 'Not in a pool yet';
+
+  @override
+  String get poolEmptyMessage =>
+      'Start one and invite others, or join with a link someone sent you.';
+
+  @override
+  String get poolCreate => 'Start a pool';
+
+  @override
+  String get poolJoin => 'Join with a link';
+
+  @override
+  String get poolTrustNotice =>
+      'Requests through the pool run on a partner\'s server. NeoRouter keeps no content there and hides secrets first, but whoever runs that server could technically see what is sent. Only share with people you trust.';
+
+  @override
+  String get poolTosNotice =>
+      'Some providers do not allow sharing free access with others. Check their terms before you share a connection.';
+
+  @override
+  String get poolInvite => 'Invite';
+
+  @override
+  String get poolInviteTitle => 'Pool invite link';
+
+  @override
+  String get poolInviteBody =>
+      'Send this link, or the ready-made text below, to someone with their own NeoRouter. The link opens a page that takes them to their own NeoRouter to join. It works once and expires in 7 days.';
+
+  @override
+  String get poolStateOnline => 'Online';
+
+  @override
+  String get poolStateOffline => 'Not reachable';
+
+  @override
+  String get poolStateConnecting => 'Connecting';
+
+  @override
+  String get poolStatePaused => 'Paused';
+
+  @override
+  String get poolBalanceNew => 'New';
+
+  @override
+  String get poolBalanceBalanced => 'Balanced';
+
+  @override
+  String get poolBalanceGiving => 'You give more';
+
+  @override
+  String get poolBalanceTaking => 'You take more';
+
+  @override
+  String get poolPausePartner => 'Pause this partner';
+
+  @override
+  String get poolResumePartner => 'Resume this partner';
+
+  @override
+  String get poolRemoveMember => 'Remove from pool';
+
+  @override
+  String poolRemoveConfirm(String name) {
+    return '$name loses access to the pool right away.';
+  }
+
+  @override
+  String get poolShareTitle => 'What you share';
+
+  @override
+  String get poolShareHint =>
+      'Free models from the connections you pick; with ⋯ you choose for each one whether its subscription or paid models are shared too. Your own requests always come first.';
+
+  @override
+  String get classificationTitle => 'Free or paid';
+
+  @override
+  String get classificationAuto => 'Automatic';
+
+  @override
+  String get classificationFree => 'All free';
+
+  @override
+  String get classificationPaid => 'All paid';
+
+  @override
+  String get classificationHint =>
+      'Automatic uses what NeoRouter worked out for each model. Set it yourself if that is wrong; a choice on a single model still wins.';
+
+  @override
+  String get classificationFreeWarning =>
+      'Only if this connection never charges you: every model is then treated as free, including for keys that may only use free models.';
+
+  @override
+  String get poolActivityGiven => 'What partners used of yours';
+
+  @override
+  String get poolActivityTaken => 'What you used of partners';
+
+  @override
+  String get poolActivityGivenMetric => 'Given';
+
+  @override
+  String get poolActivityTakenMetric => 'Taken';
+
+  @override
+  String get poolActivityCost => 'Cost to you';
+
+  @override
+  String get poolActivityCostCaption => 'from paid models you share';
+
+  @override
+  String get poolActivityByPartner => 'By partner';
+
+  @override
+  String get poolActivityEmptyTitle => 'Nothing shared yet';
+
+  @override
+  String get poolActivityEmpty =>
+      'Once partners use your connections, or you theirs, it shows up here. Only counts are kept, never content.';
+
+  @override
+  String poolRankingLine(String requests, String tokens) {
+    return '$requests · $tokens tokens';
+  }
+
+  @override
+  String get poolKindsMenu => 'Choose what to share';
+
+  @override
+  String poolKindsTitle(String name) {
+    return 'What $name shares';
+  }
+
+  @override
+  String get poolKindsHint =>
+      'Partners use free models first, then subscription, then paid ones.';
+
+  @override
+  String get poolKindFreeHint => 'Never cost you anything.';
+
+  @override
+  String get poolKindPlanHint =>
+      'Use up your subscription’s limits. Many subscriptions do not allow sharing.';
+
+  @override
+  String get poolKindPaidBilled => 'Billed to you per use.';
+
+  @override
+  String get poolKindPaidBalance => 'Spend your prepaid balance.';
+
+  @override
+  String get poolKindNone => 'This connection has none.';
+
+  @override
+  String get poolKindsApply => 'Apply';
+
+  @override
+  String poolPlanModels(String count) {
+    return '$count subscription models';
+  }
+
+  @override
+  String poolPaidModels(String count) {
+    return '$count paid models';
+  }
+
+  @override
+  String poolPlanConfirmTitle(String name) {
+    return 'Share the subscription of $name?';
+  }
+
+  @override
+  String poolPlanConfirmBody(String pool) {
+    return 'Partners in $pool can then also use this subscription when no free model can serve them. That uses up your plan’s limits, and many subscriptions do not allow sharing. Your daily limits for partners still apply.';
+  }
+
+  @override
+  String get poolPlanConfirm => 'Share subscription';
+
+  @override
+  String get filterPool => 'Pool';
+
+  @override
+  String get modelsPoolHint =>
+      'What your pool partners share with you. Only keys with pool access use these, and it costs you nothing.';
+
+  @override
+  String poolViaPartner(String name) {
+    return 'via $name';
+  }
+
+  @override
+  String poolPaidConfirmTitle(String name) {
+    return 'Share paid models of $name?';
+  }
+
+  @override
+  String poolPaidConfirmBilled(String pool) {
+    return 'Partners in $pool can then use this connection’s paid models. That costs you real money, billed by the provider. Your daily limits for partners still apply.';
+  }
+
+  @override
+  String poolPaidConfirmPrepaid(String pool) {
+    return 'Partners in $pool can then use this connection’s paid models. That spends your prepaid balance. Your daily limits for partners still apply.';
+  }
+
+  @override
+  String get poolPaidConfirm => 'Share paid models';
+
+  @override
+  String get poolShareNone => 'None of your connections has free models yet.';
+
+  @override
+  String poolFreeModels(String count) {
+    return '$count free models';
+  }
+
+  @override
+  String get poolLimitsTitle => 'Share per partner';
+
+  @override
+  String get poolLimitsAutoHint =>
+      'Automatic and fair: every partner gets the same share; one who gives you more gets up to three times as much, one who only takes half. Of each connection you keep what you usually still need that day, judged from your last week; partners use the rest.';
+
+  @override
+  String poolPartnerCaps(String requests, String tokens, String concurrent) {
+    return 'Today: $requests requests · $tokens tokens · $concurrent at once';
+  }
+
+  @override
+  String get poolLimitsNoPartners => 'Limits show up here once someone joins.';
+
+  @override
+  String get poolLimitsAdvanced => 'Fixed limits (advanced)';
+
+  @override
+  String get poolLimitsAdvancedHint =>
+      'Leave a field empty to keep it automatic. A value you set applies to every partner in this pool, whatever they give.';
+
+  @override
+  String get poolLimitAutomatic => 'Automatic';
+
+  @override
+  String get poolLimitRequests => 'Requests per day';
+
+  @override
+  String get poolLimitTokens => 'Tokens per day';
+
+  @override
+  String get poolLimitConcurrent => 'Requests at once';
+
+  @override
+  String get poolLimitReserve => 'Kept for you (%)';
+
+  @override
+  String get poolLimitReserveHint =>
+      'Empty: as much as you usually still need today, from your last week. A number keeps that share of every allowance.';
+
+  @override
+  String get poolLeave => 'Leave pool';
+
+  @override
+  String get poolClose => 'Close pool';
+
+  @override
+  String poolLeaveConfirm(String name) {
+    return 'Leave $name? Partners lose access to your connections at once, and you to theirs.';
+  }
+
+  @override
+  String poolCloseConfirm(String name) {
+    return 'Close $name? As its host, leaving ends the pool for everyone.';
+  }
+
+  @override
+  String get poolCreateTitle => 'Start a pool';
+
+  @override
+  String get poolNameLabel => 'Pool name';
+
+  @override
+  String get poolSelfNameLabel => 'Your name in the pool';
+
+  @override
+  String get poolSelfNameHint => 'Partners see this name.';
+
+  @override
+  String get poolJoinTitle => 'Join a pool';
+
+  @override
+  String get poolLinkLabel => 'Invite link';
+
+  @override
+  String get poolCheckLink => 'Check link';
+
+  @override
+  String poolJoinPreview(String name) {
+    return 'Join $name?';
+  }
+
+  @override
+  String poolJoinMembers(String host, String count) {
+    return 'Hosted by $host · $count members';
+  }
+
+  @override
+  String get poolInfoTooltip => 'About the pool';
+
+  @override
+  String get keyPoolLabel => 'Use the pool';
+
+  @override
+  String get keyPoolHint =>
+      'Also uses partners\' free models, mostly when yours are busy.';
+
+  @override
+  String get keyPoolChip => 'Pool';
+
+  @override
+  String get settingsPoolTitle => 'Pool';
+
+  @override
+  String get settingsKeepSensitive =>
+      'Keep very sensitive requests off the pool';
+
+  @override
+  String get settingsKeepSensitiveHint =>
+      'Requests with passwords, keys, card or ID numbers, or many people\'s personal data stay on your own connections. Clear cases are caught, not every secret.';
+
+  @override
+  String get homePoolPaused => 'Paused for now: you neither use nor give.';
+
+  @override
+  String get keptPrivateTag => 'Kept private';
+
+  @override
+  String get poolHostYou => 'you host it';
+
+  @override
+  String poolPartnersCount(String count, String online) {
+    return '$count partners · $online online';
+  }
+
+  @override
+  String get poolNoPartnersShort => 'No partners yet';
+
+  @override
+  String get poolTabSharing => 'Sharing';
+
+  @override
+  String get poolTabSettings => 'Settings';
+
+  @override
+  String pickerSelected(String selected, String total) {
+    return '$selected of $total selected';
+  }
+
+  @override
+  String get pickerAll => 'All';
+
+  @override
+  String get pickerNone => 'None';
+
+  @override
+  String get pickerSearch => 'Find a connection';
+
+  @override
+  String get poolDiscard => 'Discard';
+
+  @override
+  String get poolAgreeCreate => 'Understood, start pool';
+
+  @override
+  String get poolAgreeJoin => 'Understood, join';
+
+  @override
+  String poolShareDialogTitle(String name) {
+    return 'Share $name in';
+  }
+
+  @override
+  String get poolShareInPools => 'Share in pools…';
+
+  @override
+  String get homePoolsTitle => 'Pools';
+
+  @override
+  String poolInviteText(String host, String pool, String link) {
+    return 'Hi! $host is inviting you to the NeoRouter pool \"$pool\", where our NeoRouters share AI capacity. Open this link and enter the address of your own NeoRouter: $link\n(It works once and expires in 7 days.)';
+  }
+
+  @override
+  String get poolInviteCopyText => 'Copy invite text';
+
+  @override
+  String get poolInviteTextLanguage => 'Language of the text';
+
+  @override
+  String get galleryFilterAll => 'All';
+
+  @override
+  String get galleryFilterFree => 'Free';
+
+  @override
+  String get galleryFilterPlans => 'Subscriptions';
+
+  @override
+  String get galleryFilterPayg => 'Pay as you go';
+
+  @override
+  String get galleryFilterTools => 'Search & weather';
+
+  @override
+  String get galleryFilterOwn => 'Local & custom';
+
+  @override
+  String galleryCount(String count) {
+    return '$count providers';
+  }
+
+  @override
+  String get galleryNoMatch =>
+      'No provider matches. A custom OpenAI-compatible endpoint works with almost any service.';
+
+  @override
+  String get costTagFree => 'Free';
+
+  @override
+  String get costTagFreeModels => 'Free models';
+
+  @override
+  String get costTagPlan => 'Subscription';
+
+  @override
+  String get costTagPayg => 'Pay as you go';
+
+  @override
+  String get costTagConnected => 'Connected';
+
+  @override
+  String get costSummaryFree => 'Free tier without a card';
+
+  @override
+  String get costSummaryFreeModels => 'Some models are free';
+
+  @override
+  String get costSummaryPlan => 'A subscription you already pay for';
+
+  @override
+  String get costSummaryPayg => 'You pay for what you use';
+
+  @override
+  String costChecked(String date) {
+    return 'Checked $date';
+  }
+
+  @override
+  String get costSource => 'Source';
+
+  @override
+  String get providerWebsite => 'Website';
+
+  @override
+  String get providerGetKey => 'Get a key';
+
+  @override
+  String get statSuccessRate => 'Success rate';
+
+  @override
+  String get statCost => 'Spent';
+
+  @override
+  String get statTokens => 'Tokens';
+
+  @override
+  String get statFreeShare => 'Served free';
+
+  @override
+  String get statLatency => 'Avg. latency';
+
+  @override
+  String get statFallbacks => 'With fallback';
+
+  @override
+  String statInOut(String input, String output) {
+    return '$input in · $output out';
+  }
+
+  @override
+  String get poolAlreadyMember => 'You are already in this pool.';
+
+  @override
+  String get poolLoadFailed => 'Pools could not be loaded.';
+
+  @override
+  String get networkDescription =>
+      'Share free capacity with other NeoRouters, and let people help you manage this one.';
+
+  @override
+  String get statBalance => 'Your balance';
+
+  @override
+  String get statModels => 'Shared models';
+
+  @override
+  String statOnlineValue(String online, String total) {
+    return '$online of $total';
+  }
+
+  @override
+  String get statOnline => 'Members online';
+
+  @override
+  String get balanceTheyTake => 'Takes more';
+
+  @override
+  String get balanceTheyGive => 'Gives more';
+
+  @override
+  String get panelEditSharing => 'Change what you share';
+
+  @override
+  String get panelBalance => 'Balance this week';
+
+  @override
+  String panelRequests(String count) {
+    return '$count requests';
+  }
+
+  @override
+  String get panelTook => 'Took today';
+
+  @override
+  String get panelGave => 'Gave today';
+
+  @override
+  String panelSharesPartner(String models, String percent) {
+    return 'Shares $models models with you, free for you, $percent % of the models in this pool.';
+  }
+
+  @override
+  String panelSharesYou(String connections, String models, String percent) {
+    return 'You share $connections connections with $models models, $percent % of the models in this pool.';
+  }
+
+  @override
+  String memberCaptionPartner(String models) {
+    return '$models models';
+  }
+
+  @override
+  String memberCaptionYou(String connections, String models) {
+    return '$connections conn. · $models models';
+  }
+
+  @override
+  String poolMemberYou(String name) {
+    return '$name (you)';
+  }
+
+  @override
+  String get legendRing => 'ring: share of the shared models';
+
+  @override
+  String get legendOffline => 'not reachable';
+
+  @override
+  String get legendTakes => 'takes from the pool';
+
+  @override
+  String get legendGives => 'gives to the pool';
+
+  @override
+  String graphRequestsToday(String count) {
+    return '$count requests today';
+  }
+
+  @override
+  String graphShareUsed(String used, String total) {
+    return '$used of $total requests used';
+  }
+
+  @override
+  String get graphFreeToday => 'FREE TODAY';
+
+  @override
+  String get poolTabOverview => 'Overview';
+
+  @override
+  String get poolViaHost => 'Via the host';
+
+  @override
+  String get poolRelayDown =>
+      'Not connected to the host right now; it reconnects by itself.';
+
+  @override
+  String get poolRelayLabel => 'Connect partners through me';
+
+  @override
+  String get poolRelayHint =>
+      'Members without a public address take part through your NeoRouter. Their requests pass through your internet connection, sealed end to end, so you cannot read them.';
+
+  @override
+  String get poolRelaySelfLabel => 'How you take part';
+
+  @override
+  String get poolRelaySelfVia =>
+      'Through the host: your NeoRouter needs no public address. Requests pass through the host sealed, so the host cannot read them.';
+
+  @override
+  String get poolRelaySelfDirect =>
+      'Directly, at your NeoRouter’s own address.';
+
+  @override
+  String get poolLeaveHint =>
+      'Partners lose access to your connections at once, and you to theirs.';
+
+  @override
+  String get poolCloseHint => 'Ends the pool for every partner.';
+
+  @override
   String teamEventInviteCreate(String actor) {
     return '$actor created an invite link';
   }
@@ -3238,6 +4822,11 @@ class AppL10nEn extends AppL10n {
   @override
   String homeCapacityUnknown(String models) {
     return '$models more free models publish no limit and are not counted.';
+  }
+
+  @override
+  String homeCapacityObserved(String best, String average) {
+    return 'Actually used: $best on your busiest free day, $average on an average day (last 30 days).';
   }
 
   @override
@@ -3505,7 +5094,7 @@ class AppL10nEn extends AppL10n {
   String get liveNow => 'Live';
 
   @override
-  String get liveReplay => 'Replaying recent requests';
+  String get liveQuiet => 'No traffic right now';
 
   @override
   String get liveWaiting => 'Waiting for the first request';
@@ -3851,4 +5440,786 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get priorityLowLabel => 'Low priority';
+
+  @override
+  String get lmTab => 'Local models';
+
+  @override
+  String get lmIntro =>
+      'Run AI models on this server. NeoRouter shows what fits, downloads it, keeps it running and fixes problems by itself.';
+
+  @override
+  String get lmThisServer => 'This server';
+
+  @override
+  String get lmProcessor => 'Processor';
+
+  @override
+  String lmProcessorValue(String name, String cores) {
+    return '$name · $cores cores';
+  }
+
+  @override
+  String get lmMemory => 'Memory';
+
+  @override
+  String lmMemoryModels(String size) {
+    return 'Local models: $size';
+  }
+
+  @override
+  String lmMemoryOthers(String size) {
+    return 'Everything else: about $size on average';
+  }
+
+  @override
+  String get lmMemoryMeasuring => 'Everything else: still measuring';
+
+  @override
+  String lmMemoryFree(String size) {
+    return 'Free for models: $size';
+  }
+
+  @override
+  String get lmMemoryLimited => 'Limited by the container.';
+
+  @override
+  String get lmGraphics => 'Graphics';
+
+  @override
+  String lmGraphicsValue(String name, String memory) {
+    return '$name · $memory usable';
+  }
+
+  @override
+  String get lmNoGraphics => 'None found. Models run on the processor.';
+
+  @override
+  String get lmDisk => 'Free disk space';
+
+  @override
+  String get lmTextUnsupported =>
+      'Text, safety and embedding models need macOS or Linux. Speech and transcription models work here.';
+
+  @override
+  String get lmInstalledTitle => 'Your models';
+
+  @override
+  String get lmInstalledEmpty =>
+      'No models yet. Pick one below: NeoRouter downloads it and starts it for you.';
+
+  @override
+  String get lmRunning => 'Running';
+
+  @override
+  String get lmRunningGpu => 'Running on the graphics card';
+
+  @override
+  String get lmRunningCpu => 'Running on the processor';
+
+  @override
+  String get lmStarting => 'Starting …';
+
+  @override
+  String get lmRestarting => 'Restarting after a problem …';
+
+  @override
+  String get lmStopped => 'Stopped';
+
+  @override
+  String get lmPreparing => 'Getting ready …';
+
+  @override
+  String lmDownloading(String done, String total) {
+    return 'Downloading · $done of $total';
+  }
+
+  @override
+  String lmGettingEngine(String done, String total) {
+    return 'Setting up the engine · $done of $total';
+  }
+
+  @override
+  String get lmChecking => 'Checking the files …';
+
+  @override
+  String lmDownloadFailed(String reason) {
+    return 'Download stopped. $reason';
+  }
+
+  @override
+  String lmFailed(String reason) {
+    return 'Stopped. $reason';
+  }
+
+  @override
+  String get lmProblemMemory =>
+      'Not enough free memory: stop another model first.';
+
+  @override
+  String get lmProblemDisk => 'Not enough free disk space.';
+
+  @override
+  String get lmProblemCrashed =>
+      'It kept stopping unexpectedly. Repair checks its files and starts it again.';
+
+  @override
+  String get lmProblemNotAnswering =>
+      'It stopped answering. Repair checks its files and starts it again.';
+
+  @override
+  String get lmProblemStart =>
+      'It would not start. Repair checks its files and starts it again.';
+
+  @override
+  String get lmProblemDownload =>
+      'Check the internet connection and try again.';
+
+  @override
+  String get lmRepair => 'Repair';
+
+  @override
+  String get lmRemove => 'Remove';
+
+  @override
+  String get lmCancelDownload => 'Cancel download';
+
+  @override
+  String lmRemoveTitle(String name) {
+    return 'Remove $name?';
+  }
+
+  @override
+  String get lmRemoveConfirm =>
+      'Its files are deleted from this server. You can install it again any time.';
+
+  @override
+  String get lmAccessTitle => 'Who can use them';
+
+  @override
+  String get lmAccessEveryone => 'Everyone on this server';
+
+  @override
+  String get lmAccessHint =>
+      'Off: only admins. On: every user can add \"NeoRouter Local\" under Connections. All requests share this machine.';
+
+  @override
+  String get lmAddTitle => 'Add a model';
+
+  @override
+  String get lmAddHint =>
+      'Picked for this server. The size is the download; memory is what the model needs while it runs.';
+
+  @override
+  String get lmKindAll => 'All';
+
+  @override
+  String get lmKindChat => 'Text';
+
+  @override
+  String get lmKindModeration => 'Safety';
+
+  @override
+  String get lmKindEmbedding => 'Embeddings';
+
+  @override
+  String get lmKindTranscription => 'Transcription';
+
+  @override
+  String get lmKindSpeech => 'Speech';
+
+  @override
+  String get lmRatingGreat => 'Runs great';
+
+  @override
+  String get lmRatingGood => 'Runs well';
+
+  @override
+  String get lmRatingSlow => 'Runs, but slowly';
+
+  @override
+  String get lmRatingTight => 'Tight on memory';
+
+  @override
+  String get lmRatingTooBig => 'Needs more memory';
+
+  @override
+  String get lmRatingUnsupported => 'Not on this system';
+
+  @override
+  String lmSizes(String download, String memory) {
+    return '$download · needs $memory memory';
+  }
+
+  @override
+  String lmSizesMeasured(String download, String memory) {
+    return '$download · used $memory here';
+  }
+
+  @override
+  String get lmTightHint =>
+      'Fits this server, but other programs here usually use so much memory that it may not start.';
+
+  @override
+  String get lmRecommended => 'Recommended';
+
+  @override
+  String get lmReadsImages => 'Reads images';
+
+  @override
+  String get lmManyLanguages => 'Many languages';
+
+  @override
+  String get lmInstall => 'Install';
+
+  @override
+  String get lmInstalled => 'Installed';
+
+  @override
+  String get lmNoDisk => 'Not enough disk space';
+
+  @override
+  String lmInstallTitle(String name) {
+    return 'Install $name?';
+  }
+
+  @override
+  String lmInstallConfirm(String size) {
+    return 'NeoRouter downloads about $size and starts the model when it is ready. You can keep working in the meantime.';
+  }
+
+  @override
+  String lmShowTooBig(String count) {
+    return 'Show $count more that need a bigger server';
+  }
+
+  @override
+  String get lmHideTooBig => 'Hide models that do not fit';
+
+  @override
+  String get lmTurnOff => 'Turn off';
+
+  @override
+  String get lmLeftSeconds => 'less than a minute left';
+
+  @override
+  String lmLeftMinutes(String count) {
+    return 'about $count min left';
+  }
+
+  @override
+  String lmLeftHours(String hours, String minutes) {
+    return 'about $hours h $minutes min left';
+  }
+
+  @override
+  String get lmStarterTitle => 'Quick start';
+
+  @override
+  String lmStarterHint(String models, String size) {
+    return '$models, chosen for this server. Downloads $size and starts by itself.';
+  }
+
+  @override
+  String get lmStarterInstall => 'Install all';
+
+  @override
+  String get lmDetails => 'Details';
+
+  @override
+  String get lmLess => 'Less';
+
+  @override
+  String get lmLanguages => 'Languages';
+
+  @override
+  String get lmLicense => 'License';
+
+  @override
+  String get lmErrTooBig =>
+      'This server does not have enough memory for this model.';
+
+  @override
+  String get lmErrNoDisk =>
+      'There is not enough free disk space for this model.';
+
+  @override
+  String get lmErrUnsupported => 'This system cannot run this model.';
+
+  @override
+  String get lmErrInstalled => 'This model is already installed.';
+
+  @override
+  String get lmErrNoStarter => 'No starter set fits this server.';
+
+  @override
+  String get lmNothingFits => 'Nothing of this kind fits this server.';
+
+  @override
+  String get routingGroups => 'Routing groups';
+
+  @override
+  String get createRoutingGroup => 'Create group';
+
+  @override
+  String get routingGroupName => 'Name';
+
+  @override
+  String get routingGroupAccounts => 'Connections';
+
+  @override
+  String get routingGroupFallback => 'Fallback group';
+
+  @override
+  String get routingGroupNoKeyDefault => 'None: the key routes normally';
+
+  @override
+  String get routingGroupDefault => 'Default routing group';
+
+  @override
+  String get navGroups => 'Routing groups';
+
+  @override
+  String get routingGroupsDescription =>
+      'Use one model name across your subscriptions.';
+
+  @override
+  String routingGroupOptionHelp(String option) {
+    return 'About $option';
+  }
+
+  @override
+  String get routingGroupFallbackHelp =>
+      'Choose a backup group. If none of the models in this group can take a request, NeoRouter can try the backup group.';
+
+  @override
+  String get routingGroupOutsideHelp =>
+      'Turn this on to let NeoRouter try connections outside your selected groups when it has run out of options. Your key’s permissions and spending settings still apply.';
+
+  @override
+  String get routingGroupsHelpSwitch =>
+      'For example, choose two subscriptions and pick one under “Use first”. NeoRouter can use the other if the first is busy or has reached its limit.';
+
+  @override
+  String get routingGroupsHelpSubagents =>
+      'Choose “Same group” to share these connections, or pick another group for your app’s helpers. Your app needs to send subagent requests separately. See “Use in app” after saving.';
+
+  @override
+  String get routingGroupsEmptyTitle => 'No routing groups yet';
+
+  @override
+  String routingGroupUsesStyle(String name) {
+    return 'Style: $name';
+  }
+
+  @override
+  String routingGroupAtLeast(String percent) {
+    return 'At least $percent % intelligence';
+  }
+
+  @override
+  String routingGroupFallsBackTo(String name) {
+    return 'Then $name';
+  }
+
+  @override
+  String routingGroupPlanUsed(String percent) {
+    return '$percent % used';
+  }
+
+  @override
+  String get routingGroupAccountsHint =>
+      'Choose the subscriptions and connections this group can use.';
+
+  @override
+  String get routingGroupOtherAccounts => 'Other accounts';
+
+  @override
+  String get routingGroupSearchAccounts => 'Search accounts';
+
+  @override
+  String get routingGroupNoAccounts => 'No matching accounts.';
+
+  @override
+  String get routingGroupModelsTitle => 'Models';
+
+  @override
+  String get routingGroupModelsHint =>
+      'Single models from any account. A pattern with * takes several, e.g. groq/*.';
+
+  @override
+  String get routingGroupPickModels => 'Choose models';
+
+  @override
+  String get routingGroupPatternHint => 'or type a pattern, e.g. groq/*';
+
+  @override
+  String get routingGroupAddPattern => 'Add pattern';
+
+  @override
+  String get routingGroupOptions => 'Options';
+
+  @override
+  String get routingGroupOptionsHint =>
+      'How the group picks among its models, and where requests go when it is full.';
+
+  @override
+  String get routingGroupMinimumTitle => 'Minimum intelligence';
+
+  @override
+  String get routingGroupMinimumOff => 'Any model in the group may answer.';
+
+  @override
+  String get routingGroupStyle => 'Routing style';
+
+  @override
+  String get routingGroupStyleHint =>
+      'What counts most when the group picks a model.';
+
+  @override
+  String get routingGroupStyleKey => 'The key\'s own style';
+
+  @override
+  String get routingGroupFallbackHint =>
+      'Used when every model in this group is busy or failing.';
+
+  @override
+  String get routingGroupNoFallback => 'None: wait, then any model';
+
+  @override
+  String get routingGroupsEmpty =>
+      'No groups yet. A group sends one kind of work, such as an agent\'s helpers, to the plans you choose.';
+
+  @override
+  String get routingGroupNameHint =>
+      'Lowercase letters, digits, - and _. Cannot be changed later.';
+
+  @override
+  String get routingGroupNameInvalid =>
+      'Use lowercase letters, digits, - and _ only, starting with a letter or digit.';
+
+  @override
+  String get routingGroupMembersMissing =>
+      'Choose at least one account or model pattern.';
+
+  @override
+  String get routingGroupDeleteTitle => 'Delete this group?';
+
+  @override
+  String routingGroupDeleteMessage(String name) {
+    return 'Keys and apps that use pool:$name will route normally again.';
+  }
+
+  @override
+  String get routingGroupPrefer => 'Use first';
+
+  @override
+  String get routingGroupPreferHint =>
+      'Switches when this connection can’t take a request.';
+
+  @override
+  String get routingGroupAutomatic => 'Automatic';
+
+  @override
+  String get routingGroupMore => 'More options';
+
+  @override
+  String get routingGroupSubagents => 'Subagent requests';
+
+  @override
+  String get routingGroupSameGroup => 'Same group';
+
+  @override
+  String get routingGroupSubagentHint =>
+      'App setup required for separate routing.';
+
+  @override
+  String get routingGroupCreateSubagent => 'Create subagent group';
+
+  @override
+  String get routingGroupAllowOutside =>
+      'Try other connections as a last resort';
+
+  @override
+  String get routingGroupAllowMetered => 'Allow per-use charges';
+
+  @override
+  String get routingGroupMeteredHint =>
+      'Includes connections set up to charge after an allowance runs out.';
+
+  @override
+  String get routingGroupUseInApp => 'Use in app';
+
+  @override
+  String get routingGroupAppModel => 'Enter this as the model in your app.';
+
+  @override
+  String get routingGroupAppSubagent =>
+      'If your app has a separate subagent model, use this:';
+
+  @override
+  String get routingGroupAppSubagentHeader =>
+      'To keep one model name, send X-NeoRouter-Workload: subagent on child requests.';
+
+  @override
+  String get routingGroupPreviewSubagent => 'Preview a subagent request';
+
+  @override
+  String get routingGroupPreviewHint =>
+      'Uses current limits with a sample request. No provider call.';
+
+  @override
+  String get routingGroupPreview => 'Preview route';
+
+  @override
+  String get routingGroupPreviewUnavailable =>
+      'No model can take this request right now.';
+
+  @override
+  String routingGroupPreviewModel(String model) {
+    return 'Would use $model';
+  }
+
+  @override
+  String routingGroupPrefers(String name) {
+    return 'Prefers $name';
+  }
+
+  @override
+  String routingGroupUsesSubagent(String name) {
+    return 'Subagents use $name';
+  }
+
+  @override
+  String get routingGroupReasonSame =>
+      'Kept the conversation on the same model and connection.';
+
+  @override
+  String get routingGroupReasonPreferred => 'Used the preferred connection.';
+
+  @override
+  String get routingGroupReasonBusy => 'The preferred connection was busy.';
+
+  @override
+  String get routingGroupReasonAllowance =>
+      'The preferred connection reached a limit.';
+
+  @override
+  String get routingGroupReasonUnavailable =>
+      'The preferred connection couldn’t take this request.';
+
+  @override
+  String get cachedInputTokens => 'Cached input tokens';
+
+  @override
+  String get cacheHitRate => 'Cache hit rate';
+
+  @override
+  String get planUsageUnknown => 'Plan usage unknown';
+
+  @override
+  String get planUsage => 'Plan usage';
+
+  @override
+  String get flatRateBilling => 'Flat rate / concurrency slots';
+
+  @override
+  String get flatRateHint =>
+      'A paid subscription with no incremental charge. Fill available slots before using other sources.';
+
+  @override
+  String get slotPlan => 'Subscription plan';
+
+  @override
+  String get slotOverflowPolicy => 'When slots are busy';
+
+  @override
+  String get slotOverflowAuto =>
+      'Automatic: overflow to a comparable free source, otherwise wait';
+
+  @override
+  String get slotOverflowNow => 'Overflow immediately';
+
+  @override
+  String get slotOverflowQueue => 'Wait for a slot first';
+
+  @override
+  String get slotMaxWait => 'Maximum slot wait (seconds)';
+
+  @override
+  String get slotCurrent => 'Busy slots now';
+
+  @override
+  String get slotAverage => 'Average busy slots';
+
+  @override
+  String get slotPeak => 'Peak busy slots';
+
+  @override
+  String get slotIdle => 'Idle capacity';
+
+  @override
+  String get slotObserved => 'Observed slot usage over the last 24 hours';
+
+  @override
+  String get allowancePace =>
+      'Allowance pace (above 1 means ahead of schedule)';
+
+  @override
+  String get keyExpiryTitle => 'Expiration';
+
+  @override
+  String get keyExpiryHint =>
+      'This key stops accepting new requests at the selected time. Times are shown in your local time zone.';
+
+  @override
+  String get keyExpiryNever => 'No expiration';
+
+  @override
+  String keyExpiryDays(String days) {
+    return '$days days from now';
+  }
+
+  @override
+  String get keyExpiryCustom => 'Custom date and time';
+
+  @override
+  String get keyExpiryChange => 'Change date and time';
+
+  @override
+  String keyExpiryAt(String date) {
+    return 'Expires $date';
+  }
+
+  @override
+  String keyExpiredAt(String date) {
+    return 'Expired $date';
+  }
+
+  @override
+  String get keyExpired => 'Expired';
+
+  @override
+  String get keyExpiringSoon => 'Expires soon';
+
+  @override
+  String get keyExpiryInvalid => 'Choose a date and time in the future.';
+
+  @override
+  String get keyExpiryRenewHint =>
+      'Choose a future expiry or no expiration to use this key again. Its secret stays the same.';
+
+  @override
+  String get keyExpiryRenewSave =>
+      'Saving this change reactivates the existing key.';
+
+  @override
+  String expiredKeys(String count) {
+    return 'Expired keys ($count)';
+  }
+
+  @override
+  String get keyRenewEdit => 'Renew / edit';
+
+  @override
+  String get noActiveKeysTitle => 'No active API keys';
+
+  @override
+  String get noActiveKeysHint => 'Create a key or renew an expired key below.';
+
+  @override
+  String get proxyChooseFile => 'Load text or CSV file';
+
+  @override
+  String get proxyFileError => 'Choose a UTF-8 text file smaller than 1 MB.';
+
+  @override
+  String proxyDeleteConfirm(String endpoint) {
+    return 'Delete $endpoint? Import it again to restore it.';
+  }
+
+  @override
+  String proxyActivity(String active, String served) {
+    return 'Active requests: $active · assigned: $served';
+  }
+
+  @override
+  String get proxyPrevious => 'Previous proxies';
+
+  @override
+  String get proxyNext => 'Next proxies';
+
+  @override
+  String proxyPage(String page, String pages, String count) {
+    return '$page / $pages · $count proxies';
+  }
+
+  @override
+  String get proxyTitle => 'Outbound proxies';
+
+  @override
+  String get proxyHint =>
+      'Optional proxy rotation for public provider HTTP requests, including streams. Local/private destinations and relayed or WebSocket traffic keep their existing transport. Credentials are encrypted and never shown back.';
+
+  @override
+  String get proxyEnable => 'Use outbound proxies';
+
+  @override
+  String get proxyDirect => 'Allow direct fallback';
+
+  @override
+  String get proxyDirectHint =>
+      'If proxies cannot connect, requests may use your server’s direct connection. Turn off to require a proxy for public provider HTTP requests.';
+
+  @override
+  String get proxyImport => 'Import proxies';
+
+  @override
+  String get proxyFormats =>
+      'Paste one proxy per line: scheme://user:password@host:port, user:password@host:port, host:port, or host:port:user:password. CSV/tab-separated host, port, user, password also works. Use URL-encoding for special characters in URL credentials. Duplicate entries are skipped.';
+
+  @override
+  String get proxyProtocol => 'Default protocol for entries without a scheme';
+
+  @override
+  String get proxyPaste => 'Proxy list';
+
+  @override
+  String proxyImportResult(String added, String duplicates, String lines) {
+    return 'Added $added; duplicates $duplicates; invalid lines: $lines (kept below for correction)';
+  }
+
+  @override
+  String get proxyList => 'Configured proxies';
+
+  @override
+  String get proxyTestUrl => 'Public test URL';
+
+  @override
+  String get proxyTestHint =>
+      'Tests send a GET without provider credentials. Any origin HTTP response proves connectivity.';
+
+  @override
+  String get proxyEmpty =>
+      'No proxies configured. Import a list to get started.';
+
+  @override
+  String get proxyCooling => 'Cooling down after a connection failure';
+
+  @override
+  String get proxyUnmeasured => 'Not measured yet';
+
+  @override
+  String proxyLatency(String ms) {
+    return 'Measured latency: $ms ms';
+  }
+
+  @override
+  String get proxyTest => 'Test connection';
+
+  @override
+  String get proxyTestOk => 'Proxy connection succeeded.';
+
+  @override
+  String get proxyTestFailed => 'Proxy connection failed; it is cooling down.';
 }

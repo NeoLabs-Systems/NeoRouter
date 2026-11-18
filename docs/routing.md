@@ -8,6 +8,101 @@
 - `auto` — the key's routing profile. `auto:<profile>` picks a preset
   (`reliable`, `fast`, `balanced`, `best`, `smart`, `cheap`) or a custom profile id.
 
+## Routing groups
+
+Create a named group on **Routing → Routing groups**. Select accounts (all their
+models) and/or model patterns (matched against `provider-slug/model-id`). Members
+are combined as a union. A group can set a routing style, minimum intelligence and
+a fallback group. Names are stable routing identifiers; fallback cycles are rejected.
+These groups are independent of the shared-capacity pools between users.
+
+Select a group with `pool:<group-name>` as the model, `X-NeoRouter-Group` as a
+request header, or the key's default routing group. The model name takes precedence
+over the header, which takes precedence over the key default. A key default applies
+to automatic routing; explicitly named models keep their normal behavior. Key
+allowed-model patterns can include `pool:*` or individual group routes. A route
+permission controls client selection; configured fallbacks still obey the key's
+underlying model, capability, cost and privacy policies.
+
+Groups reuse scoring, measured health, plan pacing, concurrency limits and the
+capacity queue. If one group has no candidate, its fallback is tried. Queueing
+watches every configured group and reconsiders the preferred group when capacity
+opens. If the chain cannot serve, the existing last-resort pass can use models
+outside the group; key restrictions and hard provider limits still apply.
+
+Management API: `GET/POST /api/v1/routing/groups`, and
+`PUT/DELETE /api/v1/routing/groups/:id`. The writable fields are `name`, `accounts`,
+`models`, `profile`, `minIntelligence` and `fallback`. At least one account or model
+pattern is required. The list includes current plan usage per member account;
+unknown usage is shown as unknown. Activity records and `X-NeoRouter-Group` identify
+the group that actually served a request, including a fallback.
+
+## Flat-rate concurrency plans
+
+Choose **Flat rate / concurrency slots** for a connection with a paid subscription
+that charges nothing per request. This is a plan, not a free tier: keys must allow
+plans, and request cost is zero. Kourier is a known provider using its authenticated
+`/v1/models` listing. Starter/Pro slot counts come from its provider definition;
+select the subscribed plan and override the concurrent limit for account bonuses.
+Custom OpenAI/Anthropic endpoints can use the same billing kind and stated limits.
+Model routing never relies on a fixed Kourier model name.
+
+With flat-rate capacity in automatic routing, source preference within each style's
+kind tier is: available flat-rate slot, allowance ahead of its renewal pace, other
+prepaid allowance, free tier, paid usage. Health, capabilities, model permissions
+and other hard filters still apply. Explicit model requests keep their existing
+model-first behavior. Allowance pacing and concurrency remain learned from provider
+responses; a stated concurrency limit continues to override learned/curated limits.
+
+Each flat-rate account has an overflow policy:
+
+- `auto`: overflow when a comparable genuinely free model can serve; otherwise wait.
+- `overflow`: try another available source immediately when all slots are busy.
+- `queue`: wait for a slot first, then overflow when the maximum wait expires.
+
+The wait starts when routing starts and is bounded by `slotWaitMs` and the overall
+request deadline. Its default is `NEOROUTER_SLOT_QUEUE_WAIT_MS`. Configure
+`billingMode: "flat_rate"`, `concurrent`, `overflowPolicy` and `slotWaitMs` through
+the provider account API or connection form. Kourier's plan selection is
+`options.slotPlan`; concurrent overrides cover bonuses without changing a definition.
+The Limits dialog can change both the concurrency limit and overflow policy.
+
+The Limits page shows current, time-weighted average and peak busy slots, idle
+capacity and a minute-by-minute usage chart for the last 24 hours. These are
+router-observed counts, persisted as time integrals; downtime is excluded from
+observed time. Unknown slot capacity yields unknown idle share. Allowance plans
+also show pace relative to renewal (above 1 means ahead of schedule). Extra keys
+from the same subscription should not be added as independent accounts because
+the upstream shares their capacity.
+
+## Provider cache awareness
+
+Chat routing remembers the last successful account and model for a conversation,
+scoped to the router key. It uses the existing client session headers or derives a
+hash from the leading system/user messages. Only a hashed identifier and model
+reference are retained in bounded, expiring process memory. Restarting the router
+clears affinity; observed cache usage remains in the request history.
+
+Affinity is a soft score benefit, scaled by the recent measured share of cached
+input, request size and known cache discount. A model with no reported cache hits
+receives no benefit. Normal health, capacity, quality and budget decisions can move
+the conversation elsewhere. Configure expiry, memory size and learning window with
+`NEOROUTER_CACHE_AFFINITY_TTL_MS`, `NEOROUTER_CACHE_AFFINITY_MAX_SESSIONS`,
+`NEOROUTER_CACHE_LEARNING_WINDOW_MS` and `NEOROUTER_CACHE_AFFINITY_TOKEN_SCALE`.
+
+OpenAI Chat/Responses requests preserve `prompt_cache_key`; absent a client value,
+the conversation identifier supplies it. Anthropic translation preserves system
+and tool cache breakpoints and adds ephemeral prefix breakpoints when absent.
+JSON and streamed usage preserve cache reads and cache creation separately.
+Provider listing prices and provider-specific models.dev facts supply cache rates;
+`priceCachedIn` and `priceCacheWrite` model overrides use USD per million tokens.
+Unknown cache prices fall back to the ordinary input price. Budget reservations
+include known cache write premiums. Activity shows cached tokens and the percentage
+of successful requests with cache hits for each provider.
+
+This uses upstream prompt caches. NeoRouter never stores prompts or responses in
+a local response cache.
+
 ## Pipeline (`server/services/routing/router.js`)
 
 1. **Request profile** — estimated input tokens, needed capabilities (tools,
@@ -24,20 +119,57 @@
 5. **Selection** — softmax draw among the top-k (exploration temperature),
    so bursts spread out; in-flight leases lower scores immediately.
 
+## Spreading metered allowances until reset
+
+When enabled in Settings → Usage, pacing combines observed remaining balances
+with a recency-weighted hour-of-week demand profile. Requests and tokens learn
+separate traffic shapes, and token forecasts include learned output sizes and
+in-flight output reservations. Failed attempts do not teach a false demand peak.
+
+Daily limits with an upstream reset use cumulative consumption since that reset;
+yesterday's buckets do not block the renewed window. Unknown daily reset times
+use a rolling window, its remaining balance and upcoming bucket expirations.
+Provider observations retain their local-consumption baseline so sends between
+observations are deducted, including concurrent sends within one minute.
+
+Percentage plan windows learn units consumed per request from balance changes and
+reserve that measured consumption between updates. The router shifts work toward
+allowances with room before they exceed pace, then queues paced work until its
+calculated release time. Last-resort routing preserves enabled pacing. If no
+eligible source can serve within the request's queue budget, the response includes
+a retry time; a sustained demand above total allowance cannot be solved by pacing.
+Initial enablement requires sufficient history; adding unknown models does not
+silently switch protection off for known allowances. High-priority keys bypass
+pacing, while hard limits and key budgets still apply.
+Flat-rate slots and pay-per-use sources are not metered allowances.
+
 ## Learning (`learning.js`, `stats_store.js`)
 
 | Error kind | Effect |
 |---|---|
-| rate_limit (429) | penalty +2, cooldown max(Retry-After, 90 s), limit learned from message |
+| rate_limit (429) | penalty +2, cooldown max(Retry-After, 90 s), limit learned from message; with no answer in the last hour the cooldown climbs 90 s → 5 min → 30 min → 2 h → 6 h |
 | quota_exhausted | cooldown ladder 2 min → 10 min → 1 h → 24 h |
 | payment (402) | cooldown 24 h |
 | auth (401/403) | cooldown 30 min, background key re-check, account disabled after 3 confirmed rejections |
-| not_found | cooldown 6 h |
+| not_found, or 401/403 about the model or plan (not on this plan, consent, phone verification) | cooldown 6 h → 24 h → 7 d |
 | context_length | no penalty, context window learned |
 | server / timeout / network / empty / invalid tool JSON | failure + penalty, counts for circuit breaker (3 in 15 min → 10 min pause, then half-open probe) |
 | slow (> 2.5 × own EWMA) | soft failure, small penalty |
 
 Outcome counts decay with a 24 h half-life, penalties with a 5 min half-life.
+
+One connection may cost a single request two failed attempts, then the others
+get a turn. After 30 failures in a row without a success, a whole connection
+rests for 5 minutes, doubling up to an hour (`account_health.js`). While at least
+30 % of a user's recent requests go unanswered (`capacity.js`), requests wait
+5 seconds instead of 45 for a model to free up (high-priority keys still wait in
+full) and at most one hedge runs per request. A client sending the same conversation again within
+3 minutes of an answer counts as a bad rating of that answer; only a hash of the
+conversation is kept, in memory.
+
+Benchmark scores with a confidence below 0.5 are pulled towards 0.25, so a model
+nobody measured cannot outrank measured ones, and a model far below what the task
+needs (under 0.08 to 0.12) keeps 60 % of its score.
 
 Streams are committed to the client only after the first real output arrives,
 so silent or failing providers are replaced transparently.
@@ -45,8 +177,17 @@ so silent or failing providers are replaced transparently.
 ## Intelligence
 
 `server/services/catalog/metadata_service.js` combines models.dev and
-OpenRouter (prices, context, capabilities, release dates) and, if an admin
-configured a key, Artificial Analysis (benchmark index, measured speed).
+OpenRouter (prices, context, capabilities, release dates), OpenRouter's daily
+benchmark leaderboard (GPQA Diamond and tau2-bench airline, the newest 90 days;
+CC BY 4.0) and, if an admin configured a key, Artificial Analysis (benchmark
+index, measured speed). Where both benchmark sources know a model, its overall
+score is 60 % Artificial Analysis and 40 % OpenRouter. An OpenRouter benchmark
+that ranks models very differently from the fuller index gets no say.
+
+Artificial Analysis refreshes every 6 hours: a Free key allows 100 requests a day.
+Free lists carry the index and speed but no per-benchmark scores, so the scores
+already known are kept (a Pro key keeps them current); models without an index
+get one estimated from them.
 Without a benchmark the score is a heuristic of market price, parameter count,
 recency and reasoning support. Users can override it per model.
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,8 +7,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
 import 'main_model_picker.dart';
+import 'main_key_expiry.dart';
 import 'main_routing.dart';
 import 'main_shared.dart';
+import 'main_pool.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
 import 'src/backend_client.dart';
@@ -15,7 +19,7 @@ import 'src/models.dart';
 
 /// "Free · Plans · Paid" for the kinds of models a key may use.
 String keyKindsLabel(AppL10n t, RouterKey key) =>
-    <String>[if (key.allowFree) t.kindFreeShort, if (key.allowPlan) t.kindPlanShort, if (key.allowPaid) t.kindPaidShort].join(' · ');
+    <String>[if (key.allowFree) t.kindFreeShort, if (key.allowPlan) t.kindPlanShort, if (key.allowPaid) t.kindPaidShort, if (key.usesPool) t.keyPoolChip].join(' · ');
 
 class KeysScreen extends StatefulWidget {
   const KeysScreen({super.key, required this.controller});
@@ -32,38 +36,50 @@ class _KeysScreenState extends State<KeysScreen> {
   bool _loading = true;
   String? _error;
   bool _showRevoked = false;
+  bool _showExpired = false;
+  Timer? _expiryRefresh;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _expiryRefresh = Timer.periodic(const Duration(minutes: 1), (_) { if (mounted) setState(() {}); });
+  }
+
+  @override
+  void dispose() {
+    _expiryRefresh?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
+    if (!mounted) return;
     setState(() => _error = null);
     try {
       final results = await Future.wait(<Future<Object>>[widget.controller.api.keys(), widget.controller.api.profiles()]);
+      if (!mounted) return;
       setState(() {
         _keys = results[0] as List<RouterKey>;
         _profiles = results[1] as List<RoutingProfile>;
       });
     } catch (error) {
-      setState(() => _error = '$error');
+      if (mounted) setState(() => _error = '$error');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _open([RouterKey? key]) async {
-    final secret = await showDialog<String>(
+    final created = await showDialog<({RouterKey key, String secret})>(
       context: context,
       builder: (_) => _KeyForm(controller: widget.controller, profiles: _profiles, existing: key),
     );
+    if (!mounted) return;
     await _load();
-    if (secret != null && mounted) await _showSecret(secret);
+    if (created != null && mounted) await _showSecret(created.secret, created.key.expiresAt);
   }
 
-  Future<void> _showSecret(String secret) async {
+  Future<void> _showSecret(String secret, String? expiresAt) async {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     await showDialog<void>(
@@ -77,6 +93,8 @@ class _KeysScreenState extends State<KeysScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              KeyExpiryStatus(expiresAt: expiresAt == null ? null : DateTime.tryParse(expiresAt)),
+              const SizedBox(height: AppSpacing.sm),
               Text(t.keySecretBody, style: TextStyle(color: palette.textSoft, height: 1.45)),
               const SizedBox(height: AppSpacing.md),
               Container(
@@ -135,8 +153,9 @@ class _KeysScreenState extends State<KeysScreen> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    final active = _keys.where((key) => !key.revoked && !key.isConnectedApp).toList();
-    final apps = _keys.where((key) => !key.revoked && key.isConnectedApp).toList();
+    final active = _keys.where((key) => !key.revoked && !key.expired && !key.isConnectedApp).toList();
+    final apps = _keys.where((key) => !key.revoked && !key.expired && key.isConnectedApp).toList();
+    final expired = _keys.where((key) => !key.revoked && key.expired).toList();
     final revoked = _keys.where((key) => key.revoked).toList();
     final controller = widget.controller;
     final canCreate = controller.can('keys.create');
@@ -181,8 +200,8 @@ class _KeysScreenState extends State<KeysScreen> {
                 AppCard(
                   child: EmptyState(
                     icon: Icons.key_outlined,
-                    title: t.noKeysTitle,
-                    message: t.noKeysMessage,
+                    title: expired.isNotEmpty ? t.noActiveKeysTitle : t.noKeysTitle,
+                    message: expired.isNotEmpty ? t.noActiveKeysHint : t.noKeysMessage,
                     action: canCreate
                         ? FilledButton.icon(onPressed: () => _open(), icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.createKey))
                         : null,
@@ -190,6 +209,15 @@ class _KeysScreenState extends State<KeysScreen> {
                 )
               else
                 SettingsCardList(children: <Widget>[for (final key in active) row(key)]),
+              if (expired.isNotEmpty) ...<Widget>[
+                const SizedBox(height: AppSpacing.md),
+                Align(alignment: Alignment.centerLeft, child: TextButton.icon(
+                  onPressed: () => setState(() => _showExpired = !_showExpired),
+                  icon: Icon(_showExpired ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
+                  label: Text(t.expiredKeys('${expired.length}')),
+                )),
+                if (_showExpired) SettingsCardList(children: <Widget>[for (final key in expired) row(key)]),
+              ],
               if (revoked.isNotEmpty) ...<Widget>[
                 const SizedBox(height: AppSpacing.md),
                 Align(
@@ -243,7 +271,7 @@ class _KeyRow extends StatelessWidget {
       if (key.isConnectedApp) key.appOrigin == null ? t.connectedApp : t.connectedVia(key.appOrigin!),
       used, if (showCreator) createdByLabel(t, key.createdBy)].join(' · ');
     final actions = <PopupMenuEntry<String>>[
-      if (!key.revoked && canEdit) PopupMenuItem<String>(value: 'edit', child: Text(t.edit)),
+      if (!key.revoked && canEdit) PopupMenuItem<String>(value: 'edit', child: Text(key.expired ? t.keyRenewEdit : t.edit)),
       if (!key.revoked && canEdit) PopupMenuItem<String>(value: 'revoke', child: Text(t.revoke)),
       if (canDelete)
         PopupMenuItem<String>(
@@ -291,7 +319,11 @@ class _KeyRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(fontSize: 13, color: palette.textMuted),
                 ),
-                if (key.tokenLimit != null && !key.revoked) ...<Widget>[
+                if (!key.revoked) ...<Widget>[
+                  const SizedBox(height: 8),
+                  KeyExpiryStatus(expiresAt: key.expiresAt == null ? null : DateTime.tryParse(key.expiresAt!), expired: key.expired),
+                ],
+                if (key.tokenLimit != null && !key.revoked && !key.expired) ...<Widget>[
                   const SizedBox(height: 10),
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 360),
@@ -311,7 +343,7 @@ class _KeyRow extends StatelessWidget {
                     ),
                   ),
                 ],
-                if (budget != null && !key.revoked) ...<Widget>[
+                if (budget != null && !key.revoked && !key.expired) ...<Widget>[
                   const SizedBox(height: 10),
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 360),
@@ -341,7 +373,7 @@ class _KeyRow extends StatelessWidget {
               ],
             ),
           ),
-          if (!key.revoked) _PriorityPicker(priority: key.priority, onChanged: canEdit ? onPriority : null),
+          if (!key.revoked && !key.expired) _PriorityPicker(priority: key.priority, onChanged: canEdit ? onPriority : null),
           if (actions.isNotEmpty)
             PopupMenuButton<String>(
               tooltip: t.moreActions,
@@ -447,7 +479,9 @@ class _KeyFormState extends State<_KeyForm> {
   late final TextEditingController _name = TextEditingController(text: widget.existing?.name ?? '');
   late final TextEditingController _budget = TextEditingController(text: widget.existing?.budgetUsd?.toString() ?? '');
   late final TextEditingController _rpm = TextEditingController(text: widget.existing?.rpmLimit?.toString() ?? '');
+  late final _concurrent = TextEditingController(text: widget.existing?.concurrentLimit?.toString() ?? '');
   late final TextEditingController _tokens = TextEditingController(text: widget.existing?.tokenLimit?.toString() ?? '');
+  late final TextEditingController _maxPrice = TextEditingController(text: widget.existing?.maxPricePerMillion?.toString() ?? '');
   late String _tokenPeriod = widget.existing?.tokenPeriod ?? 'monthly';
   // Kinds of model ("kind:speech") have their own chips; the text keeps models and routings.
   late final TextEditingController _allowed = TextEditingController(text: widget.existing?.allowedModels.where((item) => !item.startsWith('kind:')).join('\n') ?? '');
@@ -459,19 +493,34 @@ class _KeyFormState extends State<_KeyForm> {
   late bool _free = widget.existing?.allowFree ?? true;
   late bool _plan = widget.existing?.allowPlan ?? true;
   late bool _paid = widget.existing?.allowPaid ?? false;
+  late bool _pool = widget.existing?.usesPool ?? false;
   late String _period = widget.existing?.budgetPeriod ?? 'monthly';
+  late String _routingGroup = widget.existing?.raw['routingGroup'] as String? ?? '';
+  List<Map<String, dynamic>> _groups = [];
   late String _profile = widget.existing?.profile ?? 'balanced';
-  bool _advanced = false;
+  late DateTime? _expiresAt = widget.existing?.expiresAt == null ? null : DateTime.tryParse(widget.existing!.expiresAt!);
+  bool _expiryChanged = false;
+  late bool _advanced = widget.existing?.rpmLimit != null || widget.existing?.concurrentLimit != null;
   bool _saving = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
+
+    widget.controller.api
+        .routingGroups()
+        .then((groups) {
+          if (mounted) setState(() => _groups = groups);
+        })
+        .catchError((_) {});
     // The kinds of model this user has connected, for the kind chips.
-    widget.controller.api.capabilities().then((items) {
-      if (mounted) setState(() => _available = items.where((item) => item.routable && item.total > 0 && item.id != 'live').map((item) => item.id).toList());
-    }).catchError((_) {});
+    widget.controller.api
+        .capabilities()
+        .then((items) {
+          if (mounted) setState(() => _available = items.where((item) => item.routable && item.total > 0 && item.id != 'live').map((item) => item.id).toList());
+        })
+        .catchError((_) {});
   }
 
   bool _kindOn(String kind) => _kinds == null || _kinds!.contains(kind);
@@ -488,8 +537,12 @@ class _KeyFormState extends State<_KeyForm> {
     final lines = _allowed.text.split('\n').map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
     final kinds = _kinds ?? _available.toSet();
     final narrowed = _kinds != null && !_available.every(kinds.contains);
-    final hasModels = lines.any((line) => !RegExp(r'^auto(?:$|[-:*?])', caseSensitive: false).hasMatch(line));
-    return <String>[if (narrowed || hasModels) for (final kind in kinds) 'kind:$kind', ...lines];
+    final hasModels = lines.any((line) => !RegExp(r'^(?:auto(?:$|[-:*?])|pool:)', caseSensitive: false).hasMatch(line));
+    return <String>[
+      if (narrowed || hasModels)
+        for (final kind in kinds) 'kind:$kind',
+      ...lines,
+    ];
   }
 
   @override
@@ -497,7 +550,9 @@ class _KeyFormState extends State<_KeyForm> {
     _name.dispose();
     _budget.dispose();
     _rpm.dispose();
+    _concurrent.dispose();
     _tokens.dispose();
+    _maxPrice.dispose();
     _allowed.dispose();
     super.dispose();
   }
@@ -509,14 +564,26 @@ class _KeyFormState extends State<_KeyForm> {
     final routes = <(String, String)>[
       ('auto', t.autoKeyDefault),
       for (final profile in widget.profiles) ('auto:${profile.slug}', 'Auto (${profileLabel(t, profile)})'),
+      for (final group in _groups) ('pool:${group['name']}', '${group['name']}'),
     ];
-    final picked = await showModelPicker(context, controller: widget.controller, selected: lines.where((line) => !line.contains('*')).toList(), multi: true, routes: routes, capabilities: _available.where(_kindOn).toList());
+    final picked = await showModelPicker(
+      context,
+      controller: widget.controller,
+      selected: lines.where((line) => !line.contains('*')).toList(),
+      multi: true,
+      routes: routes,
+      capabilities: _available.where(_kindOn).toList(),
+    );
     if (picked == null) return;
     final patterns = lines.where((line) => line.contains('*'));
     setState(() => _allowed.text = <String>{...patterns, ...picked}.join('\n'));
   }
 
   Future<void> _submit() async {
+    if (_expiryChanged && _expiresAt != null && !_expiresAt!.isAfter(DateTime.now())) {
+      setState(() => _error = AppL10n.of(context).keyExpiryInvalid);
+      return;
+    }
     if (!_free && !_plan && !_paid) {
       setState(() => _error = AppL10n.of(context).pickOneKind);
       return;
@@ -524,6 +591,16 @@ class _KeyFormState extends State<_KeyForm> {
     if (_kinds != null && _kinds!.isEmpty) {
       setState(() => _error = AppL10n.of(context).keyKindsNone);
       return;
+    }
+    for (final field in [_rpm, _concurrent]) {
+      final value = field.text.trim();
+      if (value.isNotEmpty && (int.tryParse(value) ?? 0) < 1) {
+        setState(() {
+          _advanced = true;
+          _error = AppL10n.of(context).limitsInvalid;
+        });
+        return;
+      }
     }
     setState(() {
       _saving = true;
@@ -537,10 +614,16 @@ class _KeyFormState extends State<_KeyForm> {
       'budgetUsd': _paid ? double.tryParse(_budget.text.trim().replaceAll(',', '.')) : null,
       'budgetPeriod': _period,
       'rpmLimit': int.tryParse(_rpm.text.trim()),
+      'concurrentLimit': int.tryParse(_concurrent.text.trim()),
+      'maxPricePerMillion': _paid ? double.tryParse(_maxPrice.text.trim().replaceAll(',', '.')) : null,
       'tokenLimit': _free || _plan ? int.tryParse(_tokens.text.trim().replaceAll(RegExp(r'[^0-9]'), '')) : null,
       'tokenPeriod': _tokenPeriod,
       'allowedModels': _allowedList(),
       'profile': _profile,
+      'routingGroup': _routingGroup.isEmpty ? null : _routingGroup,
+      if (_expiryChanged) 'expiresAt': _expiresAt?.toUtc().toIso8601String(),
+      // Only sent while in a pool, so a key keeps its choice if the pool is left and rejoined.
+      if (widget.controller.inPool) 'poolAccess': _pool ? 'pool' : 'own',
     };
     try {
       if (widget.existing != null) {
@@ -548,7 +631,7 @@ class _KeyFormState extends State<_KeyForm> {
         if (mounted) Navigator.of(context).pop();
       } else {
         final created = await widget.controller.api.createKey(body);
-        if (mounted) Navigator.of(context).pop(created.secret);
+        if (mounted) Navigator.of(context).pop(created);
       }
     } on ApiException catch (error) {
       setState(() => _error = error.message);
@@ -560,106 +643,268 @@ class _KeyFormState extends State<_KeyForm> {
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    return AlertDialog(
-      title: Text(widget.existing == null ? t.createKey : t.editKey),
-      content: SizedBox(
-        width: 480,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    final palette = neoRouterPaletteOf(context);
+    final kinds = _available.length > 1
+        ? Wrap(
+            spacing: 6,
+            runSpacing: 6,
             children: <Widget>[
-              TextField(
-                controller: _name,
-                autofocus: true,
-                decoration: InputDecoration(labelText: t.keyName, hintText: t.keyNameHint),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              KeyAccessFields(
-                free: _free,
-                plan: _plan,
-                paid: _paid,
-                budget: _budget,
-                period: _period,
-                rpm: _rpm,
-                tokens: _tokens,
-                tokenPeriod: _tokenPeriod,
-                onFree: (value) => setState(() => _free = value),
-                onPlan: (value) => setState(() => _plan = value),
-                onPaid: (value) => setState(() => _paid = value),
-                onPeriod: (value) => setState(() => _period = value),
-                onTokenPeriod: (value) => setState(() => _tokenPeriod = value),
-              ),
-              if (_available.length > 1) ...<Widget>[
-                const SizedBox(height: AppSpacing.md),
-                Text(t.keyKindsTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 2),
-                Text(t.keyKindsHint, style: TextStyle(fontSize: 12.5, color: neoRouterPaletteOf(context).textMuted)),
-                const SizedBox(height: AppSpacing.xs),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: <Widget>[
-                    for (final kind in _available)
-                      FilterChip(
-                        avatar: Icon(capabilityInfo(kind).icon, size: 15, color: _kindOn(kind) ? neoRouterPaletteOf(context).accent : neoRouterPaletteOf(context).textMuted),
-                        label: Text(
-                          capabilityInfo(kind).label(t),
-                          style: TextStyle(
-                            color: _kindOn(kind) ? neoRouterPaletteOf(context).text : neoRouterPaletteOf(context).textMuted,
-                            decoration: _kindOn(kind) ? null : TextDecoration.lineThrough,
-                          ),
-                        ),
-                        selected: _kindOn(kind),
-                        showCheckmark: false,
-                        selectedColor: neoRouterPaletteOf(context).accentSoft,
-                        side: BorderSide(color: _kindOn(kind) ? neoRouterPaletteOf(context).accent.withValues(alpha: 0.6) : neoRouterPaletteOf(context).border),
-                        onSelected: (value) => _toggleKind(kind, value),
-                      ),
-                  ],
+              for (final kind in _available)
+                FilterChip(
+                  visualDensity: VisualDensity.compact,
+                  avatar: Icon(capabilityInfo(kind).icon, size: 15, color: _kindOn(kind) ? palette.accent : palette.textMuted),
+                  label: Text(capabilityInfo(kind).label(t), style: TextStyle(color: _kindOn(kind) ? palette.text : palette.textMuted)),
+                  selected: _kindOn(kind),
+                  showCheckmark: false,
+                  selectedColor: palette.accentSoft,
+                  side: BorderSide(color: _kindOn(kind) ? palette.accent.withValues(alpha: 0.6) : palette.border),
+                  onSelected: (value) => _toggleKind(kind, value),
                 ),
-                if (_kinds != null && _kinds!.isEmpty) ...<Widget>[const SizedBox(height: AppSpacing.xs), InlineError(message: t.keyKindsNone)],
-              ],
-              const SizedBox(height: AppSpacing.sm),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => setState(() => _advanced = !_advanced),
-                  icon: Icon(_advanced ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
-                  label: Text(t.advancedOptions),
-                ),
-              ),
-              if (_advanced) ...<Widget>[
-                DropdownButtonFormField<String>(
-                  initialValue: widget.profiles.any((item) => item.id == _profile) ? _profile : 'balanced',
-                  decoration: InputDecoration(labelText: t.defaultProfile),
-                  items: <DropdownMenuItem<String>>[
-                    for (final profile in widget.profiles)
-                      DropdownMenuItem<String>(value: profile.id, child: Text(profile.id == 'balanced' ? t.presetBalancedDefault : profileLabel(t, profile))),
-                  ],
-                  onChanged: (value) => setState(() => _profile = value ?? _profile),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                TextField(
-                  controller: _allowed,
-                  minLines: 2,
-                  maxLines: 5,
-                  decoration: InputDecoration(labelText: t.allowedModels, hintText: 'auto:fast\ngroq/*\nopenrouter/*:free'),
-                ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(onPressed: _pickAllowed, icon: const Icon(Icons.checklist_rounded, size: 17), label: Text(t.pickModels)),
-                ),
-              ],
-              if (_error != null) ...<Widget>[const SizedBox(height: AppSpacing.sm), InlineError(message: _error!)],
             ],
-          ),
+          )
+        : null;
+    return Dialog(
+      insetPadding: const EdgeInsets.all(16),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560, maxHeight: 760),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 12, 8),
+              child: Row(
+                children: <Widget>[
+                  Expanded(child: Text(widget.existing == null ? t.createKey : t.editKey, style: sectionTitleStyle(palette).copyWith(fontSize: 18))),
+                  IconButton(tooltip: t.cancel, onPressed: _saving ? null : () => Navigator.of(context).pop(), icon: const Icon(Icons.close_rounded)),
+                ],
+              ),
+            ),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 4, 24, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    TextField(
+                      controller: _name,
+                      autofocus: widget.existing == null,
+                      decoration: InputDecoration(labelText: t.keyName, hintText: t.keyNameHint),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    KeyExpiryField(
+                      value: _expiresAt,
+                      wasExpired: widget.existing?.expired ?? false,
+                      enabled: !_saving,
+                      onChanged: (value) => setState(() {
+                        _expiresAt = value;
+                        _expiryChanged = true;
+                        _error = null;
+                      }),
+                    ),
+                    _FormSection(
+                      title: t.keySectionModels,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          KeyAccessFields(
+                            free: _free,
+                            plan: _plan,
+                            paid: _paid,
+                            budget: _budget,
+                            period: _period,
+                            tokens: _tokens,
+                            maxPrice: _maxPrice,
+                            tokenPeriod: _tokenPeriod,
+                            onFree: (value) => setState(() => _free = value),
+                            onPlan: (value) => setState(() => _plan = value),
+                            onPaid: (value) => setState(() => _paid = value),
+                            onPeriod: (value) => setState(() => _period = value),
+                            onTokenPeriod: (value) => setState(() => _tokenPeriod = value),
+                            pool: _pool,
+                            onPool: widget.controller.inPool ? (value) => setState(() => _pool = value) : null,
+                            kinds: kinds,
+                          ),
+                          if (_kinds != null && _kinds!.isEmpty) ...<Widget>[const SizedBox(height: AppSpacing.xs), InlineError(message: t.keyKindsNone)],
+                        ],
+                      ),
+                    ),
+                    _FormSection(
+                      title: t.keySectionRouting,
+                      trailing: TextButton.icon(
+                        onPressed: () => setState(() => _advanced = !_advanced),
+                        icon: Icon(_advanced ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
+                        label: Text(t.advancedOptions),
+                      ),
+                      child: !_advanced
+                          ? const SizedBox.shrink()
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: <Widget>[
+                                _FormSection(
+                                  title: t.trafficLimitsTitle,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      Text(t.keyTrafficLimitsHint),
+                                      const SizedBox(height: AppSpacing.sm),
+                                      _LimitRow(label: t.keyRateLimit, controller: _rpm, unit: t.keyRequestsPerMinute),
+                                      _LimitRow(label: t.limitConcurrent, controller: _concurrent, unit: ''),
+                                    ],
+                                  ),
+                                ),
+                                Row(
+                                  children: <Widget>[
+                                    Expanded(
+                                      child: DropdownButtonFormField<String>(
+                                        isExpanded: true,
+                                        initialValue: widget.profiles.any((item) => item.id == _profile) ? _profile : 'balanced',
+                                        decoration: InputDecoration(labelText: t.defaultProfile),
+                                        items: <DropdownMenuItem<String>>[
+                                          for (final profile in widget.profiles)
+                                            DropdownMenuItem<String>(
+                                              value: profile.id,
+                                              child: Text(profile.id == 'balanced' ? t.presetBalancedDefault : profileLabel(t, profile), overflow: TextOverflow.ellipsis),
+                                            ),
+                                        ],
+                                        onChanged: (value) => setState(() => _profile = value ?? _profile),
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Expanded(
+                                      child: DropdownButtonFormField<String>(
+                                        isExpanded: true,
+                                        initialValue: _routingGroup,
+                                        decoration: InputDecoration(labelText: t.routingGroupDefault),
+                                        items: <DropdownMenuItem<String>>[
+                                          DropdownMenuItem(
+                                            value: '',
+                                            child: Text(t.routingGroupNoKeyDefault, overflow: TextOverflow.ellipsis),
+                                          ),
+                                          if (_routingGroup.isNotEmpty && !_groups.any((group) => group['name'] == _routingGroup)) DropdownMenuItem(value: _routingGroup, child: Text(_routingGroup)),
+                                          for (final group in _groups)
+                                            DropdownMenuItem(
+                                              value: group['name'] as String,
+                                              child: Text('${group['name']}', overflow: TextOverflow.ellipsis),
+                                            ),
+                                        ],
+                                        onChanged: (value) => setState(() => _routingGroup = value ?? ''),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                TextField(
+                                  controller: _allowed,
+                                  minLines: 2,
+                                  maxLines: 5,
+                                  decoration: InputDecoration(
+                                    labelText: t.allowedModels,
+                                    hintText: 'auto:fast\ngroq/*\nopenrouter/*:free',
+                                    suffixIcon: IconButton(tooltip: t.pickModels, onPressed: _pickAllowed, icon: const Icon(Icons.checklist_rounded, size: 18)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                    if (_error != null) ...<Widget>[const SizedBox(height: AppSpacing.md), InlineError(message: _error!)],
+                  ],
+                ),
+              ),
+            ),
+            Divider(height: 1, color: palette.border),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(), child: Text(t.cancel)),
+                  const SizedBox(width: AppSpacing.sm),
+                  FilledButton(onPressed: _saving ? null : _submit, child: Text(widget.existing == null ? t.createKey : t.save)),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      actions: <Widget>[
-        TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(), child: Text(t.cancel)),
-        FilledButton(onPressed: _saving ? null : _submit, child: Text(widget.existing == null ? t.createKey : t.save)),
-      ],
+    );
+  }
+}
+
+/// A titled block of the key form, separated by space and a thin rule.
+class _FormSection extends StatelessWidget {
+  const _FormSection({required this.title, required this.child, this.trailing});
+  final String title;
+  final Widget child;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = neoRouterPaletteOf(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Divider(height: 1, color: palette.border),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  title.toUpperCase(),
+                  style: TextStyle(fontSize: 11.5, letterSpacing: 0.8, fontWeight: FontWeight.w600, color: palette.textMuted),
+                ),
+              ),
+              ?trailing,
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+/// Title, one muted line of help, and a switch on the right.
+class _ToggleRow extends StatelessWidget {
+  const _ToggleRow({required this.title, required this.hint, required this.value, this.onChanged, this.trailing});
+  final String title;
+  final String hint;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = neoRouterPaletteOf(context);
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: onChanged == null ? null : () => onChanged!(!value),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    title,
+                    style: TextStyle(fontWeight: FontWeight.w500, color: onChanged == null ? palette.textMuted : palette.text),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(hint, style: TextStyle(fontSize: 12, color: palette.textMuted, height: 1.35)),
+                ],
+              ),
+            ),
+            ?trailing,
+            const SizedBox(width: AppSpacing.sm),
+            Switch(value: value, onChanged: onChanged),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -684,65 +929,86 @@ class KeyAccessFields extends StatelessWidget {
     required this.paid,
     required this.budget,
     required this.period,
-    required this.rpm,
+    this.rpm,
     required this.tokens,
     required this.tokenPeriod,
+    required this.maxPrice,
     required this.onFree,
     required this.onPlan,
     required this.onPaid,
     required this.onPeriod,
     required this.onTokenPeriod,
+    this.pool = false,
+    this.onPool,
+    this.kinds,
   });
+
+  /// Optional chips narrowing which kinds of model (chat, images, …) the key may use.
+  final Widget? kinds;
 
   final bool free;
   final bool plan;
   final bool paid;
   final TextEditingController budget;
   final String period;
-  final TextEditingController rpm;
+  final TextEditingController? rpm;
   final TextEditingController tokens;
   final String tokenPeriod;
+  final TextEditingController maxPrice;
   final ValueChanged<bool> onFree;
   final ValueChanged<bool> onPlan;
   final ValueChanged<bool> onPaid;
   final ValueChanged<String> onPeriod;
   final ValueChanged<String> onTokenPeriod;
 
+  /// Whether the key may also use pool partners' free models; the choice is
+  /// shown only while in a pool (onPool set).
+  final bool pool;
+  final ValueChanged<bool>? onPool;
+
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    final label = TextStyle(fontWeight: FontWeight.w600, color: palette.text);
     final hint = TextStyle(fontSize: 12, color: palette.textMuted, height: 1.4);
+    final label = TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: palette.textSoft);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Text(t.keyAccessTitle, style: label),
-        const SizedBox(height: AppSpacing.xs),
-        _KindCheck(title: t.kindFree, description: t.kindFreeHint, value: free, onChanged: onFree),
-        _KindCheck(title: t.kindPlan, description: t.kindPlanHint, value: plan, onChanged: onPlan),
-        _KindCheck(title: t.kindPaid, description: t.kindPaidHint, value: paid, onChanged: onPaid),
-        const SizedBox(height: AppSpacing.md),
-        Text(t.keyLimitsTitle, style: label),
-        const SizedBox(height: 2),
-        Text(t.keyNoLimitHint, style: hint),
+        _ToggleRow(title: t.kindFree, hint: t.kindFreeHint, value: free, onChanged: onFree),
+        _ToggleRow(title: t.kindPlan, hint: t.kindPlanHint, value: plan, onChanged: onPlan),
+        _ToggleRow(title: t.kindPaid, hint: t.kindPaidHint, value: paid, onChanged: onPaid),
+        if (onPool != null)
+          _ToggleRow(
+            title: t.keyPoolLabel,
+            hint: t.keyPoolHint,
+            value: pool && free,
+            onChanged: free ? onPool : null,
+            trailing: IconButton(tooltip: t.poolInfoTooltip, icon: const Icon(Icons.info_outline_rounded, size: 18), onPressed: () => showPoolTrustInfo(context)),
+          ),
+        if (kinds != null) ...<Widget>[const SizedBox(height: AppSpacing.md), Text(t.keyKindsTitle, style: label), const SizedBox(height: AppSpacing.xs), kinds!],
+        const SizedBox(height: AppSpacing.lg),
+        Row(
+          children: <Widget>[
+            Text(t.keyLimitsTitle, style: label),
+            const SizedBox(width: 6),
+            Tooltip(
+              message: t.keyNoLimitHint,
+              child: Icon(Icons.info_outline_rounded, size: 15, color: palette.textMuted),
+            ),
+          ],
+        ),
         const SizedBox(height: AppSpacing.sm),
         // Every key: how many requests a minute.
-        _LimitRow(label: t.keyRateLimit, controller: rpm, unit: t.keyRequestsPerMinute),
-        // Paid models: a spending limit.
-        if (paid) ...<Widget>[
-          const SizedBox(height: AppSpacing.sm),
-          _LimitRow(label: t.keyBudgetTitle, controller: budget, prefix: r'$ ', decimal: true, unit: t.spendingLimitPer, period: period, onPeriod: onPeriod),
-          const SizedBox(height: 4),
-          Text(free || plan ? t.budgetFallsBack : t.budgetStops, style: hint),
-        ],
+        if (rpm case final field?) _LimitRow(label: t.keyRateLimit, controller: field, unit: t.keyRequestsPerMinute),
         // Free and subscription models: a token limit.
-        if (free || plan) ...<Widget>[
-          const SizedBox(height: AppSpacing.sm),
-          _LimitRow(label: t.keyTokenLimit, controller: tokens, unit: t.keyTokensPer, period: tokenPeriod, onPeriod: onTokenPeriod),
-          const SizedBox(height: 4),
-          Text(paid ? t.keyTokenFallsBack : t.keyTokenHint, style: hint),
+        if (free || plan) _LimitRow(label: t.keyTokenLimit, controller: tokens, unit: t.keyTokensPer, period: tokenPeriod, onPeriod: onTokenPeriod),
+        // Paid models: a spending limit and a maximum price per million tokens.
+        if (paid) ...<Widget>[
+          _LimitRow(label: t.keyBudgetTitle, controller: budget, prefix: r'$ ', decimal: true, unit: t.spendingLimitPer, period: period, onPeriod: onPeriod),
+          _LimitRow(label: t.keyMaxPriceTitle, controller: maxPrice, decimal: true, unit: t.keyMaxPricePerMillion),
         ],
+        if (paid || free || plan) ...<Widget>[const SizedBox(height: 4), Text(paid ? (free || plan ? t.budgetFallsBack : t.budgetStops) : t.keyTokenHint, style: hint)],
       ],
     );
   }
@@ -764,82 +1030,54 @@ class _LimitRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.xs,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: <Widget>[
-        SizedBox(width: 120, child: Text(label, style: TextStyle(color: palette.textSoft))),
-        SizedBox(
-          width: 120,
-          child: TextField(
-            controller: controller,
-            keyboardType: TextInputType.numberWithOptions(decimal: decimal),
-            decoration: InputDecoration(prefixText: prefix, isDense: true, hintText: '—'),
-          ),
-        ),
-        Text(unit, style: TextStyle(color: palette.textSoft)),
-        if (period != null && onPeriod != null)
-          DropdownButton<String>(
-            value: period,
-            onChanged: (value) => onPeriod!(value ?? period!),
-            items: <DropdownMenuItem<String>>[
-              DropdownMenuItem<String>(value: 'daily', child: Text(t.periodDaily)),
-              DropdownMenuItem<String>(value: 'monthly', child: Text(t.periodMonthly)),
-              DropdownMenuItem<String>(value: 'total', child: Text(t.periodTotal)),
-            ],
-          ),
-      ],
-    );
-  }
-}
-
-/// One kind of model a key may use: a checkbox card.
-class _KindCheck extends StatelessWidget {
-  const _KindCheck({required this.title, required this.description, required this.value, required this.onChanged});
-
-  final String title;
-  final String description;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = neoRouterPaletteOf(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: value ? palette.accentSoft : palette.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          side: BorderSide(color: value ? palette.accent.withValues(alpha: 0.5) : palette.border),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => onChanged(!value),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 10, 14, 10),
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            flex: 4,
+            child: Text(label, style: TextStyle(color: palette.textSoft, fontSize: 13)),
+          ),
+          SizedBox(
+            width: 110,
+            child: TextField(
+              controller: controller,
+              keyboardType: TextInputType.numberWithOptions(decimal: decimal),
+              textAlign: TextAlign.right,
+              decoration: InputDecoration(prefixText: prefix, isDense: true, hintText: '—'),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            flex: 5,
             child: Row(
               children: <Widget>[
-                Checkbox(value: value, onChanged: (next) => onChanged(next ?? false)),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        title,
-                        style: TextStyle(fontWeight: FontWeight.w600, color: palette.text),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(description, style: TextStyle(fontSize: 12.5, color: palette.textSoft, height: 1.35)),
-                    ],
+                Flexible(
+                  child: Text(
+                    unit,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: palette.textMuted, fontSize: 12.5),
                   ),
                 ),
+                if (period != null && onPeriod != null) ...<Widget>[
+                  const SizedBox(width: 4),
+                  DropdownButton<String>(
+                    value: period,
+                    isDense: true,
+                    underline: const SizedBox.shrink(),
+                    style: TextStyle(color: palette.text, fontSize: 12.5),
+                    onChanged: (value) => onPeriod!(value ?? period!),
+                    items: <DropdownMenuItem<String>>[
+                      DropdownMenuItem<String>(value: 'daily', child: Text(t.periodDaily)),
+                      DropdownMenuItem<String>(value: 'monthly', child: Text(t.periodMonthly)),
+                      DropdownMenuItem<String>(value: 'total', child: Text(t.periodTotal)),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
+import 'discovery/benchmarks_page.dart';
 import 'main_activity.dart';
 import 'main_admin.dart';
 import 'main_controller.dart';
@@ -12,6 +13,8 @@ import 'main_playground.dart';
 import 'main_processing.dart';
 import 'main_providers.dart';
 import 'main_routing.dart';
+import 'main_routing_groups.dart';
+import 'main_connect_apps.dart';
 import 'main_settings.dart';
 import 'main_team.dart';
 import 'main_shared.dart';
@@ -44,6 +47,7 @@ List<NavGroup> navigationGroups(BuildContext context, NeoRouterController contro
   final groups = <NavGroup>[
     NavGroup(t.groupOverview, Icons.space_dashboard_outlined, <NavItem>[
       NavItem(AppPage.home, t.navHome, Icons.space_dashboard_outlined),
+      NavItem(AppPage.benchmarks, t.discoveryBenchmarks, Icons.query_stats_outlined),
       NavItem(AppPage.activity, t.navActivity, Icons.insights_outlined),
       NavItem(AppPage.playground, t.navPlayground, Icons.forum_outlined),
     ]),
@@ -53,9 +57,10 @@ List<NavGroup> navigationGroups(BuildContext context, NeoRouterController contro
     ]),
     NavGroup(t.groupAccess, Icons.alt_route_outlined, <NavItem>[
       NavItem(AppPage.routing, t.navRouting, Icons.alt_route_outlined),
+      NavItem(AppPage.groups, t.navGroups, Icons.workspaces_outline),
       NavItem(AppPage.keys, t.navKeys, Icons.key_outlined),
       NavItem(AppPage.processing, t.navProcessing, Icons.shield_outlined),
-      NavItem(AppPage.team, t.navTeam, Icons.groups_2_outlined),
+      NavItem(AppPage.team, t.navTeam, Icons.hub_outlined),
     ]),
     if (controller.user?.isAdmin == true)
       NavGroup(t.navAdmin, Icons.admin_panel_settings_outlined, <NavItem>[
@@ -139,6 +144,7 @@ class _NeoRouterShellState extends State<NeoRouterShell> {
   }
 
   Widget _page(AppPage page) => switch (page) {
+        AppPage.benchmarks => BenchmarksScreen(controller: controller),
         AppPage.home => DashboardScreen(controller: controller),
         AppPage.playground => PlaygroundScreen(controller: controller),
         AppPage.activity => ActivityScreen(controller: controller),
@@ -146,6 +152,10 @@ class _NeoRouterShellState extends State<NeoRouterShell> {
         AppPage.providers => ProvidersScreen(controller: controller),
         AppPage.keys => KeysScreen(controller: controller),
         AppPage.routing => RoutingScreen(controller: controller),
+        AppPage.groups => RoutingGroupsScreen(
+          controller: controller,
+          appSetup: (model) => ConnectAppsPage(controller: controller, initialModel: model),
+        ),
         AppPage.processing => ProcessingScreen(controller: controller),
         AppPage.team => TeamScreen(controller: controller),
         AppPage.settings => SettingsScreen(controller: controller),

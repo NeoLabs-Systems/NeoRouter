@@ -55,11 +55,13 @@ test('the code flow gives the app a working key without copy-paste', async () =>
 test('a correct exchange returns a key and where to use it', async () => {
   const start = await authorize({ state: undefined });
   const requestId = new URL(start.headers.location, 'http://x').searchParams.get('connect');
-  const approved = await api('post', `/oauth/apps/requests/${requestId}/approve`).send(access);
+  const expiresAt = new Date(Date.now() + 86400000).toISOString();
+  const approved = await api('post', `/oauth/apps/requests/${requestId}/approve`).send({ ...access, expiresAt });
   const code = new URL(approved.body.redirect).searchParams.get('code');
   const token = await request(app).post('/oauth/token').type('form').send({ grant_type: 'authorization_code', code, client_id: 'neoagent', redirect_uri: redirectUri, code_verifier: verifier });
   assert.equal(token.status, 200, JSON.stringify(token.body));
   assert.match(token.body.access_token, /^nrt_/);
+  assert.ok(token.body.expires_in > 0 && token.body.expires_in <= 86400);
   assert.match(token.body.base_url, /\/v1$/);
   assert.equal(token.headers['access-control-allow-origin'], '*');
 
@@ -68,6 +70,7 @@ test('a correct exchange returns a key and where to use it', async () => {
   const listed = (await api('get', '/keys')).body.keys.find((key) => key.id === token.body.key_id);
   assert.deepEqual(listed.app, { name: 'NeoAgent', origin: '127.0.0.1:4555', scopes: ['chat', 'live'] });
   assert.equal(listed.allowPlan, false);
+  assert.equal(listed.expiresAt, expiresAt);
 });
 
 test('bad requests never redirect to an unchecked address', async () => {

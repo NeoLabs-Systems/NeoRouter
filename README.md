@@ -6,6 +6,8 @@
 
 <p align="center"><strong>Every model. One endpoint.</strong></p>
 
+Browser and coarse server analytics are enabled by default and can be disabled; see [analytics](docs/analytics.md).
+
 <p align="center">
   Connect any inference provider, from free tiers to paid APIs and your own servers.<br>
   NeoRouter checks every key, imports every model and routes each request to the best one right now.
@@ -59,6 +61,8 @@ or with npm:
 npm i -g --allow-git=root --allow-scripts=bcrypt,better-sqlite3,onnxruntime-node,protobufjs github:NeoLabs-Systems/NeoRouter && neorouter install
 ```
 
+On fish, wrap the first command: `bash -c 'bash <(curl -fsSL https://raw.githubusercontent.com/NeoLabs-Systems/NeoRouter/main/install.sh)'`. Afterwards the `neorouter` command works in a new terminal (`neorouter update`, `neorouter doctor`, …); if your shell does not pick up `~/.local/bin` yet, the installer prints the one line to add it.
+
 You need Node.js 20+ and git. The web app comes prebuilt; if it cannot be downloaded, the installer sets up Flutter for you and builds it.
 
 Then open **http://localhost:4600/app**. The first account you create becomes the administrator. Add a provider, create a router key, and point any OpenAI or Anthropic SDK at `http://localhost:4600/v1`.
@@ -109,7 +113,9 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
   </tr>
 </table>
 
-**Subscriptions:** ChatGPT (Plus/Pro, through the Codex sign-in), Ollama Cloud Pro/Max, Synthetic, MiniMax M Plan and Kimi Code as prepaid plans: used first while the allowance lasts, then stopped or billed per use.
+**Subscriptions:** ChatGPT (Plus/Pro, through the Codex sign-in), Ollama Cloud Pro/Max, OpenCode Go, Synthetic, MiniMax M Plan and Kimi Code as prepaid plans: used first while the allowance lasts, then stopped or billed per use.
+
+**Local models:** admins can run text, speech, transcription, embedding and safety models on the server itself; NeoRouter shows what fits the hardware, then downloads, runs and repairs them.
 
 **Search engines:** Tavily, Exa, Linkup, Parallel, Firecrawl, Serper, Brave Search, Jina and self-hosted SearXNG.
 

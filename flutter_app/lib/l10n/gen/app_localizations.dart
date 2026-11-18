@@ -472,50 +472,8 @@ abstract class AppL10n {
   /// No description provided for @statRequests.
   ///
   /// In en, this message translates to:
-  /// **'Requests'**
+  /// **'Requests today'**
   String get statRequests;
-
-  /// No description provided for @statSuccessRate.
-  ///
-  /// In en, this message translates to:
-  /// **'Success rate'**
-  String get statSuccessRate;
-
-  /// No description provided for @statCost.
-  ///
-  /// In en, this message translates to:
-  /// **'Spent'**
-  String get statCost;
-
-  /// No description provided for @statTokens.
-  ///
-  /// In en, this message translates to:
-  /// **'Tokens'**
-  String get statTokens;
-
-  /// No description provided for @statFreeShare.
-  ///
-  /// In en, this message translates to:
-  /// **'Served free'**
-  String get statFreeShare;
-
-  /// No description provided for @statLatency.
-  ///
-  /// In en, this message translates to:
-  /// **'Avg. latency'**
-  String get statLatency;
-
-  /// No description provided for @statFallbacks.
-  ///
-  /// In en, this message translates to:
-  /// **'With fallback'**
-  String get statFallbacks;
-
-  /// No description provided for @statInOut.
-  ///
-  /// In en, this message translates to:
-  /// **'{input} in · {output} out'**
-  String statInOut(String input, String output);
 
   /// No description provided for @topModels.
   ///
@@ -624,6 +582,24 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Fix'**
   String get homeFix;
+
+  /// No description provided for @homeAttentionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs your attention'**
+  String get homeAttentionTitle;
+
+  /// No description provided for @homeAttentionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'These connections are giving trouble. Requests use the others meanwhile.'**
+  String get homeAttentionHint;
+
+  /// No description provided for @homeAttentionOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to connections'**
+  String get homeAttentionOpen;
 
   /// No description provided for @homeConnectTitle.
   ///
@@ -756,12 +732,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Custom'**
   String get categoryCustom;
-
-  /// No description provided for @categoryCommunity.
-  ///
-  /// In en, this message translates to:
-  /// **'Community'**
-  String get categoryCommunity;
 
   /// No description provided for @categorySearch.
   ///
@@ -900,6 +870,60 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'ChatGPT connected'**
   String get chatgptConnected;
+
+  /// No description provided for @nousSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Nous Portal'**
+  String get nousSignIn;
+
+  /// No description provided for @nousSignInAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again'**
+  String get nousSignInAgain;
+
+  /// No description provided for @nousSignInHint.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter shows a code. Enter it in Nous Portal to let it use your subscription and credits.'**
+  String get nousSignInHint;
+
+  /// No description provided for @nousEnterCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter this code in Nous Portal'**
+  String get nousEnterCode;
+
+  /// No description provided for @nousOpenPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Nous Portal'**
+  String get nousOpenPage;
+
+  /// No description provided for @nousWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for you to confirm…'**
+  String get nousWaiting;
+
+  /// No description provided for @nousExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'The code expired. Start again.'**
+  String get nousExpired;
+
+  /// No description provided for @nousConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Nous Portal connected'**
+  String get nousConnected;
+
+  /// No description provided for @nousSignedInAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in as {email}'**
+  String nousSignedInAs(String email);
 
   /// No description provided for @apiKey.
   ///
@@ -1050,6 +1074,24 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Check balance'**
   String get probeQuota;
+
+  /// No description provided for @markFixed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as fixed'**
+  String get markFixed;
+
+  /// No description provided for @markFixedDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Fresh start: NeoRouter forgot the cooldowns and will try this connection again.'**
+  String get markFixedDone;
+
+  /// No description provided for @markFixedStillFailing.
+  ///
+  /// In en, this message translates to:
+  /// **'Fresh start, but the key check says: {message}'**
+  String markFixedStillFailing(String message);
 
   /// No description provided for @removeProvider.
   ///
@@ -2155,10 +2197,514 @@ abstract class AppL10n {
   /// **'Theme and language of this dashboard.'**
   String get settingsAppearanceDescription;
 
+  /// No description provided for @settingsUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage'**
+  String get settingsUsage;
+
+  /// No description provided for @settingsUsageDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread free and plan limits evenly until they reset.'**
+  String get settingsUsageDescription;
+
+  /// No description provided for @smoothTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Even out usage'**
+  String get smoothTitle;
+
+  /// No description provided for @smoothHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Free and metered plan allowances follow observed balances, reset times and your learned demand. When every eligible source needs to save allowance, requests wait or return a retry time.'**
+  String get smoothHint;
+
+  /// No description provided for @smoothSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread limits until they reset'**
+  String get smoothSwitch;
+
+  /// No description provided for @smoothOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On. Limits are spread over their whole period.'**
+  String get smoothOn;
+
+  /// No description provided for @smoothOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off. Requests use limits as fast as they come.'**
+  String get smoothOff;
+
+  /// No description provided for @smoothLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter is still learning how you use it. This unlocks by itself once there is enough to go by.'**
+  String get smoothLearning;
+
+  /// No description provided for @smoothPausedLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'On, but paused until there is enough data again.'**
+  String get smoothPausedLearning;
+
+  /// No description provided for @smoothHomeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Limits are being spread until they reset. Keys with a high priority are not held back.'**
+  String get smoothHomeNote;
+
+  /// No description provided for @smoothStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get smoothStatusActive;
+
+  /// No description provided for @smoothStatusOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get smoothStatusOff;
+
+  /// No description provided for @smoothStatusLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning'**
+  String get smoothStatusLearning;
+
+  /// No description provided for @smoothNeedDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days of history'**
+  String get smoothNeedDays;
+
+  /// No description provided for @smoothNeedActiveDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days with requests (last 14)'**
+  String get smoothNeedActiveDays;
+
+  /// No description provided for @smoothNeedRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered requests (last 14 days)'**
+  String get smoothNeedRequests;
+
+  /// No description provided for @smoothNeedCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Free and plan requests on connections with known limits (last 7 days)'**
+  String get smoothNeedCoverage;
+
+  /// No description provided for @smoothProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{have} of {need}'**
+  String smoothProgress(String have, String need);
+
+  /// No description provided for @smoothHowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How it works'**
+  String get smoothHowTitle;
+
+  /// No description provided for @smoothHowDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily limits: track the remaining balance and real reset time, reserving room for the hours when you usually need it. Token estimates include learned output sizes.'**
+  String get smoothHowDaily;
+
+  /// No description provided for @smoothHowPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Metered plans: learn how much requests spend and reserve that allowance between provider updates. Paid concurrency slots have no allowance to spread.'**
+  String get smoothHowPlans;
+
+  /// No description provided for @smoothHowPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'High-priority keys bypass pacing. Pay-per-use models and flat-rate slots are unaffected; provider limits and key budgets still apply.'**
+  String get smoothHowPriority;
+
+  /// No description provided for @caIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your app and NeoRouter gives you exactly what to paste, then checks that it works.'**
+  String get caIntro;
+
+  /// No description provided for @caStepApp.
+  ///
+  /// In en, this message translates to:
+  /// **'App'**
+  String get caStepApp;
+
+  /// No description provided for @caStepPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Where it runs'**
+  String get caStepPlace;
+
+  /// No description provided for @caStepSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up'**
+  String get caStepSetup;
+
+  /// No description provided for @caSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search apps'**
+  String get caSearch;
+
+  /// No description provided for @caGroupAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get caGroupAll;
+
+  /// No description provided for @caGroupCoding.
+  ///
+  /// In en, this message translates to:
+  /// **'Coding'**
+  String get caGroupCoding;
+
+  /// No description provided for @caGroupChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get caGroupChat;
+
+  /// No description provided for @caGroupAutomation.
+  ///
+  /// In en, this message translates to:
+  /// **'Automation'**
+  String get caGroupAutomation;
+
+  /// No description provided for @caGroupDeveloper.
+  ///
+  /// In en, this message translates to:
+  /// **'Your own code'**
+  String get caGroupDeveloper;
+
+  /// No description provided for @caNoApps.
+  ///
+  /// In en, this message translates to:
+  /// **'No app matches. \"Other app (OpenAI-compatible)\" works with almost any app.'**
+  String get caNoApps;
+
+  /// No description provided for @caWhereTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Where does {app} run?'**
+  String caWhereTitle(String app);
+
+  /// No description provided for @caPlaceLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'On this computer'**
+  String get caPlaceLocal;
+
+  /// No description provided for @caPlaceLocalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed on the same computer as NeoRouter.'**
+  String get caPlaceLocalHint;
+
+  /// No description provided for @caPlaceDocker.
+  ///
+  /// In en, this message translates to:
+  /// **'In Docker on this computer'**
+  String get caPlaceDocker;
+
+  /// No description provided for @caPlaceDockerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'In a container on the same computer as NeoRouter.'**
+  String get caPlaceDockerHint;
+
+  /// No description provided for @caPlaceNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'On another device at home'**
+  String get caPlaceNetwork;
+
+  /// No description provided for @caPlaceNetworkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Another computer, phone or server in the same network.'**
+  String get caPlaceNetworkHint;
+
+  /// No description provided for @caPlaceInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'Somewhere on the internet'**
+  String get caPlaceInternet;
+
+  /// No description provided for @caPlaceInternetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A cloud service, or an app that calls through its own servers.'**
+  String get caPlaceInternetHint;
+
+  /// No description provided for @caUsual.
+  ///
+  /// In en, this message translates to:
+  /// **'Usual for this app'**
+  String get caUsual;
+
+  /// No description provided for @caReachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Works'**
+  String get caReachable;
+
+  /// No description provided for @caNotReachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not reachable yet'**
+  String get caNotReachable;
+
+  /// No description provided for @caCloudOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'{app} sends requests through its own servers, so only an internet address works.'**
+  String caCloudOnly(String app);
+
+  /// No description provided for @caOpenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter only lets this computer in'**
+  String get caOpenTitle;
+
+  /// No description provided for @caOpenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Containers and other devices cannot reach it yet. Opening it lets them in; every request still needs a NeoRouter key.'**
+  String get caOpenHint;
+
+  /// No description provided for @caOpenButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Let containers and devices in'**
+  String get caOpenButton;
+
+  /// No description provided for @caOpenAskAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask an admin of this NeoRouter to let containers and devices in (Settings → Connect your apps).'**
+  String get caOpenAskAdmin;
+
+  /// No description provided for @caRestarting.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter is restarting to apply this …'**
+  String get caRestarting;
+
+  /// No description provided for @caRestartBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Done: containers and devices can reach NeoRouter now.'**
+  String get caRestartBack;
+
+  /// No description provided for @caRestartManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved. Restart NeoRouter once to apply it:'**
+  String get caRestartManual;
+
+  /// No description provided for @caPublicUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter has no internet address yet. Put it behind a domain (for example with a reverse proxy or a tunnel) and set NEOROUTER_PUBLIC_URL to it.'**
+  String get caPublicUrlHint;
+
+  /// No description provided for @caDockerLinuxHint.
+  ///
+  /// In en, this message translates to:
+  /// **'On Linux, the app’s container also needs this, so the address works:'**
+  String get caDockerLinuxHint;
+
+  /// No description provided for @caNoLanAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'No network address found on this computer.'**
+  String get caNoLanAddress;
+
+  /// No description provided for @caContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get caContinue;
+
+  /// No description provided for @caBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get caBack;
+
+  /// No description provided for @caKeyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Key for {app}'**
+  String caKeyTitle(String app);
+
+  /// No description provided for @caKeyCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a key for {app}'**
+  String caKeyCreate(String app);
+
+  /// No description provided for @caKeyCreateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Its own key, so you can see its usage and switch it off on its own.'**
+  String get caKeyCreateHint;
+
+  /// No description provided for @caKeyCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created. It is shown only now; it is already filled in below.'**
+  String get caKeyCreated;
+
+  /// No description provided for @caKeyExisting.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a key I already have'**
+  String get caKeyExisting;
+
+  /// No description provided for @caKeyExistingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Put your nrt_ key where it says nrt_… below.'**
+  String get caKeyExistingHint;
+
+  /// No description provided for @caModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get caModelTitle;
+
+  /// No description provided for @caModelAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'auto: NeoRouter picks the best model for each request'**
+  String get caModelAuto;
+
+  /// No description provided for @caModelChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get caModelChange;
+
+  /// No description provided for @caModelAutoRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get caModelAutoRoute;
+
+  /// No description provided for @caInApp.
+  ///
+  /// In en, this message translates to:
+  /// **'In {app}'**
+  String caInApp(String app);
+
+  /// No description provided for @caDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get caDownload;
+
+  /// No description provided for @caWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the first request from {app} …'**
+  String caWaiting(String app);
+
+  /// No description provided for @caWaitingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a message in {app}; this updates by itself.'**
+  String caWaitingHint(String app);
+
+  /// No description provided for @caConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'{app} is connected'**
+  String caConnected(String app);
+
+  /// No description provided for @caConnectedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Last answer from {model}{time}.'**
+  String caConnectedDetail(String model, String time);
+
+  /// No description provided for @caSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'{app} reached NeoRouter'**
+  String caSeen(String app);
+
+  /// No description provided for @caSeenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The key works. Send a message in {app} to try a real answer.'**
+  String caSeenHint(String app);
+
+  /// No description provided for @caFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{app} got through, but the request failed'**
+  String caFailed(String app);
+
+  /// No description provided for @caUnknownModel.
+  ///
+  /// In en, this message translates to:
+  /// **'{app} asked for the model \"{model}\", which does not exist here.'**
+  String caUnknownModel(String app, String model);
+
+  /// No description provided for @caDidYouMean.
+  ///
+  /// In en, this message translates to:
+  /// **'Did you mean one of these? Copy it into {app}, or use \"auto\".'**
+  String caDidYouMean(String app);
+
+  /// No description provided for @caNothingYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing has arrived yet. Check that:'**
+  String get caNothingYet;
+
+  /// No description provided for @caCheckAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'the address is exactly the one above, including /v1'**
+  String get caCheckAddress;
+
+  /// No description provided for @caCheckKey.
+  ///
+  /// In en, this message translates to:
+  /// **'the key was copied completely (it starts with nrt_)'**
+  String get caCheckKey;
+
+  /// No description provided for @caCheckDocker.
+  ///
+  /// In en, this message translates to:
+  /// **'if {app} runs in Docker, you picked \"In Docker on this computer\"'**
+  String caCheckDocker(String app);
+
+  /// No description provided for @caAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect another app'**
+  String get caAnother;
+
   /// No description provided for @settingsConnectDescription.
   ///
   /// In en, this message translates to:
-  /// **'Ready-to-paste setup for your SDKs and tools.'**
+  /// **'Connect any app step by step, with a check that it works.'**
   String get settingsConnectDescription;
 
   /// No description provided for @settingsServerDescription.
@@ -2280,6 +2826,192 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Security'**
   String get securityTitle;
+
+  /// No description provided for @accountDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data'**
+  String get accountDataTitle;
+
+  /// No description provided for @accountExportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export account data'**
+  String get accountExportTitle;
+
+  /// No description provided for @accountExportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile, connections, settings, pools and usage history as one file. Passwords and API keys are not included.'**
+  String get accountExportHint;
+
+  /// No description provided for @accountExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get accountExport;
+
+  /// No description provided for @accountKeysTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export saved API keys'**
+  String get accountKeysTitle;
+
+  /// No description provided for @accountKeysHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The keys of your connections in plain text, as a separate file. Needs two-factor authentication.'**
+  String get accountKeysHint;
+
+  /// No description provided for @accountKeysNeedTwoFactor.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on two-factor authentication under Security first. The keys leave the server in plain text, so this needs more than your password.'**
+  String get accountKeysNeedTwoFactor;
+
+  /// No description provided for @accountKeysWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone with this file can use your providers on your bill. Keep it somewhere safe and delete it when you no longer need it.'**
+  String get accountKeysWarning;
+
+  /// No description provided for @accountImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import API keys'**
+  String get accountImportTitle;
+
+  /// No description provided for @accountImportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds the connections from a key file exported from NeoRouter. Each key is checked with its provider; keys you already have are skipped.'**
+  String get accountImportHint;
+
+  /// No description provided for @accountImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get accountImport;
+
+  /// No description provided for @accountImportConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} keys found: {names}'**
+  String accountImportConfirm(String count, String names);
+
+  /// No description provided for @accountImportNotAFile.
+  ///
+  /// In en, this message translates to:
+  /// **'This is not a NeoRouter key file.'**
+  String get accountImportNotAFile;
+
+  /// No description provided for @accountImportWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the keys with their providers …'**
+  String get accountImportWorking;
+
+  /// No description provided for @accountImportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Import finished'**
+  String get accountImportDone;
+
+  /// No description provided for @accountImportImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Added: {names}'**
+  String accountImportImported(String names);
+
+  /// No description provided for @accountImportSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Already there: {names}'**
+  String accountImportSkipped(String names);
+
+  /// No description provided for @accountImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not added:'**
+  String get accountImportFailed;
+
+  /// No description provided for @accountImportNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing was added.'**
+  String get accountImportNothing;
+
+  /// No description provided for @accountDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get accountDeleteTitle;
+
+  /// No description provided for @accountDeleteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Deletes your account with all connections, keys, settings and history. Your pools are told you left. This cannot be undone.'**
+  String get accountDeleteHint;
+
+  /// No description provided for @accountDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get accountDelete;
+
+  /// No description provided for @accountDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything in this account is deleted for good. Export your data first if you want to keep it.'**
+  String get accountDeleteConfirm;
+
+  /// No description provided for @accountDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account was deleted.'**
+  String get accountDeleted;
+
+  /// No description provided for @accountConfirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password to continue.'**
+  String get accountConfirmPassword;
+
+  /// No description provided for @accountConfirmPasswordCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password and a code from your authenticator app.'**
+  String get accountConfirmPasswordCode;
+
+  /// No description provided for @accountExported.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded.'**
+  String get accountExported;
+
+  /// No description provided for @accountLastAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'You are the only admin. Make someone else an admin first.'**
+  String get accountLastAdmin;
+
+  /// No description provided for @accountWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'The password is not correct.'**
+  String get accountWrongPassword;
+
+  /// No description provided for @accountTooManyTries.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many wrong tries. Wait a few minutes and try again.'**
+  String get accountTooManyTries;
+
+  /// No description provided for @accountWrongCode.
+  ///
+  /// In en, this message translates to:
+  /// **'The code is not valid.'**
+  String get accountWrongCode;
 
   /// No description provided for @twoFactorTitle.
   ///
@@ -2842,7 +3574,7 @@ abstract class AppL10n {
   /// No description provided for @adminDescription.
   ///
   /// In en, this message translates to:
-  /// **'Run this server: accounts, sign-ups, server details and model metadata.'**
+  /// **'Run this server: accounts, sign-ups, server details, local models and model metadata.'**
   String get adminDescription;
 
   /// No description provided for @adminSearchHint.
@@ -3289,10 +4021,16 @@ abstract class AppL10n {
   /// **'Everything is running. {count} connections are working.'**
   String homeStatusOk(String count);
 
+  /// No description provided for @homeStatusIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'1 connection needs your attention. Requests use the others meanwhile.'**
+  String get homeStatusIssue;
+
   /// No description provided for @homeStatusIssues.
   ///
   /// In en, this message translates to:
-  /// **'{count} connection needs your attention. Requests use the others meanwhile.'**
+  /// **'{count} connections need your attention. Requests use the others meanwhile.'**
   String homeStatusIssues(String count);
 
   /// No description provided for @homeStatusEmpty.
@@ -3445,6 +4183,30 @@ abstract class AppL10n {
   /// **'{name} needs attention'**
   String problemTitle(String name);
 
+  /// No description provided for @problemFailingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is not answering'**
+  String problemFailingTitle(String name);
+
+  /// No description provided for @problemFailing.
+  ///
+  /// In en, this message translates to:
+  /// **'{successes} of {attempts} attempts worked in the last day.'**
+  String problemFailing(String successes, String attempts);
+
+  /// No description provided for @problemCapacityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Many requests go unanswered'**
+  String get problemCapacityTitle;
+
+  /// No description provided for @problemCapacity.
+  ///
+  /// In en, this message translates to:
+  /// **'{failed} of {requests} failed in the last day. Your connections cannot keep up: connect more, or send less.'**
+  String problemCapacity(String failed, String requests);
+
   /// No description provided for @problemKeyRejected.
   ///
   /// In en, this message translates to:
@@ -3493,6 +4255,336 @@ abstract class AppL10n {
   /// **'Requests'**
   String get tabRequests;
 
+  /// No description provided for @keyMaxPriceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Max price per million tokens'**
+  String get keyMaxPriceTitle;
+
+  /// No description provided for @keyMaxPricePerMillion.
+  ///
+  /// In en, this message translates to:
+  /// **'per million tokens'**
+  String get keyMaxPricePerMillion;
+
+  /// No description provided for @tabLearned.
+  ///
+  /// In en, this message translates to:
+  /// **'Learned'**
+  String get tabLearned;
+
+  /// No description provided for @learnedEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing learned yet'**
+  String get learnedEmptyTitle;
+
+  /// No description provided for @learnedEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter learns from every answer. Send a few requests and watch this fill up.'**
+  String get learnedEmptyMessage;
+
+  /// No description provided for @learnedExperience.
+  ///
+  /// In en, this message translates to:
+  /// **'Experience'**
+  String get learnedExperience;
+
+  /// No description provided for @learnedExperienceCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'recent answers'**
+  String get learnedExperienceCaption;
+
+  /// No description provided for @learnedKnowHow.
+  ///
+  /// In en, this message translates to:
+  /// **'Kinds of work'**
+  String get learnedKnowHow;
+
+  /// No description provided for @learnedKnowHowCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} models compared'**
+  String learnedKnowHowCaption(String count);
+
+  /// No description provided for @learnedRescued.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescued'**
+  String get learnedRescued;
+
+  /// No description provided for @learnedRescuedCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'by a backup, 30 days'**
+  String get learnedRescuedCaption;
+
+  /// No description provided for @learnedFirstTry.
+  ///
+  /// In en, this message translates to:
+  /// **'First choice answered'**
+  String get learnedFirstTry;
+
+  /// No description provided for @learnedFirstTryCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'when a model was free'**
+  String get learnedFirstTryCaption;
+
+  /// No description provided for @learnedUpFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'up from {value}'**
+  String learnedUpFrom(String value);
+
+  /// No description provided for @learnedWas.
+  ///
+  /// In en, this message translates to:
+  /// **'was {value}'**
+  String learnedWas(String value);
+
+  /// No description provided for @learnedCurveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How often its first choice answers'**
+  String get learnedCurveTitle;
+
+  /// No description provided for @learnedNoCapacity.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} requests found no model free in 30 days'**
+  String learnedNoCapacity(String count);
+
+  /// No description provided for @learnedMapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What works for what'**
+  String get learnedMapTitle;
+
+  /// No description provided for @learnedMapHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Every model you can use right now, scored out of 100 for each kind of work: benchmarks first, then your ratings, measured speed and how reliably it answered. Move the slider to weigh them differently. Price is not part of it.'**
+  String get learnedMapHelp;
+
+  /// No description provided for @learnedSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmarks: Artificial Analysis; OpenRouter (openrouter.ai), CC BY 4.0.'**
+  String get learnedSources;
+
+  /// No description provided for @learnedNotTried.
+  ///
+  /// In en, this message translates to:
+  /// **'Not tried yet: benchmarks only'**
+  String get learnedNotTried;
+
+  /// No description provided for @learnedBestLineNew.
+  ///
+  /// In en, this message translates to:
+  /// **'{score} of 100 · not tried yet, benchmarks only'**
+  String learnedBestLineNew(String score);
+
+  /// No description provided for @learnedTuneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Best for what you need'**
+  String get learnedTuneTitle;
+
+  /// No description provided for @learnedTuneFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get learnedTuneFast;
+
+  /// No description provided for @learnedTuneBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get learnedTuneBalanced;
+
+  /// No description provided for @learnedTuneSmart.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality'**
+  String get learnedTuneSmart;
+
+  /// No description provided for @learnedTuneFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free only'**
+  String get learnedTuneFree;
+
+  /// No description provided for @learnedTuneNoFree.
+  ///
+  /// In en, this message translates to:
+  /// **'No free model has answered yet.'**
+  String get learnedTuneNoFree;
+
+  /// No description provided for @learnedLegendWorse.
+  ///
+  /// In en, this message translates to:
+  /// **'Lower'**
+  String get learnedLegendWorse;
+
+  /// No description provided for @learnedLegendBetter.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher'**
+  String get learnedLegendBetter;
+
+  /// No description provided for @learnedLegendBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Best'**
+  String get learnedLegendBest;
+
+  /// No description provided for @learnedLegendEstimated.
+  ///
+  /// In en, this message translates to:
+  /// **'~ partly estimated, no benchmark'**
+  String get learnedLegendEstimated;
+
+  /// No description provided for @learnedLegendFails.
+  ///
+  /// In en, this message translates to:
+  /// **'Often fails for you'**
+  String get learnedLegendFails;
+
+  /// No description provided for @learnedCellScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score: {value} of 100'**
+  String learnedCellScore(String value);
+
+  /// No description provided for @learnedCellBenchmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmarks and ratings: {value}'**
+  String learnedCellBenchmark(String value);
+
+  /// No description provided for @learnedCellEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated quality: {value}, no benchmark yet'**
+  String learnedCellEstimate(String value);
+
+  /// No description provided for @learnedCellSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed: {value}'**
+  String learnedCellSpeed(String value);
+
+  /// No description provided for @learnedBestLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{score} of 100 · {rate} worked · {answers} answers'**
+  String learnedBestLine(String score, String rate, String answers);
+
+  /// No description provided for @learnedCellLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{rate} worked · {answers} answers'**
+  String learnedCellLine(String rate, String answers);
+
+  /// No description provided for @learnedCellVotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Rated {liked} up, {disliked} down'**
+  String learnedCellVotes(String liked, String disliked);
+
+  /// No description provided for @learnedBestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Best for each kind of work'**
+  String get learnedBestTitle;
+
+  /// No description provided for @learnedFastestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest it has measured'**
+  String get learnedFastestTitle;
+
+  /// No description provided for @learnedWorked.
+  ///
+  /// In en, this message translates to:
+  /// **'{rate} worked'**
+  String learnedWorked(String rate);
+
+  /// No description provided for @learnedFoundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Found out on its own'**
+  String get learnedFoundTitle;
+
+  /// No description provided for @learnedLimitRpm.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} allows {value} requests a minute'**
+  String learnedLimitRpm(String name, String value);
+
+  /// No description provided for @learnedLimitRpd.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} allows {value} requests a day'**
+  String learnedLimitRpd(String name, String value);
+
+  /// No description provided for @learnedLimitTpm.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} allows {value} tokens a minute'**
+  String learnedLimitTpm(String name, String value);
+
+  /// No description provided for @learnedLimitTpd.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} allows {value} tokens a day'**
+  String learnedLimitTpd(String name, String value);
+
+  /// No description provided for @learnedRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} needs room for {value} tokens to finish'**
+  String learnedRoom(String name, String value);
+
+  /// No description provided for @learnedResting.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is resting until {time}'**
+  String learnedResting(String name, String time);
+
+  /// No description provided for @learnedReasonLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'It reached its limit'**
+  String get learnedReasonLimit;
+
+  /// No description provided for @learnedReasonAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'The account needs attention'**
+  String get learnedReasonAccount;
+
+  /// No description provided for @learnedReasonMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'It isn\'t available right now'**
+  String get learnedReasonMissing;
+
+  /// No description provided for @learnedReasonIncompatible.
+  ///
+  /// In en, this message translates to:
+  /// **'It can\'t handle these requests'**
+  String get learnedReasonIncompatible;
+
+  /// No description provided for @learnedReasonFailing.
+  ///
+  /// In en, this message translates to:
+  /// **'It kept failing'**
+  String get learnedReasonFailing;
+
   /// No description provided for @metricTokens.
   ///
   /// In en, this message translates to:
@@ -3534,6 +4626,354 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Most used models'**
   String get topModelsTitle;
+
+  /// No description provided for @keySectionModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Models'**
+  String get keySectionModels;
+
+  /// No description provided for @keySectionRouting.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing'**
+  String get keySectionRouting;
+
+  /// No description provided for @discoveryBenchmarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmarks'**
+  String get discoveryBenchmarks;
+
+  /// No description provided for @discoveryBenchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured model performance, brought together. Explore the evidence and compare two models side by side.'**
+  String get discoveryBenchHint;
+
+  /// No description provided for @discoveryMeasuredModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured models'**
+  String get discoveryMeasuredModels;
+
+  /// No description provided for @discoveryMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'How scores are combined'**
+  String get discoveryMethod;
+
+  /// No description provided for @discoveryMethodHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw scores stay on their original scales. Each test becomes a percentile among models measured by that source, within the same model kind. Test percentiles are averaged per source, then sources receive equal weight. Missing tests are excluded, never scored as zero. Coverage differs: compare shared tests for a fairer view. This is a relative ranking, not an accuracy percentage.'**
+  String get discoveryMethodHint;
+
+  /// No description provided for @discoverySources.
+  ///
+  /// In en, this message translates to:
+  /// **'Sources'**
+  String get discoverySources;
+
+  /// No description provided for @discoverySourceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses the latest successfully collected data. Refresh reloads this view; source collection follows the instance sync schedule.'**
+  String get discoverySourceHint;
+
+  /// No description provided for @discoveryNotSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Not collected yet'**
+  String get discoveryNotSynced;
+
+  /// No description provided for @discoveryUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {date}'**
+  String discoveryUpdated(String date);
+
+  /// No description provided for @discoveryCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'{sources} sources · {tests} tests'**
+  String discoveryCoverage(String sources, String tests);
+
+  /// No description provided for @discoveryScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Combined score'**
+  String get discoveryScore;
+
+  /// No description provided for @discoverySourceFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmark source'**
+  String get discoverySourceFilter;
+
+  /// No description provided for @discoveryAllSources.
+  ///
+  /// In en, this message translates to:
+  /// **'All sources'**
+  String get discoveryAllSources;
+
+  /// No description provided for @discoveryKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Model kind'**
+  String get discoveryKind;
+
+  /// No description provided for @discoveryFreeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified zero-price OpenRouter listings. Provider free tiers depend on your connected accounts.'**
+  String get discoveryFreeHint;
+
+  /// No description provided for @discoveryFreeOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed free only'**
+  String get discoveryFreeOnly;
+
+  /// No description provided for @discoveryFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free listing'**
+  String get discoveryFree;
+
+  /// No description provided for @discoverySearchModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Search models'**
+  String get discoverySearchModels;
+
+  /// No description provided for @discoveryCompare.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare two models'**
+  String get discoveryCompare;
+
+  /// No description provided for @discoveryCompareHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose up to two models from the ranking. They must be the same kind.'**
+  String get discoveryCompareHint;
+
+  /// No description provided for @discoverySelectCompare.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare {name}'**
+  String discoverySelectCompare(String name);
+
+  /// No description provided for @discoveryRemoveCompare.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from comparison'**
+  String discoveryRemoveCompare(String name);
+
+  /// No description provided for @discoveryCompareLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove a selection first, or choose the same model kind.'**
+  String get discoveryCompareLimit;
+
+  /// No description provided for @discoveryChartScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score'**
+  String get discoveryChartScore;
+
+  /// No description provided for @discoveryChartValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Score vs price'**
+  String get discoveryChartValue;
+
+  /// No description provided for @discoveryPriceAxis.
+  ///
+  /// In en, this message translates to:
+  /// **'Price per 1M tokens (log)'**
+  String get discoveryPriceAxis;
+
+  /// No description provided for @discoveryNoPrices.
+  ///
+  /// In en, this message translates to:
+  /// **'No prices known for these models.'**
+  String get discoveryNoPrices;
+
+  /// No description provided for @proxyCheckNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Check all now'**
+  String get proxyCheckNow;
+
+  /// No description provided for @proxyLastCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked {ago} · {ok} of {count} working · every hour'**
+  String proxyLastCheck(String ago, String ok, String count);
+
+  /// No description provided for @proxyNotChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked automatically every hour'**
+  String get proxyNotChecked;
+
+  /// No description provided for @proxySelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get proxySelectAll;
+
+  /// No description provided for @proxySelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String proxySelected(String count);
+
+  /// No description provided for @proxyEnableAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get proxyEnableAction;
+
+  /// No description provided for @proxyDisableAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable'**
+  String get proxyDisableAction;
+
+  /// No description provided for @proxyDeleteSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} proxies? This cannot be undone.'**
+  String proxyDeleteSelected(String count);
+
+  /// No description provided for @proxyHealthy.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get proxyHealthy;
+
+  /// No description provided for @proxyResting.
+  ///
+  /// In en, this message translates to:
+  /// **'Resting'**
+  String get proxyResting;
+
+  /// No description provided for @proxyOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get proxyOff;
+
+  /// No description provided for @proxyLatencyChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest proxies'**
+  String get proxyLatencyChart;
+
+  /// No description provided for @discoveryShared.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} shared tests'**
+  String discoveryShared(String count);
+
+  /// No description provided for @discoveryBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmark breakdown'**
+  String get discoveryBreakdown;
+
+  /// No description provided for @discoveryNoShared.
+  ///
+  /// In en, this message translates to:
+  /// **'These models have no shared tests in the collected data. Their overall rankings use different evidence.'**
+  String get discoveryNoShared;
+
+  /// No description provided for @discoveryTestScale.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw score · percentile bar · {count} measured peers'**
+  String discoveryTestScale(String count);
+
+  /// No description provided for @discoveryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No measured results yet'**
+  String get discoveryEmpty;
+
+  /// No description provided for @discoveryEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Results appear after metadata sources have been collected. Try a different search or filter if sources are already available.'**
+  String get discoveryEmptyHint;
+
+  /// No description provided for @discoveryOwnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter benchmarks'**
+  String get discoveryOwnTitle;
+
+  /// No description provided for @discoveryOwnHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming later. A preview of our own evaluations — no results yet.'**
+  String get discoveryOwnHint;
+
+  /// No description provided for @discoveryPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous page'**
+  String get discoveryPrevious;
+
+  /// No description provided for @discoveryNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next page'**
+  String get discoveryNext;
+
+  /// No description provided for @discoveryPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} · {count} models'**
+  String discoveryPage(String page, String count);
+
+  /// No description provided for @mostUsedProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'Most used providers'**
+  String get mostUsedProviders;
+
+  /// No description provided for @providerUsageTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get providerUsageTotal;
+
+  /// No description provided for @providerUsageAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Average per key'**
+  String get providerUsageAverage;
+
+  /// No description provided for @providerUsageAverageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests divided by provider keys used in this period and filter. Unused keys are excluded.'**
+  String get providerUsageAverageHint;
+
+  /// No description provided for @providerUsageUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Average unavailable: missing connection history'**
+  String get providerUsageUnavailable;
+
+  /// No description provided for @providerUsageAverageLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{requests} / key · keys: {keys}'**
+  String providerUsageAverageLine(String requests, String keys);
 
   /// No description provided for @byConnection.
   ///
@@ -3721,12 +5161,6 @@ abstract class AppL10n {
   /// **'Pick the service you have a key for. Providers marked \"Free models\" can be used without paying.'**
   String get chooseProviderHint;
 
-  /// No description provided for @providerFreeTag.
-  ///
-  /// In en, this message translates to:
-  /// **'Free models'**
-  String get providerFreeTag;
-
   /// No description provided for @getKeyAt.
   ///
   /// In en, this message translates to:
@@ -3856,8 +5290,14 @@ abstract class AppL10n {
   /// No description provided for @limitsDescription.
   ///
   /// In en, this message translates to:
-  /// **'What is left of each provider\'s allowance today. Per-minute limits reset on their own and NeoRouter routes around them, so only daily allowances and models running low are shown.'**
+  /// **'Each provider\'s limits and what is left of today\'s allowance. To change a limit, open the connection’s menu on the Providers tab.'**
   String get limitsDescription;
+
+  /// No description provided for @limitRenewed.
+  ///
+  /// In en, this message translates to:
+  /// **'renewed, counts again from the next request'**
+  String get limitRenewed;
 
   /// No description provided for @limitResets.
   ///
@@ -3882,6 +5322,114 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'up to {count}'**
   String limitConcurrentDocumented(String count);
+
+  /// No description provided for @limitsSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Limits'**
+  String get limitsSectionTitle;
+
+  /// No description provided for @limitsInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a whole number, 1 or more.'**
+  String get limitsInvalid;
+
+  /// No description provided for @providerLimitsChooseConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which connection to edit.'**
+  String get providerLimitsChooseConnection;
+
+  /// No description provided for @trafficLimitsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Traffic limits'**
+  String get trafficLimitsTitle;
+
+  /// No description provided for @providerTrafficLimitsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to all models on this connection. Enter a limit to override NeoRouter’s estimate, or leave it blank for automatic limits. Provider restrictions still apply.'**
+  String get providerTrafficLimitsHint;
+
+  /// No description provided for @keyTrafficLimitsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies only to this key. Leave a field blank to use the connections’ limits.'**
+  String get keyTrafficLimitsHint;
+
+  /// No description provided for @limitAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'automatic'**
+  String get limitAutomatic;
+
+  /// No description provided for @limitSharedValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} for all models'**
+  String limitSharedValue(String value);
+
+  /// No description provided for @limitPerModelValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} per model'**
+  String limitPerModelValue(String value);
+
+  /// No description provided for @limitSourceCurated.
+  ///
+  /// In en, this message translates to:
+  /// **'documented'**
+  String get limitSourceCurated;
+
+  /// No description provided for @limitSourceHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'reported by the provider'**
+  String get limitSourceHeader;
+
+  /// No description provided for @limitSourceLearned.
+  ///
+  /// In en, this message translates to:
+  /// **'learned from its answers'**
+  String get limitSourceLearned;
+
+  /// No description provided for @limitSourceManual.
+  ///
+  /// In en, this message translates to:
+  /// **'set by you'**
+  String get limitSourceManual;
+
+  /// No description provided for @limitsPerModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Limits per model ({count})'**
+  String limitsPerModelTitle(String count);
+
+  /// No description provided for @limitShortRpm.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}/min'**
+  String limitShortRpm(String value);
+
+  /// No description provided for @limitShortRpd.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}/day'**
+  String limitShortRpd(String value);
+
+  /// No description provided for @limitShortTpm.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} tokens/min'**
+  String limitShortTpm(String value);
+
+  /// No description provided for @limitShortTpd.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} tokens/day'**
+  String limitShortTpd(String value);
 
   /// No description provided for @addAnotherAccount.
   ///
@@ -5164,13 +6712,13 @@ abstract class AppL10n {
   /// No description provided for @navTeam.
   ///
   /// In en, this message translates to:
-  /// **'Team'**
+  /// **'Network'**
   String get navTeam;
 
   /// No description provided for @teamTitle.
   ///
   /// In en, this message translates to:
-  /// **'Team'**
+  /// **'Network'**
   String get teamTitle;
 
   /// No description provided for @teamDescription.
@@ -5587,6 +7135,1092 @@ abstract class AppL10n {
   /// **'Nothing has happened yet.'**
   String get teamActivityEmpty;
 
+  /// No description provided for @teamTabPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'Team'**
+  String get teamTabPeople;
+
+  /// No description provided for @teamTabPool.
+  ///
+  /// In en, this message translates to:
+  /// **'Pools'**
+  String get teamTabPool;
+
+  /// No description provided for @poolDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Share free capacity with friends who run their own NeoRouter. Nobody hands out keys: each request runs on the server of whoever shares it.'**
+  String get poolDescription;
+
+  /// No description provided for @poolEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not in a pool yet'**
+  String get poolEmptyTitle;
+
+  /// No description provided for @poolEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Start one and invite others, or join with a link someone sent you.'**
+  String get poolEmptyMessage;
+
+  /// No description provided for @poolCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a pool'**
+  String get poolCreate;
+
+  /// No description provided for @poolJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join with a link'**
+  String get poolJoin;
+
+  /// No description provided for @poolTrustNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests through the pool run on a partner\'s server. NeoRouter keeps no content there and hides secrets first, but whoever runs that server could technically see what is sent. Only share with people you trust.'**
+  String get poolTrustNotice;
+
+  /// No description provided for @poolTosNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Some providers do not allow sharing free access with others. Check their terms before you share a connection.'**
+  String get poolTosNotice;
+
+  /// No description provided for @poolInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get poolInvite;
+
+  /// No description provided for @poolInviteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pool invite link'**
+  String get poolInviteTitle;
+
+  /// No description provided for @poolInviteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Send this link, or the ready-made text below, to someone with their own NeoRouter. The link opens a page that takes them to their own NeoRouter to join. It works once and expires in 7 days.'**
+  String get poolInviteBody;
+
+  /// No description provided for @poolStateOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get poolStateOnline;
+
+  /// No description provided for @poolStateOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not reachable'**
+  String get poolStateOffline;
+
+  /// No description provided for @poolStateConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting'**
+  String get poolStateConnecting;
+
+  /// No description provided for @poolStatePaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get poolStatePaused;
+
+  /// No description provided for @poolBalanceNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get poolBalanceNew;
+
+  /// No description provided for @poolBalanceBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get poolBalanceBalanced;
+
+  /// No description provided for @poolBalanceGiving.
+  ///
+  /// In en, this message translates to:
+  /// **'You give more'**
+  String get poolBalanceGiving;
+
+  /// No description provided for @poolBalanceTaking.
+  ///
+  /// In en, this message translates to:
+  /// **'You take more'**
+  String get poolBalanceTaking;
+
+  /// No description provided for @poolPausePartner.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause this partner'**
+  String get poolPausePartner;
+
+  /// No description provided for @poolResumePartner.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume this partner'**
+  String get poolResumePartner;
+
+  /// No description provided for @poolRemoveMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from pool'**
+  String get poolRemoveMember;
+
+  /// No description provided for @poolRemoveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} loses access to the pool right away.'**
+  String poolRemoveConfirm(String name);
+
+  /// No description provided for @poolShareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What you share'**
+  String get poolShareTitle;
+
+  /// No description provided for @poolShareHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Free models from the connections you pick; with ⋯ you choose for each one whether its subscription or paid models are shared too. Your own requests always come first.'**
+  String get poolShareHint;
+
+  /// No description provided for @classificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Free or paid'**
+  String get classificationTitle;
+
+  /// No description provided for @classificationAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get classificationAuto;
+
+  /// No description provided for @classificationFree.
+  ///
+  /// In en, this message translates to:
+  /// **'All free'**
+  String get classificationFree;
+
+  /// No description provided for @classificationPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'All paid'**
+  String get classificationPaid;
+
+  /// No description provided for @classificationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic uses what NeoRouter worked out for each model. Set it yourself if that is wrong; a choice on a single model still wins.'**
+  String get classificationHint;
+
+  /// No description provided for @classificationFreeWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Only if this connection never charges you: every model is then treated as free, including for keys that may only use free models.'**
+  String get classificationFreeWarning;
+
+  /// No description provided for @poolActivityGiven.
+  ///
+  /// In en, this message translates to:
+  /// **'What partners used of yours'**
+  String get poolActivityGiven;
+
+  /// No description provided for @poolActivityTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'What you used of partners'**
+  String get poolActivityTaken;
+
+  /// No description provided for @poolActivityGivenMetric.
+  ///
+  /// In en, this message translates to:
+  /// **'Given'**
+  String get poolActivityGivenMetric;
+
+  /// No description provided for @poolActivityTakenMetric.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken'**
+  String get poolActivityTakenMetric;
+
+  /// No description provided for @poolActivityCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost to you'**
+  String get poolActivityCost;
+
+  /// No description provided for @poolActivityCostCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'from paid models you share'**
+  String get poolActivityCostCaption;
+
+  /// No description provided for @poolActivityByPartner.
+  ///
+  /// In en, this message translates to:
+  /// **'By partner'**
+  String get poolActivityByPartner;
+
+  /// No description provided for @poolActivityEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing shared yet'**
+  String get poolActivityEmptyTitle;
+
+  /// No description provided for @poolActivityEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Once partners use your connections, or you theirs, it shows up here. Only counts are kept, never content.'**
+  String get poolActivityEmpty;
+
+  /// No description provided for @poolRankingLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{requests} · {tokens} tokens'**
+  String poolRankingLine(String requests, String tokens);
+
+  /// No description provided for @poolKindsMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what to share'**
+  String get poolKindsMenu;
+
+  /// No description provided for @poolKindsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What {name} shares'**
+  String poolKindsTitle(String name);
+
+  /// No description provided for @poolKindsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Partners use free models first, then subscription, then paid ones.'**
+  String get poolKindsHint;
+
+  /// No description provided for @poolKindFreeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Never cost you anything.'**
+  String get poolKindFreeHint;
+
+  /// No description provided for @poolKindPlanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use up your subscription’s limits. Many subscriptions do not allow sharing.'**
+  String get poolKindPlanHint;
+
+  /// No description provided for @poolKindPaidBilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Billed to you per use.'**
+  String get poolKindPaidBilled;
+
+  /// No description provided for @poolKindPaidBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend your prepaid balance.'**
+  String get poolKindPaidBalance;
+
+  /// No description provided for @poolKindNone.
+  ///
+  /// In en, this message translates to:
+  /// **'This connection has none.'**
+  String get poolKindNone;
+
+  /// No description provided for @poolKindsApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get poolKindsApply;
+
+  /// No description provided for @poolPlanModels.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} subscription models'**
+  String poolPlanModels(String count);
+
+  /// No description provided for @poolPaidModels.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} paid models'**
+  String poolPaidModels(String count);
+
+  /// No description provided for @poolPlanConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share the subscription of {name}?'**
+  String poolPlanConfirmTitle(String name);
+
+  /// No description provided for @poolPlanConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Partners in {pool} can then also use this subscription when no free model can serve them. That uses up your plan’s limits, and many subscriptions do not allow sharing. Your daily limits for partners still apply.'**
+  String poolPlanConfirmBody(String pool);
+
+  /// No description provided for @poolPlanConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Share subscription'**
+  String get poolPlanConfirm;
+
+  /// No description provided for @filterPool.
+  ///
+  /// In en, this message translates to:
+  /// **'Pool'**
+  String get filterPool;
+
+  /// No description provided for @modelsPoolHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What your pool partners share with you. Only keys with pool access use these, and it costs you nothing.'**
+  String get modelsPoolHint;
+
+  /// No description provided for @poolViaPartner.
+  ///
+  /// In en, this message translates to:
+  /// **'via {name}'**
+  String poolViaPartner(String name);
+
+  /// No description provided for @poolPaidConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share paid models of {name}?'**
+  String poolPaidConfirmTitle(String name);
+
+  /// No description provided for @poolPaidConfirmBilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Partners in {pool} can then use this connection’s paid models. That costs you real money, billed by the provider. Your daily limits for partners still apply.'**
+  String poolPaidConfirmBilled(String pool);
+
+  /// No description provided for @poolPaidConfirmPrepaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Partners in {pool} can then use this connection’s paid models. That spends your prepaid balance. Your daily limits for partners still apply.'**
+  String poolPaidConfirmPrepaid(String pool);
+
+  /// No description provided for @poolPaidConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Share paid models'**
+  String get poolPaidConfirm;
+
+  /// No description provided for @poolShareNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None of your connections has free models yet.'**
+  String get poolShareNone;
+
+  /// No description provided for @poolFreeModels.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} free models'**
+  String poolFreeModels(String count);
+
+  /// No description provided for @poolLimitsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share per partner'**
+  String get poolLimitsTitle;
+
+  /// No description provided for @poolLimitsAutoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic and fair: every partner gets the same share; one who gives you more gets up to three times as much, one who only takes half. Of each connection you keep what you usually still need that day, judged from your last week; partners use the rest.'**
+  String get poolLimitsAutoHint;
+
+  /// No description provided for @poolPartnerCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Today: {requests} requests · {tokens} tokens · {concurrent} at once'**
+  String poolPartnerCaps(String requests, String tokens, String concurrent);
+
+  /// No description provided for @poolLimitsNoPartners.
+  ///
+  /// In en, this message translates to:
+  /// **'Limits show up here once someone joins.'**
+  String get poolLimitsNoPartners;
+
+  /// No description provided for @poolLimitsAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed limits (advanced)'**
+  String get poolLimitsAdvanced;
+
+  /// No description provided for @poolLimitsAdvancedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave a field empty to keep it automatic. A value you set applies to every partner in this pool, whatever they give.'**
+  String get poolLimitsAdvancedHint;
+
+  /// No description provided for @poolLimitAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get poolLimitAutomatic;
+
+  /// No description provided for @poolLimitRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests per day'**
+  String get poolLimitRequests;
+
+  /// No description provided for @poolLimitTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens per day'**
+  String get poolLimitTokens;
+
+  /// No description provided for @poolLimitConcurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests at once'**
+  String get poolLimitConcurrent;
+
+  /// No description provided for @poolLimitReserve.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept for you (%)'**
+  String get poolLimitReserve;
+
+  /// No description provided for @poolLimitReserveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty: as much as you usually still need today, from your last week. A number keeps that share of every allowance.'**
+  String get poolLimitReserveHint;
+
+  /// No description provided for @poolLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave pool'**
+  String get poolLeave;
+
+  /// No description provided for @poolClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close pool'**
+  String get poolClose;
+
+  /// No description provided for @poolLeaveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave {name}? Partners lose access to your connections at once, and you to theirs.'**
+  String poolLeaveConfirm(String name);
+
+  /// No description provided for @poolCloseConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Close {name}? As its host, leaving ends the pool for everyone.'**
+  String poolCloseConfirm(String name);
+
+  /// No description provided for @poolCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a pool'**
+  String get poolCreateTitle;
+
+  /// No description provided for @poolNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pool name'**
+  String get poolNameLabel;
+
+  /// No description provided for @poolSelfNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name in the pool'**
+  String get poolSelfNameLabel;
+
+  /// No description provided for @poolSelfNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Partners see this name.'**
+  String get poolSelfNameHint;
+
+  /// No description provided for @poolJoinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a pool'**
+  String get poolJoinTitle;
+
+  /// No description provided for @poolLinkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link'**
+  String get poolLinkLabel;
+
+  /// No description provided for @poolCheckLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Check link'**
+  String get poolCheckLink;
+
+  /// No description provided for @poolJoinPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Join {name}?'**
+  String poolJoinPreview(String name);
+
+  /// No description provided for @poolJoinMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Hosted by {host} · {count} members'**
+  String poolJoinMembers(String host, String count);
+
+  /// No description provided for @poolInfoTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'About the pool'**
+  String get poolInfoTooltip;
+
+  /// No description provided for @keyPoolLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the pool'**
+  String get keyPoolLabel;
+
+  /// No description provided for @keyPoolHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Also uses partners\' free models, mostly when yours are busy.'**
+  String get keyPoolHint;
+
+  /// No description provided for @keyPoolChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Pool'**
+  String get keyPoolChip;
+
+  /// No description provided for @settingsPoolTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pool'**
+  String get settingsPoolTitle;
+
+  /// No description provided for @settingsKeepSensitive.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep very sensitive requests off the pool'**
+  String get settingsKeepSensitive;
+
+  /// No description provided for @settingsKeepSensitiveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests with passwords, keys, card or ID numbers, or many people\'s personal data stay on your own connections. Clear cases are caught, not every secret.'**
+  String get settingsKeepSensitiveHint;
+
+  /// No description provided for @homePoolPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused for now: you neither use nor give.'**
+  String get homePoolPaused;
+
+  /// No description provided for @keptPrivateTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept private'**
+  String get keptPrivateTag;
+
+  /// No description provided for @poolHostYou.
+  ///
+  /// In en, this message translates to:
+  /// **'you host it'**
+  String get poolHostYou;
+
+  /// No description provided for @poolPartnersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} partners · {online} online'**
+  String poolPartnersCount(String count, String online);
+
+  /// No description provided for @poolNoPartnersShort.
+  ///
+  /// In en, this message translates to:
+  /// **'No partners yet'**
+  String get poolNoPartnersShort;
+
+  /// No description provided for @poolTabSharing.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharing'**
+  String get poolTabSharing;
+
+  /// No description provided for @poolTabSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get poolTabSettings;
+
+  /// No description provided for @pickerSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{selected} of {total} selected'**
+  String pickerSelected(String selected, String total);
+
+  /// No description provided for @pickerAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get pickerAll;
+
+  /// No description provided for @pickerNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get pickerNone;
+
+  /// No description provided for @pickerSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a connection'**
+  String get pickerSearch;
+
+  /// No description provided for @poolDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get poolDiscard;
+
+  /// No description provided for @poolAgreeCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Understood, start pool'**
+  String get poolAgreeCreate;
+
+  /// No description provided for @poolAgreeJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Understood, join'**
+  String get poolAgreeJoin;
+
+  /// No description provided for @poolShareDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share {name} in'**
+  String poolShareDialogTitle(String name);
+
+  /// No description provided for @poolShareInPools.
+  ///
+  /// In en, this message translates to:
+  /// **'Share in pools…'**
+  String get poolShareInPools;
+
+  /// No description provided for @homePoolsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pools'**
+  String get homePoolsTitle;
+
+  /// No description provided for @poolInviteText.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi! {host} is inviting you to the NeoRouter pool \"{pool}\", where our NeoRouters share AI capacity. Open this link and enter the address of your own NeoRouter: {link}\n(It works once and expires in 7 days.)'**
+  String poolInviteText(String host, String pool, String link);
+
+  /// No description provided for @poolInviteCopyText.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy invite text'**
+  String get poolInviteCopyText;
+
+  /// No description provided for @poolInviteTextLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language of the text'**
+  String get poolInviteTextLanguage;
+
+  /// No description provided for @galleryFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get galleryFilterAll;
+
+  /// No description provided for @galleryFilterFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get galleryFilterFree;
+
+  /// No description provided for @galleryFilterPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscriptions'**
+  String get galleryFilterPlans;
+
+  /// No description provided for @galleryFilterPayg.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay as you go'**
+  String get galleryFilterPayg;
+
+  /// No description provided for @galleryFilterTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Search & weather'**
+  String get galleryFilterTools;
+
+  /// No description provided for @galleryFilterOwn.
+  ///
+  /// In en, this message translates to:
+  /// **'Local & custom'**
+  String get galleryFilterOwn;
+
+  /// No description provided for @galleryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} providers'**
+  String galleryCount(String count);
+
+  /// No description provided for @galleryNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No provider matches. A custom OpenAI-compatible endpoint works with almost any service.'**
+  String get galleryNoMatch;
+
+  /// No description provided for @costTagFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get costTagFree;
+
+  /// No description provided for @costTagFreeModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Free models'**
+  String get costTagFreeModels;
+
+  /// No description provided for @costTagPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription'**
+  String get costTagPlan;
+
+  /// No description provided for @costTagPayg.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay as you go'**
+  String get costTagPayg;
+
+  /// No description provided for @costTagConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get costTagConnected;
+
+  /// No description provided for @costSummaryFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free tier without a card'**
+  String get costSummaryFree;
+
+  /// No description provided for @costSummaryFreeModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Some models are free'**
+  String get costSummaryFreeModels;
+
+  /// No description provided for @costSummaryPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'A subscription you already pay for'**
+  String get costSummaryPlan;
+
+  /// No description provided for @costSummaryPayg.
+  ///
+  /// In en, this message translates to:
+  /// **'You pay for what you use'**
+  String get costSummaryPayg;
+
+  /// No description provided for @costChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked {date}'**
+  String costChecked(String date);
+
+  /// No description provided for @costSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get costSource;
+
+  /// No description provided for @providerWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Website'**
+  String get providerWebsite;
+
+  /// No description provided for @providerGetKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Get a key'**
+  String get providerGetKey;
+
+  /// No description provided for @statSuccessRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Success rate'**
+  String get statSuccessRate;
+
+  /// No description provided for @statCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Spent'**
+  String get statCost;
+
+  /// No description provided for @statTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens'**
+  String get statTokens;
+
+  /// No description provided for @statFreeShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Served free'**
+  String get statFreeShare;
+
+  /// No description provided for @statLatency.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg. latency'**
+  String get statLatency;
+
+  /// No description provided for @statFallbacks.
+  ///
+  /// In en, this message translates to:
+  /// **'With fallback'**
+  String get statFallbacks;
+
+  /// No description provided for @statInOut.
+  ///
+  /// In en, this message translates to:
+  /// **'{input} in · {output} out'**
+  String statInOut(String input, String output);
+
+  /// No description provided for @poolAlreadyMember.
+  ///
+  /// In en, this message translates to:
+  /// **'You are already in this pool.'**
+  String get poolAlreadyMember;
+
+  /// No description provided for @poolLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pools could not be loaded.'**
+  String get poolLoadFailed;
+
+  /// No description provided for @networkDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Share free capacity with other NeoRouters, and let people help you manage this one.'**
+  String get networkDescription;
+
+  /// No description provided for @statBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Your balance'**
+  String get statBalance;
+
+  /// No description provided for @statModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared models'**
+  String get statModels;
+
+  /// No description provided for @statOnlineValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{online} of {total}'**
+  String statOnlineValue(String online, String total);
+
+  /// No description provided for @statOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Members online'**
+  String get statOnline;
+
+  /// No description provided for @balanceTheyTake.
+  ///
+  /// In en, this message translates to:
+  /// **'Takes more'**
+  String get balanceTheyTake;
+
+  /// No description provided for @balanceTheyGive.
+  ///
+  /// In en, this message translates to:
+  /// **'Gives more'**
+  String get balanceTheyGive;
+
+  /// No description provided for @panelEditSharing.
+  ///
+  /// In en, this message translates to:
+  /// **'Change what you share'**
+  String get panelEditSharing;
+
+  /// No description provided for @panelBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance this week'**
+  String get panelBalance;
+
+  /// No description provided for @panelRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} requests'**
+  String panelRequests(String count);
+
+  /// No description provided for @panelTook.
+  ///
+  /// In en, this message translates to:
+  /// **'Took today'**
+  String get panelTook;
+
+  /// No description provided for @panelGave.
+  ///
+  /// In en, this message translates to:
+  /// **'Gave today'**
+  String get panelGave;
+
+  /// No description provided for @panelSharesPartner.
+  ///
+  /// In en, this message translates to:
+  /// **'Shares {models} models with you, free for you, {percent} % of the models in this pool.'**
+  String panelSharesPartner(String models, String percent);
+
+  /// No description provided for @panelSharesYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You share {connections} connections with {models} models, {percent} % of the models in this pool.'**
+  String panelSharesYou(String connections, String models, String percent);
+
+  /// No description provided for @memberCaptionPartner.
+  ///
+  /// In en, this message translates to:
+  /// **'{models} models'**
+  String memberCaptionPartner(String models);
+
+  /// No description provided for @memberCaptionYou.
+  ///
+  /// In en, this message translates to:
+  /// **'{connections} conn. · {models} models'**
+  String memberCaptionYou(String connections, String models);
+
+  /// No description provided for @poolMemberYou.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (you)'**
+  String poolMemberYou(String name);
+
+  /// No description provided for @legendRing.
+  ///
+  /// In en, this message translates to:
+  /// **'ring: share of the shared models'**
+  String get legendRing;
+
+  /// No description provided for @legendOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'not reachable'**
+  String get legendOffline;
+
+  /// No description provided for @legendTakes.
+  ///
+  /// In en, this message translates to:
+  /// **'takes from the pool'**
+  String get legendTakes;
+
+  /// No description provided for @legendGives.
+  ///
+  /// In en, this message translates to:
+  /// **'gives to the pool'**
+  String get legendGives;
+
+  /// No description provided for @graphRequestsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} requests today'**
+  String graphRequestsToday(String count);
+
+  /// No description provided for @graphShareUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {total} requests used'**
+  String graphShareUsed(String used, String total);
+
+  /// No description provided for @graphFreeToday.
+  ///
+  /// In en, this message translates to:
+  /// **'FREE TODAY'**
+  String get graphFreeToday;
+
+  /// No description provided for @poolTabOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get poolTabOverview;
+
+  /// No description provided for @poolViaHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Via the host'**
+  String get poolViaHost;
+
+  /// No description provided for @poolRelayDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected to the host right now; it reconnects by itself.'**
+  String get poolRelayDown;
+
+  /// No description provided for @poolRelayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect partners through me'**
+  String get poolRelayLabel;
+
+  /// No description provided for @poolRelayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Members without a public address take part through your NeoRouter. Their requests pass through your internet connection, sealed end to end, so you cannot read them.'**
+  String get poolRelayHint;
+
+  /// No description provided for @poolRelaySelfLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'How you take part'**
+  String get poolRelaySelfLabel;
+
+  /// No description provided for @poolRelaySelfVia.
+  ///
+  /// In en, this message translates to:
+  /// **'Through the host: your NeoRouter needs no public address. Requests pass through the host sealed, so the host cannot read them.'**
+  String get poolRelaySelfVia;
+
+  /// No description provided for @poolRelaySelfDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Directly, at your NeoRouter’s own address.'**
+  String get poolRelaySelfDirect;
+
+  /// No description provided for @poolLeaveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Partners lose access to your connections at once, and you to theirs.'**
+  String get poolLeaveHint;
+
+  /// No description provided for @poolCloseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends the pool for every partner.'**
+  String get poolCloseHint;
+
   /// No description provided for @teamEventInviteCreate.
   ///
   /// In en, this message translates to:
@@ -5790,6 +8424,12 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'{models} more free models publish no limit and are not counted.'**
   String homeCapacityUnknown(String models);
+
+  /// No description provided for @homeCapacityObserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Actually used: {best} on your busiest free day, {average} on an average day (last 30 days).'**
+  String homeCapacityObserved(String best, String average);
 
   /// No description provided for @homeCapacityNone.
   ///
@@ -6259,11 +8899,11 @@ abstract class AppL10n {
   /// **'Live'**
   String get liveNow;
 
-  /// No description provided for @liveReplay.
+  /// No description provided for @liveQuiet.
   ///
   /// In en, this message translates to:
-  /// **'Replaying recent requests'**
-  String get liveReplay;
+  /// **'No traffic right now'**
+  String get liveQuiet;
 
   /// No description provided for @liveWaiting.
   ///
@@ -6870,6 +9510,1326 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Low priority'**
   String get priorityLowLabel;
+
+  /// No description provided for @lmTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Local models'**
+  String get lmTab;
+
+  /// No description provided for @lmIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Run AI models on this server. NeoRouter shows what fits, downloads it, keeps it running and fixes problems by itself.'**
+  String get lmIntro;
+
+  /// No description provided for @lmThisServer.
+  ///
+  /// In en, this message translates to:
+  /// **'This server'**
+  String get lmThisServer;
+
+  /// No description provided for @lmProcessor.
+  ///
+  /// In en, this message translates to:
+  /// **'Processor'**
+  String get lmProcessor;
+
+  /// No description provided for @lmProcessorValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} · {cores} cores'**
+  String lmProcessorValue(String name, String cores);
+
+  /// No description provided for @lmMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get lmMemory;
+
+  /// No description provided for @lmMemoryModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Local models: {size}'**
+  String lmMemoryModels(String size);
+
+  /// No description provided for @lmMemoryOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything else: about {size} on average'**
+  String lmMemoryOthers(String size);
+
+  /// No description provided for @lmMemoryMeasuring.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything else: still measuring'**
+  String get lmMemoryMeasuring;
+
+  /// No description provided for @lmMemoryFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free for models: {size}'**
+  String lmMemoryFree(String size);
+
+  /// No description provided for @lmMemoryLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited by the container.'**
+  String get lmMemoryLimited;
+
+  /// No description provided for @lmGraphics.
+  ///
+  /// In en, this message translates to:
+  /// **'Graphics'**
+  String get lmGraphics;
+
+  /// No description provided for @lmGraphicsValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} · {memory} usable'**
+  String lmGraphicsValue(String name, String memory);
+
+  /// No description provided for @lmNoGraphics.
+  ///
+  /// In en, this message translates to:
+  /// **'None found. Models run on the processor.'**
+  String get lmNoGraphics;
+
+  /// No description provided for @lmDisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Free disk space'**
+  String get lmDisk;
+
+  /// No description provided for @lmTextUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Text, safety and embedding models need macOS or Linux. Speech and transcription models work here.'**
+  String get lmTextUnsupported;
+
+  /// No description provided for @lmInstalledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your models'**
+  String get lmInstalledTitle;
+
+  /// No description provided for @lmInstalledEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No models yet. Pick one below: NeoRouter downloads it and starts it for you.'**
+  String get lmInstalledEmpty;
+
+  /// No description provided for @lmRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get lmRunning;
+
+  /// No description provided for @lmRunningGpu.
+  ///
+  /// In en, this message translates to:
+  /// **'Running on the graphics card'**
+  String get lmRunningGpu;
+
+  /// No description provided for @lmRunningCpu.
+  ///
+  /// In en, this message translates to:
+  /// **'Running on the processor'**
+  String get lmRunningCpu;
+
+  /// No description provided for @lmStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting …'**
+  String get lmStarting;
+
+  /// No description provided for @lmRestarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Restarting after a problem …'**
+  String get lmRestarting;
+
+  /// No description provided for @lmStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get lmStopped;
+
+  /// No description provided for @lmPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting ready …'**
+  String get lmPreparing;
+
+  /// No description provided for @lmDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading · {done} of {total}'**
+  String lmDownloading(String done, String total);
+
+  /// No description provided for @lmGettingEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Setting up the engine · {done} of {total}'**
+  String lmGettingEngine(String done, String total);
+
+  /// No description provided for @lmChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the files …'**
+  String get lmChecking;
+
+  /// No description provided for @lmDownloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Download stopped. {reason}'**
+  String lmDownloadFailed(String reason);
+
+  /// No description provided for @lmFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped. {reason}'**
+  String lmFailed(String reason);
+
+  /// No description provided for @lmProblemMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough free memory: stop another model first.'**
+  String get lmProblemMemory;
+
+  /// No description provided for @lmProblemDisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough free disk space.'**
+  String get lmProblemDisk;
+
+  /// No description provided for @lmProblemCrashed.
+  ///
+  /// In en, this message translates to:
+  /// **'It kept stopping unexpectedly. Repair checks its files and starts it again.'**
+  String get lmProblemCrashed;
+
+  /// No description provided for @lmProblemNotAnswering.
+  ///
+  /// In en, this message translates to:
+  /// **'It stopped answering. Repair checks its files and starts it again.'**
+  String get lmProblemNotAnswering;
+
+  /// No description provided for @lmProblemStart.
+  ///
+  /// In en, this message translates to:
+  /// **'It would not start. Repair checks its files and starts it again.'**
+  String get lmProblemStart;
+
+  /// No description provided for @lmProblemDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the internet connection and try again.'**
+  String get lmProblemDownload;
+
+  /// No description provided for @lmRepair.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair'**
+  String get lmRepair;
+
+  /// No description provided for @lmRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get lmRemove;
+
+  /// No description provided for @lmCancelDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel download'**
+  String get lmCancelDownload;
+
+  /// No description provided for @lmRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}?'**
+  String lmRemoveTitle(String name);
+
+  /// No description provided for @lmRemoveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Its files are deleted from this server. You can install it again any time.'**
+  String get lmRemoveConfirm;
+
+  /// No description provided for @lmAccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can use them'**
+  String get lmAccessTitle;
+
+  /// No description provided for @lmAccessEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone on this server'**
+  String get lmAccessEveryone;
+
+  /// No description provided for @lmAccessHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Off: only admins. On: every user can add \"NeoRouter Local\" under Connections. All requests share this machine.'**
+  String get lmAccessHint;
+
+  /// No description provided for @lmAddTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a model'**
+  String get lmAddTitle;
+
+  /// No description provided for @lmAddHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Picked for this server. The size is the download; memory is what the model needs while it runs.'**
+  String get lmAddHint;
+
+  /// No description provided for @lmKindAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get lmKindAll;
+
+  /// No description provided for @lmKindChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get lmKindChat;
+
+  /// No description provided for @lmKindModeration.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety'**
+  String get lmKindModeration;
+
+  /// No description provided for @lmKindEmbedding.
+  ///
+  /// In en, this message translates to:
+  /// **'Embeddings'**
+  String get lmKindEmbedding;
+
+  /// No description provided for @lmKindTranscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcription'**
+  String get lmKindTranscription;
+
+  /// No description provided for @lmKindSpeech.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech'**
+  String get lmKindSpeech;
+
+  /// No description provided for @lmRatingGreat.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs great'**
+  String get lmRatingGreat;
+
+  /// No description provided for @lmRatingGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs well'**
+  String get lmRatingGood;
+
+  /// No description provided for @lmRatingSlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs, but slowly'**
+  String get lmRatingSlow;
+
+  /// No description provided for @lmRatingTight.
+  ///
+  /// In en, this message translates to:
+  /// **'Tight on memory'**
+  String get lmRatingTight;
+
+  /// No description provided for @lmRatingTooBig.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs more memory'**
+  String get lmRatingTooBig;
+
+  /// No description provided for @lmRatingUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Not on this system'**
+  String get lmRatingUnsupported;
+
+  /// No description provided for @lmSizes.
+  ///
+  /// In en, this message translates to:
+  /// **'{download} · needs {memory} memory'**
+  String lmSizes(String download, String memory);
+
+  /// No description provided for @lmSizesMeasured.
+  ///
+  /// In en, this message translates to:
+  /// **'{download} · used {memory} here'**
+  String lmSizesMeasured(String download, String memory);
+
+  /// No description provided for @lmTightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Fits this server, but other programs here usually use so much memory that it may not start.'**
+  String get lmTightHint;
+
+  /// No description provided for @lmRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended'**
+  String get lmRecommended;
+
+  /// No description provided for @lmReadsImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Reads images'**
+  String get lmReadsImages;
+
+  /// No description provided for @lmManyLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'Many languages'**
+  String get lmManyLanguages;
+
+  /// No description provided for @lmInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Install'**
+  String get lmInstall;
+
+  /// No description provided for @lmInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed'**
+  String get lmInstalled;
+
+  /// No description provided for @lmNoDisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough disk space'**
+  String get lmNoDisk;
+
+  /// No description provided for @lmInstallTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Install {name}?'**
+  String lmInstallTitle(String name);
+
+  /// No description provided for @lmInstallConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'NeoRouter downloads about {size} and starts the model when it is ready. You can keep working in the meantime.'**
+  String lmInstallConfirm(String size);
+
+  /// No description provided for @lmShowTooBig.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {count} more that need a bigger server'**
+  String lmShowTooBig(String count);
+
+  /// No description provided for @lmHideTooBig.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide models that do not fit'**
+  String get lmHideTooBig;
+
+  /// No description provided for @lmTurnOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get lmTurnOff;
+
+  /// No description provided for @lmLeftSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'less than a minute left'**
+  String get lmLeftSeconds;
+
+  /// No description provided for @lmLeftMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'about {count} min left'**
+  String lmLeftMinutes(String count);
+
+  /// No description provided for @lmLeftHours.
+  ///
+  /// In en, this message translates to:
+  /// **'about {hours} h {minutes} min left'**
+  String lmLeftHours(String hours, String minutes);
+
+  /// No description provided for @lmStarterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick start'**
+  String get lmStarterTitle;
+
+  /// No description provided for @lmStarterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{models}, chosen for this server. Downloads {size} and starts by itself.'**
+  String lmStarterHint(String models, String size);
+
+  /// No description provided for @lmStarterInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Install all'**
+  String get lmStarterInstall;
+
+  /// No description provided for @lmDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get lmDetails;
+
+  /// No description provided for @lmLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Less'**
+  String get lmLess;
+
+  /// No description provided for @lmLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'Languages'**
+  String get lmLanguages;
+
+  /// No description provided for @lmLicense.
+  ///
+  /// In en, this message translates to:
+  /// **'License'**
+  String get lmLicense;
+
+  /// No description provided for @lmErrTooBig.
+  ///
+  /// In en, this message translates to:
+  /// **'This server does not have enough memory for this model.'**
+  String get lmErrTooBig;
+
+  /// No description provided for @lmErrNoDisk.
+  ///
+  /// In en, this message translates to:
+  /// **'There is not enough free disk space for this model.'**
+  String get lmErrNoDisk;
+
+  /// No description provided for @lmErrUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This system cannot run this model.'**
+  String get lmErrUnsupported;
+
+  /// No description provided for @lmErrInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'This model is already installed.'**
+  String get lmErrInstalled;
+
+  /// No description provided for @lmErrNoStarter.
+  ///
+  /// In en, this message translates to:
+  /// **'No starter set fits this server.'**
+  String get lmErrNoStarter;
+
+  /// No description provided for @lmNothingFits.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing of this kind fits this server.'**
+  String get lmNothingFits;
+
+  /// No description provided for @routingGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing groups'**
+  String get routingGroups;
+
+  /// No description provided for @createRoutingGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Create group'**
+  String get createRoutingGroup;
+
+  /// No description provided for @routingGroupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get routingGroupName;
+
+  /// No description provided for @routingGroupAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Connections'**
+  String get routingGroupAccounts;
+
+  /// No description provided for @routingGroupFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Fallback group'**
+  String get routingGroupFallback;
+
+  /// No description provided for @routingGroupNoKeyDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'None: the key routes normally'**
+  String get routingGroupNoKeyDefault;
+
+  /// No description provided for @routingGroupDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default routing group'**
+  String get routingGroupDefault;
+
+  /// No description provided for @navGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing groups'**
+  String get navGroups;
+
+  /// No description provided for @routingGroupsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use one model name across your subscriptions.'**
+  String get routingGroupsDescription;
+
+  /// No description provided for @routingGroupOptionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'About {option}'**
+  String routingGroupOptionHelp(String option);
+
+  /// No description provided for @routingGroupFallbackHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a backup group. If none of the models in this group can take a request, NeoRouter can try the backup group.'**
+  String get routingGroupFallbackHelp;
+
+  /// No description provided for @routingGroupOutsideHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn this on to let NeoRouter try connections outside your selected groups when it has run out of options. Your key’s permissions and spending settings still apply.'**
+  String get routingGroupOutsideHelp;
+
+  /// No description provided for @routingGroupsHelpSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'For example, choose two subscriptions and pick one under “Use first”. NeoRouter can use the other if the first is busy or has reached its limit.'**
+  String get routingGroupsHelpSwitch;
+
+  /// No description provided for @routingGroupsHelpSubagents.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose “Same group” to share these connections, or pick another group for your app’s helpers. Your app needs to send subagent requests separately. See “Use in app” after saving.'**
+  String get routingGroupsHelpSubagents;
+
+  /// No description provided for @routingGroupsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No routing groups yet'**
+  String get routingGroupsEmptyTitle;
+
+  /// No description provided for @routingGroupUsesStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Style: {name}'**
+  String routingGroupUsesStyle(String name);
+
+  /// No description provided for @routingGroupAtLeast.
+  ///
+  /// In en, this message translates to:
+  /// **'At least {percent} % intelligence'**
+  String routingGroupAtLeast(String percent);
+
+  /// No description provided for @routingGroupFallsBackTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Then {name}'**
+  String routingGroupFallsBackTo(String name);
+
+  /// No description provided for @routingGroupPlanUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent} % used'**
+  String routingGroupPlanUsed(String percent);
+
+  /// No description provided for @routingGroupAccountsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the subscriptions and connections this group can use.'**
+  String get routingGroupAccountsHint;
+
+  /// No description provided for @routingGroupOtherAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Other accounts'**
+  String get routingGroupOtherAccounts;
+
+  /// No description provided for @routingGroupSearchAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Search accounts'**
+  String get routingGroupSearchAccounts;
+
+  /// No description provided for @routingGroupNoAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching accounts.'**
+  String get routingGroupNoAccounts;
+
+  /// No description provided for @routingGroupModelsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Models'**
+  String get routingGroupModelsTitle;
+
+  /// No description provided for @routingGroupModelsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Single models from any account. A pattern with * takes several, e.g. groq/*.'**
+  String get routingGroupModelsHint;
+
+  /// No description provided for @routingGroupPickModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose models'**
+  String get routingGroupPickModels;
+
+  /// No description provided for @routingGroupPatternHint.
+  ///
+  /// In en, this message translates to:
+  /// **'or type a pattern, e.g. groq/*'**
+  String get routingGroupPatternHint;
+
+  /// No description provided for @routingGroupAddPattern.
+  ///
+  /// In en, this message translates to:
+  /// **'Add pattern'**
+  String get routingGroupAddPattern;
+
+  /// No description provided for @routingGroupOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Options'**
+  String get routingGroupOptions;
+
+  /// No description provided for @routingGroupOptionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How the group picks among its models, and where requests go when it is full.'**
+  String get routingGroupOptionsHint;
+
+  /// No description provided for @routingGroupMinimumTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum intelligence'**
+  String get routingGroupMinimumTitle;
+
+  /// No description provided for @routingGroupMinimumOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Any model in the group may answer.'**
+  String get routingGroupMinimumOff;
+
+  /// No description provided for @routingGroupStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing style'**
+  String get routingGroupStyle;
+
+  /// No description provided for @routingGroupStyleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What counts most when the group picks a model.'**
+  String get routingGroupStyleHint;
+
+  /// No description provided for @routingGroupStyleKey.
+  ///
+  /// In en, this message translates to:
+  /// **'The key\'s own style'**
+  String get routingGroupStyleKey;
+
+  /// No description provided for @routingGroupFallbackHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Used when every model in this group is busy or failing.'**
+  String get routingGroupFallbackHint;
+
+  /// No description provided for @routingGroupNoFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'None: wait, then any model'**
+  String get routingGroupNoFallback;
+
+  /// No description provided for @routingGroupsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups yet. A group sends one kind of work, such as an agent\'s helpers, to the plans you choose.'**
+  String get routingGroupsEmpty;
+
+  /// No description provided for @routingGroupNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowercase letters, digits, - and _. Cannot be changed later.'**
+  String get routingGroupNameHint;
+
+  /// No description provided for @routingGroupNameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Use lowercase letters, digits, - and _ only, starting with a letter or digit.'**
+  String get routingGroupNameInvalid;
+
+  /// No description provided for @routingGroupMembersMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one account or model pattern.'**
+  String get routingGroupMembersMissing;
+
+  /// No description provided for @routingGroupDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this group?'**
+  String get routingGroupDeleteTitle;
+
+  /// No description provided for @routingGroupDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Keys and apps that use pool:{name} will route normally again.'**
+  String routingGroupDeleteMessage(String name);
+
+  /// No description provided for @routingGroupPrefer.
+  ///
+  /// In en, this message translates to:
+  /// **'Use first'**
+  String get routingGroupPrefer;
+
+  /// No description provided for @routingGroupPreferHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Switches when this connection can’t take a request.'**
+  String get routingGroupPreferHint;
+
+  /// No description provided for @routingGroupAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get routingGroupAutomatic;
+
+  /// No description provided for @routingGroupMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get routingGroupMore;
+
+  /// No description provided for @routingGroupSubagents.
+  ///
+  /// In en, this message translates to:
+  /// **'Subagent requests'**
+  String get routingGroupSubagents;
+
+  /// No description provided for @routingGroupSameGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Same group'**
+  String get routingGroupSameGroup;
+
+  /// No description provided for @routingGroupSubagentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'App setup required for separate routing.'**
+  String get routingGroupSubagentHint;
+
+  /// No description provided for @routingGroupCreateSubagent.
+  ///
+  /// In en, this message translates to:
+  /// **'Create subagent group'**
+  String get routingGroupCreateSubagent;
+
+  /// No description provided for @routingGroupAllowOutside.
+  ///
+  /// In en, this message translates to:
+  /// **'Try other connections as a last resort'**
+  String get routingGroupAllowOutside;
+
+  /// No description provided for @routingGroupAllowMetered.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow per-use charges'**
+  String get routingGroupAllowMetered;
+
+  /// No description provided for @routingGroupMeteredHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes connections set up to charge after an allowance runs out.'**
+  String get routingGroupMeteredHint;
+
+  /// No description provided for @routingGroupUseInApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Use in app'**
+  String get routingGroupUseInApp;
+
+  /// No description provided for @routingGroupAppModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter this as the model in your app.'**
+  String get routingGroupAppModel;
+
+  /// No description provided for @routingGroupAppSubagent.
+  ///
+  /// In en, this message translates to:
+  /// **'If your app has a separate subagent model, use this:'**
+  String get routingGroupAppSubagent;
+
+  /// No description provided for @routingGroupAppSubagentHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'To keep one model name, send X-NeoRouter-Workload: subagent on child requests.'**
+  String get routingGroupAppSubagentHeader;
+
+  /// No description provided for @routingGroupPreviewSubagent.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview a subagent request'**
+  String get routingGroupPreviewSubagent;
+
+  /// No description provided for @routingGroupPreviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses current limits with a sample request. No provider call.'**
+  String get routingGroupPreviewHint;
+
+  /// No description provided for @routingGroupPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview route'**
+  String get routingGroupPreview;
+
+  /// No description provided for @routingGroupPreviewUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No model can take this request right now.'**
+  String get routingGroupPreviewUnavailable;
+
+  /// No description provided for @routingGroupPreviewModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Would use {model}'**
+  String routingGroupPreviewModel(String model);
+
+  /// No description provided for @routingGroupPrefers.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefers {name}'**
+  String routingGroupPrefers(String name);
+
+  /// No description provided for @routingGroupUsesSubagent.
+  ///
+  /// In en, this message translates to:
+  /// **'Subagents use {name}'**
+  String routingGroupUsesSubagent(String name);
+
+  /// No description provided for @routingGroupReasonSame.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept the conversation on the same model and connection.'**
+  String get routingGroupReasonSame;
+
+  /// No description provided for @routingGroupReasonPreferred.
+  ///
+  /// In en, this message translates to:
+  /// **'Used the preferred connection.'**
+  String get routingGroupReasonPreferred;
+
+  /// No description provided for @routingGroupReasonBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'The preferred connection was busy.'**
+  String get routingGroupReasonBusy;
+
+  /// No description provided for @routingGroupReasonAllowance.
+  ///
+  /// In en, this message translates to:
+  /// **'The preferred connection reached a limit.'**
+  String get routingGroupReasonAllowance;
+
+  /// No description provided for @routingGroupReasonUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The preferred connection couldn’t take this request.'**
+  String get routingGroupReasonUnavailable;
+
+  /// No description provided for @cachedInputTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached input tokens'**
+  String get cachedInputTokens;
+
+  /// No description provided for @cacheHitRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache hit rate'**
+  String get cacheHitRate;
+
+  /// No description provided for @planUsageUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan usage unknown'**
+  String get planUsageUnknown;
+
+  /// No description provided for @planUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan usage'**
+  String get planUsage;
+
+  /// No description provided for @flatRateBilling.
+  ///
+  /// In en, this message translates to:
+  /// **'Flat rate / concurrency slots'**
+  String get flatRateBilling;
+
+  /// No description provided for @flatRateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A paid subscription with no incremental charge. Fill available slots before using other sources.'**
+  String get flatRateHint;
+
+  /// No description provided for @slotPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription plan'**
+  String get slotPlan;
+
+  /// No description provided for @slotOverflowPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'When slots are busy'**
+  String get slotOverflowPolicy;
+
+  /// No description provided for @slotOverflowAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic: overflow to a comparable free source, otherwise wait'**
+  String get slotOverflowAuto;
+
+  /// No description provided for @slotOverflowNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Overflow immediately'**
+  String get slotOverflowNow;
+
+  /// No description provided for @slotOverflowQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait for a slot first'**
+  String get slotOverflowQueue;
+
+  /// No description provided for @slotMaxWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum slot wait (seconds)'**
+  String get slotMaxWait;
+
+  /// No description provided for @slotCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Busy slots now'**
+  String get slotCurrent;
+
+  /// No description provided for @slotAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Average busy slots'**
+  String get slotAverage;
+
+  /// No description provided for @slotPeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak busy slots'**
+  String get slotPeak;
+
+  /// No description provided for @slotIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle capacity'**
+  String get slotIdle;
+
+  /// No description provided for @slotObserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Observed slot usage over the last 24 hours'**
+  String get slotObserved;
+
+  /// No description provided for @allowancePace.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowance pace (above 1 means ahead of schedule)'**
+  String get allowancePace;
+
+  /// No description provided for @keyExpiryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiration'**
+  String get keyExpiryTitle;
+
+  /// No description provided for @keyExpiryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This key stops accepting new requests at the selected time. Times are shown in your local time zone.'**
+  String get keyExpiryHint;
+
+  /// No description provided for @keyExpiryNever.
+  ///
+  /// In en, this message translates to:
+  /// **'No expiration'**
+  String get keyExpiryNever;
+
+  /// No description provided for @keyExpiryDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days from now'**
+  String keyExpiryDays(String days);
+
+  /// No description provided for @keyExpiryCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom date and time'**
+  String get keyExpiryCustom;
+
+  /// No description provided for @keyExpiryChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change date and time'**
+  String get keyExpiryChange;
+
+  /// No description provided for @keyExpiryAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires {date}'**
+  String keyExpiryAt(String date);
+
+  /// No description provided for @keyExpiredAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired {date}'**
+  String keyExpiredAt(String date);
+
+  /// No description provided for @keyExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get keyExpired;
+
+  /// No description provided for @keyExpiringSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires soon'**
+  String get keyExpiringSoon;
+
+  /// No description provided for @keyExpiryInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a date and time in the future.'**
+  String get keyExpiryInvalid;
+
+  /// No description provided for @keyExpiryRenewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a future expiry or no expiration to use this key again. Its secret stays the same.'**
+  String get keyExpiryRenewHint;
+
+  /// No description provided for @keyExpiryRenewSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving this change reactivates the existing key.'**
+  String get keyExpiryRenewSave;
+
+  /// No description provided for @expiredKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired keys ({count})'**
+  String expiredKeys(String count);
+
+  /// No description provided for @keyRenewEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Renew / edit'**
+  String get keyRenewEdit;
+
+  /// No description provided for @noActiveKeysTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No active API keys'**
+  String get noActiveKeysTitle;
+
+  /// No description provided for @noActiveKeysHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a key or renew an expired key below.'**
+  String get noActiveKeysHint;
+
+  /// No description provided for @proxyChooseFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Load text or CSV file'**
+  String get proxyChooseFile;
+
+  /// No description provided for @proxyFileError.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a UTF-8 text file smaller than 1 MB.'**
+  String get proxyFileError;
+
+  /// No description provided for @proxyDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {endpoint}? Import it again to restore it.'**
+  String proxyDeleteConfirm(String endpoint);
+
+  /// No description provided for @proxyActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Active requests: {active} · assigned: {served}'**
+  String proxyActivity(String active, String served);
+
+  /// No description provided for @proxyPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous proxies'**
+  String get proxyPrevious;
+
+  /// No description provided for @proxyNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next proxies'**
+  String get proxyNext;
+
+  /// No description provided for @proxyPage.
+  ///
+  /// In en, this message translates to:
+  /// **'{page} / {pages} · {count} proxies'**
+  String proxyPage(String page, String pages, String count);
+
+  /// No description provided for @proxyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Outbound proxies'**
+  String get proxyTitle;
+
+  /// No description provided for @proxyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional proxy rotation for public provider HTTP requests, including streams. Local/private destinations and relayed or WebSocket traffic keep their existing transport. Credentials are encrypted and never shown back.'**
+  String get proxyHint;
+
+  /// No description provided for @proxyEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Use outbound proxies'**
+  String get proxyEnable;
+
+  /// No description provided for @proxyDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow direct fallback'**
+  String get proxyDirect;
+
+  /// No description provided for @proxyDirectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'If proxies cannot connect, requests may use your server’s direct connection. Turn off to require a proxy for public provider HTTP requests.'**
+  String get proxyDirectHint;
+
+  /// No description provided for @proxyImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import proxies'**
+  String get proxyImport;
+
+  /// No description provided for @proxyFormats.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste one proxy per line: scheme://user:password@host:port, user:password@host:port, host:port, or host:port:user:password. CSV/tab-separated host, port, user, password also works. Use URL-encoding for special characters in URL credentials. Duplicate entries are skipped.'**
+  String get proxyFormats;
+
+  /// No description provided for @proxyProtocol.
+  ///
+  /// In en, this message translates to:
+  /// **'Default protocol for entries without a scheme'**
+  String get proxyProtocol;
+
+  /// No description provided for @proxyPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy list'**
+  String get proxyPaste;
+
+  /// No description provided for @proxyImportResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Added {added}; duplicates {duplicates}; invalid lines: {lines} (kept below for correction)'**
+  String proxyImportResult(String added, String duplicates, String lines);
+
+  /// No description provided for @proxyList.
+  ///
+  /// In en, this message translates to:
+  /// **'Configured proxies'**
+  String get proxyList;
+
+  /// No description provided for @proxyTestUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Public test URL'**
+  String get proxyTestUrl;
+
+  /// No description provided for @proxyTestHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tests send a GET without provider credentials. Any origin HTTP response proves connectivity.'**
+  String get proxyTestHint;
+
+  /// No description provided for @proxyEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No proxies configured. Import a list to get started.'**
+  String get proxyEmpty;
+
+  /// No description provided for @proxyCooling.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooling down after a connection failure'**
+  String get proxyCooling;
+
+  /// No description provided for @proxyUnmeasured.
+  ///
+  /// In en, this message translates to:
+  /// **'Not measured yet'**
+  String get proxyUnmeasured;
+
+  /// No description provided for @proxyLatency.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured latency: {ms} ms'**
+  String proxyLatency(String ms);
+
+  /// No description provided for @proxyTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Test connection'**
+  String get proxyTest;
+
+  /// No description provided for @proxyTestOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy connection succeeded.'**
+  String get proxyTestOk;
+
+  /// No description provided for @proxyTestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy connection failed; it is cooling down.'**
+  String get proxyTestFailed;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

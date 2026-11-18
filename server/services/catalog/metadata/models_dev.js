@@ -26,6 +26,8 @@ function toRecord(model) {
   const outputs = model.modalities?.output || [];
   return {
     name: model.name || null,
+    priceCachedIn: model.cost?.cache_read != null ? num(model.cost.cache_read) : null,
+    priceCacheWrite: model.cost?.cache_write != null ? num(model.cost.cache_write) : null,
     priceIn: num(model.cost?.input),
     priceOut: num(model.cost?.output),
     contextWindow: num(model.limit?.context),

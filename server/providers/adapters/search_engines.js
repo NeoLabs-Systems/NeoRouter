@@ -136,6 +136,9 @@ class SearchAdapter extends BaseAdapter {
       return { status: 'healthy', message: null };
     } catch (error) {
       if (error.kind === KINDS.AUTH || error.kind === KINDS.PAYMENT) return { status: 'invalid', message: error.message };
+      // The key was accepted and the allowance is only used up until it renews
+      // (a free plan's monthly searches): no problem with the connection.
+      if (error.kind === KINDS.QUOTA_EXHAUSTED || error.kind === KINDS.RATE_LIMIT) return { status: 'healthy', message: null };
       return { status: 'unknown', message: error.message };
     }
   }

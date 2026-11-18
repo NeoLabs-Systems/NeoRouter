@@ -56,6 +56,8 @@ router.patch('/:ref', requirePermission('models.manage'), validate(z.object({
   overrides: z.object({
     free: z.boolean().nullable().optional(),
     priceIn: z.number().min(0).nullable().optional(),
+    priceCachedIn: z.number().min(0).nullable().optional(),
+    priceCacheWrite: z.number().min(0).nullable().optional(),
     priceOut: z.number().min(0).nullable().optional(),
     contextWindow: z.number().int().positive().nullable().optional(),
     tools: z.boolean().nullable().optional(),

@@ -1,0 +1,90 @@
+# Promotes beta to main and publishes a stable release. Run it by hand from the
+# Actions tab when beta is ready.
+name: Release Stable
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-stable
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Promote beta and tag stable
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Promote beta to main
+        id: promotion
+        run: |
+          set -euo pipefail
+          git fetch origin main beta --tags --force
+          git checkout main
+          echo "main_sha=$(git rev-parse origin/main)" >> "$GITHUB_OUTPUT"
+          if git merge --no-ff origin/beta -m "chore(release): promote beta to main [skip ci]"; then
+            exit 0
+          fi
+          # Both branches carry their own release commits, so only the version
+          # fields conflict on a promotion; beta's copies are the right ones.
+          conflicts="$(git diff --name-only --diff-filter=U)"
+          unexpected="$(printf '%s\n' "$conflicts" | grep -vxE 'package\.json|package-lock\.json' || true)"
+          if [[ -z "$conflicts" || -n "$unexpected" ]]; then
+            echo "::error::beta and main conflict outside the version files; resolve this by hand."
+            printf '%s\n' "$conflicts" >&2
+            git merge --abort
+            exit 1
+          fi
+          git checkout origin/beta -- package.json package-lock.json
+          git add package.json package-lock.json
+          git commit --no-edit
+
+      - name: Resolve next stable version
+        id: stable_version
+        run: node scripts/next_release_version.js stable
+
+      - name: Set package version
+        run: npm version "${{ steps.stable_version.outputs.version }}" --no-git-tag-version --allow-same-version
+
+      - name: Commit and tag
+        run: |
+          set -euo pipefail
+          git add package.json package-lock.json
+          git commit -m "chore(release): ${{ steps.stable_version.outputs.release_tag }} [skip ci]"
+          git tag "${{ steps.stable_version.outputs.release_tag }}" -m "Release ${{ steps.stable_version.outputs.release_tag }}"
+
+      - name: Push stable release
+        run: |
+          set -euo pipefail
+          remote_sha="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+          if [[ "$remote_sha" != "${{ steps.promotion.outputs.main_sha }}" ]]; then
+            echo "::error::main advanced to $remote_sha while this release was being prepared."
+            exit 1
+          fi
+          git push --atomic origin HEAD:refs/heads/main "refs/tags/${{ steps.stable_version.outputs.release_tag }}"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.stable_version.outputs.release_tag }}
+        run: |
+          gh release view "$RELEASE_TAG" >/dev/null 2>&1 || gh release create "$RELEASE_TAG" \
+            --verify-tag --title "Release $RELEASE_TAG" --generate-notes --latest

@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 const WebSocket = require('ws');
 const { createApp } = require('../../server/app');
+const { getDatabase } = require('../../server/db/database');
 const live = require('../../server/capabilities/live/gateway');
 const { createMockProvider } = require('../support/mock_provider');
 
@@ -128,4 +129,23 @@ test('a provider that hangs up before answering counts as a failed attempt', asy
   const error = await client.next('error');
   assert.match(error.error.message, /model failed/);
   assert.equal((await client.closed).code, 1011);
+});
+
+test('a key that may spend cannot pay through a connection with no billing, and the error says so', async () => {
+  const paying = (await api('post', '/keys').send({ name: 'may spend', mode: 'both', budgetUsd: 3 })).body.secret;
+  const db = getDatabase();
+  const ref = db.prepare("SELECT id FROM models WHERE model_id = 'gpt-live-1'").get().id;
+  const account = db.prepare('SELECT account_id FROM models WHERE id = ?').get(ref).account_id;
+  const before = db.prepare('SELECT billing_mode FROM provider_accounts WHERE id = ?').get(account).billing_mode;
+  db.prepare("UPDATE provider_accounts SET billing_mode = 'free_tier' WHERE id = ?").run(account);
+  db.prepare("UPDATE models SET is_free = 0, free_reason = 'not_in_free_tier' WHERE account_id = ? AND capability = 'live'").run(account);
+  try {
+    const client = open('/v1/realtime?model=gpt-live-1', { Authorization: `Bearer ${paying}` });
+    await client.opened;
+    const error = await client.next('error');
+    assert.match(error.error.message, /need credits, and their connection is set to free/);
+    await client.closed;
+  } finally {
+    db.prepare('UPDATE provider_accounts SET billing_mode = ? WHERE id = ?').run(before, account);
+  }
 });

@@ -38,17 +38,25 @@ function windows(accountId) {
   return quota.accountState(accountId).filter((item) => item.scope === `a:${accountId}` && PLAN_METRICS.has(item.metric) && item.limit);
 }
 
+function remainingOf(window, now) {
+  if (window.resetAt && window.resetAt <= now) return window.limit;
+  let remaining = window.remaining ?? window.limit;
+  if (window.metric === COUNTED) {
+    const counted = sent.get(window.scope.slice(2));
+    if (counted && counted.since === window.observedAt) remaining -= counted.count;
+  } else if (window.requestCost > 0 && window.localUsed != null) {
+    const later = Math.max(0, quota.usageInLast(window.scope, 1440, now).requests - window.localUsed);
+    remaining -= later * window.requestCost;
+  }
+  return Math.max(0, remaining);
+}
+
 /** { share: fraction left of the tightest window, resetAt } or null when unknown. */
 function room(entry, now = Date.now()) {
+  if (entry.isFlatRate) return null;
   let tightest = null;
   for (const window of windows(entry.accountId)) {
-    let remaining = window.remaining ?? window.limit;
-    if (window.resetAt && window.resetAt <= now) remaining = window.limit;
-    else if (window.metric === COUNTED) {
-      const counted = sent.get(entry.accountId);
-      if (counted && counted.since === window.observedAt) remaining -= counted.count;
-    }
-    const share = Math.max(0, remaining) / window.limit;
+    const share = remainingOf(window, now) / window.limit;
     if (!tightest || share < tightest.share) tightest = { share, resetAt: window.resetAt && window.resetAt > now ? window.resetAt : null };
   }
   return tightest;
@@ -61,12 +69,13 @@ function room(entry, now = Date.now()) {
  * reset time.
  */
 function pace(entry, now = Date.now()) {
+  if (entry.isFlatRate) return null;
   let tightest = null;
   for (const window of windows(entry.accountId)) {
     const length = WINDOW_MS[window.metric];
     if (!length || !window.resetAt) continue;
     const renewed = window.resetAt <= now;
-    const share = renewed ? 1 : Math.max(0, window.remaining ?? window.limit) / window.limit;
+    const share = renewed ? 1 : remainingOf(window, now) / window.limit;
     const timeLeft = renewed ? 1 : Math.min(1, Math.max(MIN_TIME_LEFT, (window.resetAt - now) / length));
     const ratio = share / timeLeft;
     if (tightest === null || ratio < tightest) tightest = ratio;
@@ -74,17 +83,39 @@ function pace(entry, now = Date.now()) {
   return tightest;
 }
 
+/**
+ * How far the tightest plan window is used compared with how far it has run:
+ * { usedShare, elapsedShare } (both 0 to 1), or null when no window has a
+ * known length and reset time. Smoothing (smoothing.js) holds a plan back
+ * while usedShare runs ahead of elapsedShare.
+ */
+function schedules(entry, now = Date.now()) {
+  if (entry.isFlatRate) return [];
+  return windows(entry.accountId).flatMap((window) => {
+    const length = WINDOW_MS[window.metric];
+    if (!length || !window.resetAt || window.resetAt <= now) return [];
+    return [{ metric: window.metric, usedShare: 1 - remainingOf(window, now) / window.limit,
+      elapsedShare: Math.min(1, Math.max(0, 1 - (window.resetAt - now) / length)),
+      startAt: window.resetAt - length, resetAt: window.resetAt,
+      requestShare: (window.requestCost || 0) / window.limit }];
+  });
+}
+function schedule(entry, now = Date.now()) {
+  return schedules(entry, now).reduce((worst, item) => !worst || item.usedShare - item.elapsedShare > worst.usedShare - worst.elapsedShare ? item : worst, null);
+}
+
 /** The allowance a request spends, priced by pace() (0 for models outside a plan). */
 function allowanceCost(entry, now = Date.now()) {
-  if (!entry.isPlan) return 0;
+  if (!entry.isPlan || entry.isFlatRate) return 0;
   const ratio = pace(entry, now);
   if (ratio === null) return ON_SCHEDULE_COST;
   if (ratio >= 1) return ON_SCHEDULE_COST * Math.max(0, 2 - ratio);
   return ON_SCHEDULE_COST + (BEHIND_COST - ON_SCHEDULE_COST) * (1 - ratio);
 }
 
-function onSent(entry) {
-  if (!entry.isPlan) return;
+function onSent(entry, now = Date.now()) {
+  if (!entry.isPlan || entry.isFlatRate) return;
+  quota.recordPlanRequest(entry.accountId, now);
   const counted = windows(entry.accountId).find((window) => window.metric === COUNTED);
   if (!counted) return;
   const previous = sent.get(entry.accountId);
@@ -136,4 +167,4 @@ function resetForTests() {
   sent.clear();
 }
 
-module.exports = { room, pace, allowanceCost, onSent, effective, rejection, factor, observeHeaders, PLAN_METRICS, resetForTests };
+module.exports = { room, pace, schedule, schedules, allowanceCost, onSent, effective, rejection, factor, observeHeaders, PLAN_METRICS, resetForTests };

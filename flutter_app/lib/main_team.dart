@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
+import 'main_pool.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
@@ -52,7 +53,13 @@ class TeamScreen extends StatefulWidget {
   State<TeamScreen> createState() => _TeamScreenState();
 }
 
+/// People who help manage this NeoRouter, and the pool of other NeoRouters
+/// sharing free capacity: both about who works with you, on one page.
+enum _TeamTab { pool, people }
+
 class _TeamScreenState extends State<TeamScreen> {
+  // Pools come first; the team tab opens for an invite to someone's team.
+  late _TeamTab _tab = widget.controller.pendingInvite != null ? _TeamTab.people : widget.controller.savedTab('network', _TeamTab.values, _TeamTab.pool);
   TeamSummary? _team;
   bool _loading = true;
   String? _error;
@@ -177,6 +184,23 @@ class _TeamScreenState extends State<TeamScreen> {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
     final team = _team;
+    final tabs = PageTabs<_TeamTab>(
+      tabs: <({_TeamTab value, String label, int? count})>[
+        (value: _TeamTab.pool, label: t.teamTabPool, count: controller.inPool ? controller.pools!.pools.length : null),
+        (value: _TeamTab.people, label: t.teamTabPeople, count: team == null || team.members.isEmpty ? null : team.members.length),
+      ],
+      selected: _tab,
+      onChanged: (tab) {
+        widget.controller.rememberChoice('network', tab);
+        setState(() => _tab = tab);
+      },
+    );
+    if (_tab == _TeamTab.pool) {
+      return PageScaffold(
+        header: ScreenHeader(title: t.teamTitle, description: t.networkDescription),
+        children: <Widget>[tabs, const SizedBox(height: AppSpacing.lg), PoolTab(controller: controller)],
+      );
+    }
     return PageScaffold(
       header: ScreenHeader(
         title: t.teamTitle,
@@ -184,6 +208,8 @@ class _TeamScreenState extends State<TeamScreen> {
         trailing: FilledButton.icon(onPressed: team == null ? null : _createInvite, icon: const Icon(Icons.person_add_alt_1_outlined, size: 18), label: Text(t.inviteSomeone)),
       ),
       children: <Widget>[
+        tabs,
+        const SizedBox(height: AppSpacing.lg),
         AsyncBody(
           loading: _loading,
           error: _error,

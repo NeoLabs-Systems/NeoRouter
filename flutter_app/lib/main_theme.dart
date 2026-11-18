@@ -26,6 +26,7 @@ class NeoRouterPalette {
     required this.warning,
     required this.error,
     required this.info,
+    required this.pool,
     required this.shadow,
     required this.glassFill,
     required this.glassBorder,
@@ -55,6 +56,8 @@ class NeoRouterPalette {
 
   /// Kept for compatibility; neutral like [secondary].
   final Color info;
+  /// Capacity from pool partners: a calm blue, so it reads apart from the gold accent.
+  final Color pool;
   final Color shadow;
   final Color glassFill;
   final Color glassBorder;
@@ -83,6 +86,7 @@ const NeoRouterPalette _darkPalette = NeoRouterPalette(
   warning: Color(0xFFD7A84E),
   error: Color(0xFFE08A79),
   info: Color(0xFF6E7A6A),
+  pool: Color(0xFF86B8C8),
   shadow: Color(0x33000000),
   glassFill: Color(0xFF141C17),
   glassBorder: Color(0x22E0F0E0),
@@ -109,6 +113,7 @@ const NeoRouterPalette _lightPalette = NeoRouterPalette(
   warning: Color(0xFFA9741C),
   error: Color(0xFFB4483C),
   info: Color(0xFFA6AB9C),
+  pool: Color(0xFF3F7A8C),
   shadow: Color(0x141C2117),
   glassFill: Color(0xFFFFFFFF),
   glassBorder: Color(0x241C2117),

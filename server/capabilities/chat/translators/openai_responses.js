@@ -46,6 +46,7 @@ function toCanonical(body) {
   if (Number.isFinite(body.max_output_tokens)) request.max_tokens = body.max_output_tokens;
   if (body.temperature !== undefined) request.temperature = body.temperature;
   if (body.top_p !== undefined) request.top_p = body.top_p;
+  if (body.prompt_cache_key) request.prompt_cache_key = body.prompt_cache_key;
   if (body.user) request.user = body.user;
   if (body.parallel_tool_calls !== undefined) request.parallel_tool_calls = body.parallel_tool_calls;
   if (body.reasoning?.effort) request.reasoning_effort = body.reasoning.effort;

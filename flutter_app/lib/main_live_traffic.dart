@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show PointMode;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,18 +16,27 @@ import 'src/models.dart';
 /// router. Requests from the request log travel from the key that sent them
 /// into the router, circle it while it decides, fly to the provider that
 /// answered (bouncing back from the ones that failed first) and return as
-/// answers. New requests play as they arrive; in between, recent ones are
-/// replayed at an easy pace, and the view says which it is showing.
+/// answers. Only real traffic plays, as it arrives; with none, the view
+/// stays quiet and says so.
 class LiveTrafficHero extends StatefulWidget {
-  const LiveTrafficHero({super.key, required this.controller, required this.accounts, required this.keys, required this.title, required this.status, this.action, this.onMore});
+  const LiveTrafficHero({super.key, required this.controller, required this.accounts, required this.keys, required this.ready, required this.title, required this.status, this.action, this.onMore, this.onStatusTap, this.note});
 
   final NeoRouterController controller;
+
+  /// Connections and keys have arrived; until then their cards are unknown.
+  final bool ready;
   final List<ProviderAccount> accounts;
   final List<RouterKey> keys;
   final String title;
   final String status;
+
+  /// A small extra line under the status (e.g. that limits are being spread).
+  final String? note;
   final Widget? action;
   final VoidCallback? onMore;
+
+  /// Set when the status line reports a problem: opens the details.
+  final VoidCallback? onStatusTap;
 
   @override
   State<LiveTrafficHero> createState() => _LiveTrafficHeroState();
@@ -35,6 +45,9 @@ class LiveTrafficHero extends StatefulWidget {
 // How long each leg of a request's trip takes on screen, in ms.
 const double _inMs = 950, _thinkMs = 750, _outMs = 620, _bounceMs = 520, _rethinkMs = 420, _backMs = 600, _homeMs = 820;
 const int _historySize = 40;
+// On opening, requests from this far back play in their real rhythm, so the
+// view starts in the middle of what is happening rather than from nothing.
+const Duration _backfill = Duration(seconds: 15);
 
 class _Attempt {
   const _Attempt(this.provider, this.ok);
@@ -45,7 +58,7 @@ class _Attempt {
 class _Packet {
   _Packet({required this.app, required this.attempts, required this.label, required this.success, required this.latency, required this.live, this.queued = 0});
 
-  final int app;
+  int app;
   final List<_Attempt> attempts;
   final String label;
   final bool success;
@@ -95,6 +108,34 @@ class _Scene extends ChangeNotifier {
       provFail = List<double>.filled(providers, -1e9);
       provBusy = List<int>.filled(providers, 0);
     }
+  }
+
+  /// The cards were rearranged: moves everything in flight (and each card's
+  /// glow) to where its card is now. map[old] is the new index, or -1.
+  void remap(List<int> appMap, List<int> provMap, int apps, int providers) {
+    int to(List<int> map, int index) => index >= 0 && index < map.length ? map[index] : -1;
+    List<T> moved<T>(List<T> old, List<int> map, int length, T empty) {
+      final next = List<T>.filled(length, empty);
+      for (var i = 0; i < old.length; i++) {
+        final j = to(map, i);
+        if (j >= 0 && j < length) next[j] = old[i];
+      }
+      return next;
+    }
+
+    appGlow = moved(appGlow, appMap, apps, 0.0);
+    appFlash = moved(appFlash, appMap, apps, -1e9);
+    provGlow = moved(provGlow, provMap, providers, 0.0);
+    provFail = moved(provFail, provMap, providers, -1e9);
+    provBusy = moved(provBusy, provMap, providers, 0);
+    for (final p in packets) {
+      p.app = math.max(0, to(appMap, p.app));
+      for (var k = 0; k < p.attempts.length; k++) {
+        p.attempts[k] = _Attempt(to(provMap, p.attempts[k].provider), p.attempts[k].ok);
+      }
+    }
+    // A request whose card is gone has nowhere to fly.
+    packets.removeWhere((p) => p.attempts.any((a) => a.provider < 0) && p.phase != 'home' && p.phase != 'fail');
   }
 
   int get thinking => packets.where((p) => p.phase == 'think' || p.phase == 'rethink').length;
@@ -201,7 +242,7 @@ class _Scene extends ChangeNotifier {
 /// Where everything sits for a given size: side by side when there is room,
 /// apps on top and providers below on a phone.
 class _Layout {
-  _Layout(this.size, int apps, int providers) {
+  _Layout(this.size, int apps, int providers, {this.poolIndex}) {
     vertical = size.width < 640;
     const pad = 16.0;
     if (!vertical) {
@@ -211,6 +252,8 @@ class _Layout {
       core = Offset(size.width / 2, size.height / 2);
       appPos = _column(apps, pad + nodeW / 2, 84);
       provPos = _column(providers, size.width - pad - nodeW / 2, 72);
+      // The pool card stands out of the column, nearer the router.
+      if (poolIndex != null && poolIndex! < provPos.length) provPos[poolIndex!] = provPos[poolIndex!].translate(-nodeW * 0.35, 8);
     } else {
       nodeH = 44;
       radius = (size.width * 0.13).clamp(34, 56).toDouble();
@@ -229,6 +272,7 @@ class _Layout {
   }
 
   final Size size;
+  final int? poolIndex;
   late final bool vertical;
   late double nodeW;
   late final double appW;
@@ -304,6 +348,9 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
 
   bool _loaded = false;
 
+  // Requests and the connections and keys they go between have all arrived.
+  bool get _ready => _loaded && widget.ready;
+
   final _Scene _scene = _Scene();
   late final Ticker _ticker;
   Duration _last = Duration.zero;
@@ -312,7 +359,6 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   final List<RequestLog> _history = <RequestLog>[];
   final List<RequestLog> _queue = <RequestLog>[];
   double _sinceSpawn = 0;
-  double _nextReplay = 600;
   double _lastLive = -1e9;
   bool _warmed = false;
 
@@ -320,9 +366,12 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   List<String> _providers = <String>[];
   // Provider keys of the cards ("*": the rest), and which provider each account slug belongs to.
   List<String> _providerSlugs = <String>[];
+  // Where the pool sits among the providers, when this person is in a pool.
+  int? _poolIndex;
   Map<String, String> _slugToProvider = <String, String>{};
   final Map<String, int> _appRequests = <String, int>{};
-  final Map<int, String> _lastModel = <int, String>{};
+  // The model each provider card answered with last, by card key.
+  final Map<String, String> _lastModel = <String, String>{};
 
   @override
   void initState() {
@@ -336,9 +385,9 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   @override
   void didUpdateWidget(LiveTrafficHero oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.accounts != widget.accounts || oldWidget.keys != widget.keys) {
+    if (oldWidget.accounts != widget.accounts || oldWidget.keys != widget.keys || oldWidget.ready != widget.ready) {
       _arrange();
-      if (_history.isNotEmpty && !_warmed) _warmUp();
+      if (_history.isNotEmpty && !_warmed && widget.ready) _warmUp();
     }
   }
 
@@ -361,12 +410,12 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
       _history
         ..insertAll(0, fresh)
         ..length = math.min(_history.length, _historySize);
-      // The first load is history to replay; later arrivals play live.
+      // The first load is history (only its last seconds play); later arrivals play live.
       if (!first) _queue.addAll(fresh.reversed.take(30));
       _arrange();
-      if (first && !_warmed) _warmUp();
+      if (first && !_warmed && widget.ready) _warmUp();
     } catch (_) {
-      // The next poll tries again; the scene keeps replaying meanwhile.
+      // The next poll tries again.
     }
   }
 
@@ -381,10 +430,12 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
         slugCounts[slug] = (slugCounts[slug] ?? 0) + 1;
       }
     }
+    final oldApps = _apps;
+    final oldProviderSlugs = _providerSlugs;
     final keyNames = <String>{...(keyCounts.keys.toList()..sort((a, b) => keyCounts[b]!.compareTo(keyCounts[a]!))), ...widget.keys.map((key) => key.name)}.toList();
     final wide = MediaQuery.maybeSizeOf(context)?.width ?? 1200;
     final maxApps = wide < 640 ? 4 : 6;
-    _apps = keyNames.length > maxApps ? <String>[...keyNames.take(maxApps - 1), _otherLabel] : keyNames;
+    _apps = _keepOrder(oldApps, keyNames.length > maxApps ? <String>[...keyNames.take(maxApps - 1), _otherLabel] : keyNames);
     // One card per provider, however many of its accounts are connected.
     _slugToProvider = <String, String>{for (final account in widget.accounts) account.slug: account.providerKey};
     final providerCounts = <String, int>{};
@@ -396,16 +447,45 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
     final keys = providerNames.keys.toList()..sort((a, b) => providerCounts[b]!.compareTo(providerCounts[a]!));
     const maxProviders = 8;
     final shown = keys.length > maxProviders ? keys.take(maxProviders - 1).toList() : keys;
-    _providerSlugs = List<String>.of(shown);
-    _providers = shown.map((key) => providerNames[key]!).toList();
-    if (keys.length > maxProviders) {
-      _providerSlugs.add('*');
-      _providers.add(_otherLabel);
+    // "Other" and the pool card always come last.
+    final slugs = _keepOrder(oldProviderSlugs.where((slug) => slug != '*' && slug != _poolSlug).toList(), shown);
+    if (keys.length > maxProviders) slugs.add('*');
+    final inPool = widget.controller.pools?.inPool ?? false;
+    if (inPool) slugs.add(_poolSlug);
+    _providerSlugs = slugs;
+    _providers = <String>[
+      for (final slug in slugs)
+        slug == '*'
+            ? _otherLabel
+            : slug == _poolSlug
+            ? AppL10n.of(context).filterPool
+            : providerNames[slug]!,
+    ];
+    // Pool partners share one card, set a little apart from the providers.
+    _poolIndex = inPool ? slugs.length - 1 : null;
+    final apps = math.max(1, _apps.length), providers = math.max(1, _providers.length);
+    if (!listEquals(oldApps, _apps) || !listEquals(oldProviderSlugs, _providerSlugs)) {
+      // Cards that moved take what is in flight to them along.
+      _scene.remap(
+        <int>[for (final name in oldApps) _apps.indexOf(name)],
+        <int>[for (final slug in oldProviderSlugs) _providerSlugs.indexOf(slug)],
+        apps,
+        providers,
+      );
     }
-    _scene.resize(math.max(1, _apps.length), math.max(1, _providers.length));
+    _scene.resize(apps, providers);
+  }
+
+  // The wanted cards, but those already shown keep their place, so a card
+  // does not jump (and lose its label) just because traffic shifted a little.
+  static List<String> _keepOrder(List<String> current, List<String> wanted) {
+    final wantedSet = wanted.toSet();
+    final kept = current.where(wantedSet.contains).toList();
+    return <String>[...kept, ...wanted.where((name) => !kept.contains(name))];
   }
 
   String get _otherLabel => AppL10n.of(context).liveOther;
+  static const String _poolSlug = '#pool';
 
   Iterable<String> _slugsOf(RequestLog log) sync* {
     for (final step in log.trail) {
@@ -416,6 +496,8 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   }
 
   int _providerIndex(String slug) {
+    // Partner connections are named pool-<partner>; they all go to the pool card.
+    if (slug.startsWith('pool-') && _poolIndex != null) return _poolIndex!;
     final index = _providerSlugs.indexOf(_slugToProvider[slug] ?? slug);
     if (index >= 0) return index;
     return _providerSlugs.indexOf('*');
@@ -433,7 +515,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
       final provider = model.contains('/') ? _providerIndex(model.split('/').first) : -1;
       if (provider < 0) continue;
       attempts.add(_Attempt(provider, outcome == 'success'));
-      if (outcome == 'success') _lastModel[provider] = model.substring(model.indexOf('/') + 1);
+      if (outcome == 'success') _lastModel[_providerSlugs[provider]] = model.substring(model.indexOf('/') + 1);
     }
     if (attempts.isEmpty && log.success && (log.model ?? '').contains('/')) {
       final provider = _providerIndex(log.model!.split('/').first);
@@ -455,11 +537,30 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   }
 
   // Starts mid-traffic, so the very first frame already has requests moving.
+  // What arrived in the last seconds plays as live, each request where it
+  // would be by now; with nothing that recent, the view starts quiet.
   void _warmUp() {
     _warmed = true;
-    for (var i = 0; i < 300; i++) {
-      _step(16);
+    final now = DateTime.now();
+    final start = now.subtract(_backfill);
+    final recent = _history.where((log) => log.createdAt.isAfter(start)).toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    if (recent.isEmpty) return;
+    const frame = 16.0;
+    var clock = 0.0;
+    for (final log in recent) {
+      final at = log.createdAt.difference(start).inMilliseconds.toDouble();
+      while (clock < at) {
+        _scene.advance(frame);
+        clock += frame;
+      }
+      _spawn(log, live: true);
     }
+    final end = _backfill.inMilliseconds.toDouble();
+    while (clock < end) {
+      _scene.advance(frame);
+      clock += frame;
+    }
+    _sinceSpawn = 0;
   }
 
   double get _speed => MediaQuery.maybeDisableAnimationsOf(context) == true ? 0.5 : 1;
@@ -471,14 +572,15 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   }
 
   void _step(double dt) {
+    // Without the connections, a request would not know which card it goes to.
+    if (!widget.ready) {
+      _scene.advance(dt);
+      return;
+    }
     _sinceSpawn += dt;
     if (_queue.isNotEmpty && _sinceSpawn > 260) {
       _sinceSpawn = 0;
       _spawn(_queue.removeAt(0), live: true);
-    } else if (_queue.isEmpty && _history.isNotEmpty && _sinceSpawn > _nextReplay && _scene.packets.length < 24) {
-      _sinceSpawn = 0;
-      _nextReplay = 700 + _scene.random.nextDouble() * 1300;
-      _spawn(_history[_scene.random.nextInt(_history.length)], live: false);
     }
     _scene.advance(dt);
   }
@@ -501,15 +603,19 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _Header(title: widget.title, status: widget.status, action: widget.action, scene: _scene, liveSince: () => _lastLive, hasTraffic: () => _history.isNotEmpty, loaded: () => _loaded, compact: compact),
+              _Header(title: widget.title, status: widget.status, note: widget.note, onStatusTap: widget.onStatusTap, action: widget.action, scene: _scene, liveSince: () => _lastLive, hasTraffic: () => _history.isNotEmpty, loaded: () => _ready, compact: compact),
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, stage) {
                     // While loading, skeleton slots stand in for keys and connections.
-                    final apps = _loaded || _apps.isNotEmpty ? math.max(1, _apps.length) : (compact ? 3 : 4);
-                    final providers = _loaded || _providers.isNotEmpty ? math.max(1, _providers.length) : (compact ? 4 : 5);
-                    final layout = _Layout(Size(stage.maxWidth, stage.maxHeight), apps, providers);
-                    return _Stage(scene: _scene, layout: layout, apps: _apps, providers: _providers, appRequests: _appRequests, lastModel: _lastModel, empty: _history.isEmpty, loaded: _loaded);
+                    final apps = _ready || _apps.isNotEmpty ? math.max(1, _apps.length) : (compact ? 3 : 4);
+                    final providers = _ready || _providers.isNotEmpty ? math.max(1, _providers.length) : (compact ? 4 : 5);
+                    final layout = _Layout(Size(stage.maxWidth, stage.maxHeight), apps, providers, poolIndex: _poolIndex);
+                    final lastModels = <int, String>{
+                      for (var j = 0; j < _providerSlugs.length; j++)
+                        if (_lastModel[_providerSlugs[j]] != null) j: _lastModel[_providerSlugs[j]]!,
+                    };
+                    return _Stage(scene: _scene, layout: layout, apps: _apps, providers: _providers, appRequests: _appRequests, lastModel: lastModels, empty: _history.isEmpty, loaded: _ready, poolIndex: _poolIndex);
                   },
                 ),
               ),
@@ -523,10 +629,12 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.title, required this.status, required this.action, required this.scene, required this.liveSince, required this.hasTraffic, required this.loaded, required this.compact});
+  const _Header({required this.title, required this.status, this.note, this.onStatusTap, required this.action, required this.scene, required this.liveSince, required this.hasTraffic, required this.loaded, required this.compact});
 
   final String title;
   final String status;
+  final String? note;
+  final VoidCallback? onStatusTap;
   final Widget? action;
   final _Scene scene;
   final double Function() liveSince;
@@ -548,7 +656,7 @@ class _Header extends StatelessWidget {
           animation: scene,
           builder: (context, _) {
             final live = scene.t - liveSince() < 30000;
-            final label = !loaded() ? t.liveLoading : !hasTraffic() ? t.liveWaiting : live ? t.liveNow : t.liveReplay;
+            final label = !loaded() ? t.liveLoading : !hasTraffic() ? t.liveWaiting : live ? t.liveNow : t.liveQuiet;
             final color = live ? palette.success : palette.textMuted;
             final blink = live ? 0.35 + 0.65 * (0.5 + 0.5 * math.sin(scene.t / 260)) : 1.0;
             return Container(
@@ -574,7 +682,44 @@ class _Header extends StatelessWidget {
         Text(title, style: displayTitleStyle(palette, size: compact ? 22 : 28)),
         if (status.isNotEmpty) ...<Widget>[
           const SizedBox(height: 4),
-          Text(status, style: TextStyle(color: palette.textSoft, height: 1.4)),
+          if (onStatusTap == null)
+            Text(status, style: TextStyle(color: palette.textSoft, height: 1.4))
+          else
+            // A problem: the line itself opens which connections and why.
+            InkWell(
+              onTap: onStatusTap,
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Container(width: 7, height: 7, decoration: BoxDecoration(color: palette.warning, shape: BoxShape.circle)),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        status,
+                        style: TextStyle(color: palette.text, height: 1.4, decoration: TextDecoration.underline, decorationColor: palette.textMuted),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.chevron_right_rounded, size: 18, color: palette.textSoft),
+                  ],
+                ),
+              ),
+            ),
+        ],
+        if (note != null) ...<Widget>[
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(padding: const EdgeInsets.only(top: 2), child: Icon(Icons.schedule_rounded, size: 13, color: palette.textMuted)),
+              const SizedBox(width: 6),
+              Flexible(child: Text(note!, style: TextStyle(fontSize: 12.5, color: palette.textMuted, height: 1.4))),
+            ],
+          ),
         ],
       ],
     );
@@ -653,7 +798,7 @@ class _Footer extends StatelessWidget {
 /// The animated part: the painter underneath and the app and connection
 /// cards on top, both following the scene every frame.
 class _Stage extends StatelessWidget {
-  const _Stage({required this.scene, required this.layout, required this.apps, required this.providers, required this.appRequests, required this.lastModel, required this.empty, required this.loaded});
+  const _Stage({required this.scene, required this.layout, required this.apps, required this.providers, required this.appRequests, required this.lastModel, required this.empty, required this.loaded, this.poolIndex});
 
   final _Scene scene;
   final _Layout layout;
@@ -663,6 +808,7 @@ class _Stage extends StatelessWidget {
   final Map<int, String> lastModel;
   final bool empty;
   final bool loaded;
+  final int? poolIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -695,7 +841,7 @@ class _Stage extends StatelessWidget {
             children: <Widget>[
               Positioned.fill(
                 child: CustomPaint(
-                  painter: _TrafficPainter(scene: s, layout: layout, palette: palette, loading: !loaded),
+                  painter: _TrafficPainter(scene: s, layout: layout, palette: palette, loading: !loaded, poolIndex: poolIndex),
                 ),
               ),
               for (var i = 0; i < layout.appPos.length && i < appNames.length; i++)
@@ -721,6 +867,7 @@ class _Stage extends StatelessWidget {
                   shakeAt: j < s.provFail.length ? s.t - s.provFail[j] : 1e9,
                   dashed: providers.isEmpty,
                   width: layout.provW,
+                  tint: j == poolIndex ? palette.pool : null,
                 ),
               if (!loaded && apps.isEmpty)
                 for (var i = 0; i < layout.appPos.length; i++) _skeleton(palette, layout.appPos[i], layout.appW, s.t, i),
@@ -857,14 +1004,18 @@ class _Stage extends StatelessWidget {
     double shakeAt = 1e9,
     bool dashed = false,
     required double width,
+    // The pool card: its own colour instead of the accent.
+    Color? tint,
   }) {
     final shake = fail > 0 ? math.sin(shakeAt / 28) * 4 * fail : 0.0;
+    final rest = tint == null ? palette.border : tint.withValues(alpha: 0.55);
+    final hot = tint ?? palette.accent;
     final border = fail > 0
-        ? Color.lerp(palette.border, palette.error, 0.4 + fail * 0.6)!
+        ? Color.lerp(rest, palette.error, 0.4 + fail * 0.6)!
         : glow > 0
-        ? Color.lerp(palette.border, palette.accent, 0.3 + glow * 0.7)!
-        : palette.border;
-    final shadow = fail > 0 ? palette.error.withValues(alpha: fail * 0.45) : palette.accent.withValues(alpha: glow * 0.3);
+        ? Color.lerp(rest, hot, 0.3 + glow * 0.7)!
+        : rest;
+    final shadow = fail > 0 ? palette.error.withValues(alpha: fail * 0.45) : hot.withValues(alpha: glow * 0.3);
     return Positioned(
       left: center.dx - width / 2 + shake,
       top: center.dy - layout.nodeH / 2,
@@ -873,7 +1024,7 @@ class _Stage extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
-          color: palette.surfaceRaised,
+          color: tint == null ? palette.surfaceRaised : Color.alphaBlend(tint.withValues(alpha: 0.08), palette.surfaceRaised),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: dashed ? palette.borderStrong : border, width: dashed ? 1 : 1.2),
           boxShadow: <BoxShadow>[if (glow > 0 || fail > 0) BoxShadow(color: shadow, blurRadius: 18)],
@@ -903,12 +1054,14 @@ class _Stage extends StatelessWidget {
 }
 
 class _TrafficPainter extends CustomPainter {
-  _TrafficPainter({required this.scene, required this.layout, required this.palette, this.loading = false});
+  _TrafficPainter({required this.scene, required this.layout, required this.palette, this.loading = false, this.poolIndex});
 
   final _Scene scene;
   final _Layout layout;
   final NeoRouterPalette palette;
   final bool loading;
+  // The pool's route is drawn in the pool colour.
+  final int? poolIndex;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -931,9 +1084,10 @@ class _TrafficPainter extends CustomPainter {
     }
     for (var j = 0; j < layout.provPos.length; j++) {
       final path = _path(layout.provCurve(j));
-      canvas.drawPath(path, base);
+      final pool = j == poolIndex;
+      canvas.drawPath(path, pool ? (Paint.from(base)..color = palette.pool.withValues(alpha: 0.4)) : base);
       final glow = j < s.provGlow.length ? s.provGlow[j] : 0.0;
-      if (glow > 0.01) canvas.drawPath(path, hot..color = palette.accent.withValues(alpha: glow * 0.85));
+      if (glow > 0.01) canvas.drawPath(path, hot..color = (pool ? palette.pool : palette.accent).withValues(alpha: glow * 0.85));
     }
 
     if (loading) _loadingPulses(canvas);

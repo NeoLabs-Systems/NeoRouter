@@ -9,6 +9,7 @@
 // without new evidence, so a single burst never caps an account for good.
 const registry = require('../../providers/registry');
 const loadTracker = require('./load_tracker');
+const accountLimits = require('../quota/account_limits');
 
 const FORGET_AFTER_MS = 60 * 60 * 1000;
 const SUCCESSES_TO_PROBE_UP = 10;
@@ -18,7 +19,18 @@ const CONCURRENCY_PATTERN = /concurren|parallel requests|simultaneous|in.?flight
 const learned = new Map();
 
 function documented(entry) {
-  return registry.get(entry.definitionId)?.limits?.account?.concurrent || null;
+  const definition = registry.get(entry.definitionId);
+  const billing = definition?.billing.flatRate;
+  if (billing) {
+    let selected = entry.slotPlan;
+    if (!selected) {
+      const row = require('../../db/database').getDatabase().prepare('SELECT options_json FROM provider_accounts WHERE id = ?').get(entry.accountId);
+      selected = JSON.parse(row?.options_json || '{}').slotPlan || billing.defaultPlan;
+    }
+    const plan = billing.plans.find((item) => item.id === selected);
+    if (plan) return plan.concurrent;
+  }
+  return definition?.limits?.account?.concurrent || null;
 }
 
 function current(accountId, now) {
@@ -30,8 +42,11 @@ function current(accountId, now) {
   return item || null;
 }
 
-/** { limit, source: 'learned' | 'documented' } or null when unknown. */
+/** { limit, source: 'manual' | 'learned' | 'documented' } or null when unknown. */
 function limitFor(entry, now = Date.now()) {
+  // A number the person stated is exact: it never fades and is never learned over.
+  const stated = accountLimits.get(entry.accountId).concurrent;
+  if (stated) return { limit: stated, source: 'manual' };
   const item = current(entry.accountId, now);
   const known = documented(entry);
   if (item) return { limit: known ? Math.min(item.limit, known) : item.limit, source: 'learned' };
@@ -40,6 +55,19 @@ function limitFor(entry, now = Date.now()) {
 
 const isConcurrencyError = (error) => CONCURRENCY_PATTERN.test(String(error?.message || ''));
 
+// The limit when the provider names it ("concurrency limit: 4 in-flight
+// requests", "max 4 concurrent requests"): exact, unlike a guess from how
+// many were running here (other clients may share the key).
+const NAMED_LIMIT = [/concurren\w*\s+limit\D{0,12}(\d{1,4})/i, /(\d{1,4})\s+(?:in.?flight|concurrent|parallel|simultaneous)/i];
+function namedLimit(error) {
+  const text = String(error?.message || '');
+  for (const pattern of NAMED_LIMIT) {
+    const value = Number(text.match(pattern)?.[1]);
+    if (value >= 1) return value;
+  }
+  return null;
+}
+
 /**
  * After a rate-limit error. `running` counts the account's requests in
  * flight, the failed one included. Returns true when it looked like a
@@ -47,8 +75,14 @@ const isConcurrencyError = (error) => CONCURRENCY_PATTERN.test(String(error?.mes
  */
 function onRateLimited(entry, error, { running = loadTracker.inflight(entry).account, now = Date.now() } = {}) {
   const explicit = isConcurrencyError(error);
+  if (accountLimits.get(entry.accountId).concurrent) return explicit;
   if (!explicit && running < 2) return false;
   const item = current(entry.accountId, now);
+  const named = namedLimit(error);
+  if (named) {
+    learned.set(entry.accountId, { limit: named, at: now, successes: 0 });
+    return explicit;
+  }
   const limit = Math.max(1, running - 1);
   if (!item || limit < item.limit || explicit) learned.set(entry.accountId, { limit: Math.min(limit, item?.limit ?? limit), at: now, successes: 0 });
   else item.at = now;
@@ -67,8 +101,14 @@ function onSuccess(entry, { running = loadTracker.inflight(entry).account, now =
   }
 }
 
-function resetForTests() {
-  learned.clear();
+/** Drops what was learned about an account (a person says it works again). */
+function forget(accountId) {
+  learned.delete(accountId);
 }
 
-module.exports = { limitFor, onRateLimited, onSuccess, isConcurrencyError, resetForTests };
+function resetForTests() {
+  learned.clear();
+  accountLimits.resetForTests();
+}
+
+module.exports = { namedLimit, forget, limitFor, onRateLimited, onSuccess, isConcurrencyError, resetForTests };

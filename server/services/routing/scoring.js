@@ -12,11 +12,24 @@ const TPS_RANGE = [10, 1500];
 const TTFT_RANGE = [150, 15000];
 const PRICE_RANGE = [0.05, 60];
 const DEFAULT_INTELLIGENCE = 0.4;
+// A score with little behind it counts for less: below this confidence it is
+// pulled towards what an unknown model is typically worth, so a model nobody
+// has measured cannot rank above ones that have been.
+const TRUSTED_CONFIDENCE = 0.5;
+const UNKNOWN_INTELLIGENCE = 0.25;
 const UNKNOWN_PRICE_COST = 0.3;
 const RELIABILITY_PRIOR = { alpha: 2, beta: 1 };
 const MAX_PENALTY = 10;
 const PENALTY_IMPACT = 0.6;
 const DEFAULT_CAPACITY = 4;
+
+function trustedIntelligence(entry) {
+  const value = entry.intelligence ?? DEFAULT_INTELLIGENCE;
+  const confidence = entry.intelligenceConfidence;
+  if (entry.intelligenceSource === 'manual' || confidence === null || confidence === undefined || confidence >= TRUSTED_CONFIDENCE) return value;
+  const share = Math.max(0, confidence) / TRUSTED_CONFIDENCE;
+  return share * value + (1 - share) * UNKNOWN_INTELLIGENCE;
+}
 
 function logScale(value, [low, high]) {
   if (!Number.isFinite(value) || value <= 0) return null;
@@ -127,7 +140,7 @@ function score(entry, { weights, quotaFactor = 1, random, sample = true, now = D
   const snapshot = stats.snapshot(entry.ref, now);
   const learned = experience.adjust(task ? entry.ref : null, task?.primary, reliability(snapshot, { sample, random }), now);
   const totalWeight = weights.intelligence + weights.speed + weights.reliability + weights.cost;
-  const capability = Math.min(1, taskIntelligence(entry.intelligence ?? DEFAULT_INTELLIGENCE, entry.skills, task?.skills) * learned.quality);
+  const capability = Math.min(1, taskIntelligence(trustedIntelligence(entry), entry.skills, task?.skills) * learned.quality);
   const features = {
     intelligence: enoughIntelligence(capability, need, weights.intelligence / totalWeight),
     speed: speed(entry, snapshot),
@@ -144,9 +157,40 @@ function score(entry, { weights, quotaFactor = 1, random, sample = true, now = D
   return {
     score: base * quotaFactor * penaltyFactor * loadFactor,
     base,
+    capability,
     features,
     factors: { quota: quotaFactor, penalty: penaltyFactor, load: loadFactor },
   };
 }
 
-module.exports = { score, reliability, speed, cost, blendedPrice, adaptWeights, sampleBeta, logScale };
+// Floor for each feature, so one zero cannot wipe out a geometric mean.
+const FEATURE_FLOOR = 0.02;
+
+/**
+ * What a model is worth for a kind of task apart from its price and from what
+ * is going on right now: benchmarks and ratings, measured speed, and its track
+ * record, weighed as a style weighs them. A weighted geometric mean, so a model
+ * has to be decent on every axis.
+ */
+function worth(entry, { weights, task, now = Date.now() }) {
+  const features = worthParts(entry, { task, now });
+  return { value: combineWorth(features, weights), features };
+}
+
+function worthParts(entry, { task, now = Date.now() }) {
+  const snapshot = stats.snapshot(entry.ref, now);
+  const learned = experience.adjust(entry.ref, task.primary, reliability(snapshot, { sample: false }), now);
+  return {
+    intelligence: Math.min(1, taskIntelligence(trustedIntelligence(entry), entry.skills, task.skills) * learned.quality),
+    speed: speed(entry, snapshot),
+    reliability: learned.reliability,
+  };
+}
+
+function combineWorth(features, weights) {
+  const total = weights.intelligence + weights.speed + weights.reliability;
+  return Math.exp(Object.keys(features)
+    .reduce((sum, feature) => sum + (weights[feature] / total) * Math.log(Math.max(features[feature], FEATURE_FLOOR)), 0));
+}
+
+module.exports = { score, worth, worthParts, combineWorth, trustedIntelligence, FEATURE_FLOOR, reliability, speed, cost, blendedPrice, adaptWeights, sampleBeta, logScale };

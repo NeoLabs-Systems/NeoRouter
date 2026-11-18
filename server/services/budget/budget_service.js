@@ -53,13 +53,19 @@ function remaining(key, now = Date.now()) {
 function costOf(entry, usage) {
   if (entry.isFree || entry.isPlan || !usage) return 0;
   if (entry.priceIn === null || entry.priceOut === null) return 0;
-  return ((usage.prompt_tokens || 0) * entry.priceIn + (usage.completion_tokens || 0) * entry.priceOut) / 1e6;
+  const cached = require('../routing/cache_affinity').cachedTokens(usage);
+  const creation = Math.min(Math.max(0, usage.cache_creation_input_tokens || 0), Math.max(0, (usage.prompt_tokens || 0) - cached));
+  const cachedRate = Number.isFinite(entry.priceCachedIn) ? entry.priceCachedIn : entry.priceIn;
+  const creationRate = Number.isFinite(entry.priceCacheWrite) ? entry.priceCacheWrite : entry.priceIn;
+  return (((usage.prompt_tokens || 0) - cached - creation) * entry.priceIn + cached * cachedRate + creation * creationRate + (usage.completion_tokens || 0) * entry.priceOut) / 1e6;
 }
 
 function estimateMaxCost(entry, inputTokens, maxOutputTokens) {
   if (entry.isFree || entry.isPlan) return 0;
   if (entry.priceIn === null || entry.priceOut === null) return null;
-  return (inputTokens * entry.priceIn + maxOutputTokens * entry.priceOut) / 1e6;
+  // Cache writes may cost more than ordinary input; reserve the worst case.
+  const inputPrice = Math.max(entry.priceIn, entry.priceCacheWrite ?? entry.priceIn);
+  return (inputTokens * inputPrice + maxOutputTokens * entry.priceOut) / 1e6;
 }
 
 function reserve(key, amount) {

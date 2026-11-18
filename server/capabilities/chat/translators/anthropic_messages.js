@@ -37,7 +37,7 @@ function toolResultText(content) {
 function toCanonical(body) {
   const messages = [];
   const system = typeof body.system === 'string' ? body.system : blocksOf(body.system).map((block) => block.text || '').join('\n');
-  if (system) messages.push({ role: 'system', content: system });
+  if (system) messages.push({ role: 'system', content: Array.isArray(body.system) ? body.system.filter((block) => block.type === 'text').map((block) => ({ ...block })) : system });
   for (const message of body.messages || []) {
     const blocks = blocksOf(message.content);
     if (message.role === 'assistant') {
@@ -77,6 +77,7 @@ function toCanonical(body) {
     if (tools.length) {
       request.tools = tools.map((tool) => ({
         type: 'function',
+        ...(tool.cache_control ? { cache_control: tool.cache_control } : {}),
         function: { name: tool.name, description: tool.description || '', parameters: tool.input_schema || { type: 'object', properties: {} } },
       }));
     }
@@ -90,6 +91,12 @@ function toCanonical(body) {
   if (body.thinking?.type === 'enabled') request.reasoning_effort = effortFromBudget(body.thinking.budget_tokens);
   if (body.metadata?.user_id) request.user = String(body.metadata.user_id);
   return request;
+}
+
+function anthropicUsage(usage) {
+  const cached = usage?.prompt_tokens_details?.cached_tokens || 0;
+  const creation = usage?.cache_creation_input_tokens || 0;
+  return { input_tokens: Math.max(0, (usage?.prompt_tokens || 0) - cached - creation), output_tokens: usage?.completion_tokens || 0, cache_read_input_tokens: cached, cache_creation_input_tokens: creation };
 }
 
 // ---- canonical response -> client (Anthropic) ------------------------------
@@ -115,7 +122,7 @@ function responseFromCanonical(completion, model) {
     content,
     stop_reason: STOP_TO_ANTHROPIC[choice.finish_reason] || 'end_turn',
     stop_sequence: null,
-    usage: { input_tokens: usage.prompt_tokens, output_tokens: usage.completion_tokens },
+    usage: anthropicUsage(usage),
   };
 }
 
@@ -189,7 +196,7 @@ async function* streamFromCanonical(chunks, model) {
     data: {
       type: 'message_delta',
       delta: { stop_reason: STOP_TO_ANTHROPIC[finish] || 'end_turn', stop_sequence: null },
-      usage: { input_tokens: usage?.prompt_tokens || 0, output_tokens: usage?.completion_tokens || 0 },
+      usage: anthropicUsage(usage),
     },
   };
   yield { event: 'message_stop', data: { type: 'message_stop' } };
@@ -217,7 +224,7 @@ function fromCanonical(request, { defaultMaxTokens = 4096 } = {}) {
   };
   for (const message of request.messages) {
     if (message.role === 'system' || message.role === 'developer') {
-      system.push(textOf(message.content));
+      system.push(...contentParts(message.content).filter((part) => part.type === 'text').map((part) => ({ ...part, ...(message.cache_control ? { cache_control: message.cache_control } : {}) })));
     } else if (message.role === 'tool') {
       push('user', [{ type: 'tool_result', tool_use_id: message.tool_call_id, content: textOf(message.content) }]);
     } else if (message.role === 'assistant') {
@@ -236,7 +243,7 @@ function fromCanonical(request, { defaultMaxTokens = 4096 } = {}) {
     }
   }
   const body = { messages, max_tokens: request.max_tokens || defaultMaxTokens };
-  if (system.length) body.system = system.join('\n\n');
+  if (system.length) body.system = system;
   if (request.temperature !== undefined) body.temperature = Math.min(1, request.temperature);
   if (request.top_p !== undefined) body.top_p = request.top_p;
   if (request.stop) body.stop_sequences = Array.isArray(request.stop) ? request.stop : [request.stop];
@@ -265,7 +272,13 @@ function fromCanonical(request, { defaultMaxTokens = 4096 } = {}) {
     const note = request.response_format.json_schema?.schema
       ? `Respond only with JSON matching this schema: ${JSON.stringify(request.response_format.json_schema.schema)}`
       : 'Respond only with valid JSON.';
-    body.system = body.system ? `${body.system}\n\n${note}` : note;
+    body.system = [...(body.system || []), { type: 'text', text: note }];
+  }
+  // Stable prefix breakpoints are upstream cache hints, never a local answer cache.
+  if (body.system?.length && !body.system.some((block) => block.cache_control)) body.system[body.system.length - 1].cache_control = { type: 'ephemeral' };
+  if (body.tools?.length) {
+    body.tools.forEach((tool, index) => { if (request.tools[index].cache_control) tool.cache_control = request.tools[index].cache_control; });
+    if (!body.tools.some((tool) => tool.cache_control)) body.tools[body.tools.length - 1].cache_control = { type: 'ephemeral' };
   }
   return body;
 }
@@ -292,7 +305,7 @@ function responseToCanonical(message, model) {
     model: message.model || model,
     message: out,
     finishReason: STOP_FROM_ANTHROPIC[message.stop_reason] || 'stop',
-    usage: { prompt_tokens: input, completion_tokens: usage.output_tokens || 0, total_tokens: input + (usage.output_tokens || 0) },
+    usage: { prompt_tokens: input, prompt_tokens_details: { cached_tokens: usage.cache_read_input_tokens || 0 }, cache_creation_input_tokens: usage.cache_creation_input_tokens || 0, completion_tokens: usage.output_tokens || 0, total_tokens: input + (usage.output_tokens || 0) },
   });
 }
 
@@ -301,6 +314,8 @@ async function* streamToCanonical(events, model, onError) {
   let id = completionId();
   const created = Math.floor(Date.now() / 1000);
   let input = 0;
+  let cached = 0;
+  let creation = 0;
   let output = 0;
   let finish = null;
   const toolIndex = new Map();
@@ -318,6 +333,8 @@ async function* streamToCanonical(events, model, onError) {
     if (type === 'message_start') {
       id = payload.message?.id || id;
       const usage = payload.message?.usage || {};
+      cached = usage.cache_read_input_tokens || 0;
+      creation = usage.cache_creation_input_tokens || 0;
       input = (usage.input_tokens || 0) + (usage.cache_read_input_tokens || 0) + (usage.cache_creation_input_tokens || 0);
       yield chunk({ role: 'assistant', content: '' });
     } else if (type === 'content_block_start' && payload.content_block?.type === 'tool_use') {
@@ -334,12 +351,14 @@ async function* streamToCanonical(events, model, onError) {
     } else if (type === 'message_delta') {
       finish = STOP_FROM_ANTHROPIC[payload.delta?.stop_reason] || finish;
       if (payload.usage?.output_tokens !== undefined) output = payload.usage.output_tokens;
-      if (payload.usage?.input_tokens) input = payload.usage.input_tokens;
+      if (payload.usage?.cache_read_input_tokens !== undefined) cached = payload.usage.cache_read_input_tokens;
+      if (payload.usage?.cache_creation_input_tokens !== undefined) creation = payload.usage.cache_creation_input_tokens;
+      if (payload.usage?.input_tokens !== undefined) input = payload.usage.input_tokens + cached + creation;
     } else if (type === 'message_stop') {
       break;
     }
   }
-  yield chunk({}, finish || 'stop', { prompt_tokens: input, completion_tokens: output, total_tokens: input + output });
+  yield chunk({}, finish || 'stop', { prompt_tokens: input, prompt_tokens_details: { cached_tokens: cached }, cache_creation_input_tokens: creation, completion_tokens: output, total_tokens: input + output });
 }
 
 module.exports = {

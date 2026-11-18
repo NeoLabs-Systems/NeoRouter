@@ -10,7 +10,7 @@ const { ProviderError, KINDS } = require('../provider_error');
 
 const AURA_VOICES = new Set(['thalia', 'andromeda', 'helena', 'apollo', 'arcas', 'aries', 'asteria', 'athena', 'atlas', 'aurora', 'callista', 'cora', 'cordelia',
   'delia', 'draco', 'electra', 'harmonia', 'hera', 'hermes', 'hyperion', 'iris', 'janus', 'juno', 'jupiter', 'luna', 'mars', 'minerva', 'neptune', 'odysseus',
-  'ophelia', 'orion', 'orpheus', 'pandora', 'phoebe', 'pluto', 'saturn', 'selene', 'theia', 'vesta', 'zeus']);
+  'ophelia', 'orion', 'orpheus', 'pandora', 'phoebe', 'pluto', 'saturn', 'selene', 'theia', 'vesta', 'zeus', 'amalthea']);
 const OPENAI_VOICES = { alloy: 'thalia', echo: 'orion', fable: 'apollo', onyx: 'zeus', nova: 'luna', shimmer: 'asteria', ash: 'arcas', coral: 'cora', sage: 'athena', ballad: 'helena', verse: 'hermes' };
 // Requested format → Deepgram encoding and container.
 const ENCODINGS = {

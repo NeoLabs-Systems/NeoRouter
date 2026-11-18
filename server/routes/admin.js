@@ -15,6 +15,7 @@ const { asyncRoute } = require('./helpers');
 
 const router = express.Router();
 router.use(requireAdmin);
+router.use('/proxies', require('./proxies'));
 
 // Each user with the owner whose team they are in, if any.
 const listUsers = () => auth.listUsers().map((user) => {
@@ -49,6 +50,8 @@ router.patch('/settings', validate(z.object({
   res.json(adminSettings());
 });
 router.post('/metadata/refresh', asyncRoute(async (_req, res) => res.json({ results: await metadata.refreshSources(), metadata: metadata.status() })));
+
+router.use('/local-models', require('./local_models'));
 
 router.get('/update', (_req, res) => res.json(updates.status()));
 router.post('/update/check', asyncRoute(async (_req, res) => res.json(await updates.check())));

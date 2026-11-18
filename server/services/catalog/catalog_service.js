@@ -1,5 +1,7 @@
 'use strict';
 
+const { FLAT_RATE } = require('../providers/billing_modes');
+
 const { getDatabase } = require('../../db/database');
 const { HttpError } = require('../../middleware/error_handler');
 const registry = require('../../providers/registry');
@@ -25,10 +27,10 @@ async function syncAccount(accountId) {
   const seen = new Set();
   const upsert = db.prepare(`INSERT INTO models
     (account_id, model_id, display_name, canonical_id, capability, context_window, max_output, supports_tools, supports_vision,
-     supports_json, supports_reasoning, price_in, price_out, price_source, is_free, free_reason, available, raw_json, price_unit, price_per_unit, last_seen_at)
+     supports_json, supports_reasoning, price_in, price_out, price_source, is_free, free_reason, available, raw_json, price_unit, price_per_unit, enabled, last_seen_at)
     VALUES (@account_id, @model_id, @display_name, @canonical_id, @capability, @context_window, @max_output, @supports_tools,
      @supports_vision, @supports_json, @supports_reasoning, @price_in, @price_out, @price_source, @is_free, @free_reason, 1, @raw_json,
-     @price_unit, @price_per_unit,
+     @price_unit, @price_per_unit, @enabled,
      strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     ON CONFLICT(account_id, model_id) DO UPDATE SET display_name = excluded.display_name, canonical_id = excluded.canonical_id,
       capability = excluded.capability, context_window = excluded.context_window, max_output = excluded.max_output,
@@ -59,9 +61,11 @@ async function syncAccount(accountId) {
         price_source: model.priceKnown ? 'listing' : priceFromFacts ? 'models.dev' : null,
         is_free: 0,
         free_reason: null,
-        raw_json: JSON.stringify({ freeHint: model.freeHint, priceKnown: model.priceKnown, ...(model.decision ? { decision: true } : {}) }),
+        raw_json: JSON.stringify({ priceCachedIn: model.priceCachedIn ?? facts.priceCachedIn ?? null, priceCacheWrite: model.priceCacheWrite ?? facts.priceCacheWrite ?? null, freeHint: model.freeHint, priceKnown: model.priceKnown, ...(model.decision ? { decision: true } : {}), ...(model.paidOnly ? { paidOnly: true } : {}) }),
         price_unit: model.priceUnit || null,
         price_per_unit: model.unitPrice ?? null,
+        // Only a new model starts switched off; the ON CONFLICT update leaves a choice alone.
+        enabled: model.optIn ? 0 : 1,
       });
     }
     const existing = db.prepare('SELECT id, model_id FROM models WHERE account_id = ?').all(accountId);
@@ -79,7 +83,7 @@ async function syncAccount(accountId) {
 // recomputed whenever either changes, not only on sync.
 function reclassifyAccount(accountId) {
   const db = getDatabase();
-  const account = db.prepare('SELECT definition_id, billing_mode, billing_state, base_url, secret_encrypted FROM provider_accounts WHERE id = ?').get(accountId);
+  const account = db.prepare('SELECT definition_id, billing_mode, billing_state, base_url, secret_encrypted, classification, prepaid FROM provider_accounts WHERE id = ?').get(accountId);
   if (!account) return;
   const definition = registry.get(account.definition_id);
   const rows = db.prepare('SELECT id, model_id, raw_json, overrides_json, price_in, price_out, price_source FROM models WHERE account_id = ?').all(accountId);
@@ -88,7 +92,7 @@ function reclassifyAccount(accountId) {
     for (const row of rows) {
       const listing = JSON.parse(row.raw_json || '{}');
       const overrides = JSON.parse(row.overrides_json || '{}');
-      const result = classify({
+      const result = account.prepaid === FLAT_RATE ? { isFree: false, reason: 'flat_rate_plan' } : classify({
         definition,
         billingMode: account.billing_mode,
         billingState: account.billing_state,
@@ -97,6 +101,7 @@ function reclassifyAccount(accountId) {
         modelId: row.model_id,
         listing: { ...listing, priceKnown: listing.priceKnown || row.price_source !== null || overrides.priceIn !== undefined },
         overrides,
+        accountOverride: account.classification,
       });
       update.run(result.isFree ? 1 : 0, result.reason, row.id);
     }
@@ -125,7 +130,14 @@ function capabilitySummary(userId) {
     GROUP BY m.capability ORDER BY total DESC`).all(userId).map((row) => ({ id: row.capability, total: row.total, free: row.free || 0 }));
 }
 
-const OVERRIDE_KEYS = ['free', 'billedAt', 'noFreeTier', 'priceUnit', 'unitPrice', 'priceIn', 'priceOut', 'contextWindow', 'tools', 'vision', 'intelligence'];
+// Cache prices retained from listings and provider facts use USD/million.
+function cachePrice(row, overrides, field) {
+  const raw = JSON.parse(row.raw_json || '{}');
+  const value = overrides[field] ?? raw[field] ?? null;
+  return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+const OVERRIDE_KEYS = ['free', 'billedAt', 'noFreeTier', 'priceUnit', 'unitPrice', 'priceIn', 'priceOut', 'priceCachedIn', 'priceCacheWrite', 'contextWindow', 'tools', 'vision', 'intelligence'];
 
 function updateModel(userId, modelRef, { enabled, overrides }) {
   const db = getDatabase();
@@ -156,7 +168,7 @@ function bulkSetEnabled(userId, { accountId, enabled, onlyFree }) {
 
 // One row per model with everything routing needs. Overrides win over
 // provider data; provider data wins over canonical metadata.
-const SELECT_ENTRY = `SELECT m.*, a.slug, a.user_id, a.definition_id, a.label account_label, a.base_url account_base_url, a.billing_mode, a.enabled account_enabled, a.status account_status, a.prepaid account_prepaid,
+const SELECT_ENTRY = `SELECT m.*, a.slug, a.user_id, a.definition_id, a.label account_label, a.base_url account_base_url, a.billing_mode, a.enabled account_enabled, a.status account_status, a.prepaid account_prepaid, a.options_json account_options, a.overflow_policy, a.slot_wait_ms,
     md.intelligence, md.intelligence_source, md.intelligence_confidence, md.speed_tps, md.context_window md_context,
     md.supports_tools md_tools, md.supports_vision md_vision, md.supports_reasoning md_reasoning, md.release_date, md.params_b, md.skills_json,
     s.successes, s.failures, s.decayed_at, s.latency_ms, s.ttft_ms, s.tps, s.samples, s.penalty, s.penalty_at,
@@ -185,6 +197,10 @@ function toEntry(row) {
     // name. Custom endpoints are one provider per address.
     ...providerIdentity({ definitionId: row.definition_id, slug: row.slug, label: row.account_label, baseUrl: row.account_base_url }),
     billingMode: row.billing_mode,
+    isFlatRate: row.account_prepaid === FLAT_RATE,
+    slotPlan: JSON.parse(row.account_options || '{}').slotPlan || null,
+    overflowPolicy: row.overflow_policy || 'auto',
+    slotWaitMs: row.slot_wait_ms,
     enabled: Boolean(row.enabled),
     available: Boolean(row.available),
     accountEnabled: Boolean(row.account_enabled),
@@ -197,16 +213,18 @@ function toEntry(row) {
     reasoning: bool(pick(undefined, row.supports_reasoning, row.md_reasoning)),
     priceIn: pick(overrides.priceIn, row.price_in, null),
     priceOut: pick(overrides.priceOut, row.price_out, null),
+    priceCachedIn: cachePrice(row, overrides, 'priceCachedIn'),
+    priceCacheWrite: cachePrice(row, overrides, 'priceCacheWrite'),
     priceSource: overrides.priceIn !== undefined ? 'manual' : row.price_source,
     // Media models: USD per image, second (video), minute (audio in) or
     // million characters (speech).
     priceUnit: pick(overrides.priceUnit, row.price_unit, null),
     unitPrice: pick(overrides.unitPrice, row.price_per_unit, null),
-    isFree: Boolean(row.is_free),
+    isFree: row.account_prepaid === FLAT_RATE ? false : Boolean(row.is_free),
     // Answers typed questions (decision model) rather than classifying text.
     decision: row.capability === 'moderation' && JSON.parse(row.raw_json || '{}').decision === true,
     // Included in a prepaid plan: no extra cost per request.
-    isPlan: !row.is_free && Boolean(row.account_prepaid),
+    isPlan: row.account_prepaid === FLAT_RATE || (!row.is_free && Boolean(row.account_prepaid)),
     // After the plan is used up: billed per use (true) or unavailable.
     planOverflow: row.account_prepaid === 2,
     freeReason: row.free_reason,

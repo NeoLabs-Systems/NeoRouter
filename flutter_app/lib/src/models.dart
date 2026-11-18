@@ -107,6 +107,16 @@ class ProviderDefinition {
   bool get planAvailable => billing['planAvailable'] == true;
   String? get planNote => billing['planNote'] as String?;
   String get billingNote => billing['note'] as String? ?? '';
+  String? get billingSource => billing['source'] as String?;
+  String? get billingCheckedAt => billing['checkedAt'] as String?;
+
+  /// How using it is paid for, in one word: free, free_models, plan or payg.
+  String get costKind {
+    if (category == 'plan') return 'plan';
+    if (freeTierAvailable && !freeTierPartial) return 'free';
+    if (freeTierAvailable || hasAlwaysFreeModels) return 'free_models';
+    return 'payg';
+  }
 }
 
 class ProviderAccount {
@@ -128,6 +138,8 @@ class ProviderAccount {
   String get billingState => raw['billingState'] as String? ?? 'unknown';
   String? get billingMessage => raw['billingMessage'] as String?;
   bool get billingVerifiable => raw['billingVerifiable'] == true;
+  /// The person's call for all its models: auto, free or paid.
+  String get classification => raw['classification'] as String? ?? 'auto';
   bool get enabled => raw['enabled'] == true;
   String get status => raw['status'] as String? ?? 'unknown';
   String? get statusMessage => raw['statusMessage'] as String?;
@@ -135,6 +147,8 @@ class ProviderAccount {
   String? get lastSyncedAt => raw['lastSyncedAt'] as String?;
   int get modelCount => _int(_map(raw['models'])['total']) ?? 0;
   int get freeModelCount => _int(_map(raw['models'])['free']) ?? 0;
+  /// The pools its free models are shared in.
+  List<String> get sharedInPools => _strings(raw['sharedInPools']);
   /// "Free models only" can be chosen (the provider or its listing has free models).
   bool get freeAvailable => raw['freeAvailable'] == true;
   bool get freeTierAll => raw['freeTierAll'] == true;
@@ -160,6 +174,8 @@ class CatalogModel {
   List<String> get liveProtocols => _strings(raw['liveProtocols']);
   String get definitionId => raw['definitionId'] as String;
   String get accountId => raw['accountId'] as String;
+  /// Offered by a pool partner (providerName is the partner).
+  bool get fromPool => definitionId == 'neorouter_peer';
   bool get enabled => raw['enabled'] == true;
   bool get isFree => raw['isFree'] == true;
   bool get isPlan => raw['isPlan'] == true;
@@ -216,15 +232,20 @@ class RouterKey {
   String? get paceState => (raw['pacing'] as Map?)?['state'] as String?;
   double? get paceForecast => _double((raw['pacing'] as Map?)?['forecast']);
   int? get rpmLimit => _int(raw['rpmLimit']);
+  int? get concurrentLimit => _int(raw['concurrentLimit']);
   // Who goes first when models are busy: high, normal or low.
   String get priority => raw['priority'] as String? ?? 'normal';
   int? get tokenLimit => _int(raw['tokenLimit']);
+  double? get maxPricePerMillion => _double(raw['maxPricePerMillion']);
+  /// Whether the key may also use pool partners' free models.
+  bool get usesPool => raw['poolAccess'] == 'pool';
   String get tokenPeriod => raw['tokenPeriod'] as String? ?? 'monthly';
   int? get tokensUsed => _int(raw['tokensUsed']);
   String? get tokenResetsAt => raw['tokenResetsAt'] as String?;
   List<String> get allowedModels => _strings(raw['allowedModels']);
   String get profile => raw['profile'] as String? ?? 'balanced';
   String? get expiresAt => raw['expiresAt'] as String?;
+  bool get expired => raw['expired'] == true || (expiresAt != null && !(DateTime.tryParse(expiresAt!)?.isAfter(DateTime.now()) ?? true));
   bool get revoked => raw['revoked'] == true;
   String? get lastUsedAt => raw['lastUsedAt'] as String?;
   TeamUser? get createdBy => TeamUser.from(raw['createdBy']);
@@ -298,6 +319,8 @@ class RequestLog {
   int? get httpStatus => _int(raw['httpStatus']);
   String? get errorCode => raw['errorCode'] as String?;
   String? get errorMessage => raw['errorMessage'] as String?;
+  String? get routingGroup => raw['routingGroup'] as String?;
+  int get cachedInputTokens => _int(raw['cachedInputTokens']) ?? 0;
   int get inputTokens => _int(raw['inputTokens']) ?? 0;
   int get outputTokens => _int(raw['outputTokens']) ?? 0;
   double get costUsd => _double(raw['costUsd']) ?? 0;
@@ -309,4 +332,208 @@ class RequestLog {
   int get queuedMs => _int(raw['queuedMs']) ?? 0;
   bool get stream => raw['stream'] == true;
   List<Map<String, dynamic>> get trail => (raw['trail'] as List? ?? const <Object>[]).map(_map).toList();
+  /// Why the request stayed off the pool (very sensitive content), or null.
+  String? get keptPrivate => raw['keptPrivate'] as String?;
+}
+
+/// Give and take with one partner (requests and tokens).
+class PoolTraffic {
+  PoolTraffic(this.raw);
+  final Map<String, dynamic> raw;
+
+  int get givenRequests => _int(_map(raw['given'])['requests']) ?? 0;
+  int get takenRequests => _int(_map(raw['taken'])['requests']) ?? 0;
+  int get givenTokens => _int(_map(raw['given'])['tokens']) ?? 0;
+  int get takenTokens => _int(_map(raw['taken'])['tokens']) ?? 0;
+}
+
+class PoolPartner {
+  PoolPartner(this.raw);
+  final Map<String, dynamic> raw;
+
+  String get memberId => raw['memberId'] as String;
+  String get name => raw['name'] as String? ?? '';
+  bool get isHost => raw['isHost'] == true;
+  String? get linkId => raw['linkId'] as String?;
+  /// connecting, online, offline or paused.
+  String get state => raw['state'] as String? ?? 'connecting';
+  String? get problem => raw['problem'] as String?;
+  /// Reached through the pool's host (it has no public address); relayDown: not connected to the host now.
+  bool get viaHost => raw['viaHost'] == true;
+  bool get relayDown => raw['relayDown'] == true;
+  int get models => _int(raw['models']) ?? 0;
+  /// new, balanced, giving_more or taking_more.
+  String get balance => _map(raw['balance'])['state'] as String? ?? 'new';
+  PoolTraffic get week => PoolTraffic(_map(_map(raw['balance'])['week']));
+  PoolTraffic get today => PoolTraffic(_map(raw['today']));
+  /// What this partner may use of ours today (automatic unless fixed).
+  int get capRequests => _int(_map(raw['caps'])['requestsPerDay']) ?? 0;
+  int get capTokens => _int(_map(raw['caps'])['tokensPerDay']) ?? 0;
+  int get capConcurrent => _int(_map(raw['caps'])['concurrent']) ?? 0;
+}
+
+class ShareableAccount {
+  ShareableAccount(this.raw);
+  final Map<String, dynamic> raw;
+
+  String get id => raw['id'] as String;
+  String get label => raw['label'] as String? ?? '';
+  String get definitionId => raw['definitionId'] as String? ?? '';
+  int get freeModels => _int(raw['freeModels']) ?? 0;
+  /// Subscription and pay-as-you-go models: shared only at a level the owner picks.
+  int get planModels => _int(raw['planModels']) ?? 0;
+  int get paidModels => _int(raw['paidModels']) ?? 0;
+  /// How many kinds (free, subscription, paid) it has models of.
+  int get kinds => <int>[freeModels, planModels, paidModels].where((count) => count > 0).length;
+  /// The provider reports a balance: partner use spends it instead of being billed.
+  bool get hasBalance => raw['hasBalance'] == true;
+}
+
+/// The limits the owner fixed for a pool; null means automatic.
+class PoolShare {
+  PoolShare(this.raw);
+  final Map<String, dynamic> raw;
+
+  int? get requestsPerDay => _int(raw['requestsPerDay']);
+  int? get tokensPerDay => _int(raw['tokensPerDay']);
+  int? get concurrent => _int(raw['concurrent']);
+  double? get reserve => _double(raw['reserve']);
+}
+
+/// One pool this person is in.
+class PoolInfo {
+  PoolInfo(this.raw);
+  final Map<String, dynamic> raw;
+
+  String get id => raw['id'] as String;
+  String get name => raw['name'] as String? ?? '';
+  bool get isHost => raw['isHost'] == true;
+  bool get paused => raw['paused'] == true;
+  String get selfName => raw['selfName'] as String? ?? '';
+  /// Host: passes traffic for members without a public address. Member: our host offers that.
+  bool get relayOffered => _map(raw['relay'])['offered'] == true;
+  /// We take part through the host (no public address of our own), and whether that connection is up.
+  bool get viaHost => _map(raw['relay'])['viaHost'] == true;
+  bool get relayConnected => _map(raw['relay'])['connected'] == true;
+  List<PoolPartner> get partners => (raw['partners'] as List? ?? const <Object>[]).map((item) => PoolPartner(_map(item))).toList();
+  int get onlinePartners => partners.where((partner) => partner.state == 'online').length;
+  List<String> get sharedAccountIds => _strings(raw['sharedAccountIds']);
+  /// Which kinds of models (free, plan, paid) each shared connection gives this pool.
+  Map<String, Set<String>> get shareKinds => _map(raw['shareKinds']).map((key, value) => MapEntry(key, _strings(value).toSet()));
+  List<Map<String, dynamic>> get invites => (raw['invites'] as List? ?? const <Object>[]).map(_map).toList();
+  PoolShare get share => PoolShare(_map(raw['share']));
+}
+
+/// All pools of a space, with what can be shared and the privacy setting.
+class PoolsSummary {
+  PoolsSummary(this.raw);
+  final Map<String, dynamic> raw;
+
+  List<PoolInfo> get pools => (raw['pools'] as List? ?? const <Object>[]).map((item) => PoolInfo(_map(item))).toList();
+  bool get inPool => pools.isNotEmpty;
+  PoolInfo? pool(String? id) => pools.where((item) => item.id == id).firstOrNull;
+  /// The pool just created or joined, when the server says.
+  String? get createdId => raw['poolId'] as String?;
+  List<ShareableAccount> get shareable => (raw['shareable'] as List? ?? const <Object>[]).map((item) => ShareableAccount(_map(item))).toList();
+  /// Connections with free models: what the ordinary sharing picker offers.
+  List<ShareableAccount> get shareableFree => shareable.where((account) => account.freeModels > 0).toList();
+  bool get keepSensitivePrivate => _map(raw['privacy'])['keepSensitivePrivate'] != false;
+  int get maxPools => _int(raw['maxPools']) ?? 10;
+}
+
+/// Admin → Local models: this machine, what is installed and what could be.
+class LocalModelsOverview {
+  LocalModelsOverview(this.raw);
+  final Map<String, dynamic> raw;
+
+  Map<String, dynamic> get _system => _map(raw['system']);
+  String get cpuName => '${_map(_system['cpu'])['name'] ?? ''}';
+  int get cpuCores => _int(_map(_system['cpu'])['cores']) ?? 0;
+  int get memoryMb => _int(_system['memoryMb']) ?? 0;
+  bool get memoryLimited => _system['memoryLimited'] == true;
+  /// Graphics a model can run on, or null (then it runs on the processor).
+  ({String name, String type, int memoryMb})? get gpu {
+    final gpu = _system['gpu'];
+    if (gpu is! Map) return null;
+    return (name: '${gpu['name']}', type: '${gpu['type']}', memoryMb: _int(gpu['memoryMb']) ?? 0);
+  }
+
+  int? get diskFreeMb => _int(_map(_system['disk'])['freeMb']);
+  /// Taken by local models (and kept for the privacy filter while it is on).
+  int get memoryUsedMb => _int(_map(raw['memory'])['usedMb']) ?? 0;
+  /// What everything else uses on average; null until it has been measured.
+  int? get memoryOthersMb => _int(_map(raw['memory'])['othersMb']);
+  /// What models may use beside everything else.
+  int get memoryRoomMb => _int(_map(raw['memory'])['roomMb']) ?? 0;
+  /// The privacy filter: enabled, status (off · downloading · loading · ready · idle · error), progress, memoryMb.
+  Map<String, dynamic> get privacyFilter => _map(raw['privacyFilter']);
+  bool get _privacyFilterBusy => const <String>{'downloading', 'loading'}.contains(privacyFilter['status']);
+  /// Text, safety and embedding models need llama.cpp, which runs on macOS and Linux.
+  bool get textModelsSupported => _map(_map(raw['engines'])['llama_cpp'])['ok'] == true;
+  bool get everyoneMayUse => raw['access'] == 'everyone';
+  /// A first set for this machine, offered while nothing is installed.
+  List<({String id, String name, int downloadMb})> get starter => ((raw['starter'] as List?) ?? const <Object>[])
+      .map((item) => _map(item))
+      .map((item) => (id: '${item['id']}', name: '${item['name']}', downloadMb: _int(item['downloadMb']) ?? 0))
+      .toList();
+  List<LocalModel> get installed => ((raw['installed'] as List?) ?? const <Object>[]).map((item) => LocalModel(_map(item))).toList();
+  List<LocalCatalogModel> get catalog => ((raw['catalog'] as List?) ?? const <Object>[]).map((item) => LocalCatalogModel(_map(item))).toList();
+  /// Something is changing (a download, a start): worth checking again soon.
+  bool get busy => _privacyFilterBusy || installed.any((model) => model.busy);
+}
+
+/// Text in the dashboard's language, from a server value with en and de.
+String localizedText(Object? value, String languageCode) {
+  final map = _map(value);
+  return '${map[languageCode] ?? map['en'] ?? ''}';
+}
+
+class LocalModel {
+  LocalModel(this.raw);
+  final Map<String, dynamic> raw;
+
+  String get id => raw['id'] as String;
+  String get name => raw['name'] as String? ?? id;
+  String get kind => raw['kind'] as String? ?? 'chat';
+  /// downloading · download_failed · stopped · starting · running · restarting · failed
+  String get state => raw['state'] as String? ?? 'stopped';
+  bool get enabled => raw['enabled'] == true;
+  bool get busy => const <String>{'downloading', 'starting', 'restarting'}.contains(state);
+  bool get installedFiles => state != 'downloading' && state != 'download_failed';
+  String? get phase => _map(raw['progress'])['phase'] as String?;
+  int get doneBytes => _int(_map(raw['progress'])['doneBytes']) ?? 0;
+  int get totalBytes => _int(_map(raw['progress'])['totalBytes']) ?? 0;
+  /// Download time left at the current speed, once it is known.
+  int? get secondsLeft => _int(_map(raw['progress'])['secondsLeft']);
+  String? get problemCode => _map(raw['problem'])['code'] as String?;
+  String? get problemMessage => _map(raw['problem'])['message'] as String?;
+  bool? get onGpu => raw['gpu'] as bool?;
+  int? get memoryMb => _int(raw['memoryMb']);
+  /// memoryMb is what it really used while running here (not an estimate).
+  bool get memoryMeasured => raw['memoryMeasured'] == true;
+}
+
+class LocalCatalogModel {
+  LocalCatalogModel(this.raw);
+  final Map<String, dynamic> raw;
+
+  String get id => raw['id'] as String;
+  String get name => raw['name'] as String? ?? id;
+  String get kind => raw['kind'] as String? ?? 'chat';
+  Object? get summary => raw['summary'];
+  bool get recommended => raw['recommended'] == true;
+  bool get installed => raw['installed'] == true;
+  /// great · good · slow · too_big · unsupported
+  String get rating => raw['rating'] as String? ?? 'unsupported';
+  bool get runs => rating != 'too_big' && rating != 'unsupported';
+  bool get diskOk => raw['diskOk'] != false;
+  int get downloadMb => _int(raw['downloadMb']) ?? 0;
+  int get memoryMb => _int(raw['memoryMb']) ?? 0;
+  /// memoryMb is what it really used while it ran here (not an estimate).
+  bool get measured => raw['measured'] == true;
+  String get license => raw['license'] as String? ?? '';
+  /// 'many', or the two-letter languages it speaks.
+  Object? get languages => raw['languages'];
+  bool get vision => _map(raw['features'])['vision'] == true;
+  bool get tools => _map(raw['features'])['tools'] == true;
 }

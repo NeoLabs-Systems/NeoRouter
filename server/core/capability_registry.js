@@ -6,16 +6,18 @@
 const chatRoutes = () => require('../capabilities/chat/gateway_routes');
 const mediaRoutes = () => require('../capabilities/media/gateway_routes');
 
+// method: the adapter method that serves the kind, so a model is only listed
+// and routed when its provider's adapter can actually do it.
 const CAPABILITIES = [
   { id: 'chat', label: 'Chat', routes: chatRoutes },
-  { id: 'embedding', label: 'Embeddings', routes: mediaRoutes },
-  { id: 'image', label: 'Images', routes: mediaRoutes },
-  { id: 'speech', label: 'Speech', routes: mediaRoutes },
-  { id: 'transcription', label: 'Transcription', routes: mediaRoutes },
+  { id: 'embedding', label: 'Embeddings', routes: mediaRoutes, method: 'embed' },
+  { id: 'image', label: 'Images', routes: mediaRoutes, method: 'generateImage' },
+  { id: 'speech', label: 'Speech', routes: mediaRoutes, method: 'speech' },
+  { id: 'transcription', label: 'Transcription', routes: mediaRoutes, method: 'transcribe' },
   { id: 'moderation', label: 'System One', routes: mediaRoutes },
-  { id: 'video', label: 'Video', routes: mediaRoutes },
-  { id: 'search', label: 'Web search', routes: mediaRoutes },
-  { id: 'weather', label: 'Weather', routes: mediaRoutes },
+  { id: 'video', label: 'Video', routes: mediaRoutes, method: 'createVideo' },
+  { id: 'search', label: 'Web search', routes: mediaRoutes, method: 'search' },
+  { id: 'weather', label: 'Weather', routes: mediaRoutes, method: 'weather' },
   // Live voice sessions are WebSockets, attached to the HTTP server (capabilities/live).
   { id: 'live', label: 'Live voice', routes: null },
 ];
@@ -28,4 +30,9 @@ function list() {
   return CAPABILITIES.map(({ id, label }) => ({ id, label }));
 }
 
-module.exports = { mount, list };
+/** The adapter method serving a kind, or null when any model of it can be called. */
+function methodFor(id) {
+  return CAPABILITIES.find((capability) => capability.id === id)?.method || null;
+}
+
+module.exports = { mount, list, methodFor };

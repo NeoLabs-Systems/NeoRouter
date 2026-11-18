@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
 import 'main_keys.dart';
+import 'main_key_expiry.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
@@ -31,6 +32,7 @@ class _ConnectAppScreenState extends State<ConnectAppScreen> {
   final TextEditingController _budget = TextEditingController();
   final TextEditingController _rpm = TextEditingController();
   final TextEditingController _tokens = TextEditingController();
+  final TextEditingController _maxPrice = TextEditingController();
   String _tokenPeriod = 'monthly';
   _ConnectStep _step = _ConnectStep.loading;
   ConnectRequest? _request;
@@ -40,6 +42,7 @@ class _ConnectAppScreenState extends State<ConnectAppScreen> {
   bool _plan = true;
   bool _paid = false;
   String _period = 'monthly';
+  DateTime? _expiresAt;
 
   NeoRouterController get _controller => widget.controller;
 
@@ -63,6 +66,7 @@ class _ConnectAppScreenState extends State<ConnectAppScreen> {
     _budget.dispose();
     _rpm.dispose();
     _tokens.dispose();
+    _maxPrice.dispose();
     super.dispose();
   }
 
@@ -90,6 +94,10 @@ class _ConnectAppScreenState extends State<ConnectAppScreen> {
 
   Future<void> _answer(bool approve) async {
     final t = AppL10n.of(context);
+    if (approve && _expiresAt != null && !_expiresAt!.isAfter(DateTime.now())) {
+      setState(() => _error = t.keyExpiryInvalid);
+      return;
+    }
     if (approve && !_free && !_plan && !_paid) {
       setState(() => _error = t.pickOneKind);
       return;
@@ -104,6 +112,7 @@ class _ConnectAppScreenState extends State<ConnectAppScreen> {
         approve: approve,
         access: approve
             ? <String, Object?>{
+                'expiresAt': _expiresAt?.toUtc().toIso8601String(),
                 'allowFree': _free,
                 'allowPlan': _plan,
                 'allowPaid': _paid,
@@ -112,6 +121,7 @@ class _ConnectAppScreenState extends State<ConnectAppScreen> {
                 'rpmLimit': int.tryParse(_rpm.text.trim()),
                 'tokenLimit': _free || _plan ? int.tryParse(_tokens.text.trim().replaceAll(RegExp(r'[^0-9]'), '')) : null,
                 'tokenPeriod': _tokenPeriod,
+                'maxPricePerMillion': _paid ? double.tryParse(_maxPrice.text.trim().replaceAll(',', '.')) : null,
               }
             : null,
       );
@@ -252,6 +262,8 @@ class _ConnectAppScreenState extends State<ConnectAppScreen> {
         const SizedBox(height: AppSpacing.md),
         FilledButton(onPressed: () => _controller.switchSpace(null), child: Text(t.mySpace)),
       ] else ...<Widget>[
+        KeyExpiryField(value: _expiresAt, enabled: !_busy, onChanged: (value) => setState(() { _expiresAt = value; _error = null; })),
+        const SizedBox(height: AppSpacing.lg),
         Text(t.keyAccessTitle, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
         const SizedBox(height: AppSpacing.xs),
         KeyAccessFields(
@@ -263,6 +275,7 @@ class _ConnectAppScreenState extends State<ConnectAppScreen> {
           rpm: _rpm,
           tokens: _tokens,
           tokenPeriod: _tokenPeriod,
+          maxPrice: _maxPrice,
           onFree: (value) => setState(() => _free = value),
           onPlan: (value) => setState(() => _plan = value),
           onPaid: (value) => setState(() => _paid = value),

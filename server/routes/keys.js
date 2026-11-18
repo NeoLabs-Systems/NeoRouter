@@ -18,15 +18,21 @@ const keyInput = z.object({
   allowPaid: z.boolean().optional(),
   budgetUsd: z.number().min(0).nullable().optional(),
   budgetPeriod: z.enum(['total', 'monthly', 'daily']).optional(),
+  concurrentLimit: z.number().int().positive().safe().nullable().optional(),
   rpmLimit: z.number().int().positive().nullable().optional(),
-  // Who goes first when models are busy.
-  priority: z.enum(LEVELS).optional(),
+  // Maximum price per million tokens for paid models used with this key.
+  // When set, models whose output price exceeds this limit are rejected.
+  maxPricePerMillion: z.number().min(0).nullable().optional(),
+  poolAccess: z.enum(['own', 'pool']).optional(),
   // Tokens on free and subscription models per period (null = no limit).
   tokenLimit: z.number().int().positive().nullable().optional(),
   tokenPeriod: z.enum(['total', 'monthly', 'daily']).optional(),
+  // Who goes first when models are busy.
+  priority: z.enum(LEVELS).optional(),
   allowedModels: z.array(z.string().min(1).max(200)).max(200).optional(),
+  routingGroup: z.string().min(1).max(80).nullable().optional(),
   profile: z.string().max(80).optional(),
-  expiresAt: z.string().datetime().nullable().optional(),
+  expiresAt: z.string().datetime({ offset: true }).nullable().optional(),
 });
 
 router.get('/', requirePermission('keys.view'), (req, res) => res.json({ keys: keys.list(req.space.ownerId) }));

@@ -48,16 +48,23 @@ function publicKey(row) {
     // Whether the budget will last the period at the current pace.
     pacing: row.mode === 'free_only' ? null : pick(pacing.pacing(row), ['state', 'forecast']),
     rpmLimit: row.rpm_limit,
+    concurrentLimit: row.concurrent_limit,
     // Who goes first when models are busy.
     priority: row.priority || 'normal',
+    // Maximum price per million tokens for paid models (null = no limit).
+    maxPricePerMillion: row.max_price_per_million === null || row.max_price_per_million === undefined ? null : row.max_price_per_million,
     // Tokens on free and subscription models, per period.
     tokenLimit: row.token_limit,
     tokenPeriod: row.token_period || 'monthly',
     tokensUsed: row.token_limit === null || row.token_limit === undefined ? null : budget.tokensUsed(row),
     tokenResetsAt: budget.periodEnd(row.token_period || 'monthly') ? new Date(budget.periodEnd(row.token_period || 'monthly')).toISOString() : null,
     allowedModels: JSON.parse(row.allowed_models_json || '[]'),
+    // 'pool': may also use pool partners' free models; 'own': own connections only.
+    poolAccess: row.pool_access === 'pool' ? 'pool' : 'own',
+    routingGroup: row.routing_group || null,
     profile: row.profile,
     expiresAt: row.expires_at,
+    expired: Boolean(row.expires_at && Date.parse(row.expires_at) <= Date.now()),
     revoked: Boolean(row.revoked_at),
     lastUsedAt: row.last_used_at,
     createdAt: row.created_at,
@@ -71,27 +78,41 @@ function assertProfile(userId, profile) {
   if (profile && !profiles.resolve(userId, profile)) throw new HttpError(400, 'UNKNOWN_PROFILE', 'This routing profile does not exist.');
 }
 
+function assertExpiry(expiresAt, previous = null) {
+  if (expiresAt == null) return;
+  const timestamp = Date.parse(expiresAt);
+  // Unrelated edits can preserve a past expiry; only changing it renews a key.
+  if (!Number.isFinite(timestamp) || (timestamp !== Date.parse(previous) && timestamp <= Date.now())) {
+    throw new HttpError(400, 'INVALID_KEY_EXPIRY', 'Choose an expiry date and time in the future.');
+  }
+}
+
 // `app` ({name, origin, scopes}) marks a key made for a connected app.
 function create(userId, input, createdBy = userId, app = null) {
+  assertExpiry(input.expiresAt);
   assertProfile(userId, input.profile);
+  if (input.routingGroup) require('../routing/groups').requireGroup(userId, input.routingGroup);
   const id = crypto.randomUUID();
   const prefix = crypto.randomBytes(4).toString('hex');
   const secret = `${PREFIX}_${prefix}_${randomToken(32)}`;
   const allowed = kinds(input);
   getDatabase().prepare(`INSERT INTO router_keys
-    (id, user_id, name, prefix, key_hash, mode, budget_usd, budget_period, rpm_limit, allowed_models_json, profile, expires_at, created_by_user_id, allow_free, allow_plan,
-      app_name, app_origin, app_scopes_json, token_limit, token_period, priority)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    (id, user_id, name, prefix, key_hash, mode, budget_usd, budget_period, rpm_limit, concurrent_limit, allowed_models_json, profile, expires_at, created_by_user_id, allow_free, allow_plan,
+      app_name, app_origin, app_scopes_json, token_limit, token_period, priority, max_price_per_million, pool_access)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run(id, userId, input.name, prefix, sha256(secret), allowed.mode, input.budgetUsd ?? null,
-      input.budgetPeriod || 'total', input.rpmLimit ?? null, JSON.stringify(input.allowedModels || []),
+      input.budgetPeriod || 'total', input.rpmLimit ?? null, input.concurrentLimit ?? null, JSON.stringify(input.allowedModels || []),
       input.profile || 'balanced', input.expiresAt || null, createdBy, allowed.allowFree, allowed.allowPlan,
       app?.name ?? null, app?.origin ?? null, app ? JSON.stringify(app.scopes || []) : null,
-      input.tokenLimit ?? null, input.tokenPeriod || 'monthly', input.priority || 'normal');
+      input.tokenLimit ?? null, input.tokenPeriod || 'monthly', input.priority || 'normal',
+      input.maxPricePerMillion ?? null, input.poolAccess === 'pool' ? 'pool' : 'own');
+  if (input.routingGroup) getDatabase().prepare('UPDATE router_keys SET routing_group = ? WHERE id = ?').run(input.routingGroup, id);
   return { key: get(userId, id), secret };
 }
 
 function getRow(userId, id) {
-  const row = getDatabase().prepare('SELECT * FROM router_keys WHERE id = ? AND user_id = ?').get(id, userId);
+  // Keys pool partners use are managed by the pool, not on the keys page.
+  const row = getDatabase().prepare('SELECT * FROM router_keys WHERE id = ? AND user_id = ? AND peer_link_id IS NULL').get(id, userId);
   if (!row) throw new HttpError(404, 'KEY_NOT_FOUND', 'This router key does not exist.');
   return row;
 }
@@ -101,21 +122,24 @@ function get(userId, id) {
 }
 
 function list(userId) {
-  return getDatabase().prepare('SELECT * FROM router_keys WHERE user_id = ? ORDER BY created_at DESC').all(userId).map(publicKey);
+  return getDatabase().prepare('SELECT * FROM router_keys WHERE user_id = ? AND peer_link_id IS NULL ORDER BY created_at DESC').all(userId).map(publicKey);
 }
 
 function update(userId, id, input) {
   const row = getRow(userId, id);
+  if (input.expiresAt !== undefined) assertExpiry(input.expiresAt, row.expires_at);
   assertProfile(userId, input.profile);
+  if (input.routingGroup) require('../routing/groups').requireGroup(userId, input.routingGroup);
   const allowed = kinds(input, row);
-  getDatabase().prepare(`UPDATE router_keys SET name = ?, mode = ?, budget_usd = ?, budget_period = ?, rpm_limit = ?,
-    allowed_models_json = ?, profile = ?, expires_at = ?, allow_free = ?, allow_plan = ?, token_limit = ?, token_period = ?, priority = ? WHERE id = ?`)
+  getDatabase().prepare(`UPDATE router_keys SET name = ?, mode = ?, budget_usd = ?, budget_period = ?, rpm_limit = ?, concurrent_limit = ?,
+    allowed_models_json = ?, profile = ?, expires_at = ?, allow_free = ?, allow_plan = ?, token_limit = ?, token_period = ?, priority = ?, max_price_per_million = ?, pool_access = ? WHERE id = ?`)
     .run(
       input.name ?? row.name,
       allowed.mode,
       input.budgetUsd !== undefined ? input.budgetUsd : row.budget_usd,
       input.budgetPeriod ?? row.budget_period,
       input.rpmLimit !== undefined ? input.rpmLimit : row.rpm_limit,
+      input.concurrentLimit !== undefined ? input.concurrentLimit : row.concurrent_limit,
       input.allowedModels !== undefined ? JSON.stringify(input.allowedModels) : row.allowed_models_json,
       input.profile ?? row.profile,
       input.expiresAt !== undefined ? input.expiresAt : row.expires_at,
@@ -124,8 +148,11 @@ function update(userId, id, input) {
       input.tokenLimit !== undefined ? input.tokenLimit : row.token_limit,
       input.tokenPeriod ?? row.token_period,
       input.priority ?? row.priority,
+      input.maxPricePerMillion !== undefined ? input.maxPricePerMillion : row.max_price_per_million,
+      input.poolAccess !== undefined ? (input.poolAccess === 'pool' ? 'pool' : 'own') : row.pool_access,
       id,
     );
+  if (input.routingGroup !== undefined) getDatabase().prepare('UPDATE router_keys SET routing_group = ? WHERE id = ?').run(input.routingGroup, id);
   return get(userId, id);
 }
 
@@ -145,7 +172,10 @@ function authenticate(token) {
   const row = getDatabase().prepare(`SELECT k.*, u.disabled_at user_disabled FROM router_keys k JOIN users u ON u.id = k.user_id
     WHERE k.key_hash = ?`).get(sha256(token));
   if (!row || row.revoked_at || row.user_disabled) return null;
-  if (row.expires_at && Date.parse(row.expires_at) <= Date.now()) return null;
+  if (row.expires_at) {
+    const expiry = Date.parse(row.expires_at);
+    if (!Number.isFinite(expiry) || expiry <= Date.now()) return null;
+  }
   getDatabase().prepare("UPDATE router_keys SET last_used_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?").run(row.id);
   return row;
 }
@@ -163,4 +193,12 @@ function consumeRpm(key, now = Date.now()) {
   return { allowed: true };
 }
 
-module.exports = { create, list, get, getRow, update, revoke, remove, authenticate, consumeRpm, publicKey, kinds, PREFIX };
+// The key's minute window without using it up: { limit, remaining, resetSeconds }.
+function rpmState(key, now = Date.now()) {
+  if (!key.rpm_limit) return null;
+  const recent = (rpmWindows.get(key.id) || []).filter((time) => now - time < 60_000);
+  const resetSeconds = recent.length ? Math.max(1, Math.ceil((recent[0] + 60_000 - now) / 1000)) : 0;
+  return { limit: key.rpm_limit, remaining: Math.max(0, key.rpm_limit - recent.length), resetSeconds };
+}
+
+module.exports = { create, list, get, getRow, update, revoke, remove, authenticate, consumeRpm, rpmState, publicKey, kinds, assertExpiry, PREFIX };

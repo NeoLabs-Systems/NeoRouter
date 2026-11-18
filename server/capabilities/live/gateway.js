@@ -13,13 +13,14 @@ const { dialectFor, usageOf } = require('./dialects');
 const { ProviderError, KINDS, classifyHttpError, fromNetworkError } = require('../../providers/provider_error');
 const accounts = require('../../services/providers/account_service');
 const { isPrivateDestination } = require('../../providers/net_guard');
-const { RoutingPlan } = require('../../services/routing/router');
+const { RoutingPlan, explainNoModel } = require('../../services/routing/router');
 const learning = require('../../services/routing/learning');
 const loadTracker = require('../../services/routing/load_tracker');
 const quota = require('../../services/quota/quota_service');
 const plans = require('../../services/routing/plans');
 const budget = require('../../services/budget/budget_service');
 const usage = require('../../services/usage/usage_service');
+const keyConcurrency = require('../../services/router_keys/key_concurrency');
 const routerKeys = require('../../services/router_keys/router_key_service');
 const { createLogger } = require('../../utils/logger');
 
@@ -155,6 +156,11 @@ class LiveSession {
 
   async connect(requestedModel, first) {
     this.requestedModel = requestedModel;
+    try {
+      this.releaseKey = keyConcurrency.acquire(this.key);
+    } catch (error) {
+      return this.fail(error.message, error.code.toLowerCase());
+    }
     const rpm = routerKeys.consumeRpm(this.key);
     if (!rpm.allowed) return this.fail('This router key exceeded its requests-per-minute limit.', 'rate_limited');
     this.first = first;
@@ -170,6 +176,8 @@ class LiveSession {
       const { entry } = choice;
       const adapter = accounts.adapterFor(accounts.getRuntime(entry.accountId));
       const attemptStarted = Date.now();
+      const release = loadTracker.lease(entry);
+      this.release = release;
       quota.recordRequest(entry, 0);
       plans.onSent(entry);
       try {
@@ -183,12 +191,19 @@ class LiveSession {
         return this.attach(upstream, entry);
       } catch (caught) {
         const error = caught instanceof ProviderError ? caught : fromNetworkError(caught);
-        if (!this.failed(entry, error, attemptStarted)) break;
+        const retry = !this.closed && this.failed(entry, error, attemptStarted);
+        release();
+        this.release = null;
+        if (!retry) break;
       }
     }
+    // Say what stopped it. Models of other protocols are not counted as rejected.
+    const rejected = this.trail.length ? {} : this.routing.rejectionSummary();
     const message = this.trail.length
       ? `All ${this.trail.length} attempt(s) failed. Last error: ${this.lastError?.message || 'unknown'}`
-      : `No live model in your catalog can serve "${this.requestedModel}" over this protocol right now (filters, quotas, cooldowns or budget).`;
+      : Object.keys(rejected).length
+        ? explainNoModel(rejected, 'live')
+        : `No live model in your catalog can serve "${this.requestedModel}" over this protocol.`;
     return this.fail(message, this.trail.length ? 'all_attempts_failed' : 'no_model_available');
   }
 
@@ -197,6 +212,7 @@ class LiveSession {
     this.lastError = error;
     this.trail.push({ model: entry.id, outcome: error.kind, status: error.status, ms: Date.now() - attemptStarted, message: String(error.message).slice(0, 200) });
     const policy = learning.onFailure(entry, error, { estimatedTokens: 0 });
+    this.routing.noteFailure(entry, error.kind);
     if (error.kind === KINDS.AUTH) accounts.validateAccount(entry.accountId).catch(() => {});
     return policy.fallback;
   }
@@ -205,7 +221,6 @@ class LiveSession {
     const attachedAt = Date.now();
     this.upstream = upstream;
     this.entry = entry;
-    this.release = loadTracker.lease(entry);
     if (this.first) upstream.send(JSON.stringify(this.dialect.rewriteFirst(this.first, entry.modelId)));
     for (const [data, binary] of this.queue) upstream.send(data, { binary });
     const relay = (data, binary) => {
@@ -252,6 +267,7 @@ class LiveSession {
     if (!reported) return;
     this.tokens.input += reported.input;
     this.tokens.output += reported.output;
+    if (this.entry) quota.recordTokens(this.entry, reported.input + reported.output);
   }
 
   fail(message, code) {
@@ -275,6 +291,7 @@ class LiveSession {
       usageIn: this.tokens.input, usageOut: this.tokens.output, ...this.traffic,
     });
     this.release?.();
+    this.releaseKey?.();
     if (this.upstream && this.upstream.readyState !== WebSocket.CLOSED) this.upstream.close();
     const entry = this.entry;
     const seconds = Math.round((Date.now() - this.startedAt) / 1000);
@@ -306,9 +323,13 @@ function attach(server) {
   server.on('upgrade', (request, socket, head) => {
     const url = new URL(request.url, 'http://local');
     const dialect = dialectFor(url.pathname);
-    if (!dialect) return socket.destroy();
+    // Other paths belong to other handlers (the pool relay); unclaimed ones are closed in index.js.
+    if (!dialect) return undefined;
+    request.upgradeClaimed = true;
     const key = routerKeys.authenticate(tokenOf(request, url));
     if (!key) return reject(socket, 401, 'A valid NeoRouter key (nrt_…) is required.');
+    // Pool partners reach chat only.
+    if (key.peer_link_id) return reject(socket, 403, 'Pool partners can only use chat models.');
     return wss.handleUpgrade(request, socket, head, (client) => new LiveSession({ client, request, url, dialect, key }).start());
   });
   return wss;

@@ -9,7 +9,7 @@ process environment. Change values with `neorouter env set KEY value`.
 | --- | --- | --- |
 | `NEOROUTER_HOST` | `127.0.0.1` | Bind address. Use `0.0.0.0` behind a reverse proxy. |
 | `NEOROUTER_PORT` | `4600` | HTTP port for `/`, `/app`, `/api/v1` and `/v1`. |
-| `NEOROUTER_PUBLIC_URL` | – | External URL; used for the endpoint shown in the app and OAuth callbacks. |
+| `NEOROUTER_PUBLIC_URL` | – | External URL; used for the endpoint shown in the app, OAuth callbacks, and the address pool partners reach. Without one, a NeoRouter can still join a pool: it takes part through the pool's host. |
 | `NEOROUTER_HOME` | `~/.neorouter` | Data, logs, backups and `secret.key`. `/data` in the container image. |
 | `NEOROUTER_CONTAINER` | auto | Forces the container behaviour (no service install, foreground start). Detected from `/.dockerenv` and Kubernetes env otherwise. See [docker.md](docker.md). |
 | `NEOROUTER_TRUST_PROXY` | `false` | Trust `X-Forwarded-*` from a reverse proxy. |
@@ -18,6 +18,24 @@ process environment. Change values with `neorouter env set KEY value`.
 | `NEOROUTER_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error`. |
 | `NEOROUTER_SESSION_TTL_MS` | 30 days | Dashboard session lifetime. |
 | `NEOROUTER_WEB_DEV_URL` | – | Development only: redirect `/app` to a running `flutter run -d web-server`. |
+
+## Router key expiration
+
+In **API keys → Create key / Edit**, choose no expiration, 7/30/90 days, or a
+custom date and time. The form and key list show the exact cutoff in the
+browser's local time zone, including its UTC offset. Existing keys keep their
+current expiration unless you explicitly change it. The same choice is available
+when approving a connected app; expiring OAuth tokens include `expires_in`.
+
+Expired keys are listed separately and can be renewed through **Renew / edit**.
+Extending or removing expiry reuses the existing secret; it never reactivates a
+revoked key. At expiration, new gateway requests receive HTTP 401. Requests that
+were already authenticated are allowed to finish.
+
+The management API accepts `expiresAt` as an ISO 8601 timestamp with `Z` or an
+explicit UTC offset on `POST /api/v1/keys` and `PATCH /api/v1/keys/:id`. Use `null`
+to remove expiry; omit the field on updates to preserve it. New or changed
+deadlines must be in the future. Key responses include `expiresAt` and `expired`.
 
 ## Routing
 
@@ -38,7 +56,7 @@ process environment. Change values with `neorouter env set KEY value`.
 | --- | --- | --- |
 | `NEOROUTER_WORKERS_ENABLED` | `true` | Key checks, model sync, metadata refresh and quota probes. |
 | `NEOROUTER_VALIDATE_INTERVAL_MS` | 5 min | Key re-validation. |
-| `NEOROUTER_MODEL_SYNC_INTERVAL_MS` | 6 h | Model list refresh. |
+| `NEOROUTER_MODEL_SYNC_INTERVAL_MS` | 2 h | Model list refresh. |
 | `NEOROUTER_METADATA_INTERVAL_MS` | 1 h | models.dev / OpenRouter / Artificial Analysis refresh. |
 | `NEOROUTER_QUOTA_PROBE_INTERVAL_MS` | 15 min | Balance and credit probes. |
 | `NEOROUTER_METADATA_SOURCES_ENABLED` | `true` | Disable to run fully offline. |

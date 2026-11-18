@@ -75,7 +75,8 @@ test('ElevenLabs maps voices and builds subtitle cues from word timestamps', asy
   const speech = await adapter('elevenlabs').speech({ input: 'Hi', voice: 'alloy', format: 'mp3' }, ctx('eleven_multilingual_v2'));
   assert.equal(speech.audio.toString(), 'eleven-mp3');
   const call = seen.find((item) => item.path.startsWith('/tts/'));
-  assert.equal(call.path, '/tts/21m00Tcm4TlvDq8ikWAM');
+  // This mock lists no voices, so the static default (Eldrin, a current default voice) is used.
+  assert.equal(call.path, '/tts/6WwXjDDEMyNmFG95zycZ');
   assert.equal(call.key, 'secret-1');
   assert.equal(call.query.output_format, 'mp3_44100_128');
   assert.equal(call.body.model_id, 'eleven_multilingual_v2');

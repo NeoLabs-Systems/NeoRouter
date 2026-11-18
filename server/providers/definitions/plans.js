@@ -24,11 +24,29 @@ function minimaxWindows(data) {
   return results;
 }
 
+// OpenCode Go reports the console's three meters: the 5-hour block (rolling),
+// the week and the month, each as the share used and when it resets.
+// GET /usage -> { usage: { rolling|weekly|monthly: { status, percent, resetsAt } } }
+function opencodeGoWindows(data) {
+  const meters = data?.usage || data || {};
+  const windows = [['rolling', 'plan_5h'], ['weekly', 'plan_week'], ['monthly', 'plan_month']];
+  const results = [];
+  for (const [name, metric] of windows) {
+    const meter = meters[name];
+    const used = Number(meter?.percent ?? meter?.usagePercent);
+    if (!meter || !Number.isFinite(used)) continue;
+    const resetAt = Date.parse(meter.resetsAt) || (Number(meter.resetInSec) ? Date.now() + Number(meter.resetInSec) * 1000 : null);
+    results.push({ metric, limit: 100, remaining: Math.max(0, Math.min(100, Math.round(100 - used))), resetAt });
+  }
+  return results;
+}
+
 module.exports = [
   {
     id: 'chatgpt',
     label: 'ChatGPT',
-    description: 'Your ChatGPT plan (Plus, Pro) through the Codex sign-in.',
+    keyUrl: 'https://chatgpt.com/codex',
+    description: 'Your ChatGPT plan through the Codex sign-in.',
     category: 'plan',
     website: 'https://chatgpt.com/codex',
     adapter: 'codex',
@@ -38,10 +56,10 @@ module.exports = [
     baseUrl: process.env.NEOROUTER_CODEX_BASE_URL || 'https://chatgpt.com/backend-api/codex',
     billing: {
       defaultMode: 'plan',
-      plan: { note: 'Uses your ChatGPT plan: a 5-hour and a weekly window, which ChatGPT reports with every answer.' },
-      note: 'Signs in the way Codex, OpenClaw and OpenCode do. Meant for your own plan: Team, Business and Enterprise workspaces follow their admins\' rules, and sharing one plan between people is against the terms.',
-      source: 'https://developers.openai.com/codex/auth',
-      checkedAt: '2026-10-29',
+      plan: { note: "Uses your ChatGPT plan's Codex limits (a 5-hour window on most plans, plus weekly limits); ChatGPT reports them with each answer." },
+      note: 'Device sign-in must first be enabled in the ChatGPT security settings (or by a workspace admin). Extra credits are bought separately. Signs in the way Codex, OpenClaw and OpenCode do. Meant for your own plan: Team, Business and Enterprise workspaces follow their admins\' rules, and sharing one plan between people is against the terms.',
+      source: 'https://learn.chatgpt.com/docs/pricing',
+      checkedAt: '2026-11-07',
     },
     quirks: { timeoutMs: 300000 },
   },
@@ -56,10 +74,10 @@ module.exports = [
     baseUrl: 'https://api.synthetic.new/openai/v1',
     billing: {
       defaultMode: 'plan',
-      plan: { note: 'Subscription (Go, Standard, Big) with a request allowance that renews on a schedule; NeoRouter reads what is left from Synthetic.' },
-      note: 'A subscription: requests within the allowance cost nothing extra.',
+      plan: { note: 'Go 9 USD, Standard 30 USD, Big 90 USD a month. A weekly credit limit that refills 2% every 3.4 hours; NeoRouter reads what is left from Synthetic.' },
+      note: 'Requests within the plan cost nothing extra; extra usage beyond it is billed at API prices if you allow it.',
       source: 'https://synthetic.new/pricing',
-      checkedAt: '2026-10-29',
+      checkedAt: '2026-11-07',
     },
     quota: {
       probe: {
@@ -78,7 +96,7 @@ module.exports = [
     description: 'The MiniMax subscription (Go, Explore, Build) with its own plan key.',
     category: 'plan',
     website: 'https://www.minimax.io',
-    keyUrl: 'https://platform.minimax.io/user-center/basic-information/interface-key',
+    keyUrl: 'https://platform.minimax.io/console/plan',
     adapter: 'openai_compatible',
     baseUrl: 'https://api.minimax.io/v1',
     // The plan key does not list models; these are the plan's text models.
@@ -88,8 +106,8 @@ module.exports = [
       defaultMode: 'plan',
       plan: { note: 'Usage windows of 5 hours and a week; MiniMax reports what is left of each.' },
       note: 'The M Plan key works in any OpenAI- or Anthropic-compatible tool; usage from all tools counts against the same windows.',
-      source: 'https://platform.minimax.io/docs/coding-plan/faq',
-      checkedAt: '2026-10-29',
+      source: 'https://platform.minimax.io/docs/m-plan/intro',
+      checkedAt: '2026-11-07',
     },
     quota: { probe: { path: 'https://www.minimax.io/v1/token_plan/remains', parse: minimaxWindows } },
   },
@@ -115,14 +133,42 @@ module.exports = [
     },
     billing: {
       defaultMode: 'plan',
-      plan: { note: 'Usage windows of 5 hours and a week; which models you get depends on your membership.' },
+      plan: { note: 'Plus and higher: a rolling 5-hour limit plus the membership\'s monthly credit pool (older plans also have a weekly limit). The Go tier does not include Kimi Code.' },
       note: 'Kimi lists the tools it supports and forbids disguising the client; NeoRouter identifies itself honestly, so Kimi may refuse it. Check the membership terms before relying on it.',
-      source: 'https://www.kimi.com/coding/docs/en/',
-      checkedAt: '2026-10-29',
+      source: 'https://www.kimi.com/en/help/membership/membership-pricing',
+      checkedAt: '2026-11-07',
     },
     // Never pretend to be another client: Kimi treats a faked User-Agent as a violation.
     quirks: { userAgent: 'NeoRouter' },
   },
+  {
+    id: 'opencode_go',
+    label: 'OpenCode Go',
+    keyUrl: 'https://opencode.ai/console',
+    description: 'The OpenCode Go subscription: open and partner models for coding agents, with monthly usage limits.',
+    category: 'plan',
+    website: 'https://opencode.ai/go',
+    adapter: 'openai_compatible',
+    baseUrl: 'https://opencode.ai/inference/go/v1',
+    // Without a session id Go refuses the request ("MissingSessionID"). It wants
+    // the conversation's own id (for routing and prompt caching) and a client name.
+    sessionHeader: 'x-opencode-session',
+    quirks: { userAgent: 'NeoRouter' },
+    quota: { probe: { path: '/usage', parse: opencodeGoWindows } },
+    // The "Contributor" models are cheaper or free in exchange for training on
+    // the prompts, so they start switched off.
+    models: { optIn: ['contributor'] },
+    // /models is public: the key and the subscription are checked with a 1-token request.
+    validate: { chatProbe: true, probeModels: ['glm-5.3-flash'] },
+    billing: {
+      defaultMode: 'plan',
+      plan: { note: 'A monthly dollar limit per model, with a 5-hour window (20% of it) and a weekly one (50%). NeoRouter reads the three windows from the OpenCode usage endpoint. With Extra Usage on, OpenCode carries on from your balance.' },
+      note: 'Needs the Go subscription ($10 a month, Go Plus $40, Teams $20 a member). Some models (DeepSeek among them) need the workspace Privacy setting on Global regions. Muse Spark Contributor and Iceman Contributor train on your prompts, so they start switched off. Grok, GPT and Claude Haiku keep requests for 30 days; most others keep none.',
+      source: 'https://opencode.ai/docs/go/',
+      checkedAt: '2026-11-07',
+    },
+  },
 ];
 
 module.exports.minimaxWindows = minimaxWindows;
+module.exports.opencodeGoWindows = opencodeGoWindows;

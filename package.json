@@ -1,6 +1,6 @@
 {
   "name": "neorouter",
-  "version": "0.1.0",
+  "version": "0.2.0-beta.83",
   "description": "Self-hosted inference router for the NeoLabs ecosystem: one OpenAI/Anthropic-compatible endpoint for every provider, with a learning auto-router, budgets and free-tier tracking",
   "license": "AGPL-3.0-only",
   "type": "commonjs",
@@ -57,6 +57,8 @@
     "dotenv": "^16.6.1",
     "express": "^4.22.3",
     "otplib": "^13.5.0",
+    "socks": "^2.8.10",
+    "undici": "^6.29.1",
     "ws": "^8.22.0",
     "zod": "^3.25.76"
   },

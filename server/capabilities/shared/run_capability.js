@@ -12,11 +12,13 @@ const { ProviderError, KINDS, fromNetworkError } = require('../../providers/prov
 const accounts = require('../../services/providers/account_service');
 const { RoutingPlan, explainNoModel } = require('../../services/routing/router');
 const learning = require('../../services/routing/learning');
+const capacity = require('../../services/routing/capacity');
 const loadTracker = require('../../services/routing/load_tracker');
 const plans = require('../../services/routing/plans');
 const quota = require('../../services/quota/quota_service');
 const budget = require('../../services/budget/budget_service');
 const usage = require('../../services/usage/usage_service');
+const keyConcurrency = require('../../services/router_keys/key_concurrency');
 const routerKeys = require('../../services/router_keys/router_key_service');
 
 const KEY_POLICY_REJECTIONS = new Set(['not_free', 'not_allowed_for_key', 'price_unknown']);
@@ -26,7 +28,7 @@ const QUEUE_MIN_POLL_MS = 200;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function trailItem(entry, outcome, extra = {}) {
-  return { model: entry.id, outcome, ...extra };
+  return { model: entry.id, outcome, ...(entry.tryingLuck ? { luck: true } : {}), ...(entry.lastResort ? { lastResort: true } : {}), ...extra };
 }
 
 /**
@@ -44,12 +46,20 @@ function trailItem(entry, outcome, extra = {}) {
  * @param {() => HttpError|null} [options.onNoCandidate]  explains an empty candidate list
  * @param {number} [options.redactedCount]  values the privacy shield hid, for the log
  */
-async function runCapability({ req, res = null, key, capability, method, requestedModel = 'auto', invoke, costOf, estimateCost, respond, inputTokens = 0, units = 0, format = capability, freeOnly = false, filter = null, onNoCandidate = null, contextTokens = inputTokens, redactedCount = 0 }) {
+function runCapability(options) {
+  return keyConcurrency.run(options.key, () => run(options));
+}
+
+async function run({ req, res = null, key, capability, method, requestedModel = 'auto', invoke, costOf, estimateCost, respond, inputTokens = 0, units = 0, format = capability, freeOnly = false, filter = null, onNoCandidate = null, contextTokens = inputTokens, redactedCount = 0 }) {
   const requestId = req.id || crypto.randomUUID();
   const startedAt = Date.now();
   const trail = [];
 
   const rpm = routerKeys.consumeRpm(key);
+  const window = routerKeys.rpmState(key);
+  if (window && res) {
+    res.set({ 'x-ratelimit-limit-requests': String(window.limit), 'x-ratelimit-remaining-requests': String(window.remaining), 'x-ratelimit-reset-requests': `${window.resetSeconds}s` });
+  }
   if (!rpm.allowed) {
     res?.set('Retry-After', String(rpm.retryAfterSeconds));
     throw new HttpError(429, 'KEY_RATE_LIMITED', 'This router key exceeded its requests-per-minute limit.', { retryAfterSeconds: rpm.retryAfterSeconds });
@@ -91,10 +101,8 @@ async function runCapability({ req, res = null, key, capability, method, request
 
   // Only providers whose adapter speaks this kind are candidates.
   const supported = (entry) => {
-    const runtime = accounts.getRuntime(entry.accountId);
-    if (!runtime) return false;
-    const adapter = accounts.adapterFor(runtime);
-    return typeof adapter[method] === 'function' && adapter.supports(method) && (!filter || filter(entry, adapter));
+    if (!accounts.canServe(entry.accountId, method)) return false;
+    return !filter || filter(entry, accounts.adapterFor(accounts.getRuntime(entry.accountId)));
   };
 
   const config = getConfig();
@@ -102,7 +110,7 @@ async function runCapability({ req, res = null, key, capability, method, request
   let badRequests = 0;
   // Like chat: when every candidate is only blocked for a moment, wait for
   // the first one to free up instead of failing.
-  const waitUntil = Math.min(startedAt + config.routing.queueWaitMs, startedAt + config.routing.totalBudgetMs);
+  const waitUntil = Math.min(startedAt + capacity.queueWaitMs(key, plan.queueWaitMs(config.routing.queueWaitMs)), startedAt + config.routing.totalBudgetMs);
   const nextChoice = async () => {
     try {
       for (;;) {
@@ -110,7 +118,13 @@ async function runCapability({ req, res = null, key, capability, method, request
         if (choice) return choice;
         const now = Date.now();
         freesUpAt = plan.freesUpAt(now, supported);
-        if (freesUpAt === null || freesUpAt > waitUntil) return null;
+        if (freesUpAt === null || freesUpAt > waitUntil) {
+          // Better to try what may work again than to answer "no model available".
+          // A slow or weaker model that works comes before connections known to refuse.
+          if (plan.enableLastResort({ filter: supported, now })) continue;
+          if (plan.enableLongShots({ filter: supported, now })) continue;
+          return null;
+        }
         plan.joinQueue(now, supported);
         await sleep(Math.min(waitUntil - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random())));
         queuedMs += Date.now() - now;
@@ -156,7 +170,9 @@ async function runCapability({ req, res = null, key, capability, method, request
       if (error instanceof HttpError) throw error;
       lastError = error;
       trail.push(trailItem(entry, error.kind, { status: error.status, ms: Date.now() - attemptStarted, message: String(error.message).slice(0, 200) }));
-      const policy = learning.onFailure(entry, error, { estimatedTokens: inputTokens });
+      // Media requests bring their own voice, size or format: a refusal of those is about this request, not the model.
+      const policy = learning.onFailure(entry, error, { estimatedTokens: inputTokens, requestSpecific: true });
+      plan.noteFailure(entry, error.kind);
       if (error.kind === KINDS.AUTH) accounts.validateAccount(entry.accountId).catch(() => {});
       badRequests = error.kind === KINDS.BAD_REQUEST ? badRequests + 1 : 0;
       if (!policy.fallback || badRequests >= MAX_CONSECUTIVE_BAD_REQUESTS) break;
@@ -172,7 +188,7 @@ async function runCapability({ req, res = null, key, capability, method, request
       throw explained;
     }
   }
-  const rejected = plan.rejectionSummary();
+  const rejected = plan.rejectionSummary(Date.now(), supported);
   const reasons = Object.keys(rejected);
   if (!plan.parsed.auto && trail.length === 0 && reasons.length && reasons.every((reason) => KEY_POLICY_REJECTIONS.has(reason))) {
     const why = reasons.includes('not_free') ? 'is not free and this key only allows free models' : 'is not allowed for this key';

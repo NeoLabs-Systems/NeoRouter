@@ -4,6 +4,7 @@ const express = require('express');
 const { z } = require('zod');
 const auth = require('../services/auth/auth_service');
 const twoFactor = require('../services/auth/two_factor_service');
+const accountData = require('../services/account/account_data_service');
 const { requireSession } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
 const { slidingWindow } = require('../middleware/rate_limit');
@@ -47,5 +48,16 @@ router.put('/password', validate(z.object({ currentPassword: z.string(), newPass
   asyncRoute(async (req, res) => { await auth.changePassword(req.auth.userId, req.body.currentPassword, req.body.newPassword); res.status(204).end(); }));
 router.patch('/profile', validate(z.object({ displayName: z.string().max(80).optional(), email: z.string().email().optional() })),
   (req, res) => res.json({ user: auth.updateProfile(req.auth.userId, req.body) }));
+
+// Your own account: export it, export the saved keys, delete it. Each asks for
+// the password again (and a 2FA code); few tries a minute.
+const accountLimit = () => slidingWindow({ windowMs: 60_000, limit: 5 });
+const confirmation = z.object({ currentPassword: z.string().min(1).max(1024), code: z.string().min(6).max(64).optional() });
+router.post('/account/export', accountLimit(), validate(confirmation),
+  asyncRoute(async (req, res) => res.set('Cache-Control', 'no-store').json(await accountData.exportData(req.auth.userId, req.body))));
+router.post('/account/export-keys', accountLimit(), validate(confirmation),
+  asyncRoute(async (req, res) => res.set('Cache-Control', 'no-store').json(await accountData.exportKeys(req.auth.userId, req.body))));
+router.post('/account/delete', accountLimit(), validate(confirmation),
+  asyncRoute(async (req, res) => { await accountData.deleteAccount(req.auth.userId, req.body); res.status(204).end(); }));
 
 module.exports = router;

@@ -85,6 +85,12 @@ RUN --mount=type=cache,target=/root/.npm \
 # web-main releases (.github/workflows/web-client.yml). This is also what an
 # npm install without the Flutter SDK uses, so no Flutter is needed here.
 # ---------------------------------------------------------------------------
+# A dashboard archive handed to the build, which then downloads nothing:
+#   docker build --build-context web-archive=<dir> .   (with incoming/neorouter-web.tar.gz)
+# CI does this. Without it this stage is empty and the archive is downloaded.
+FROM debian:bookworm-slim AS web-archive
+RUN mkdir /incoming
+
 FROM debian:bookworm-slim AS web-prebuilt
 
 # The dashboard always matches the code: the channel decides which release tag
@@ -97,16 +103,33 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl \
  && rm -rf /var/lib/apt/lists/*
 
+# Changes with every commit in CI (the commit id), so the download below runs
+# again instead of reusing a cached, older dashboard.
+ARG NEOROUTER_WEB_STAMP=
+
 WORKDIR /web
+COPY --from=web-archive /incoming /incoming
+# GitHub's download link sometimes answers 504 for minutes at a time (also
+# right after the Web Client workflow replaces the archive); GitHub's API serves
+# the same file, so it is the fallback for the default URL.
 RUN set -eux; \
+    echo "Web client for ${NEOROUTER_WEB_STAMP:-this build}"; \
     case "${NEOROUTER_CHANNEL:-beta}" in \
       beta) release=web-beta ;; \
       stable|main|latest) release=web-main ;; \
       *) echo "NEOROUTER_CHANNEL must be beta or stable, got '${NEOROUTER_CHANNEL}'" >&2; exit 1 ;; \
     esac; \
     url="${NEOROUTER_WEB_URL:-https://github.com/NeoLabs-Systems/NeoRouter/releases/download/${release}/neorouter-web.tar.gz}"; \
-    echo "Downloading web client: $url"; \
-    curl -fsSL --retry 3 --retry-delay 2 -o web.tar.gz "$url"; \
+    if [ -f /incoming/neorouter-web.tar.gz ]; then \
+      echo "Web client handed to the build"; \
+      cp /incoming/neorouter-web.tar.gz web.tar.gz; \
+    elif echo "Downloading web client: $url" && ! curl -fsSL --retry 3 --retry-delay 3 --retry-all-errors -o web.tar.gz "$url"; then \
+      test -z "${NEOROUTER_WEB_URL}"; \
+      echo "The download link failed; fetching the same archive through GitHub's API"; \
+      asset="$(curl -fsSL --retry 3 "https://api.github.com/repos/NeoLabs-Systems/NeoRouter/releases/tags/${release}" | tr ',' '\n' | grep -o 'https://api.github.com/repos/[^"]*/releases/assets/[0-9]*' | head -n 1)"; \
+      test -n "$asset"; \
+      curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors -H 'Accept: application/octet-stream' -o web.tar.gz "$asset"; \
+    fi; \
     tar -xzf web.tar.gz; \
     rm web.tar.gz; \
     test -f index.html; \
@@ -142,7 +165,8 @@ LABEL org.opencontainers.image.title="NeoRouter" \
       org.opencontainers.image.licenses="AGPL-3.0-only"
 
 # ffmpeg is optional for NeoRouter (speech output is converted to the format
-# the client asked for), tini is PID 1 so SIGTERM reaches the server and the
+# the client asked for), libgomp1 is what llama.cpp needs for local models,
+# tini is PID 1 so SIGTERM reaches the server and the
 # scheduler shuts down instead of the container timing out.
 #
 # The process runs as an unprivileged uid; the data volume is the only thing it
@@ -153,7 +177,7 @@ ARG UID=1000
 ARG GID=1000
 ARG NEOROUTER_CHANNEL=beta
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates ffmpeg tini \
+ && apt-get install -y --no-install-recommends ca-certificates ffmpeg libgomp1 tini \
  && rm -rf /var/lib/apt/lists/* \
  && if ! getent group "$GID" >/dev/null; then groupadd --gid "$GID" neorouter; fi \
  && if ! getent passwd "$UID" >/dev/null; then \
@@ -162,9 +186,11 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY --from=source --chown=${UID}:${GID} /src ./
+# Largest and least often changed first: an update that only touches the code
+# rebuilds, uploads and downloads just the last, small layer.
 COPY --from=deps --chown=${UID}:${GID} /app/node_modules ./node_modules
 COPY --from=web-prebuilt --chown=${UID}:${GID} /web ./flutter_app/build/web
+COPY --from=source --chown=${UID}:${GID} /src ./
 
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 # The symlink makes `docker compose exec neorouter neorouter status` work
