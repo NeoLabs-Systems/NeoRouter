@@ -62,7 +62,7 @@ async function exportData(userId, credentials) {
     routingProfiles: rows('SELECT id, name, weights_json, constraints_json, created_at FROM routing_profiles WHERE user_id = ?', userId)
       .map((row) => ({ id: row.id, name: row.name, weights: json(row.weights_json, {}), constraints: json(row.constraints_json, {}), createdAt: row.created_at })),
     // NeoRouter keys are stored only as a hash: listed, but they cannot be exported.
-    routerKeys: rows(`SELECT id, name, prefix, mode, budget_usd, budget_period, rpm_limit, allowed_models_json, profile, routing_group, expires_at, revoked_at,
+    routerKeys: rows(`SELECT id, name, prefix, mode, budget_usd, budget_period, rpm_limit, concurrent_limit, allowed_models_json, profile, routing_group, expires_at, revoked_at,
       last_used_at, created_at, app_name, token_limit, token_period, priority FROM router_keys WHERE user_id = ? ORDER BY created_at`, userId)
       .map(({ allowed_models_json: allowed, ...row }) => ({ ...row, allowedModels: json(allowed, null) })),
     team: {

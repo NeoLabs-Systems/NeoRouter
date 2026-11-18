@@ -208,8 +208,9 @@ function assertSlotPlan(definition, options) {
   }
 }
 
-function configureSlots(accountId, input) {
-  if (input.concurrent !== undefined) require('../quota/account_limits').set(accountId, { concurrent: input.concurrent });
+function configureTraffic(accountId, input) {
+  const manual = { ...(input.concurrent !== undefined ? { concurrent: input.concurrent } : {}), ...input.limits };
+  if (Object.keys(manual).length) require('../quota/account_limits').set(accountId, manual);
   if (input.overflowPolicy !== undefined) getDatabase().prepare('UPDATE provider_accounts SET overflow_policy = ? WHERE id = ?').run(input.overflowPolicy, accountId);
   if (input.slotWaitMs !== undefined) getDatabase().prepare('UPDATE provider_accounts SET slot_wait_ms = ? WHERE id = ?').run(input.slotWaitMs, accountId);
   require('../routing/slot_utilization').watch(accountId);
@@ -248,7 +249,7 @@ async function create(userId, input, createdBy = userId, actor = null) {
       input.secret ? encryptString(input.secret) : null, JSON.stringify(options), billingMode,
       result.status === 'healthy' ? 'healthy' : 'error', result.message || null, createdBy, prepaid);
   if (input.classification && input.classification !== 'auto') getDatabase().prepare('UPDATE provider_accounts SET classification = ? WHERE id = ?').run(input.classification, id);
-  configureSlots(id, input);
+  configureTraffic(id, input);
   return { account: publicAccount(getRow(userId, id)), validation: result };
 }
 
@@ -307,7 +308,7 @@ async function update(userId, accountId, input, actor = null) {
     );
   if (input.billingMode !== undefined) db.prepare('UPDATE provider_accounts SET prepaid = ? WHERE id = ?').run(storedBilling(input.billingMode).prepaid, accountId);
   if (input.classification !== undefined) db.prepare('UPDATE provider_accounts SET classification = ? WHERE id = ?').run(input.classification === 'auto' ? null : input.classification, accountId);
-  configureSlots(accountId, input);
+  configureTraffic(accountId, input);
   return publicAccount(getRow(userId, accountId));
 }
 

@@ -23,6 +23,7 @@ const billing = require('../../services/providers/billing_check');
 const requestProcessing = require('../../services/processing/processing_service');
 const { restoreResponse, StreamRestorer } = require('../../services/processing/redaction');
 const requestBudget = require('../../services/routing/request_budget');
+const keyConcurrency = require('../../services/router_keys/key_concurrency');
 const routerKeys = require('../../services/router_keys/router_key_service');
 const sharePolicy = require('../../services/pools/share_policy');
 const peerPrivacy = require('../../services/pools/peer_privacy');
@@ -185,7 +186,7 @@ async function execute(options) {
   if (req.get?.('x-neorouter-hop') && !key.peer_link_id) {
     throw new HttpError(403, 'POOL_HOP_REFUSED', 'Requests passed on by a pool partner are only accepted with a partner key.');
   }
-  if (!key.peer_link_id) return run(options);
+  if (!key.peer_link_id) return options.internal ? run(options) : keyConcurrency.run(key, () => run(options));
   // A partner's request: admitted within its share, and announced to the
   // partner's router as rate-limit headers.
   const share = sharePolicy.admit(key);

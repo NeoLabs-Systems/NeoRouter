@@ -6,6 +6,7 @@
 // once (stated, documented or learned per account; see concurrency.js).
 const catalog = require('../catalog/catalog_service');
 const routerKeys = require('../router_keys/router_key_service');
+const keyConcurrency = require('../router_keys/key_concurrency');
 const concurrency = require('./concurrency');
 const loadTracker = require('./load_tracker');
 
@@ -39,10 +40,15 @@ function forKey(key, now = Date.now()) {
     if (known) limit += known.limit;
     else unknown = true;
   }
-  const cap = unknown ? null : limit;
+  const ownLimit = key.concurrent_limit;
+  const ownInFlight = ownLimit ? keyConcurrency.inFlight(key) : 0;
+  const ownAvailable = ownLimit ? Math.max(0, ownLimit - ownInFlight) : null;
+  const providerAvailable = unknown ? null : Math.max(0, limit - inFlight);
   return {
     requests: rpm && { perMinute: rpm.limit, remaining: rpm.remaining, resetSeconds: rpm.resetSeconds, intervalMs: Math.ceil(60_000 / rpm.limit) },
-    concurrent: { limit: cap, inFlight, available: cap === null ? null : Math.max(0, cap - inFlight) },
+    concurrent: ownLimit
+      ? { limit: ownLimit, inFlight: ownInFlight, available: Math.min(ownAvailable, providerAvailable ?? Infinity) }
+      : { limit: unknown ? null : limit, inFlight, available: providerAvailable },
   };
 }
 

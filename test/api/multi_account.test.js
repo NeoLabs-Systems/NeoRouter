@@ -84,3 +84,46 @@ test('learned limits probe upward again and expire', () => {
   assert.equal(concurrency.limitFor(entry).limit, 4);
   assert.equal(concurrency.limitFor(entry, Date.now() + 2 * 60 * 60 * 1000), null);
 });
+
+
+test('one key caps concurrent requests across connections and can clear its cap', async () => {
+  const response = await api('post', '/keys').send({ name: 'limited', mode: 'free_only', concurrentLimit: 1, rpmLimit: 10 });
+  assert.equal(response.status, 201, response.text);
+  const { key, secret: limited } = response.body;
+  const send = () => request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${limited}`)
+    .send({ model: 'slow-shared', stream: true, messages: [{ role: 'user', content: 'hi' }] });
+  const [first, second] = await Promise.all([send(), send()]);
+  assert.deepEqual([first.status, second.status].sort(), [200, 429]);
+  assert.equal((first.status === 429 ? first : second).body.error.code, 'KEY_CONCURRENCY_LIMITED');
+  assert.equal((await send()).status, 200, 'the completed stream released its slot');
+  const limits = await request(app).get('/v1/limits').set('Authorization', `Bearer ${limited}`);
+  assert.equal(limits.body.concurrent.limit, 1);
+  assert.equal(limits.body.concurrent.inFlight, 0);
+  assert.equal(limits.body.requests.remaining, 8, 'a rejected concurrent request does not consume RPM');
+  const cleared = await api('patch', `/keys/${key.id}`).send({ concurrentLimit: null });
+  assert.equal(cleared.body.key.concurrentLimit, null);
+  assert.deepEqual((await Promise.all([send(), send()])).map((item) => item.status), [200, 200]);
+});
+
+test('editing a connection can override learned limits and restore automatic mode', async () => {
+  const quota = require('../../server/services/quota/quota_service');
+  const entry = require('../../server/services/catalog/catalog_service').listForUser(
+    require('../../server/services/providers/account_service').getRuntime(cappedAccount.id).userId,
+  ).find((item) => item.accountId === cappedAccount.id);
+  quota.learnLimit(entry, { metric: 'rpd', value: 1 });
+  const read = () => quota.evaluate(entry, 0).details.filter((item) => item.metric === 'rpd');
+  assert.ok(read().some((item) => item.source === 'learned' && item.limit === 1));
+
+  const path = `/providers/accounts/${cappedAccount.id}`;
+  const updated = await api('patch', path).send({ limits: { rpd: 60, concurrent: 4 } });
+  assert.equal(updated.status, 200, updated.text);
+  assert.deepEqual(updated.body.account.limits, { rpd: 60, concurrent: 4 });
+  assert.deepEqual(concurrency.limitFor(entry), { source: 'manual', limit: 4 });
+  const manual = read();
+  assert.equal(manual.length, 1);
+  assert.equal(manual[0].limit, 60);
+  assert.ok(manual[0].used > 0, 'the account cap includes prior traffic');
+  const cleared = await api('patch', path).send({ limits: { rpd: null, concurrent: null } });
+  assert.deepEqual(cleared.body.account.limits, {});
+  assert.ok(read().some((item) => item.source === 'learned' && item.limit === 1));
+});

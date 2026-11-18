@@ -18,6 +18,7 @@ const plans = require('../../services/routing/plans');
 const quota = require('../../services/quota/quota_service');
 const budget = require('../../services/budget/budget_service');
 const usage = require('../../services/usage/usage_service');
+const keyConcurrency = require('../../services/router_keys/key_concurrency');
 const routerKeys = require('../../services/router_keys/router_key_service');
 
 const KEY_POLICY_REJECTIONS = new Set(['not_free', 'not_allowed_for_key', 'price_unknown']);
@@ -45,7 +46,11 @@ function trailItem(entry, outcome, extra = {}) {
  * @param {() => HttpError|null} [options.onNoCandidate]  explains an empty candidate list
  * @param {number} [options.redactedCount]  values the privacy shield hid, for the log
  */
-async function runCapability({ req, res = null, key, capability, method, requestedModel = 'auto', invoke, costOf, estimateCost, respond, inputTokens = 0, units = 0, format = capability, freeOnly = false, filter = null, onNoCandidate = null, contextTokens = inputTokens, redactedCount = 0 }) {
+function runCapability(options) {
+  return keyConcurrency.run(options.key, () => run(options));
+}
+
+async function run({ req, res = null, key, capability, method, requestedModel = 'auto', invoke, costOf, estimateCost, respond, inputTokens = 0, units = 0, format = capability, freeOnly = false, filter = null, onNoCandidate = null, contextTokens = inputTokens, redactedCount = 0 }) {
   const requestId = req.id || crypto.randomUUID();
   const startedAt = Date.now();
   const trail = [];

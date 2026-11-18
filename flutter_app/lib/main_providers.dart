@@ -874,7 +874,10 @@ class _ProviderFormState extends State<_ProviderForm> {
   late String _slotPlan = (_savedOptions['slotPlan'] as String?) ?? (widget.definition.billing['flatRate'] as Map?)?['defaultPlan'] as String? ?? '';
   late String _overflow = widget.account?.raw['overflowPolicy'] as String? ?? 'auto';
   late final _slotWait = TextEditingController(text: '${((widget.account?.raw['slotWaitMs'] ?? widget.definition.billing['slotWaitMs']) as num) / 1000}');
-  late final _concurrent = TextEditingController(text: (widget.account?.raw['limits'] as Map?)?['concurrent']?.toString() ?? '');
+  late final _limits = {
+    for (final metric in _statedMetrics)
+      metric: TextEditingController(text: (widget.account?.raw['limits'] as Map?)?[metric]?.toString() ?? ''),
+  };
   late String _billing = widget.account?.billingMode ?? widget.definition.defaultBillingMode;
   late String _classification = widget.account?.classification ?? 'auto';
   bool _saving = false;
@@ -884,7 +887,7 @@ class _ProviderFormState extends State<_ProviderForm> {
   Map<String, dynamic>? _deviceLogin;
   Timer? _devicePoll;
   // Open when editing a connection whose free/paid setting was changed, so it is not hidden.
-  late bool _advanced = (widget.account?.classification ?? 'auto') != 'auto';
+  late bool _advanced = (widget.account?.classification ?? 'auto') != 'auto' || ((widget.account?.raw['limits'] as Map?)?.isNotEmpty ?? false);
   Map<String, dynamic>? _probe;
   String? _error;
 
@@ -897,6 +900,10 @@ class _ProviderFormState extends State<_ProviderForm> {
       controller.dispose();
     }
     _devicePoll?.cancel();
+    for (final field in _limits.values) {
+      field.dispose();
+    }
+    _slotWait.dispose();
     super.dispose();
   }
 
@@ -1034,7 +1041,6 @@ class _ProviderFormState extends State<_ProviderForm> {
   }
 
   Map<String, Object?> _slotBody() => <String, Object?>{
-    'concurrent': _concurrent.text.trim().isEmpty ? null : int.parse(_concurrent.text.trim()),
     'overflowPolicy': _overflow,
     'slotWaitMs': _slotWait.text.trim().isEmpty ? null : (double.parse(_slotWait.text.trim()) * 1000).round(),
   };
@@ -1048,10 +1054,23 @@ class _ProviderFormState extends State<_ProviderForm> {
     final options = _options();
     final headers = _headerMap();
     try {
+      final limits = _readTrafficLimits(_limits);
+      if (limits == null) {
+        setState(() {
+          _advanced = true;
+          _error = t.limitsInvalid;
+        });
+        return;
+      }
+      if (_editing) {
+        final existing = widget.account!.raw['limits'] as Map?;
+        limits.removeWhere((metric, value) => existing?[metric] == value);
+      } else {
+        limits.removeWhere((metric, value) => value == null);
+      }
       if (_billing == 'flat_rate') {
-        final count = _concurrent.text.trim().isEmpty ? null : int.tryParse(_concurrent.text.trim());
         final seconds = _slotWait.text.trim().isEmpty ? null : double.tryParse(_slotWait.text.trim());
-        if ((_concurrent.text.trim().isNotEmpty && (count == null || count < 1)) || (_slotWait.text.trim().isNotEmpty && (seconds == null || seconds < 0 || seconds * 1000 > (widget.definition.billing['slotMaxWaitMs'] as num)))) {
+        if (_slotWait.text.trim().isNotEmpty && (seconds == null || !seconds.isFinite || seconds < 0 || seconds * 1000 > (widget.definition.billing['slotMaxWaitMs'] as num))) {
           setState(() => _error = t.limitsInvalid);
           return;
         }
@@ -1066,6 +1085,7 @@ class _ProviderFormState extends State<_ProviderForm> {
           'headers': headers,
           'billingMode': _billing,
           if (_billing == 'flat_rate') ..._slotBody(),
+          if (limits.isNotEmpty) 'limits': limits,
           'classification': _billing == 'flat_rate' ? 'auto' : _classification,
         });
         if (mounted) Navigator.of(context).pop(t.saved);
@@ -1083,6 +1103,7 @@ class _ProviderFormState extends State<_ProviderForm> {
         'headers': headers,
         'billingMode': _billing,
         if (_billing == 'flat_rate') ..._slotBody(),
+          if (limits.isNotEmpty) 'limits': limits,
         if (_classification != 'auto' && _billing != 'flat_rate') 'classification': _classification,
       });
       final validation = Map<String, dynamic>.from(result['validation'] as Map);
@@ -1264,7 +1285,6 @@ class _ProviderFormState extends State<_ProviderForm> {
               items: <DropdownMenuItem<String>>[for (final plan in ((definition.billing['flatRate'] as Map)['plans'] as List).cast<Map>()) DropdownMenuItem(value: plan['id'] as String, child: Text('${plan['label']} · ${plan['concurrent']}'))],
               onChanged: (value) => setState(() => _slotPlan = value ?? _slotPlan),
             ),
-            TextField(controller: _concurrent, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: t.limitConcurrent, helperText: t.limitAutomatic)),
             SlotOverflowControls(policy: _overflow, onChanged: (value) => setState(() => _overflow = value), wait: _slotWait),
           ],
           if (_billing == 'free_tier' && definition.freeTierAvailable && !definition.freeTierPartial) ...<Widget>[
@@ -1284,6 +1304,12 @@ class _ProviderFormState extends State<_ProviderForm> {
             ),
           ),
           if (_advanced) ...<Widget>[
+            Text(t.trafficLimitsTitle, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
+            gap,
+            Text(t.providerTrafficLimitsHint, style: TextStyle(color: palette.textSoft)),
+            gap,
+            ..._trafficLimitFields(t, _limits),
+            gap,
             TextField(
               controller: _label,
               decoration: InputDecoration(labelText: t.displayNameLabel),
@@ -1550,9 +1576,11 @@ class _AccountLimits extends StatelessWidget {
         SettingsRow(
           label: t.limitConcurrent,
           control: Text(
-            (group['concurrency'] as Map)['source'] == 'learned'
-                ? t.limitConcurrentValue('${(group['concurrency'] as Map)['limit']}')
-                : t.limitConcurrentDocumented('${(group['concurrency'] as Map)['limit']}'),
+            switch ((group['concurrency'] as Map)['source']) {
+              'manual' => '${(group['concurrency'] as Map)['limit']} · ${t.limitSourceManual}',
+              'learned' => t.limitConcurrentValue('${(group['concurrency'] as Map)['limit']}'),
+              _ => t.limitConcurrentDocumented('${(group['concurrency'] as Map)['limit']}'),
+            },
             style: TextStyle(color: palette.textSoft, fontSize: 13),
           ),
         ),
@@ -1686,7 +1714,36 @@ class _ModelLimits extends StatelessWidget {
   }
 }
 
-const List<String> _statedMetrics = <String>['rpm', 'rpd', 'tpm', 'tpd', 'concurrent'];
+const List<String> _statedMetrics = <String>['concurrent', 'rpm', 'rpd', 'tpm', 'tpd'];
+
+Map<String, int?>? _readTrafficLimits(Map<String, TextEditingController> fields) {
+  final values = <String, int?>{};
+  for (final entry in fields.entries) {
+    final text = entry.value.text.trim();
+    final value = int.tryParse(text);
+    if (text.isNotEmpty && (value == null || value < 1 || value > 10000000000)) return null;
+    values[entry.key] = value;
+  }
+  return values;
+}
+
+Iterable<Widget> _trafficLimitFields(AppL10n t, Map<String, TextEditingController> fields) sync* {
+  final labels = {
+    'rpm': t.metricRpm,
+    'rpd': t.metricRpd,
+    'tpm': t.metricTpm,
+    'tpd': t.metricTpd,
+    'concurrent': t.limitConcurrent,
+  };
+  for (final metric in _statedMetrics) {
+    yield TextField(
+      controller: fields[metric],
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(labelText: labels[metric], hintText: t.limitAutomatic),
+    );
+    yield const SizedBox(height: AppSpacing.sm);
+  }
+}
 
 /// States what an account can take. A number wins over everything NeoRouter
 /// reads or learns; an empty field gives the decision back to NeoRouter.
@@ -1731,20 +1788,12 @@ class _LimitsDialogState extends State<_LimitsDialog> {
 
   Future<void> _save() async {
     final t = AppL10n.of(context);
-    final body = <String, int?>{};
-    for (final metric in _statedMetrics) {
-      final text = _fields[metric]!.text.trim().replaceAll(RegExp(r'[ _,.]'), '');
-      if (text.isEmpty) {
-        if (_before.containsKey(metric)) body[metric] = null;
-        continue;
-      }
-      final value = int.tryParse(text);
-      if (value == null || value < 1) {
-        setState(() => _error = t.limitsInvalid);
-        return;
-      }
-      if (_before[metric]?.toInt() != value) body[metric] = value;
+    final values = _readTrafficLimits(_fields);
+    if (values == null) {
+      setState(() => _error = t.limitsInvalid);
+      return;
     }
+    final body = Map.of(values)..removeWhere((metric, value) => value == _before[metric]);
     if (body.isEmpty && !_flatRate) {
       Navigator.of(context).pop(false);
       return;
@@ -1777,13 +1826,6 @@ class _LimitsDialogState extends State<_LimitsDialog> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    final labels = <String, String>{
-      'rpm': t.metricRpm,
-      'rpd': t.metricRpd,
-      'tpm': t.metricTpm,
-      'tpd': t.metricTpd,
-      'concurrent': t.limitConcurrent,
-    };
     return AlertDialog(
       title: Text(t.limitsEditTitle('${widget.account['label']}')),
       content: SizedBox(
@@ -1793,17 +1835,9 @@ class _LimitsDialogState extends State<_LimitsDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Text(t.limitsEditHint, style: TextStyle(color: palette.textSoft, fontSize: 13, height: 1.45)),
+              Text(t.providerTrafficLimitsHint, style: TextStyle(color: palette.textSoft, fontSize: 13, height: 1.45)),
               const SizedBox(height: AppSpacing.md),
-              for (final metric in _statedMetrics) ...<Widget>[
-                TextField(
-                  controller: _fields[metric],
-                  keyboardType: TextInputType.number,
-                  inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.allow(RegExp(r'[0-9 _,.]'))],
-                  decoration: InputDecoration(labelText: labels[metric], hintText: t.limitAutomatic),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-              ],
+              ..._trafficLimitFields(t, _fields),
               if (_flatRate) SlotOverflowControls(policy: _overflow, onChanged: (value) => setState(() => _overflow = value), wait: _slotWait),
               if (_error != null) Text(_error!, style: TextStyle(color: palette.error, fontSize: 13)),
             ],

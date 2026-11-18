@@ -1901,8 +1901,10 @@
       }
     }
   },
-  "limitsEditHint": "A number you enter always wins over what NeoRouter reads or learns, and never fades. Leave a field empty and NeoRouter works it out itself.",
   "limitsInvalid": "Enter a whole number, 1 or more.",
+  "trafficLimitsTitle": "Traffic limits",
+  "providerTrafficLimitsHint": "Applies to all models on this connection. Enter a limit to override NeoRouter’s estimate, or leave it blank for automatic limits. Provider restrictions still apply.",
+  "keyTrafficLimitsHint": "Applies only to this key. Leave a field blank to use the connections’ limits.",
   "limitAutomatic": "automatic",
   "limitSharedValue": "{value} for all models",
   "@limitSharedValue": {

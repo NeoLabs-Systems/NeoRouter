@@ -72,7 +72,7 @@ function scopesFor(entry) {
     if (new RegExp(rule.match, 'i').test(entry.modelId)) Object.assign(modelCurated, rule);
   }
   delete modelCurated.match;
-  const scopes = [{ key: `m:${entry.ref}`, curated: modelCurated, kind: 'model' }];
+  const scopes = [{ key: `m:${entry.ref}`, accountId: entry.accountId, curated: modelCurated, kind: 'model' }];
   const accountCurated = spec.account || {};
   const poolApplies = matches(spec.poolMatch, entry.modelId);
   const stated = accountLimits.get(entry.accountId);
@@ -187,10 +187,11 @@ function effectiveLimits(scope) {
   const result = {};
   // A limit a person stated for the account outranks everything inferred.
   const stated = scope.kind === 'pool' ? accountLimits.get(scope.key.slice(2)) : {};
+  const accountOverride = scope.kind === 'model' && scope.accountId ? accountLimits.get(scope.accountId) : {};
   for (const metric of METRICS) {
     if (stated[metric]) { result[metric] = { value: stated[metric], source: 'manual' }; continue; }
     const stored = fresh(limits.get(`${scope.key}|${metric}`));
-    if (stored) result[metric] = { value: stored.value, source: stored.source };
+    if (stored && !(accountOverride[metric] && stored.source === 'learned')) result[metric] = { value: stored.value, source: stored.source };
     else if (scope.curated[metric]) result[metric] = { value: scope.curated[metric], source: 'curated' };
   }
   return result;
@@ -349,18 +350,25 @@ function evaluate(entry, estimatedTokens = 0, now = Date.now()) {
   return { blocked, headroom, factor, details };
 }
 
+// Keep account totals even in automatic mode so a manual cap can take
+// effect against traffic already sent in the current window.
+function recordUsage(entry, requests, tokens, now) {
+  addUsage(`m:${entry.ref}`, requests, tokens, now);
+  addUsage(`p:${entry.accountId}`, requests, tokens, now);
+}
+
 function recordRequest(entry, tokens, now = Date.now()) {
-  for (const scope of scopesFor(entry)) addUsage(scope.key, 1, tokens, now);
+  recordUsage(entry, 1, tokens, now);
 }
 
 // Takes back a request recorded when it was sent (a pool partner refused it, so it did not count there).
 function refundRequest(entry, tokens, now = Date.now()) {
-  for (const scope of scopesFor(entry)) addUsage(scope.key, -1, -(tokens || 0), now);
+  recordUsage(entry, -1, -(tokens || 0), now);
 }
 
 function recordTokens(entry, tokens, now = Date.now()) {
   if (!tokens) return;
-  for (const scope of scopesFor(entry)) addUsage(scope.key, 0, tokens, now);
+  recordUsage(entry, 0, tokens, now);
 }
 
 function accountState(accountId) {

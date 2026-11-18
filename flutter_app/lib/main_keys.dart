@@ -479,6 +479,7 @@ class _KeyFormState extends State<_KeyForm> {
   late final TextEditingController _name = TextEditingController(text: widget.existing?.name ?? '');
   late final TextEditingController _budget = TextEditingController(text: widget.existing?.budgetUsd?.toString() ?? '');
   late final TextEditingController _rpm = TextEditingController(text: widget.existing?.rpmLimit?.toString() ?? '');
+  late final _concurrent = TextEditingController(text: widget.existing?.concurrentLimit?.toString() ?? '');
   late final TextEditingController _tokens = TextEditingController(text: widget.existing?.tokenLimit?.toString() ?? '');
   late final TextEditingController _maxPrice = TextEditingController(text: widget.existing?.maxPricePerMillion?.toString() ?? '');
   late String _tokenPeriod = widget.existing?.tokenPeriod ?? 'monthly';
@@ -499,7 +500,7 @@ class _KeyFormState extends State<_KeyForm> {
   late String _profile = widget.existing?.profile ?? 'balanced';
   late DateTime? _expiresAt = widget.existing?.expiresAt == null ? null : DateTime.tryParse(widget.existing!.expiresAt!);
   bool _expiryChanged = false;
-  bool _advanced = false;
+  late bool _advanced = widget.existing?.rpmLimit != null || widget.existing?.concurrentLimit != null;
   bool _saving = false;
   String? _error;
 
@@ -549,6 +550,7 @@ class _KeyFormState extends State<_KeyForm> {
     _name.dispose();
     _budget.dispose();
     _rpm.dispose();
+    _concurrent.dispose();
     _tokens.dispose();
     _maxPrice.dispose();
     _allowed.dispose();
@@ -590,6 +592,16 @@ class _KeyFormState extends State<_KeyForm> {
       setState(() => _error = AppL10n.of(context).keyKindsNone);
       return;
     }
+    for (final field in [_rpm, _concurrent]) {
+      final value = field.text.trim();
+      if (value.isNotEmpty && (int.tryParse(value) ?? 0) < 1) {
+        setState(() {
+          _advanced = true;
+          _error = AppL10n.of(context).limitsInvalid;
+        });
+        return;
+      }
+    }
     setState(() {
       _saving = true;
       _error = null;
@@ -602,6 +614,7 @@ class _KeyFormState extends State<_KeyForm> {
       'budgetUsd': _paid ? double.tryParse(_budget.text.trim().replaceAll(',', '.')) : null,
       'budgetPeriod': _period,
       'rpmLimit': int.tryParse(_rpm.text.trim()),
+      'concurrentLimit': int.tryParse(_concurrent.text.trim()),
       'maxPricePerMillion': _paid ? double.tryParse(_maxPrice.text.trim().replaceAll(',', '.')) : null,
       'tokenLimit': _free || _plan ? int.tryParse(_tokens.text.trim().replaceAll(RegExp(r'[^0-9]'), '')) : null,
       'tokenPeriod': _tokenPeriod,
@@ -700,7 +713,6 @@ class _KeyFormState extends State<_KeyForm> {
                             paid: _paid,
                             budget: _budget,
                             period: _period,
-                            rpm: _rpm,
                             tokens: _tokens,
                             maxPrice: _maxPrice,
                             tokenPeriod: _tokenPeriod,
@@ -729,6 +741,18 @@ class _KeyFormState extends State<_KeyForm> {
                           : Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: <Widget>[
+                                _FormSection(
+                                  title: t.trafficLimitsTitle,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      Text(t.keyTrafficLimitsHint),
+                                      const SizedBox(height: AppSpacing.sm),
+                                      _LimitRow(label: t.keyRateLimit, controller: _rpm, unit: t.keyRequestsPerMinute),
+                                      _LimitRow(label: t.limitConcurrent, controller: _concurrent, unit: ''),
+                                    ],
+                                  ),
+                                ),
                                 Row(
                                   children: <Widget>[
                                     Expanded(
@@ -905,7 +929,7 @@ class KeyAccessFields extends StatelessWidget {
     required this.paid,
     required this.budget,
     required this.period,
-    required this.rpm,
+    this.rpm,
     required this.tokens,
     required this.tokenPeriod,
     required this.maxPrice,
@@ -927,7 +951,7 @@ class KeyAccessFields extends StatelessWidget {
   final bool paid;
   final TextEditingController budget;
   final String period;
-  final TextEditingController rpm;
+  final TextEditingController? rpm;
   final TextEditingController tokens;
   final String tokenPeriod;
   final TextEditingController maxPrice;
@@ -976,7 +1000,7 @@ class KeyAccessFields extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         // Every key: how many requests a minute.
-        _LimitRow(label: t.keyRateLimit, controller: rpm, unit: t.keyRequestsPerMinute),
+        if (rpm case final field?) _LimitRow(label: t.keyRateLimit, controller: field, unit: t.keyRequestsPerMinute),
         // Free and subscription models: a token limit.
         if (free || plan) _LimitRow(label: t.keyTokenLimit, controller: tokens, unit: t.keyTokensPer, period: tokenPeriod, onPeriod: onTokenPeriod),
         // Paid models: a spending limit and a maximum price per million tokens.

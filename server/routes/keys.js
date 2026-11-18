@@ -18,6 +18,7 @@ const keyInput = z.object({
   allowPaid: z.boolean().optional(),
   budgetUsd: z.number().min(0).nullable().optional(),
   budgetPeriod: z.enum(['total', 'monthly', 'daily']).optional(),
+  concurrentLimit: z.number().int().positive().safe().nullable().optional(),
   rpmLimit: z.number().int().positive().nullable().optional(),
   // Maximum price per million tokens for paid models used with this key.
   // When set, models whose output price exceeds this limit are rejected.

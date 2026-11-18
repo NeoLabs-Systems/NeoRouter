@@ -38,6 +38,9 @@ router.get('/definitions', (req, res) => res.json({
 
 router.get('/accounts', requirePermission('providers.view'), (req, res) => res.json({ accounts: accounts.list(req.space.ownerId) }));
 
+const limitValue = z.number().int().min(1).max(10_000_000_000).nullable().optional();
+const accountLimitsInput = z.object({ rpm: limitValue, rpd: limitValue, tpm: limitValue, tpd: limitValue, concurrent: limitValue }).strict();
+
 const accountInput = z.object({
   definitionId: z.string().min(1),
   label: z.string().max(80).optional(),
@@ -56,7 +59,8 @@ const accountInput = z.object({
   classification: z.enum(['auto', 'free', 'paid']).optional(),
   overflowPolicy: z.enum(['auto', 'overflow', 'queue']).optional(),
   slotWaitMs: z.number().int().min(0).max(require('../config/env').getConfig().routing.slotMaxWaitMs).nullable().optional(),
-  concurrent: z.number().int().positive().nullable().optional(),
+  concurrent: limitValue,
+  limits: accountLimitsInput.optional(),
 });
 
 // ChatGPT (Codex) sign-in with a device code: start, then poll until the
@@ -154,7 +158,7 @@ router.post('/accounts', requirePermission('providers.manage'), validate(account
 }));
 
 // A key file exported from NeoRouter (Settings → export saved API keys).
-const importedKey = accountInput.pick({ definitionId: true, label: true, baseUrl: true, options: true, headers: true, billingMode: true, classification: true, concurrent: true, overflowPolicy: true, slotWaitMs: true })
+const importedKey = accountInput.pick({ definitionId: true, label: true, baseUrl: true, options: true, headers: true, billingMode: true, classification: true, concurrent: true, limits: true, overflowPolicy: true, slotWaitMs: true })
   .extend({ secret: z.string().min(1).max(4096) });
 router.post('/accounts/import', requirePermission('providers.manage'), slidingWindow({ windowMs: 60_000, limit: 5 }), validate(z.object({
   kind: z.literal(keyImport.KIND),
@@ -170,9 +174,6 @@ router.patch('/accounts/:id', requirePermission('providers.manage'), validate(ac
 
 // States what this account can take; a number wins over everything the router
 // infers, null clears it. Absent fields stay as they are.
-const limitValue = z.number().int().min(1).max(10_000_000_000).nullable().optional();
-const accountLimitsInput = z.object({ rpm: limitValue, rpd: limitValue, tpm: limitValue, tpd: limitValue, concurrent: limitValue }).strict();
-
 router.put('/accounts/:id/limits', requirePermission('providers.manage'), validate(accountLimitsInput), (req, res) => {
   accounts.getRow(req.space.ownerId, req.params.id);
   accountLimits.set(req.params.id, req.body);

@@ -232,6 +232,7 @@ class RouterKey {
   String? get paceState => (raw['pacing'] as Map?)?['state'] as String?;
   double? get paceForecast => _double((raw['pacing'] as Map?)?['forecast']);
   int? get rpmLimit => _int(raw['rpmLimit']);
+  int? get concurrentLimit => _int(raw['concurrentLimit']);
   // Who goes first when models are busy: high, normal or low.
   String get priority => raw['priority'] as String? ?? 'normal';
   int? get tokenLimit => _int(raw['tokenLimit']);

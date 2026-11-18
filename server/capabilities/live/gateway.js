@@ -20,6 +20,7 @@ const quota = require('../../services/quota/quota_service');
 const plans = require('../../services/routing/plans');
 const budget = require('../../services/budget/budget_service');
 const usage = require('../../services/usage/usage_service');
+const keyConcurrency = require('../../services/router_keys/key_concurrency');
 const routerKeys = require('../../services/router_keys/router_key_service');
 const { createLogger } = require('../../utils/logger');
 
@@ -155,6 +156,11 @@ class LiveSession {
 
   async connect(requestedModel, first) {
     this.requestedModel = requestedModel;
+    try {
+      this.releaseKey = keyConcurrency.acquire(this.key);
+    } catch (error) {
+      return this.fail(error.message, error.code.toLowerCase());
+    }
     const rpm = routerKeys.consumeRpm(this.key);
     if (!rpm.allowed) return this.fail('This router key exceeded its requests-per-minute limit.', 'rate_limited');
     this.first = first;
@@ -170,6 +176,8 @@ class LiveSession {
       const { entry } = choice;
       const adapter = accounts.adapterFor(accounts.getRuntime(entry.accountId));
       const attemptStarted = Date.now();
+      const release = loadTracker.lease(entry);
+      this.release = release;
       quota.recordRequest(entry, 0);
       plans.onSent(entry);
       try {
@@ -183,7 +191,10 @@ class LiveSession {
         return this.attach(upstream, entry);
       } catch (caught) {
         const error = caught instanceof ProviderError ? caught : fromNetworkError(caught);
-        if (!this.failed(entry, error, attemptStarted)) break;
+        const retry = !this.closed && this.failed(entry, error, attemptStarted);
+        release();
+        this.release = null;
+        if (!retry) break;
       }
     }
     // Say what stopped it. Models of other protocols are not counted as rejected.
@@ -210,7 +221,6 @@ class LiveSession {
     const attachedAt = Date.now();
     this.upstream = upstream;
     this.entry = entry;
-    this.release = loadTracker.lease(entry);
     if (this.first) upstream.send(JSON.stringify(this.dialect.rewriteFirst(this.first, entry.modelId)));
     for (const [data, binary] of this.queue) upstream.send(data, { binary });
     const relay = (data, binary) => {
@@ -257,6 +267,7 @@ class LiveSession {
     if (!reported) return;
     this.tokens.input += reported.input;
     this.tokens.output += reported.output;
+    if (this.entry) quota.recordTokens(this.entry, reported.input + reported.output);
   }
 
   fail(message, code) {
@@ -280,6 +291,7 @@ class LiveSession {
       usageIn: this.tokens.input, usageOut: this.tokens.output, ...this.traffic,
     });
     this.release?.();
+    this.releaseKey?.();
     if (this.upstream && this.upstream.readyState !== WebSocket.CLOSED) this.upstream.close();
     const entry = this.entry;
     const seconds = Math.round((Date.now() - this.startedAt) / 1000);

@@ -116,7 +116,7 @@ and learns from every outcome.
 | \`x-ratelimit-limit-requests\` | For keys with a requests-per-minute limit: that limit (OpenAI's header name). |
 | \`x-ratelimit-remaining-requests\` | Requests the key may still send in the current minute. |
 | \`x-ratelimit-reset-requests\` | When the oldest request leaves the minute window, e.g. \`12s\`. |
-| \`X-NeoRouter-Concurrency-Limit\` | Chat only: how many requests the key's providers take at once, when known for all of them. |
+| \`X-NeoRouter-Concurrency-Limit\` | Chat only: the key’s configured concurrency cap, or the estimated provider capacity when known. |
 | \`X-NeoRouter-Concurrency-Available\` | Of those, how many are free right now. More at once only waits or fails over. |
 
 ## Routing stats in the answer
@@ -140,7 +140,9 @@ Streams end with the same object as an SSE comment line,
 \`: neorouter {…}\`, which SSE parsers skip. \`max_tokens_raised_to\` is set
 when a free reasoning model was given more output room than asked for.
 \`requests\` is null for keys without a per-minute limit; \`concurrent.limit\`
-is null when a provider's limit is unknown.
+is null when the key has no configured cap and provider capacity is unknown.
+A request over the key’s concurrency cap returns HTTP 429. The cap covers each
+request through completion, including streams, and applies across connections.
 
 ## Pacing: \`GET ${base}/limits\`
 

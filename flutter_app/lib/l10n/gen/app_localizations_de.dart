@@ -3053,11 +3053,18 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
-  String get limitsEditHint =>
-      'Eine Zahl, die du einträgst, hat immer Vorrang vor dem, was NeoRouter ausliest oder lernt, und verfällt nie. Lässt du ein Feld leer, ermittelt NeoRouter den Wert selbst.';
+  String get limitsInvalid => 'Gib eine ganze Zahl ab 1 ein.';
 
   @override
-  String get limitsInvalid => 'Gib eine ganze Zahl ab 1 ein.';
+  String get trafficLimitsTitle => 'Anfragelimits';
+
+  @override
+  String get providerTrafficLimitsHint =>
+      'Gilt für alle Modelle dieser Verbindung. Trage ein Limit ein, um NeoRouters Schätzung zu überschreiben, oder lass das Feld für automatische Limits leer. Einschränkungen des Anbieters gelten weiterhin.';
+
+  @override
+  String get keyTrafficLimitsHint =>
+      'Gilt nur für diesen Schlüssel. Leere Felder verwenden die Limits der Verbindungen.';
 
   @override
   String get limitAutomatic => 'automatisch';

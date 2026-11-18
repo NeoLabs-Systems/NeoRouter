@@ -5341,17 +5341,29 @@ abstract class AppL10n {
   /// **'Limits for {name}'**
   String limitsEditTitle(String name);
 
-  /// No description provided for @limitsEditHint.
-  ///
-  /// In en, this message translates to:
-  /// **'A number you enter always wins over what NeoRouter reads or learns, and never fades. Leave a field empty and NeoRouter works it out itself.'**
-  String get limitsEditHint;
-
   /// No description provided for @limitsInvalid.
   ///
   /// In en, this message translates to:
   /// **'Enter a whole number, 1 or more.'**
   String get limitsInvalid;
+
+  /// No description provided for @trafficLimitsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Traffic limits'**
+  String get trafficLimitsTitle;
+
+  /// No description provided for @providerTrafficLimitsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to all models on this connection. Enter a limit to override NeoRouter’s estimate, or leave it blank for automatic limits. Provider restrictions still apply.'**
+  String get providerTrafficLimitsHint;
+
+  /// No description provided for @keyTrafficLimitsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies only to this key. Leave a field blank to use the connections’ limits.'**
+  String get keyTrafficLimitsHint;
 
   /// No description provided for @limitAutomatic.
   ///
