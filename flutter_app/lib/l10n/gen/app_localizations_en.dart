@@ -2994,7 +2994,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get limitsDescription =>
-      'Each provider\'s limits and what is left of today\'s allowance. Limits come from the provider\'s documentation and answers; NeoRouter routes around them on its own.';
+      'Each provider\'s limits and what is left of today\'s allowance. To change a limit, open the connection’s menu on the Providers tab.';
 
   @override
   String get limitRenewed => 'renewed, counts again from the next request';
@@ -3021,15 +3021,11 @@ class AppL10nEn extends AppL10n {
   String get limitsSectionTitle => 'Limits';
 
   @override
-  String get limitsEdit => 'Set limits';
-
-  @override
-  String limitsEditTitle(String name) {
-    return 'Limits for $name';
-  }
-
-  @override
   String get limitsInvalid => 'Enter a whole number, 1 or more.';
+
+  @override
+  String get providerLimitsChooseConnection =>
+      'Choose which connection to edit.';
 
   @override
   String get trafficLimitsTitle => 'Traffic limits';

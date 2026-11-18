@@ -5290,7 +5290,7 @@ abstract class AppL10n {
   /// No description provided for @limitsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Each provider\'s limits and what is left of today\'s allowance. Limits come from the provider\'s documentation and answers; NeoRouter routes around them on its own.'**
+  /// **'Each provider\'s limits and what is left of today\'s allowance. To change a limit, open the connection’s menu on the Providers tab.'**
   String get limitsDescription;
 
   /// No description provided for @limitRenewed.
@@ -5329,23 +5329,17 @@ abstract class AppL10n {
   /// **'Limits'**
   String get limitsSectionTitle;
 
-  /// No description provided for @limitsEdit.
-  ///
-  /// In en, this message translates to:
-  /// **'Set limits'**
-  String get limitsEdit;
-
-  /// No description provided for @limitsEditTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Limits for {name}'**
-  String limitsEditTitle(String name);
-
   /// No description provided for @limitsInvalid.
   ///
   /// In en, this message translates to:
   /// **'Enter a whole number, 1 or more.'**
   String get limitsInvalid;
+
+  /// No description provided for @providerLimitsChooseConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which connection to edit.'**
+  String get providerLimitsChooseConnection;
 
   /// No description provided for @trafficLimitsTitle.
   ///

@@ -12,6 +12,7 @@ import 'main_dashboard.dart';
 import 'main_pool.dart';
 import 'main_shared.dart';
 import 'main_slot_plans.dart';
+import 'provider_traffic_limits.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
 import 'src/backend_client.dart';
@@ -198,6 +199,21 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
     }
   }
 
+  Future<void> _trafficLimits(List<ProviderAccount> accounts) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => ProviderTrafficLimitsDialog(
+        controller: widget.controller,
+        accounts: accounts,
+      ),
+    );
+    if (saved == true && mounted) {
+      showSnack(context, AppL10n.of(context).saved);
+      await _load();
+    }
+  }
+
   Future<void> _action(ProviderAccount account, _AccountAction action) async {
     final t = AppL10n.of(context);
     final api = widget.controller.api;
@@ -228,6 +244,8 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
       case _AccountAction.poolShare:
         await showSharePoolsDialog(context, widget.controller, account.id, account.label);
         await _load();
+      case _AccountAction.limits:
+        await _trafficLimits([account]);
       case _AccountAction.edit:
         await _edit(account);
       case _AccountAction.another:
@@ -309,6 +327,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
                               }
                             },
                             onAddAnother: () => _action(group.first, _AccountAction.another),
+                            onLimits: () => _trafficLimits(group),
                             rows: <Widget>[for (final account in group) _row(account, canManage)],
                           ),
                     ],
@@ -319,7 +338,9 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
   }
 }
 
-enum _AccountAction { check, sync, balance, fixed, edit, another, poolShare, remove }
+enum _AccountAction { check, sync, balance, fixed, edit, limits, another, poolShare, remove }
+
+enum _ProviderGroupAction { limits, another }
 
 /// Marks a row for a moment: the connection "Fix" was pressed for.
 class _Highlight extends StatelessWidget {
@@ -346,7 +367,7 @@ class _Highlight extends StatelessWidget {
 /// A provider connected with several accounts: one row for the provider, its
 /// accounts in a dropdown under it.
 class _ProviderGroup extends StatefulWidget {
-  const _ProviderGroup({required this.accounts, this.open = false, required this.rows, required this.canManage, required this.busy, required this.onToggleAll, required this.onAddAnother});
+  const _ProviderGroup({required this.accounts, this.open = false, required this.rows, required this.canManage, required this.busy, required this.onToggleAll, required this.onAddAnother, required this.onLimits});
 
   final List<ProviderAccount> accounts;
   final bool open;
@@ -355,6 +376,7 @@ class _ProviderGroup extends StatefulWidget {
   final bool busy;
   final Future<void> Function(bool enabled) onToggleAll;
   final VoidCallback onAddAnother;
+  final VoidCallback onLimits;
 
   @override
   State<_ProviderGroup> createState() => _ProviderGroupState();
@@ -422,6 +444,20 @@ class _ProviderGroupState extends State<_ProviderGroup> {
                   onPressed: () => setState(() => _open = !_open),
                   icon: Icon(_open ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 22),
                 ),
+                if (widget.canManage)
+                  PopupMenuButton<_ProviderGroupAction>(
+                    tooltip: t.moreActions,
+                    icon: const Icon(Icons.more_horiz_rounded, size: 20),
+                    enabled: !widget.busy,
+                    onSelected: (action) => switch (action) {
+                      _ProviderGroupAction.limits => widget.onLimits(),
+                      _ProviderGroupAction.another => widget.onAddAnother(),
+                    },
+                    itemBuilder: (_) => [
+                      _menuItem(_ProviderGroupAction.limits, Icons.tune_rounded, t.trafficLimitsTitle),
+                      _menuItem(_ProviderGroupAction.another, Icons.add_rounded, t.addAnotherAccount),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -438,16 +474,6 @@ class _ProviderGroupState extends State<_ProviderGroup> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 for (var i = 0; i < widget.rows.length; i++) ...<Widget>[if (i > 0) Divider(height: 1, color: palette.border), widget.rows[i]],
-                if (widget.canManage) ...<Widget>[
-                  Divider(height: 1, color: palette.border),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: TextButton.icon(onPressed: widget.onAddAnother, icon: const Icon(Icons.add_rounded, size: 18), label: Text(t.addAnotherAccount)),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
@@ -565,6 +591,7 @@ class _AccountRow extends StatelessWidget {
                     _menuItem(_AccountAction.balance, Icons.account_balance_wallet_outlined, t.probeQuota),
                     _menuItem(_AccountAction.fixed, Icons.build_circle_outlined, t.markFixed),
                     _menuItem(_AccountAction.edit, Icons.edit_outlined, t.editProvider),
+                    _menuItem(_AccountAction.limits, Icons.tune_rounded, t.trafficLimitsTitle),
                     _menuItem(_AccountAction.another, Icons.add_rounded, t.addAnotherAccount),
                   ],
                   if (canPoolShare)
@@ -578,19 +605,19 @@ class _AccountRow extends StatelessWidget {
       ),
     );
   }
-
-  static PopupMenuItem<_AccountAction> _menuItem(_AccountAction value, IconData icon, String label, {Color? destructive}) => PopupMenuItem<_AccountAction>(
-    value: value,
-    height: 40,
-    child: Row(
-      children: <Widget>[
-        Icon(icon, size: 17, color: destructive),
-        const SizedBox(width: 12),
-        Text(label, style: TextStyle(fontSize: 13.5, color: destructive)),
-      ],
-    ),
-  );
 }
+
+PopupMenuItem<T> _menuItem<T>(T value, IconData icon, String label, {Color? destructive}) => PopupMenuItem<T>(
+  value: value,
+  height: 40,
+  child: Row(
+    children: <Widget>[
+      Icon(icon, size: 17, color: destructive),
+      const SizedBox(width: 12),
+      Text(label, style: TextStyle(fontSize: 13.5, color: destructive)),
+    ],
+  ),
+);
 
 /// The cost tag of a provider, the same in the gallery and the form.
 (String, PillTone, IconData) providerCostTag(AppL10n t, ProviderDefinition definition) => switch (definition.costKind) {
@@ -872,12 +899,6 @@ class _ProviderFormState extends State<_ProviderForm> {
     text: ((_savedOptions['headers'] as Map?) ?? const <String, Object>{}).entries.map((entry) => '${entry.key}: ${entry.value}').join('\n'),
   );
   late String _slotPlan = (_savedOptions['slotPlan'] as String?) ?? (widget.definition.billing['flatRate'] as Map?)?['defaultPlan'] as String? ?? '';
-  late String _overflow = widget.account?.raw['overflowPolicy'] as String? ?? 'auto';
-  late final _slotWait = TextEditingController(text: '${((widget.account?.raw['slotWaitMs'] ?? widget.definition.billing['slotWaitMs']) as num) / 1000}');
-  late final _limits = {
-    for (final metric in _statedMetrics)
-      metric: TextEditingController(text: (widget.account?.raw['limits'] as Map?)?[metric]?.toString() ?? ''),
-  };
   late String _billing = widget.account?.billingMode ?? widget.definition.defaultBillingMode;
   late String _classification = widget.account?.classification ?? 'auto';
   bool _saving = false;
@@ -887,7 +908,7 @@ class _ProviderFormState extends State<_ProviderForm> {
   Map<String, dynamic>? _deviceLogin;
   Timer? _devicePoll;
   // Open when editing a connection whose free/paid setting was changed, so it is not hidden.
-  late bool _advanced = (widget.account?.classification ?? 'auto') != 'auto' || ((widget.account?.raw['limits'] as Map?)?.isNotEmpty ?? false);
+  late bool _advanced = (widget.account?.classification ?? 'auto') != 'auto';
   Map<String, dynamic>? _probe;
   String? _error;
 
@@ -900,10 +921,6 @@ class _ProviderFormState extends State<_ProviderForm> {
       controller.dispose();
     }
     _devicePoll?.cancel();
-    for (final field in _limits.values) {
-      field.dispose();
-    }
-    _slotWait.dispose();
     super.dispose();
   }
 
@@ -1040,11 +1057,6 @@ class _ProviderFormState extends State<_ProviderForm> {
     }
   }
 
-  Map<String, Object?> _slotBody() => <String, Object?>{
-    'overflowPolicy': _overflow,
-    'slotWaitMs': _slotWait.text.trim().isEmpty ? null : (double.parse(_slotWait.text.trim()) * 1000).round(),
-  };
-
   Future<void> _submit() async {
     final t = AppL10n.of(context);
     setState(() {
@@ -1054,27 +1066,6 @@ class _ProviderFormState extends State<_ProviderForm> {
     final options = _options();
     final headers = _headerMap();
     try {
-      final limits = _readTrafficLimits(_limits);
-      if (limits == null) {
-        setState(() {
-          _advanced = true;
-          _error = t.limitsInvalid;
-        });
-        return;
-      }
-      if (_editing) {
-        final existing = widget.account!.raw['limits'] as Map?;
-        limits.removeWhere((metric, value) => existing?[metric] == value);
-      } else {
-        limits.removeWhere((metric, value) => value == null);
-      }
-      if (_billing == 'flat_rate') {
-        final seconds = _slotWait.text.trim().isEmpty ? null : double.tryParse(_slotWait.text.trim());
-        if (_slotWait.text.trim().isNotEmpty && (seconds == null || !seconds.isFinite || seconds < 0 || seconds * 1000 > (widget.definition.billing['slotMaxWaitMs'] as num))) {
-          setState(() => _error = t.limitsInvalid);
-          return;
-        }
-      }
       if (_editing) {
         await widget.controller.api.updateAccount(widget.account!.id, <String, Object?>{
           'label': _label.text.trim(),
@@ -1084,8 +1075,6 @@ class _ProviderFormState extends State<_ProviderForm> {
           'options': options,
           'headers': headers,
           'billingMode': _billing,
-          if (_billing == 'flat_rate') ..._slotBody(),
-          if (limits.isNotEmpty) 'limits': limits,
           'classification': _billing == 'flat_rate' ? 'auto' : _classification,
         });
         if (mounted) Navigator.of(context).pop(t.saved);
@@ -1102,8 +1091,6 @@ class _ProviderFormState extends State<_ProviderForm> {
         if (options.isNotEmpty) 'options': options,
         'headers': headers,
         'billingMode': _billing,
-        if (_billing == 'flat_rate') ..._slotBody(),
-          if (limits.isNotEmpty) 'limits': limits,
         if (_classification != 'auto' && _billing != 'flat_rate') 'classification': _classification,
       });
       final validation = Map<String, dynamic>.from(result['validation'] as Map);
@@ -1285,7 +1272,6 @@ class _ProviderFormState extends State<_ProviderForm> {
               items: <DropdownMenuItem<String>>[for (final plan in ((definition.billing['flatRate'] as Map)['plans'] as List).cast<Map>()) DropdownMenuItem(value: plan['id'] as String, child: Text('${plan['label']} · ${plan['concurrent']}'))],
               onChanged: (value) => setState(() => _slotPlan = value ?? _slotPlan),
             ),
-            SlotOverflowControls(policy: _overflow, onChanged: (value) => setState(() => _overflow = value), wait: _slotWait),
           ],
           if (_billing == 'free_tier' && definition.freeTierAvailable && !definition.freeTierPartial) ...<Widget>[
             const SizedBox(height: AppSpacing.xs),
@@ -1304,12 +1290,6 @@ class _ProviderFormState extends State<_ProviderForm> {
             ),
           ),
           if (_advanced) ...<Widget>[
-            Text(t.trafficLimitsTitle, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text)),
-            gap,
-            Text(t.providerTrafficLimitsHint, style: TextStyle(color: palette.textSoft)),
-            gap,
-            ..._trafficLimitFields(t, _limits),
-            gap,
             TextField(
               controller: _label,
               decoration: InputDecoration(labelText: t.displayNameLabel),
@@ -1488,14 +1468,6 @@ class _LimitsViewState extends State<_LimitsView> {
     }
   }
 
-  Future<void> _edit(Map<String, dynamic> group) async {
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (context) => _LimitsDialog(controller: widget.controller, account: Map<String, dynamic>.from(group['account'] as Map)),
-    );
-    if (saved == true) await _load();
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
@@ -1509,7 +1481,7 @@ class _LimitsViewState extends State<_LimitsView> {
           Text(t.limitsDescription, style: TextStyle(color: neoRouterPaletteOf(context).textSoft, fontSize: 13.5, height: 1.45)),
           const SizedBox(height: AppSpacing.lg),
           for (final group in _accounts) ...<Widget>[
-            _AccountLimits(group: group, canEdit: widget.controller.can('providers.manage'), onEdit: () => _edit(group)),
+            _AccountLimits(group: group),
             const SizedBox(height: 28),
           ],
         ],
@@ -1535,11 +1507,9 @@ double _usedFraction(Map window) {
 bool _worthShowing(Map window) => _dailyMetrics.contains('${window['metric']}') || _usedFraction(window) >= 1;
 
 class _AccountLimits extends StatelessWidget {
-  const _AccountLimits({required this.group, required this.canEdit, required this.onEdit});
+  const _AccountLimits({required this.group});
 
   final Map<String, dynamic> group;
-  final bool canEdit;
-  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -1597,10 +1567,7 @@ class _AccountLimits extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        SettingsHeading(
-          title: '${account['label']}',
-          trailing: canEdit ? TextButton.icon(onPressed: onEdit, icon: const Icon(Icons.tune_rounded, size: 17), label: Text(t.limitsEdit)) : null,
-        ),
+        SettingsHeading(title: '${account['label']}'),
         if (rows.isEmpty)
           AppCard(
             child: Text(t.noQuotaData, style: TextStyle(color: palette.textSoft)),
@@ -1710,144 +1677,6 @@ class _ModelLimits extends StatelessWidget {
             ),
         ],
       ),
-    );
-  }
-}
-
-const List<String> _statedMetrics = <String>['concurrent', 'rpm', 'rpd', 'tpm', 'tpd'];
-
-Map<String, int?>? _readTrafficLimits(Map<String, TextEditingController> fields) {
-  final values = <String, int?>{};
-  for (final entry in fields.entries) {
-    final text = entry.value.text.trim();
-    final value = int.tryParse(text);
-    if (text.isNotEmpty && (value == null || value < 1 || value > 10000000000)) return null;
-    values[entry.key] = value;
-  }
-  return values;
-}
-
-Iterable<Widget> _trafficLimitFields(AppL10n t, Map<String, TextEditingController> fields) sync* {
-  final labels = {
-    'rpm': t.metricRpm,
-    'rpd': t.metricRpd,
-    'tpm': t.metricTpm,
-    'tpd': t.metricTpd,
-    'concurrent': t.limitConcurrent,
-  };
-  for (final metric in _statedMetrics) {
-    yield TextField(
-      controller: fields[metric],
-      keyboardType: TextInputType.number,
-      decoration: InputDecoration(labelText: labels[metric], hintText: t.limitAutomatic),
-    );
-    yield const SizedBox(height: AppSpacing.sm);
-  }
-}
-
-/// States what an account can take. A number wins over everything NeoRouter
-/// reads or learns; an empty field gives the decision back to NeoRouter.
-class _LimitsDialog extends StatefulWidget {
-  const _LimitsDialog({required this.controller, required this.account});
-
-  final NeoRouterController controller;
-  final Map<String, dynamic> account;
-
-  @override
-  State<_LimitsDialog> createState() => _LimitsDialogState();
-}
-
-class _LimitsDialogState extends State<_LimitsDialog> {
-  late final Map<String, TextEditingController> _fields;
-  late final Map<String, num> _before;
-  late String _overflow = widget.account['overflowPolicy'] as String? ?? 'auto';
-  late final _slotWait = TextEditingController(text: widget.account['slotWaitMs'] == null ? '' : '${(widget.account['slotWaitMs'] as num) / 1000}');
-  bool get _flatRate => widget.account['billingMode'] == 'flat_rate';
-  String? _error;
-  bool _saving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _before = <String, num>{
-      for (final entry in ((widget.account['limits'] as Map?) ?? const <String, Object?>{}).entries) '${entry.key}': entry.value as num,
-    };
-    _fields = <String, TextEditingController>{
-      for (final metric in _statedMetrics) metric: TextEditingController(text: _before[metric]?.toInt().toString() ?? ''),
-    };
-  }
-
-  @override
-  void dispose() {
-    _slotWait.dispose();
-    for (final field in _fields.values) {
-      field.dispose();
-    }
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    final t = AppL10n.of(context);
-    final values = _readTrafficLimits(_fields);
-    if (values == null) {
-      setState(() => _error = t.limitsInvalid);
-      return;
-    }
-    final body = Map.of(values)..removeWhere((metric, value) => value == _before[metric]);
-    if (body.isEmpty && !_flatRate) {
-      Navigator.of(context).pop(false);
-      return;
-    }
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
-    try {
-      if (_flatRate) {
-        final seconds = double.tryParse(_slotWait.text.trim());
-        if (seconds == null || seconds < 0 || seconds * 1000 > (widget.account['slotMaxWaitMs'] as num)) {
-          setState(() => _error = t.limitsInvalid);
-          return;
-        }
-        await widget.controller.api.updateAccount('${widget.account['id']}', <String, Object?>{'overflowPolicy': _overflow, 'slotWaitMs': (seconds * 1000).round()});
-      }
-      if (body.isNotEmpty) await widget.controller.api.setAccountLimits('${widget.account['id']}', body);
-      if (mounted) Navigator.of(context).pop(true);
-    } on ApiException catch (error) {
-      setState(() => _error = error.message);
-    } catch (_) {
-      setState(() => _error = t.serverUnreachable);
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppL10n.of(context);
-    final palette = neoRouterPaletteOf(context);
-    return AlertDialog(
-      title: Text(t.limitsEditTitle('${widget.account['label']}')),
-      content: SizedBox(
-        width: 420,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Text(t.providerTrafficLimitsHint, style: TextStyle(color: palette.textSoft, fontSize: 13, height: 1.45)),
-              const SizedBox(height: AppSpacing.md),
-              ..._trafficLimitFields(t, _fields),
-              if (_flatRate) SlotOverflowControls(policy: _overflow, onChanged: (value) => setState(() => _overflow = value), wait: _slotWait),
-              if (_error != null) Text(_error!, style: TextStyle(color: palette.error, fontSize: 13)),
-            ],
-          ),
-        ),
-      ),
-      actions: <Widget>[
-        TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(false), child: Text(t.cancel)),
-        FilledButton(onPressed: _saving ? null : _save, child: Text(t.save)),
-      ],
     );
   }
 }
