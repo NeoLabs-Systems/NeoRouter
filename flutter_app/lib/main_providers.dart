@@ -407,59 +407,93 @@ class _ProviderGroupState extends State<_ProviderGroup> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        InkWell(
-          onTap: () => setState(() => _open = !_open),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
-            child: Row(
-              children: <Widget>[
-                ProviderAvatar(label: first.providerName, size: 38),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(first.providerName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: palette.text)),
-                      const SizedBox(height: 3),
-                      Text(
-                        <String>[t.providerAccountsCount('${accounts.length}'), t.homeModelsLine('$models', '$free')].join(' · '),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 13, color: palette.textMuted),
-                      ),
-                    ],
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Semantics(
+                  button: true,
+                  expanded: _open,
+                  hint: _open ? t.providerHideAccounts : t.providerShowAccounts,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(AppRadius.control),
+                    onTap: () => setState(() => _open = !_open),
+                    child: Row(
+                      children: <Widget>[
+                        ProviderAvatar(label: first.providerName, size: 38),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                first.providerName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: palette.text),
+                              ),
+                              const SizedBox(height: 3),
+                              Row(
+                                children: <Widget>[
+                                  Flexible(
+                                    child: Text(
+                                      t.providerAccountsCount('${accounts.length}'),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(fontSize: 13, color: palette.textMuted),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 3),
+                                  AnimatedRotation(
+                                    turns: _open ? 0.5 : 0,
+                                    duration: MediaQuery.disableAnimationsOf(context)
+                                        ? Duration.zero
+                                        : const Duration(milliseconds: 160),
+                                    child: Icon(Icons.expand_more_rounded, size: 16, color: palette.textMuted),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      '· ${t.homeModelsLine('$models', '$free')}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(fontSize: 13, color: palette.textMuted),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                if (MediaQuery.sizeOf(context).width >= 700) ...<Widget>[StatusLabel(label: status, tone: tone), const SizedBox(width: 16)] else ...<Widget>[
-                  ToneDot(tone: tone),
-                  const SizedBox(width: 10),
-                ],
-                if (widget.busy)
-                  const Padding(padding: EdgeInsets.all(14), child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)))
-                else
-                  Switch(value: enabled.isNotEmpty, onChanged: widget.canManage ? widget.onToggleAll : null),
-                IconButton(
-                  tooltip: _open ? t.providerHideAccounts : t.providerShowAccounts,
-                  onPressed: () => setState(() => _open = !_open),
-                  icon: Icon(_open ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 22),
-                ),
-                if (widget.canManage)
-                  PopupMenuButton<_ProviderGroupAction>(
-                    tooltip: t.moreActions,
-                    icon: const Icon(Icons.more_horiz_rounded, size: 20),
-                    enabled: !widget.busy,
-                    onSelected: (action) => switch (action) {
-                      _ProviderGroupAction.limits => widget.onLimits(),
-                      _ProviderGroupAction.another => widget.onAddAnother(),
-                    },
-                    itemBuilder: (_) => [
-                      _menuItem(_ProviderGroupAction.limits, Icons.tune_rounded, t.trafficLimitsTitle),
-                      _menuItem(_ProviderGroupAction.another, Icons.add_rounded, t.addAnotherAccount),
-                    ],
-                  ),
-              ],
-            ),
+              ),
+              _ProviderRowControls(
+                status: status,
+                tone: tone,
+                busy: widget.busy,
+                enabled: enabled.isNotEmpty,
+                onToggle: widget.canManage ? widget.onToggleAll : null,
+                menu: widget.canManage
+                    ? PopupMenuButton<_ProviderGroupAction>(
+                        tooltip: t.moreActions,
+                        icon: const Icon(Icons.more_horiz_rounded, size: 20),
+                        enabled: !widget.busy,
+                        onSelected: (action) => switch (action) {
+                          _ProviderGroupAction.limits => widget.onLimits(),
+                          _ProviderGroupAction.another => widget.onAddAnother(),
+                        },
+                        itemBuilder: (_) => [
+                          _menuItem(_ProviderGroupAction.limits, Icons.tune_rounded, t.trafficLimitsTitle),
+                          _menuItem(_ProviderGroupAction.another, Icons.add_rounded, t.addAnotherAccount),
+                        ],
+                      )
+                    : null,
+              ),
+            ],
           ),
         ),
         if (_open)
@@ -566,43 +600,82 @@ class _AccountRow extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 12),
-            if (MediaQuery.sizeOf(context).width >= 700) ...<Widget>[StatusLabel(label: statusText, tone: tone), const SizedBox(width: 16)] else ...<Widget>[
-              ToneDot(tone: tone),
-              const SizedBox(width: 10),
-            ],
-            if (busy)
-              const Padding(
-                padding: EdgeInsets.all(14),
-                child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)),
-              )
-            else
-              Switch(value: account.enabled, onChanged: canManage ? onToggle : null),
-            if (canManage || canDelete)
-              PopupMenuButton<_AccountAction>(
-                tooltip: t.moreActions,
-                enabled: !busy,
-                icon: const Icon(Icons.more_horiz_rounded, size: 20),
-                onSelected: onAction,
-                itemBuilder: (context) => <PopupMenuEntry<_AccountAction>>[
-                  if (canManage) ...<PopupMenuEntry<_AccountAction>>[
-                    _menuItem(_AccountAction.check, Icons.verified_user_outlined, t.revalidate),
-                    _menuItem(_AccountAction.sync, Icons.sync_rounded, t.syncModels),
-                    _menuItem(_AccountAction.balance, Icons.account_balance_wallet_outlined, t.probeQuota),
-                    _menuItem(_AccountAction.fixed, Icons.build_circle_outlined, t.markFixed),
-                    _menuItem(_AccountAction.edit, Icons.edit_outlined, t.editProvider),
-                    _menuItem(_AccountAction.limits, Icons.tune_rounded, t.trafficLimitsTitle),
-                    _menuItem(_AccountAction.another, Icons.add_rounded, t.addAnotherAccount),
-                  ],
-                  if (canPoolShare)
-                    _menuItem(_AccountAction.poolShare, Icons.hub_outlined, account.sharedInPools.isEmpty ? t.poolShareInPools : '${t.poolShareInPools} (${account.sharedInPools.length})'),
-                  if (canManage && canDelete) const PopupMenuDivider(),
-                  if (canDelete) _menuItem(_AccountAction.remove, Icons.delete_outline_rounded, t.removeProvider, destructive: palette.error),
-                ],
-              ),
+            _ProviderRowControls(
+              status: statusText,
+              tone: tone,
+              busy: busy,
+              enabled: account.enabled,
+              onToggle: canManage ? onToggle : null,
+              menu: canManage || canDelete
+                  ? PopupMenuButton<_AccountAction>(
+                      tooltip: t.moreActions,
+                      enabled: !busy,
+                      icon: const Icon(Icons.more_horiz_rounded, size: 20),
+                      onSelected: onAction,
+                      itemBuilder: (context) => <PopupMenuEntry<_AccountAction>>[
+                        if (canManage) ...<PopupMenuEntry<_AccountAction>>[
+                          _menuItem(_AccountAction.check, Icons.verified_user_outlined, t.revalidate),
+                          _menuItem(_AccountAction.sync, Icons.sync_rounded, t.syncModels),
+                          _menuItem(_AccountAction.balance, Icons.account_balance_wallet_outlined, t.probeQuota),
+                          _menuItem(_AccountAction.fixed, Icons.build_circle_outlined, t.markFixed),
+                          _menuItem(_AccountAction.edit, Icons.edit_outlined, t.editProvider),
+                          _menuItem(_AccountAction.limits, Icons.tune_rounded, t.trafficLimitsTitle),
+                          _menuItem(_AccountAction.another, Icons.add_rounded, t.addAnotherAccount),
+                        ],
+                        if (canPoolShare)
+                          _menuItem(_AccountAction.poolShare, Icons.hub_outlined, account.sharedInPools.isEmpty ? t.poolShareInPools : '${t.poolShareInPools} (${account.sharedInPools.length})'),
+                        if (canManage && canDelete) const PopupMenuDivider(),
+                        if (canDelete) _menuItem(_AccountAction.remove, Icons.delete_outline_rounded, t.removeProvider, destructive: palette.error),
+                      ],
+                    )
+                  : null,
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Keep the right-hand controls consistent for providers and connections.
+class _ProviderRowControls extends StatelessWidget {
+  const _ProviderRowControls({
+    required this.status,
+    required this.tone,
+    required this.busy,
+    required this.enabled,
+    this.onToggle,
+    this.menu,
+  });
+
+  final String status;
+  final PillTone tone;
+  final bool busy;
+  final bool enabled;
+  final ValueChanged<bool>? onToggle;
+  final Widget? menu;
+
+  @override
+  Widget build(BuildContext context) {
+    final wide = MediaQuery.sizeOf(context).width >= 700;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(width: 12),
+        if (wide)
+          StatusLabel(label: status, tone: tone)
+        else
+          Semantics(label: status, child: ToneDot(tone: tone)),
+        SizedBox(width: wide ? 16 : 10),
+        if (busy)
+          const Padding(
+            padding: EdgeInsets.all(14),
+            child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+          )
+        else
+          Switch(value: enabled, onChanged: onToggle),
+        ?menu,
+      ],
     );
   }
 }
