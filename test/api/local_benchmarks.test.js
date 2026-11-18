@@ -306,6 +306,24 @@ test('reasoning progress extends the benchmark answer wait and silent models coo
   assert.equal(transport.candidates(sample, request, 'auto').filter(({ canonicalId }) => canonicalId === timed.canonicalId).length, 2);
 });
 
+test('candidate replays inherit the opted-in key profile and the judge uses Smartest', async (t) => {
+  const changed = await api(owner, 'patch', `/keys/${key.key.id}`).send({ profile: 'fast' });
+  assert.equal(changed.status, 200);
+  const sample = {
+    userId: owner.id, keyId: key.key.id, ticket: consent.ticket(owner.id, key.key.id), expiresAt: Date.now() + 10_000,
+  };
+  const request = { messages: [{ role: 'user', content: 'Explain a triangle.' }] };
+  const profiles = require('../../server/services/routing/profiles');
+  const resolve = t.mock.method(profiles, 'resolve');
+  const [entry] = transport.candidates(sample, request, 'auto');
+  assert.equal(resolve.mock.calls.at(-1).arguments[1], 'fast');
+  const signal = new AbortController().signal;
+  await transport.call(sample, request, { signal, model: entry.id, ref: entry.ref });
+  assert.equal(resolve.mock.calls.at(-1).arguments[1], 'fast');
+  await transport.call(sample, request, { signal });
+  assert.equal(resolve.mock.calls.at(-1).arguments[1], 'smart');
+});
+
 test('judge maps answer order and separates ties from abstention', () => {
   const result = (verdict, confidence = 'high') => ({ content: JSON.stringify({ verdict, confidence }) });
   assert.equal(judge.verdict(result('A'), false), 1);

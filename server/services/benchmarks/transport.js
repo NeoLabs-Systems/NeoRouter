@@ -65,7 +65,11 @@ function active(sample, signal) {
 }
 
 function routingKey(sample) {
-  return { id: sample.keyId, user_id: sample.userId, allow_free: 1, allow_plan: 0, mode: 'free_only', pool_access: 'own', priority: 'low' };
+  const source = getDatabase().prepare('SELECT profile FROM router_keys WHERE id = ? AND user_id = ?').get(sample.keyId, sample.userId);
+  return {
+    id: sample.keyId, user_id: sample.userId, profile: source?.profile,
+    allow_free: 1, allow_plan: 0, mode: 'free_only', pool_access: 'own', priority: 'low',
+  };
 }
 
 function streamingRequest(request) {
