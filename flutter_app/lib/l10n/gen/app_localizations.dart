@@ -9148,7 +9148,7 @@ abstract class AppL10n {
   /// No description provided for @presetApplyHint.
   ///
   /// In en, this message translates to:
-  /// **'Tap to add these models, tap again to remove them'**
+  /// **'Tap to add, long-press to delete'**
   String get presetApplyHint;
 
   /// No description provided for @modelsAny.

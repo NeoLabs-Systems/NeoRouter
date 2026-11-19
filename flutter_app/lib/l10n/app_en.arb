@@ -3318,7 +3318,7 @@
       }
     }
   },
-  "presetApplyHint": "Tap to add these models, tap again to remove them",
+  "presetApplyHint": "Tap to add, long-press to delete",
   "modelsAny": "Any model. Choose some to limit this to them.",
   "modelsClear": "Clear",
   "pickModels": "Choose models",

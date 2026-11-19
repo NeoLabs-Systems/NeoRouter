@@ -1565,7 +1565,7 @@ S = {
   'presetName': ('Preset name', 'Name der Vorlage'),
   'presetNameHint': ('e.g. Smart models', 'z. B. Kluge Modelle'),
   'presetDelete': ('Delete preset "{name}"?', 'Vorlage „{name}“ löschen?'),
-  'presetApplyHint': ('Tap to add these models, tap again to remove them', 'Tippen fügt diese Modelle hinzu, erneut tippen entfernt sie'),
+  'presetApplyHint': ('Tap to add, long-press to delete', 'Tippen zum Hinzufügen, lange drücken zum Löschen'),
   'modelsTitle': ('Models and routings', 'Modelle und Routings'),
   'modelsAny': ('Any model. Choose some to limit this to them.', 'Jedes Modell. Wähle welche aus, um es darauf zu beschränken.'),
   'modelsCount': ('{count} chosen', '{count} gewählt'),

@@ -1508,7 +1508,7 @@
   "presetName": "Name der Vorlage",
   "presetNameHint": "z. B. Kluge Modelle",
   "presetDelete": "Vorlage „{name}“ löschen?",
-  "presetApplyHint": "Tippen fügt diese Modelle hinzu, erneut tippen entfernt sie",
+  "presetApplyHint": "Tippen zum Hinzufügen, lange drücken zum Löschen",
   "modelsAny": "Jedes Modell. Wähle welche aus, um es darauf zu beschränken.",
   "modelsClear": "Leeren",
   "pickModels": "Modelle wählen",

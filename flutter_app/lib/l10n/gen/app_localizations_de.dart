@@ -5272,7 +5272,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get presetApplyHint =>
-      'Tippen fügt diese Modelle hinzu, erneut tippen entfernt sie';
+      'Tippen zum Hinzufügen, lange drücken zum Löschen';
 
   @override
   String get modelsAny =>

@@ -6,7 +6,6 @@ import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
 import 'main_model_picker.dart';
 import 'main_shared.dart';
-import 'main_spacing.dart';
 import 'main_theme.dart';
 
 /// A saved set of models and routings ("DeepSeek + Qwen Max") that every
@@ -124,37 +123,41 @@ class _PresetBarState extends State<PresetBar> {
         final exists = presets.any((preset) => preset.models.length == widget.selected.length && _applied(preset));
         final canSave = widget.selected.isNotEmpty && !exists;
         if (presets.isEmpty && !canSave) return const SizedBox.shrink();
-        return Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          crossAxisAlignment: WrapCrossAlignment.center,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.only(right: 2),
-              child: Icon(Icons.bookmarks_outlined, size: 16, color: palette.textMuted),
+            Text(t.presetsTitle.toUpperCase(), style: sectionEyebrowStyle(palette)),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: <Widget>[
+                // Tap adds or removes the preset's models; long-press deletes it.
+                for (final preset in presets)
+                  Tooltip(
+                    message: '${preset.models.map(shortModelName).join(', ')}\n${t.presetApplyHint}',
+                    child: GestureDetector(
+                      onLongPress: () => _delete(preset),
+                      child: FilterChip(
+                        visualDensity: VisualDensity.compact,
+                        label: Text(preset.name),
+                        selected: _applied(preset),
+                        selectedColor: palette.accentSoft,
+                        side: BorderSide(color: _applied(preset) ? palette.accent.withValues(alpha: 0.5) : palette.border),
+                        onSelected: (_) => _toggle(preset),
+                      ),
+                    ),
+                  ),
+                if (canSave)
+                  TextButton.icon(
+                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                    onPressed: _saveCurrent,
+                    icon: const Icon(Icons.add_rounded, size: 16),
+                    label: Text(t.presetSave),
+                  ),
+              ],
             ),
-            for (final preset in presets)
-              Tooltip(
-                message: '${t.presetApplyHint}\n${preset.models.map(shortModelName).join(', ')}',
-                child: InputChip(
-                  visualDensity: VisualDensity.compact,
-                  label: Text('${preset.name} · ${preset.models.length}'),
-                  selected: _applied(preset),
-                  showCheckmark: true,
-                  selectedColor: palette.accentSoft,
-                  onPressed: () => _toggle(preset),
-                  onDeleted: () => _delete(preset),
-                  deleteIcon: const Icon(Icons.close_rounded, size: 14),
-                  deleteButtonTooltipMessage: t.delete,
-                ),
-              ),
-            if (canSave)
-              ActionChip(
-                visualDensity: VisualDensity.compact,
-                avatar: Icon(Icons.bookmark_add_outlined, size: 16, color: palette.accent),
-                label: Text(t.presetSave),
-                onPressed: _saveCurrent,
-              ),
           ],
         );
       },
@@ -235,72 +238,75 @@ class _ModelSelectionFieldState extends State<ModelSelectionField> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: palette.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: palette.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(child: Text(widget.title ?? t.modelsTitle, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text))),
-              if (widget.value.isNotEmpty) ...<Widget>[
-                Text(t.modelsCount('${widget.value.length}'), style: TextStyle(fontSize: 12, color: palette.textMuted)),
-                TextButton(onPressed: () => widget.onChanged(<String>[]), child: Text(t.modelsClear)),
-              ],
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          if (widget.value.isEmpty && widget.emptyHint != '')
-            Text(widget.emptyHint ?? t.modelsAny, style: TextStyle(fontSize: 12.5, color: palette.textMuted))
-          else if (widget.value.isNotEmpty)
-            ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: math.max(120, MediaQuery.sizeOf(context).height * 0.25)),
-              child: SingleChildScrollView(
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: <Widget>[
-                    for (final id in widget.value)
-                      InputChip(
-                        visualDensity: VisualDensity.compact,
-                        avatar: Icon(id.contains('*') ? Icons.filter_alt_outlined : (id.startsWith('auto') || id.startsWith('pool:') ? Icons.alt_route_rounded : Icons.memory_rounded), size: 15),
-                        label: Tooltip(message: id, child: Text(_label(id))),
-                        onDeleted: () => widget.onChanged(widget.value.where((item) => item != id).toList()),
-                        deleteIcon: const Icon(Icons.close_rounded, size: 14),
-                      ),
-                  ],
-                ),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Expanded(child: Text(widget.title ?? t.modelsTitle, style: TextStyle(fontWeight: FontWeight.w600, color: palette.text))),
+            if (widget.value.isNotEmpty) TextButton(onPressed: () => widget.onChanged(<String>[]), child: Text(t.modelsClear)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        // The selection itself, in one bordered box that opens the picker.
+        InkWell(
+          onTap: _pick,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+            decoration: BoxDecoration(
+              color: palette.surface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: palette.border),
             ),
-          const SizedBox(height: AppSpacing.sm),
-          PresetBar(controller: widget.controller, selected: widget.value, onChanged: widget.onChanged),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: <Widget>[
-              FilledButton.tonalIcon(onPressed: _pick, icon: const Icon(Icons.checklist_rounded, size: 18), label: Text(t.pickModels)),
-              if (widget.patterns) ...<Widget>[
-                const SizedBox(width: AppSpacing.sm),
+            child: Row(
+              children: <Widget>[
                 Expanded(
-                  child: TextField(
-                    controller: _pattern,
-                    onSubmitted: (_) => _addPattern(),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      hintText: t.routingGroupPatternHint,
-                      suffixIcon: IconButton(icon: const Icon(Icons.keyboard_return_rounded, size: 18), tooltip: t.routingGroupAddPattern, onPressed: _addPattern),
-                    ),
-                  ),
+                  child: widget.value.isEmpty
+                      ? Text(widget.emptyHint?.isNotEmpty == true ? widget.emptyHint! : t.modelsAny, style: TextStyle(fontSize: 13, color: palette.textMuted))
+                      : ConstrainedBox(
+                          constraints: BoxConstraints(maxHeight: math.max(120, MediaQuery.sizeOf(context).height * 0.25)),
+                          child: SingleChildScrollView(
+                            child: Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: <Widget>[
+                                for (final id in widget.value)
+                                  InputChip(
+                                    visualDensity: VisualDensity.compact,
+                                    label: Tooltip(message: id, child: Text(_label(id))),
+                                    onDeleted: () => widget.onChanged(widget.value.where((item) => item != id).toList()),
+                                    deleteIcon: const Icon(Icons.close_rounded, size: 14),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
                 ),
+                const SizedBox(width: 6),
+                Tooltip(message: t.pickModels, child: Icon(Icons.add_circle_outline_rounded, color: palette.accent)),
               ],
-            ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        PresetBar(controller: widget.controller, selected: widget.value, onChanged: widget.onChanged),
+        if (widget.patterns) ...<Widget>[
+          const SizedBox(height: 8),
+          TextField(
+            controller: _pattern,
+            onSubmitted: (_) => _addPattern(),
+            style: const TextStyle(fontSize: 13),
+            decoration: InputDecoration(
+              isDense: true,
+              prefixIcon: const Icon(Icons.filter_alt_outlined, size: 16),
+              hintText: t.routingGroupPatternHint,
+              suffixIcon: IconButton(icon: const Icon(Icons.keyboard_return_rounded, size: 16), tooltip: t.routingGroupAddPattern, onPressed: _addPattern),
+            ),
           ),
         ],
-      ),
+      ],
     );
   }
 }

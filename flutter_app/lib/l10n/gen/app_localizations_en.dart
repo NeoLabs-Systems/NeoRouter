@@ -5239,8 +5239,7 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get presetApplyHint =>
-      'Tap to add these models, tap again to remove them';
+  String get presetApplyHint => 'Tap to add, long-press to delete';
 
   @override
   String get modelsAny => 'Any model. Choose some to limit this to them.';
