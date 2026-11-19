@@ -5117,9 +5117,6 @@ class AppL10nEn extends AppL10n {
   String get liveOther => 'Others';
 
   @override
-  String get liveEvaluator => 'Evaluator';
-
-  @override
   String get liveYourApp => 'Your app';
 
   @override
@@ -6227,14 +6224,14 @@ class AppL10nEn extends AppL10n {
   String get proxyTestFailed => 'Proxy connection failed; it is cooling down.';
 
   @override
-  String get lbTitle => 'Local evaluations';
+  String get lbTitle => 'ReplayBench';
 
   @override
   String get lbAdminHint =>
       'Allow users to opt in to private, autonomous model evaluation. Uses confirmed free capacity.';
 
   @override
-  String get lbAdminEnable => 'Enable local benchmarking';
+  String get lbAdminEnable => 'Enable ReplayBench';
 
   @override
   String get lbAccountHint =>
@@ -6245,7 +6242,7 @@ class AppL10nEn extends AppL10n {
       'Allow private collection and replay to my free providers';
 
   @override
-  String get lbKeyEnable => 'Collect completed chats for local evaluation';
+  String get lbKeyEnable => 'Collect completed chats for ReplayBench';
 
   @override
   String get lbKeyHint =>
@@ -6253,11 +6250,11 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get lbKeyAdminRequired =>
-      'An administrator must enable local benchmarking under Admin → Server.';
+      'An administrator must enable ReplayBench under Admin → Server.';
 
   @override
   String get lbKeyAccountRequired =>
-      'Enable local evaluations under Settings → Account to collect samples with this key.';
+      'Enable ReplayBench under Settings → Account to collect samples with this key.';
 
   @override
   String get lbKeyPersonalRequired =>
@@ -6312,20 +6309,17 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get lbResults => 'NeoRouter evaluations';
-
-  @override
-  String get lbEvidenceHint =>
-      'Validated aggregate results from sanitized tasks, using objective checks or blind comparisons by a calibrated evaluator. These results supplement existing routing intelligence.';
+  String get lbResultsSubtitle =>
+      'See how models compare on sanitized, opt-in traffic.';
 
   @override
   String lbNoEvidence(String count) {
-    return 'Results appear after at least $count validated tasks per model and task category.';
+    return 'Results appear after at least $count comparisons per model and task category.';
   }
 
   @override
-  String lbResultMeta(String task, String count, String confidence) {
-    return '$task · $count tasks · confidence $confidence%';
+  String lbResultMeta(String task, String count) {
+    return '$task · $count comparisons';
   }
 
   @override
@@ -6334,11 +6328,39 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get lbPreferenceHint =>
-      'Ties count as half a preference. Sparse or older evidence has less influence on routing.';
+  String get lbPreferenceScale => 'Preference rate';
 
   @override
-  String lbRubric(String version, String date) {
-    return 'Evaluator: $version · updated $date';
+  String get lbPreferenceHint =>
+      'Scores reflect preference against the opponents tested on opted-in traffic. Ties count as half a preference. Small samples can vary widely.';
+
+  @override
+  String get lbEvaluationDetails => 'Scoring breakdown';
+
+  @override
+  String lbEvidenceDate(String date) {
+    return 'Latest evaluation day $date';
   }
+
+  @override
+  String lbEvidencePeriod(String start, String end) {
+    return 'Evaluated $start to $end';
+  }
+
+  @override
+  String get lbConstraintChecks => 'Response checks';
+
+  @override
+  String lbJudgeNumber(String number) {
+    return 'Judge $number';
+  }
+
+  @override
+  String lbEvaluatorComparisons(String count) {
+    return '$count comparisons';
+  }
+
+  @override
+  String get lbAuditHint =>
+      'Each rate uses only the comparisons from that evaluator. Recent comparisons carry more weight.';
 }

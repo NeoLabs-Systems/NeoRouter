@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'discovery/widgets.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
+import 'main_routing.dart' show taskLabel;
 import 'main_shared.dart';
 import 'main_theme.dart';
 
@@ -219,11 +221,6 @@ class _LocalBenchmarkResultsState extends State<LocalBenchmarkResults> {
     }
   }
 
-  String _evaluators(Map row) => ((row['evaluators'] as List?) ?? [])
-      .cast<Map>()
-      .map((item) => "${item['model']} · ${item['version']}")
-      .join(', ');
-
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
@@ -234,8 +231,14 @@ class _LocalBenchmarkResultsState extends State<LocalBenchmarkResults> {
     if (results.isEmpty && data['enabled'] != true) {
       return const SizedBox.shrink();
     }
+    final byModel = <String, List<Map>>{};
+    for (final row in results) {
+      (byModel['${row['model']}'] ??= []).add(row);
+    }
+    final pageSize = data['limit'] as int? ?? 24;
+    final total = data['total'] as int? ?? byModel.length;
     return SectionCard(
-      title: t.lbResults,
+      title: t.lbTitle,
       trailing: IconButton(
         tooltip: t.refresh,
         onPressed: _busy ? null : _load,
@@ -245,41 +248,44 @@ class _LocalBenchmarkResultsState extends State<LocalBenchmarkResults> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            t.lbEvidenceHint,
-            style: TextStyle(color: palette.textSoft, height: 1.5),
+            t.lbResultsSubtitle,
+            style: Theme.of(context).textTheme.bodyLarge,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             t.lbPreferenceHint,
-            style: TextStyle(color: palette.textMuted, fontSize: 12),
+            style: TextStyle(color: palette.textSoft, height: 1.4),
           ),
           if (results.isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 16),
               child: Text(t.lbNoEvidence('${data['minSamples']}')),
             ),
-          for (final row in results)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text('${row['name'] ?? row['model']}'),
-              subtitle: Text(
-                '${t.lbResultMeta('${row['task']}', '${row['samples']}', '${((row['confidence'] as num) * 100).round()}')}\n${t.lbRubric(_evaluators(row), formatTime(DateTime.fromMillisecondsSinceEpoch(row['evaluatedAt'] as int)))}',
-              ),
-              trailing: Tooltip(
-                message: t.lbPreference(
-                  '${((row['score'] as num) * 100).round()}',
-                ),
-                child: Text(
-                  '${((row['score'] as num) * 100).round()}%',
-                  style: TextStyle(
-                    color: palette.text,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+          if (results.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(
+              t.lbPreferenceScale,
+              style: Theme.of(context).textTheme.labelMedium,
             ),
-          if ((data['total'] as int? ?? results.length) >
-              (data['limit'] as int? ?? 24))
+            const SizedBox(height: 6),
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [Text('0%'), Text('50%'), Text('100%')],
+            ),
+          ],
+          for (final rows in byModel.values) ...[
+            const Divider(height: 24),
+            Text(
+              '${rows.first['name'] ?? rows.first['model']}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            for (final row in rows)
+              _PreferenceBar(
+                key: ValueKey((row['model'], row['task'])),
+                row: row,
+              ),
+          ],
+          if (total > pageSize)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -288,22 +294,18 @@ class _LocalBenchmarkResultsState extends State<LocalBenchmarkResults> {
                   onPressed: _busy || _offset == 0
                       ? null
                       : () {
-                          _offset = (_offset - (data['limit'] as int? ?? 24))
-                              .clamp(0, _offset);
+                          _offset = (_offset - pageSize).clamp(0, _offset);
                           _load();
                         },
                   icon: const Icon(Icons.chevron_left),
                 ),
-                Text('${_offset ~/ (data['limit'] as int? ?? 24) + 1}'),
+                Text('${_offset ~/ pageSize + 1}'),
                 IconButton(
                   tooltip: t.discoveryNext,
-                  onPressed:
-                      _busy ||
-                          _offset + results.length >=
-                              (data['total'] as int? ?? results.length)
+                  onPressed: _busy || _offset + pageSize >= total
                       ? null
                       : () {
-                          _offset += (data['limit'] as int? ?? 24);
+                          _offset += pageSize;
                           _load();
                         },
                   icon: const Icon(Icons.chevron_right),
@@ -311,6 +313,129 @@ class _LocalBenchmarkResultsState extends State<LocalBenchmarkResults> {
               ],
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _PreferenceBar extends StatelessWidget {
+  const _PreferenceBar({super.key, required this.row});
+
+  final Map row;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final score = (row['score'] as num).toDouble() * 100;
+    final scoreLabel = '${score.round()}';
+    final task = t.lbResultMeta(
+      taskLabel(t, row['task'] as String?),
+      '${row['samples']}',
+    );
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: const EdgeInsets.only(top: 12, bottom: 8),
+      expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(task, style: TextStyle(color: palette.textSoft)),
+          ),
+          const SizedBox(width: 8),
+          Semantics(
+            label: t.lbPreference(scoreLabel),
+            excludeSemantics: true,
+            child: Text(
+              '$scoreLabel%',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+          ),
+        ],
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: ExcludeSemantics(
+          child: BenchmarkScoreBar(score: score, selected: true),
+        ),
+      ),
+      children: [_EvaluationAudit(row: row)],
+    );
+  }
+}
+
+class _EvaluationAudit extends StatelessWidget {
+  const _EvaluationAudit({required this.row});
+
+  final Map row;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final theme = Theme.of(context).textTheme;
+    final palette = neoRouterPaletteOf(context);
+    final formatDate = MaterialLocalizations.of(context).formatMediumDate;
+    final end = row['evaluatedAt'] as int;
+    final start = row['evaluatedFrom'] as int? ?? end;
+    final lastDay = formatDate(
+      DateTime.fromMillisecondsSinceEpoch(end, isUtc: true),
+    );
+    final period = start == end
+        ? t.lbEvidenceDate(lastDay)
+        : t.lbEvidencePeriod(
+            formatDate(DateTime.fromMillisecondsSinceEpoch(start, isUtc: true)),
+            lastDay,
+          );
+    final evaluators = (row['evaluators'] as List? ?? []).cast<Map>();
+    var judgeNumber = 0;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: palette.surfaceRaised,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(t.lbEvaluationDetails, style: theme.titleSmall),
+            const SizedBox(height: 4),
+            Text(period, style: TextStyle(color: palette.textMuted)),
+            const SizedBox(height: 8),
+            for (final evaluator in evaluators)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                title: Text(
+                  evaluator['method'] == 'constraints' ||
+                          evaluator['model'] == 'objective'
+                      ? t.lbConstraintChecks
+                      : t.lbJudgeNumber('${++judgeNumber}') +
+                            (evaluator['name'] is String
+                                ? ' · ${evaluator['name']}'
+                                : ''),
+                ),
+                subtitle: Text(
+                  [
+                    if (evaluator['samples'] is int)
+                      t.lbEvaluatorComparisons('${evaluator['samples']}'),
+                    '${evaluator['version']}',
+                  ].join(' · '),
+                ),
+                trailing: evaluator['score'] is num
+                    ? Text(
+                        '${((evaluator['score'] as num) * 100).round()}%',
+                        style: theme.labelLarge,
+                      )
+                    : null,
+              ),
+            const SizedBox(height: 4),
+            Text(
+              t.lbAuditHint,
+              style: theme.bodySmall?.copyWith(color: palette.textMuted),
+            ),
+          ],
+        ),
       ),
     );
   }

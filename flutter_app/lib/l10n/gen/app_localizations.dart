@@ -8941,12 +8941,6 @@ abstract class AppL10n {
   /// **'Others'**
   String get liveOther;
 
-  /// No description provided for @liveEvaluator.
-  ///
-  /// In en, this message translates to:
-  /// **'Evaluator'**
-  String get liveEvaluator;
-
   /// No description provided for @liveYourApp.
   ///
   /// In en, this message translates to:
@@ -10840,7 +10834,7 @@ abstract class AppL10n {
   /// No description provided for @lbTitle.
   ///
   /// In en, this message translates to:
-  /// **'Local evaluations'**
+  /// **'ReplayBench'**
   String get lbTitle;
 
   /// No description provided for @lbAdminHint.
@@ -10852,7 +10846,7 @@ abstract class AppL10n {
   /// No description provided for @lbAdminEnable.
   ///
   /// In en, this message translates to:
-  /// **'Enable local benchmarking'**
+  /// **'Enable ReplayBench'**
   String get lbAdminEnable;
 
   /// No description provided for @lbAccountHint.
@@ -10870,7 +10864,7 @@ abstract class AppL10n {
   /// No description provided for @lbKeyEnable.
   ///
   /// In en, this message translates to:
-  /// **'Collect completed chats for local evaluation'**
+  /// **'Collect completed chats for ReplayBench'**
   String get lbKeyEnable;
 
   /// No description provided for @lbKeyHint.
@@ -10882,13 +10876,13 @@ abstract class AppL10n {
   /// No description provided for @lbKeyAdminRequired.
   ///
   /// In en, this message translates to:
-  /// **'An administrator must enable local benchmarking under Admin → Server.'**
+  /// **'An administrator must enable ReplayBench under Admin → Server.'**
   String get lbKeyAdminRequired;
 
   /// No description provided for @lbKeyAccountRequired.
   ///
   /// In en, this message translates to:
-  /// **'Enable local evaluations under Settings → Account to collect samples with this key.'**
+  /// **'Enable ReplayBench under Settings → Account to collect samples with this key.'**
   String get lbKeyAccountRequired;
 
   /// No description provided for @lbKeyPersonalRequired.
@@ -10975,29 +10969,23 @@ abstract class AppL10n {
   /// **'{queued} queued · {validated} validated model scores · {published} published model/task groups'**
   String lbHealth(String queued, String validated, String published);
 
-  /// No description provided for @lbResults.
+  /// No description provided for @lbResultsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'NeoRouter evaluations'**
-  String get lbResults;
-
-  /// No description provided for @lbEvidenceHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Validated aggregate results from sanitized tasks, using objective checks or blind comparisons by a calibrated evaluator. These results supplement existing routing intelligence.'**
-  String get lbEvidenceHint;
+  /// **'See how models compare on sanitized, opt-in traffic.'**
+  String get lbResultsSubtitle;
 
   /// No description provided for @lbNoEvidence.
   ///
   /// In en, this message translates to:
-  /// **'Results appear after at least {count} validated tasks per model and task category.'**
+  /// **'Results appear after at least {count} comparisons per model and task category.'**
   String lbNoEvidence(String count);
 
   /// No description provided for @lbResultMeta.
   ///
   /// In en, this message translates to:
-  /// **'{task} · {count} tasks · confidence {confidence}%'**
-  String lbResultMeta(String task, String count, String confidence);
+  /// **'{task} · {count} comparisons'**
+  String lbResultMeta(String task, String count);
 
   /// No description provided for @lbPreference.
   ///
@@ -11005,17 +10993,59 @@ abstract class AppL10n {
   /// **'Preference rate {score}%'**
   String lbPreference(String score);
 
+  /// No description provided for @lbPreferenceScale.
+  ///
+  /// In en, this message translates to:
+  /// **'Preference rate'**
+  String get lbPreferenceScale;
+
   /// No description provided for @lbPreferenceHint.
   ///
   /// In en, this message translates to:
-  /// **'Ties count as half a preference. Sparse or older evidence has less influence on routing.'**
+  /// **'Scores reflect preference against the opponents tested on opted-in traffic. Ties count as half a preference. Small samples can vary widely.'**
   String get lbPreferenceHint;
 
-  /// No description provided for @lbRubric.
+  /// No description provided for @lbEvaluationDetails.
   ///
   /// In en, this message translates to:
-  /// **'Evaluator: {version} · updated {date}'**
-  String lbRubric(String version, String date);
+  /// **'Scoring breakdown'**
+  String get lbEvaluationDetails;
+
+  /// No description provided for @lbEvidenceDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest evaluation day {date}'**
+  String lbEvidenceDate(String date);
+
+  /// No description provided for @lbEvidencePeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Evaluated {start} to {end}'**
+  String lbEvidencePeriod(String start, String end);
+
+  /// No description provided for @lbConstraintChecks.
+  ///
+  /// In en, this message translates to:
+  /// **'Response checks'**
+  String get lbConstraintChecks;
+
+  /// No description provided for @lbJudgeNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Judge {number}'**
+  String lbJudgeNumber(String number);
+
+  /// No description provided for @lbEvaluatorComparisons.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} comparisons'**
+  String lbEvaluatorComparisons(String count);
+
+  /// No description provided for @lbAuditHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each rate uses only the comparisons from that evaluator. Recent comparisons carry more weight.'**
+  String get lbAuditHint;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

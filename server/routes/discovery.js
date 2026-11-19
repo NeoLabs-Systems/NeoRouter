@@ -8,6 +8,7 @@ const news = require('../services/discovery/news_service');
 const benchmarkEvidence = require('../services/benchmarks/evidence');
 const benchmarkConsent = require('../services/benchmarks/consent');
 const benchmarkPolicy = require('../services/benchmarks/policy');
+const catalog = require('../services/catalog/catalog_service');
 const POLICY = require('../services/discovery/policy');
 const query = z.object({
   query: z.string().max(200).default(''), capability: z.string().max(50).default('chat'),
@@ -27,7 +28,32 @@ router.get('/benchmarks', (req, res) => res.json(benchmarks.list(options(req))))
 router.get('/internal-benchmarks', (req, res) => {
   const { limit, offset } = options(req);
   const rows = benchmarkEvidence.list();
-  res.json({ enabled: benchmarkConsent.globalSettings().enabled, minSamples: benchmarkPolicy.minSamples,
+  const enabled = benchmarkConsent.globalSettings().enabled;
+  const minSamples = benchmarkPolicy.minSamples;
+  if (req.query.groupBy === 'model') {
+    const byModel = new Map();
+    for (const row of rows) {
+      if (!byModel.has(row.model)) byModel.set(row.model, []);
+      byModel.get(row.model).push(row);
+    }
+    const page = [...byModel.values()].slice(offset, offset + limit).flat();
+    const listings = new Map();
+    if (page.length) {
+      for (const entry of catalog.listForUser(req.space.ownerId, { includeUnavailable: true })) {
+        const previous = listings.get(entry.canonicalId);
+        if (!previous || (previous.name === previous.modelId && entry.name !== entry.modelId)) listings.set(entry.canonicalId, entry);
+      }
+    }
+    const results = page.map((row) => ({ ...row, name: listings.get(row.model)?.name,
+      evaluators: row.evaluators.map(({ model, method, version, samples, score }) => ({
+        method,
+        name: method === 'judge' ? listings.get(model)?.name : undefined,
+        version, samples, score,
+      })),
+    }));
+    return res.json({ enabled, minSamples, total: byModel.size, limit, offset, results });
+  }
+  res.json({ enabled, minSamples,
     total: rows.length, limit, offset, results: rows.slice(offset, offset + limit) });
 });
 router.get('/news', (req, res) => res.json(news.list(options(req))));

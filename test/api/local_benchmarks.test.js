@@ -262,19 +262,48 @@ test('only sufficiently supported, fresh aggregates influence routing and owners
   const now = Date.now();
   const sample = { userId: owner.id, keyId: key.key.id, ticket: consent.ticket(owner.id, key.key.id), task: 'coding' };
   const candidates = [{ canonicalId: 'examplea' }, { canonicalId: 'exampleb' }];
-  for (let i = 0; i < policy.minSamples; i++) {
-    assert.equal(evidence.add(sample, candidates, { score: 1, confidence: 1, evaluator: 'objective', version: objective.VERSION }, now), true);
+  for (const task of ['coding', 'math']) {
+    for (let i = 0; i < policy.minSamples - 1; i++) {
+      assert.equal(evidence.add({ ...sample, task }, candidates, { score: 1, confidence: 1, evaluator: 'objective', version: objective.VERSION }, now), true);
+    }
+    assert.equal(evidence.add({ ...sample, task }, candidates,
+      { score: 0.5, confidence: policy.judgeConfidence, evaluator: 'unlisted-judge', version: judge.VERSION }, now - policy.bucketMs), true);
   }
   const result = await api(other, 'get', '/discovery/internal-benchmarks');
   assert.equal(result.status, 200);
   assert.equal(result.body.results.find((row) => row.model === 'examplea').samples, policy.minSamples);
   assert.ok(!JSON.stringify(result.body).includes(owner.id));
+  const grouped = await api(other, 'get', '/discovery/internal-benchmarks?groupBy=model&limit=1');
+  assert.equal(grouped.body.total, 2);
+  assert.deepEqual(grouped.body.results.map(({ model, task }) => [model, task]), [['examplea', 'coding'], ['examplea', 'math']]);
+  const audited = grouped.body.results[0];
+  assert.equal(audited.evaluatedAt - audited.evaluatedFrom, policy.bucketMs);
+  assert.deepEqual(audited.evaluators, [
+    { method: 'constraints', version: objective.VERSION, samples: policy.minSamples - 1, score: 1 },
+    { method: 'judge', version: judge.VERSION, samples: 1, score: 0.5 },
+  ]);
+  assert.ok(!JSON.stringify(grouped.body).includes('unlisted-judge'));
+  const second = await api(other, 'get', '/discovery/internal-benchmarks?groupBy=model&limit=1&offset=1');
+  assert.deepEqual(second.body.results.map(({ model }) => model), ['exampleb', 'exampleb']);
   assert.ok(evidence.blend(0.5, 'examplea', 'coding', now) > 0.5);
   assert.ok(evidence.blend(0.5, 'exampleb', 'coding', now) < 0.5);
   assert.equal(evidence.blend(0.5, 'examplea', 'coding', now + policy.evidenceLifetimeMs), 0.5);
   assert.equal((await api(owner, 'delete', '/benchmarks/collection')).status, 204);
   assert.equal(totals(), 0);
   assert.equal(evidence.blend(0.5, 'examplea', 'coding', now), 0.5);
+});
+
+test('a capped comparison leaves both models unchanged', () => {
+  const sample = { userId: owner.id, keyId: key.key.id, ticket: consent.ticket(owner.id, key.key.id), task: 'coding' };
+  const [first, second, third] = ['examplea', 'exampleb', 'examplec'].map((canonicalId) => ({ canonicalId }));
+  const verdict = { score: 1, confidence: 1, evaluator: 'objective', version: objective.VERSION };
+  const now = Date.now();
+  for (let i = 0; i < policy.maxDailySamplesPerGroup; i++) {
+    assert.equal(evidence.add(sample, [first, second], verdict, now), true);
+  }
+  assert.equal(evidence.add(sample, [third, first], verdict, now), false);
+  assert.equal(totals(), policy.maxDailySamplesPerGroup * 2);
+  evidence.purge(owner.id);
 });
 
 test('reasoning progress extends the benchmark answer wait and silent models cool across copies', async (t) => {

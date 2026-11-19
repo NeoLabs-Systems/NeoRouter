@@ -888,7 +888,7 @@ class _Stage extends StatelessWidget {
                   context,
                   palette,
                   center: layout.appPos[i],
-                  title: appNames[i] == _TrafficSource.evaluator ? t.liveEvaluator : appNames[i] as String,
+                  title: appNames[i] == _TrafficSource.evaluator ? t.lbTitle : appNames[i] as String,
                   subtitle: apps.isEmpty ? '' : t.liveRequests('${appRequests[appNames[i]] ?? 0}'),
                   glow: i < s.appFlash.length ? (1 - (s.t - s.appFlash[i]) / 700).clamp(0.0, 1.0) : 0,
                   dashed: apps.isEmpty,

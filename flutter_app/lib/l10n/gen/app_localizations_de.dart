@@ -5149,9 +5149,6 @@ class AppL10nDe extends AppL10n {
   String get liveOther => 'Andere';
 
   @override
-  String get liveEvaluator => 'Bewerter';
-
-  @override
   String get liveYourApp => 'Deine App';
 
   @override
@@ -6272,14 +6269,14 @@ class AppL10nDe extends AppL10n {
       'Proxy-Verbindung fehlgeschlagen; pausiert vorübergehend.';
 
   @override
-  String get lbTitle => 'Lokale Bewertungen';
+  String get lbTitle => 'ReplayBench';
 
   @override
   String get lbAdminHint =>
       'Erlaubt Nutzern, private, automatische Modellbewertungen zu aktivieren. Verwendet nur bestätigte kostenlose Kapazität.';
 
   @override
-  String get lbAdminEnable => 'Lokales Benchmarking aktivieren';
+  String get lbAdminEnable => 'ReplayBench aktivieren';
 
   @override
   String get lbAccountHint =>
@@ -6290,8 +6287,7 @@ class AppL10nDe extends AppL10n {
       'Private Sammlung und Wiederholung bei meinen kostenlosen Anbietern erlauben';
 
   @override
-  String get lbKeyEnable =>
-      'Abgeschlossene Chats für lokale Bewertungen sammeln';
+  String get lbKeyEnable => 'Abgeschlossene Chats für ReplayBench sammeln';
 
   @override
   String get lbKeyHint =>
@@ -6299,11 +6295,11 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get lbKeyAdminRequired =>
-      'Ein Administrator muss lokales Benchmarking unter Admin → Server aktivieren.';
+      'Ein Administrator muss ReplayBench unter Admin → Server aktivieren.';
 
   @override
   String get lbKeyAccountRequired =>
-      'Aktiviere lokale Bewertungen unter Einstellungen → Konto, um Stichproben mit diesem Key zu sammeln.';
+      'Aktiviere ReplayBench unter Einstellungen → Konto, um Stichproben mit diesem Key zu sammeln.';
 
   @override
   String get lbKeyPersonalRequired =>
@@ -6359,20 +6355,17 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
-  String get lbResults => 'NeoRouter-Bewertungen';
-
-  @override
-  String get lbEvidenceHint =>
-      'Validierte Gesamtergebnisse aus bereinigten Aufgaben, geprüft durch objektive Kriterien oder Blindvergleiche mit einem kalibrierten Bewerter. Diese Ergebnisse ergänzen das bestehende Routing.';
+  String get lbResultsSubtitle =>
+      'Vergleiche Modelle anhand bereinigter Anfragen, die zur Auswertung freigegeben wurden.';
 
   @override
   String lbNoEvidence(String count) {
-    return 'Ergebnisse erscheinen ab $count validierten Aufgaben pro Modell und Aufgabenkategorie.';
+    return 'Ergebnisse erscheinen ab $count Vergleichen pro Modell und Aufgabenkategorie.';
   }
 
   @override
-  String lbResultMeta(String task, String count, String confidence) {
-    return '$task · $count Aufgaben · Konfidenz $confidence%';
+  String lbResultMeta(String task, String count) {
+    return '$task · $count Vergleiche';
   }
 
   @override
@@ -6381,11 +6374,39 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
-  String get lbPreferenceHint =>
-      'Ein Gleichstand zählt als halbe Präferenz. Wenige oder ältere Ergebnisse beeinflussen das Routing weniger.';
+  String get lbPreferenceScale => 'Bevorzugungsrate';
 
   @override
-  String lbRubric(String version, String date) {
-    return 'Bewerter: $version · aktualisiert $date';
+  String get lbPreferenceHint =>
+      'Die Werte zeigen die Präferenz gegenüber den Vergleichsmodellen bei freigegebenen Anfragen. Ein Gleichstand zählt als halbe Präferenz. Kleine Stichproben können stark schwanken.';
+
+  @override
+  String get lbEvaluationDetails => 'Bewertungsübersicht';
+
+  @override
+  String lbEvidenceDate(String date) {
+    return 'Letzter Bewertungstag $date';
   }
+
+  @override
+  String lbEvidencePeriod(String start, String end) {
+    return 'Bewertet vom $start bis $end';
+  }
+
+  @override
+  String get lbConstraintChecks => 'Antwortprüfungen';
+
+  @override
+  String lbJudgeNumber(String number) {
+    return 'Bewerter $number';
+  }
+
+  @override
+  String lbEvaluatorComparisons(String count) {
+    return '$count Vergleiche';
+  }
+
+  @override
+  String get lbAuditHint =>
+      'Jede Rate beruht auf den Vergleichen dieses Bewerters. Neuere Vergleiche zählen stärker.';
 }

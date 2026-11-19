@@ -134,20 +134,20 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.text('Evaluator'), findsNothing);
+    expect(find.text('ReplayBench'), findsNothing);
 
     client.enabled = true;
     await tester.pump(const Duration(seconds: 4));
     for (var i = 0; i < 4; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
-    expect(find.text('Evaluator'), findsOneWidget);
+    expect(find.text('ReplayBench'), findsOneWidget);
     expect(find.text('1 requests'), findsOneWidget);
 
     client.enabled = false;
     await tester.pump(const Duration(seconds: 4));
     await tester.pump();
-    expect(find.text('Evaluator'), findsNothing);
+    expect(find.text('ReplayBench'), findsNothing);
     expect(find.text('0 in flight'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -220,7 +220,7 @@ void main() {
       expect(
         find.ancestor(
           of: find.byType(Switch),
-          matching: find.bySemanticsLabel('Enable local benchmarking'),
+          matching: find.bySemanticsLabel('Enable ReplayBench'),
         ),
         findsOneWidget,
       );
@@ -262,9 +262,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    final switchLabel = find.text(
-      'Collect completed chats for local evaluation',
-    );
+    final switchLabel = find.text('Collect completed chats for ReplayBench');
     await edit();
     expect(find.textContaining('Settings → Account'), findsOneWidget);
     expect(switchLabel, findsNothing);
@@ -275,7 +273,7 @@ void main() {
     await edit();
     expect(
       tester.getBottomLeft(find.byType(KeyExpiryField)).dy,
-      lessThan(tester.getTopLeft(find.text('LOCAL EVALUATIONS')).dy),
+      lessThan(tester.getTopLeft(find.text('REPLAYBENCH')).dy),
     );
     await tester.ensureVisible(switchLabel);
     await tester.tap(switchLabel);

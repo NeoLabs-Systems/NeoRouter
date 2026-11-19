@@ -97,7 +97,8 @@ async function run(sample, signal) {
     const result = sample.result;
     if (result) {
       finished = true;
-      lastOutcome = result.rejected || (evidence.add(sample, sample.answers.map(({ entry }) => entry), result) ? 'validated' : 'consent_revoked');
+      lastOutcome = result.rejected || (evidence.add(sample, sample.answers.map(({ entry }) => entry), result)
+        ? 'validated' : 'evidence_not_saved');
       logger.info('Benchmark evaluation', { stage: 'sample', code: lastOutcome });
     }
     sample.failures = 0;
