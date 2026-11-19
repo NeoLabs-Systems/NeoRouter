@@ -528,8 +528,8 @@ class AppL10nDe extends AppL10n {
   String get statusDisabled => 'Deaktiviert';
 
   @override
-  String modelsCount(String total, String free) {
-    return '$total Modelle · $free gratis';
+  String modelsCount(String count) {
+    return '$count gewählt';
   }
 
   @override
@@ -593,7 +593,7 @@ class AppL10nDe extends AppL10n {
   String get modelsEyebrow => 'Katalog';
 
   @override
-  String get modelsTitle => 'Modelle';
+  String get modelsTitle => 'Modelle und Routings';
 
   @override
   String get modelsDescription =>
@@ -5252,6 +5252,34 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get pickModel => 'Modell wählen';
+
+  @override
+  String get presetsTitle => 'Vorlagen';
+
+  @override
+  String get presetSave => 'Als Vorlage speichern';
+
+  @override
+  String get presetName => 'Name der Vorlage';
+
+  @override
+  String get presetNameHint => 'z. B. Kluge Modelle';
+
+  @override
+  String presetDelete(String name) {
+    return 'Vorlage „$name“ löschen?';
+  }
+
+  @override
+  String get presetApplyHint =>
+      'Tippen fügt diese Modelle hinzu, erneut tippen entfernt sie';
+
+  @override
+  String get modelsAny =>
+      'Jedes Modell. Wähle welche aus, um es darauf zu beschränken.';
+
+  @override
+  String get modelsClear => 'Leeren';
 
   @override
   String get pickModels => 'Modelle wählen';

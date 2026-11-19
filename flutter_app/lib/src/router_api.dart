@@ -147,6 +147,11 @@ class RouterApi {
   }
   Future<void> deleteRoutingGroup(String id) => client.delete('$_base/routing/groups/$id');
 
+  // ---- model presets --------------------------------------------------------
+  Future<List<Map<String, dynamic>>> modelPresets() async =>
+      ((await client.get('$_base/model-presets'))['presets'] as List).cast<Map<String, dynamic>>();
+  Future<void> saveModelPresets(List<Map<String, Object>> presets) => client.putJson('$_base/model-presets', <String, Object>{'presets': presets});
+
   Future<List<RoutingProfile>> profiles() async => _list(await client.get('$_base/routing/profiles'), 'profiles', RoutingProfile.new);
   Future<RoutingProfile> createProfile(String name, RoutingWeights weights, Map<String, Object?> constraints) async => RoutingProfile(
     Map<String, dynamic>.from(

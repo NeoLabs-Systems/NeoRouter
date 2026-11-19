@@ -1054,8 +1054,8 @@ abstract class AppL10n {
   /// No description provided for @modelsCount.
   ///
   /// In en, this message translates to:
-  /// **'{total} models · {free} free'**
-  String modelsCount(String total, String free);
+  /// **'{count} chosen'**
+  String modelsCount(String count);
 
   /// No description provided for @revalidate.
   ///
@@ -1156,7 +1156,7 @@ abstract class AppL10n {
   /// No description provided for @modelsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Models'**
+  /// **'Models and routings'**
   String get modelsTitle;
 
   /// No description provided for @modelsDescription.
@@ -9114,6 +9114,54 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Choose a model'**
   String get pickModel;
+
+  /// No description provided for @presetsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Presets'**
+  String get presetsTitle;
+
+  /// No description provided for @presetSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as preset'**
+  String get presetSave;
+
+  /// No description provided for @presetName.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset name'**
+  String get presetName;
+
+  /// No description provided for @presetNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Smart models'**
+  String get presetNameHint;
+
+  /// No description provided for @presetDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete preset \"{name}\"?'**
+  String presetDelete(String name);
+
+  /// No description provided for @presetApplyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to add these models, tap again to remove them'**
+  String get presetApplyHint;
+
+  /// No description provided for @modelsAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any model. Choose some to limit this to them.'**
+  String get modelsAny;
+
+  /// No description provided for @modelsClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get modelsClear;
 
   /// No description provided for @pickModels.
   ///

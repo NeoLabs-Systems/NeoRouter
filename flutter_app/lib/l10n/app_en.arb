@@ -228,13 +228,10 @@
   "statusError": "Not reachable",
   "statusUnknown": "Not checked",
   "statusDisabled": "Disabled",
-  "modelsCount": "{total} models · {free} free",
+  "modelsCount": "{count} chosen",
   "@modelsCount": {
     "placeholders": {
-      "total": {
-        "type": "String"
-      },
-      "free": {
+      "count": {
         "type": "String"
       }
     }
@@ -293,7 +290,7 @@
   },
   "quotaProbeEmpty": "This provider does not report a balance.",
   "modelsEyebrow": "Catalog",
-  "modelsTitle": "Models",
+  "modelsTitle": "Models and routings",
   "modelsDescription": "Everything your connections offer. NeoRouter learns how smart, fast and reliable each model is and picks the best one for you.",
   "searchModels": "Search models…",
   "filterAll": "All",
@@ -3309,6 +3306,21 @@
   "pgGroupLookup": "Look up",
   "pgGroupOther": "More",
   "pickModel": "Choose a model",
+  "presetsTitle": "Presets",
+  "presetSave": "Save as preset",
+  "presetName": "Preset name",
+  "presetNameHint": "e.g. Smart models",
+  "presetDelete": "Delete preset \"{name}\"?",
+  "@presetDelete": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "presetApplyHint": "Tap to add these models, tap again to remove them",
+  "modelsAny": "Any model. Choose some to limit this to them.",
+  "modelsClear": "Clear",
   "pickModels": "Choose models",
   "pickModelNone": "No model matches.",
   "pickModelsCount": "{count} chosen",

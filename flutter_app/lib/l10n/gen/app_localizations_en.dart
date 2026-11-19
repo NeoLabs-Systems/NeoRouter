@@ -525,8 +525,8 @@ class AppL10nEn extends AppL10n {
   String get statusDisabled => 'Disabled';
 
   @override
-  String modelsCount(String total, String free) {
-    return '$total models · $free free';
+  String modelsCount(String count) {
+    return '$count chosen';
   }
 
   @override
@@ -590,7 +590,7 @@ class AppL10nEn extends AppL10n {
   String get modelsEyebrow => 'Catalog';
 
   @override
-  String get modelsTitle => 'Models';
+  String get modelsTitle => 'Models and routings';
 
   @override
   String get modelsDescription =>
@@ -5220,6 +5220,33 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get pickModel => 'Choose a model';
+
+  @override
+  String get presetsTitle => 'Presets';
+
+  @override
+  String get presetSave => 'Save as preset';
+
+  @override
+  String get presetName => 'Preset name';
+
+  @override
+  String get presetNameHint => 'e.g. Smart models';
+
+  @override
+  String presetDelete(String name) {
+    return 'Delete preset \"$name\"?';
+  }
+
+  @override
+  String get presetApplyHint =>
+      'Tap to add these models, tap again to remove them';
+
+  @override
+  String get modelsAny => 'Any model. Choose some to limit this to them.';
+
+  @override
+  String get modelsClear => 'Clear';
 
   @override
   String get pickModels => 'Choose models';

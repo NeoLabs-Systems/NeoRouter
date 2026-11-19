@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
-import 'main_model_picker.dart';
+import 'main_model_selection.dart';
 import 'main_key_expiry.dart';
 import 'main_routing.dart';
 import 'main_shared.dart';
@@ -484,7 +484,7 @@ class _KeyFormState extends State<_KeyForm> {
   late final TextEditingController _maxPrice = TextEditingController(text: widget.existing?.maxPricePerMillion?.toString() ?? '');
   late String _tokenPeriod = widget.existing?.tokenPeriod ?? 'monthly';
   // Kinds of model ("kind:speech") have their own chips; the text keeps models and routings.
-  late final TextEditingController _allowed = TextEditingController(text: widget.existing?.allowedModels.where((item) => !item.startsWith('kind:')).join('\n') ?? '');
+  late List<String> _allowed = widget.existing?.allowedModels.where((item) => !item.startsWith('kind:')).toList() ?? <String>[];
   late Set<String>? _kinds = () {
     final kinds = widget.existing?.allowedModels.where((item) => item.startsWith('kind:')).map((item) => item.substring(5)).toSet() ?? <String>{};
     return kinds.isEmpty ? null : kinds;
@@ -585,7 +585,7 @@ class _KeyFormState extends State<_KeyForm> {
   // What gets saved: kind entries when kinds are narrowed or models chosen
   // (so a chosen chat model leaves other kinds open), then models and routings.
   List<String> _allowedList() {
-    final lines = _allowed.text.split('\n').map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
+    final lines = _allowed;
     final kinds = _kinds ?? _available.toSet();
     final narrowed = _kinds != null && !_available.every(kinds.contains);
     final hasModels = lines.any((line) => !RegExp(r'^(?:auto(?:$|[-:*?])|pool:)', caseSensitive: false).hasMatch(line));
@@ -604,31 +604,16 @@ class _KeyFormState extends State<_KeyForm> {
     _concurrent.dispose();
     _tokens.dispose();
     _maxPrice.dispose();
-    _allowed.dispose();
     super.dispose();
   }
 
-  // Picked models and routings join the typed lines; patterns like "groq/*" stay as they are.
-  Future<void> _pickAllowed() async {
-    final lines = _allowed.text.split('\n').map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
-    final t = AppL10n.of(context);
-    final routes = <(String, String)>[
-      ('auto', t.autoKeyDefault),
-      for (final profile in widget.profiles) ('auto:${profile.slug}', 'Auto (${profileLabel(t, profile)})'),
-      for (final group in _groups) ('pool:${group['name']}', '${group['name']}'),
-    ];
-    final picked = await showModelPicker(
-      context,
-      controller: widget.controller,
-      selected: lines.where((line) => !line.contains('*')).toList(),
-      multi: true,
-      routes: routes,
-      capabilities: _available.where(_kindOn).toList(),
-    );
-    if (picked == null) return;
-    final patterns = lines.where((line) => line.contains('*'));
-    setState(() => _allowed.text = <String>{...patterns, ...picked}.join('\n'));
-  }
+  // Routings offered next to the models in the picker.
+  List<(String, String)> _routes(AppL10n t) => <(String, String)>[
+    ('auto', t.autoKeyDefault),
+    for (final profile in widget.profiles) ('auto:${profile.slug}', 'Auto (${profileLabel(t, profile)})'),
+    for (final group in _groups) ('pool:${group['name']}', '${group['name']}'),
+  ];
+
 
   Future<void> _submit() async {
     if (_expiryChanged && _expiresAt != null && !_expiresAt!.isAfter(DateTime.now())) {
@@ -780,6 +765,14 @@ class _KeyFormState extends State<_KeyForm> {
                             kinds: kinds,
                           ),
                           if (_kinds != null && _kinds!.isEmpty) ...<Widget>[const SizedBox(height: AppSpacing.xs), InlineError(message: t.keyKindsNone)],
+                          const SizedBox(height: AppSpacing.md),
+                          ModelSelectionField(
+                            controller: widget.controller,
+                            value: _allowed,
+                            onChanged: (value) => setState(() => _allowed = value),
+                            routes: _routes(t),
+                            capabilities: _available.where(_kindOn).toList(),
+                          ),
                         ],
                       ),
                     ),
@@ -846,17 +839,6 @@ class _KeyFormState extends State<_KeyForm> {
                                       ),
                                     ),
                                   ],
-                                ),
-                                const SizedBox(height: AppSpacing.md),
-                                TextField(
-                                  controller: _allowed,
-                                  minLines: 2,
-                                  maxLines: 5,
-                                  decoration: InputDecoration(
-                                    labelText: t.allowedModels,
-                                    hintText: 'auto:fast\ngroq/*\nopenrouter/*:free',
-                                    suffixIcon: IconButton(tooltip: t.pickModels, onPressed: _pickAllowed, icon: const Icon(Icons.checklist_rounded, size: 18)),
-                                  ),
                                 ),
                               ],
                             ),
