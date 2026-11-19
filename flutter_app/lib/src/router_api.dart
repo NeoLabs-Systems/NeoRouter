@@ -59,7 +59,8 @@ class RouterApi {
   Future<Map<String, dynamic>> setBenchmarkConsent(bool enabled) =>
       client.putJson('$_base/benchmarks/settings', {'enabled': enabled});
   Future<void> deleteBenchmarkCollection() => client.delete('$_base/benchmarks/collection');
-  Future<Map<String, dynamic>> internalBenchmarkResults({int offset = 0}) => client.get('$_base/discovery/internal-benchmarks?groupBy=model&offset=$offset');
+  Future<Map<String, dynamic>> internalBenchmarkResults({int offset = 0, String task = ''}) =>
+      client.get(Uri(path: '$_base/discovery/internal-benchmarks', queryParameters: {'groupBy': 'model', 'offset': '$offset', 'task': task}).toString());
 
   // ---- providers ------------------------------------------------------------
   Future<List<ProviderDefinition>> definitions() async => _list(await client.get('$_base/providers/definitions'), 'definitions', ProviderDefinition.new);

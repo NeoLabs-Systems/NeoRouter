@@ -12,7 +12,14 @@ class BenchmarkMetric {
   final int peers;
 }
 
-class BenchmarkModel {
+abstract interface class RankedBenchmark {
+  String get id;
+  String get name;
+  double get score;
+  bool get isFree;
+}
+
+class BenchmarkModel implements RankedBenchmark {
   BenchmarkModel(Map data)
     : id = data['id'] as String,
       name = data['name'] as String,
@@ -25,13 +32,33 @@ class BenchmarkModel {
       scores = (data['scores'] as List)
           .map((row) => BenchmarkMetric(row as Map))
           .toList();
-  final String id, name, capability;
+  @override
+  final String id, name;
+  final String capability;
+  @override
   final double score;
   final int sourceCount;
+  @override
   final bool isFree;
   final double? price;
   final String? vendor;
   final List<BenchmarkMetric> scores;
+}
+
+class ReplayBenchmarkResult implements RankedBenchmark {
+  ReplayBenchmarkResult(this.data);
+
+  final Map data;
+  @override
+  String get id => data['model'] as String;
+  @override
+  String get name => data['name'] as String? ?? id;
+  @override
+  double get score => (data['score'] as num).toDouble() * 100;
+  @override
+  bool get isFree => false;
+  String get task => data['task'] as String;
+  int get samples => data['samples'] as int;
 }
 
 class BenchmarkSource {

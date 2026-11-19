@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'discovery/charts.dart';
+import 'discovery/models.dart';
 import 'discovery/widgets.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
@@ -193,31 +195,56 @@ class LocalBenchmarkResults extends StatefulWidget {
 }
 
 class _LocalBenchmarkResultsState extends State<LocalBenchmarkResults> {
+  final _auditKey = GlobalKey();
   Map<String, dynamic>? _data;
+  String _task = '';
+  String? _expanded;
   int _offset = 0;
   bool _busy = false;
+
   @override
   void initState() {
     super.initState();
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({String? task, int? offset}) async {
     if (_busy) return;
+    final requestedTask = task ?? _task;
+    var page = offset ?? _offset;
     try {
       setState(() => _busy = true);
-      var data = await widget.controller.api.internalBenchmarkResults(
-        offset: _offset,
+      final api = widget.controller.api;
+      var data = await api.internalBenchmarkResults(
+        task: requestedTask,
+        offset: page,
       );
-      if (_offset > 0 && (data['results'] as List? ?? []).isEmpty) {
-        _offset = 0;
-        data = await widget.controller.api.internalBenchmarkResults();
+      if (page > 0 && (data['results'] as List? ?? []).isEmpty) {
+        page = 0;
+        data = await api.internalBenchmarkResults(task: requestedTask);
       }
-      if (mounted) setState(() => _data = data);
+      if (mounted) {
+        setState(() {
+          _data = data;
+          _task = data['task'] as String? ?? requestedTask;
+          _offset = page;
+          if (task != null || offset != null) _expanded = null;
+        });
+      }
     } catch (_) {
-      /* External benchmark browsing remains available. */
+      // External benchmarks remain available if ReplayBench could not load.
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _toggle(ReplayBenchmarkResult model, {bool scroll = false}) {
+    setState(() => _expanded = _expanded == model.id ? null : model.id);
+    if (scroll && _expanded != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final audit = _auditKey.currentContext;
+        if (mounted && audit != null) Scrollable.ensureVisible(audit);
+      });
     }
   }
 
@@ -227,139 +254,152 @@ class _LocalBenchmarkResultsState extends State<LocalBenchmarkResults> {
     final palette = neoRouterPaletteOf(context);
     final data = _data;
     if (data == null) return const SizedBox.shrink();
-    final results = (data['results'] as List? ?? []).cast<Map>();
+    final results = (data['results'] as List? ?? [])
+        .cast<Map>()
+        .map(ReplayBenchmarkResult.new)
+        .toList();
     if (results.isEmpty && data['enabled'] != true) {
       return const SizedBox.shrink();
     }
-    final byModel = <String, List<Map>>{};
-    for (final row in results) {
-      (byModel['${row['model']}'] ??= []).add(row);
+    final tasks =
+        (data['tasks'] as List?)?.cast<String>() ??
+        results.map((model) => model.task).toSet().toList();
+    final task = tasks.contains(_task) ? _task : tasks.firstOrNull;
+    final models = results.where((model) => model.task == task).toList();
+    // Legacy servers return the whole model group in sample-count order.
+    if (data['tasks'] == null) {
+      models.sort((a, b) => b.score.compareTo(a.score));
     }
     final pageSize = data['limit'] as int? ?? 24;
-    final total = data['total'] as int? ?? byModel.length;
-    return SectionCard(
-      title: t.lbTitle,
-      trailing: IconButton(
-        tooltip: t.refresh,
-        onPressed: _busy ? null : _load,
-        icon: const Icon(Icons.refresh, size: 18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            t.lbResultsSubtitle,
-            style: Theme.of(context).textTheme.bodyLarge,
+    final total = data['total'] as int? ?? models.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionCard(
+          title: t.lbTitle,
+          trailing: IconButton(
+            tooltip: t.refresh,
+            onPressed: _busy ? null : () => _load(),
+            icon: const Icon(Icons.refresh, size: 18),
           ),
-          const SizedBox(height: 8),
-          Text(
-            t.lbPreferenceHint,
-            style: TextStyle(color: palette.textSoft, height: 1.4),
-          ),
-          if (results.isEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: Text(t.lbNoEvidence('${data['minSamples']}')),
-            ),
-          if (results.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            Text(
-              t.lbPreferenceScale,
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-            const SizedBox(height: 6),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [Text('0%'), Text('50%'), Text('100%')],
-            ),
-          ],
-          for (final rows in byModel.values) ...[
-            const Divider(height: 24),
-            Text(
-              '${rows.first['name'] ?? rows.first['model']}',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            for (final row in rows)
-              _PreferenceBar(
-                key: ValueKey((row['model'], row['task'])),
-                row: row,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                t.lbResultsSubtitle,
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
-          ],
-          if (total > pageSize)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  tooltip: t.discoveryPrevious,
-                  onPressed: _busy || _offset == 0
-                      ? null
-                      : () {
-                          _offset = (_offset - pageSize).clamp(0, _offset);
-                          _load();
-                        },
-                  icon: const Icon(Icons.chevron_left),
+              const SizedBox(height: 8),
+              Text(
+                t.lbPreferenceHint,
+                style: TextStyle(color: palette.textSoft, height: 1.4),
+              ),
+              if (_busy) const LinearProgressIndicator(minHeight: 2),
+              if (models.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(t.lbNoEvidence('${data['minSamples']}')),
+                )
+              else ...[
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 220,
+                      child: DropdownButtonFormField<String>(
+                        key: ValueKey(task),
+                        initialValue: task,
+                        isDense: true,
+                        isExpanded: true,
+                        items: [
+                          for (final item in tasks)
+                            DropdownMenuItem(
+                              value: item,
+                              child: Text(taskLabel(t, item)),
+                            ),
+                        ],
+                        onChanged: _busy
+                            ? null
+                            : (value) {
+                                if (value != null) {
+                                  _load(task: value, offset: 0);
+                                }
+                              },
+                      ),
+                    ),
+                    Text(
+                      t.discoveryPage('${_offset ~/ pageSize + 1}', '$total'),
+                      style: TextStyle(color: palette.textMuted, fontSize: 12),
+                    ),
+                  ],
                 ),
-                Text('${_offset ~/ pageSize + 1}'),
-                IconButton(
-                  tooltip: t.discoveryNext,
-                  onPressed: _busy || _offset + pageSize >= total
-                      ? null
-                      : () {
-                          _offset += pageSize;
-                          _load();
-                        },
-                  icon: const Icon(Icons.chevron_right),
+                const SizedBox(height: 16),
+                Text(
+                  t.lbPreferenceScale,
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+                const SizedBox(height: 8),
+                ScoreBarChart<ReplayBenchmarkResult>(
+                  models: models,
+                  selected: {?_expanded},
+                  onTap: (model) => _toggle(model, scroll: true),
                 ),
               ],
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PreferenceBar extends StatelessWidget {
-  const _PreferenceBar({super.key, required this.row});
-
-  final Map row;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppL10n.of(context);
-    final palette = neoRouterPaletteOf(context);
-    final score = (row['score'] as num).toDouble() * 100;
-    final scoreLabel = '${score.round()}';
-    final task = t.lbResultMeta(
-      taskLabel(t, row['task'] as String?),
-      '${row['samples']}',
-    );
-    return ExpansionTile(
-      tilePadding: EdgeInsets.zero,
-      childrenPadding: const EdgeInsets.only(top: 12, bottom: 8),
-      expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(task, style: TextStyle(color: palette.textSoft)),
+            ],
           ),
-          const SizedBox(width: 8),
-          Semantics(
-            label: t.lbPreference(scoreLabel),
-            excludeSemantics: true,
-            child: Text(
-              '$scoreLabel%',
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-          ),
-        ],
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: ExcludeSemantics(
-          child: BenchmarkScoreBar(score: score, selected: true),
         ),
-      ),
-      children: [_EvaluationAudit(row: row)],
+        if (models.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          SettingsCardList(
+            children: [
+              for (final (index, model) in models.indexed)
+                Column(
+                  key: ValueKey(model.id),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    BenchmarkRankRow(
+                      model: model,
+                      rank: _offset + index + 1,
+                      detail: t.lbEvaluatorComparisons('${model.samples}'),
+                      percentage: true,
+                      selected: _expanded == model.id,
+                      onTap: () => _toggle(model),
+                      trailing: IconButton(
+                        visualDensity: VisualDensity.compact,
+                        iconSize: 18,
+                        tooltip: t.lbEvaluationDetails,
+                        onPressed: () => _toggle(model),
+                        icon: Icon(
+                          _expanded == model.id
+                              ? Icons.expand_less
+                              : Icons.expand_more,
+                        ),
+                      ),
+                    ),
+                    if (_expanded == model.id)
+                      Padding(
+                        key: _auditKey,
+                        padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                        child: _EvaluationAudit(row: model.data),
+                      ),
+                  ],
+                ),
+            ],
+          ),
+        ],
+        if (total > pageSize)
+          BenchmarkPagination(
+            offset: _offset,
+            pageSize: pageSize,
+            total: total,
+            busy: _busy,
+            onPage: (offset) => _load(offset: offset),
+          ),
+      ],
     );
   }
 }

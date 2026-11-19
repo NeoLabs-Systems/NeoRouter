@@ -3,10 +3,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:neorouter/discovery/benchmarks_page.dart';
-import 'package:neorouter/discovery/widgets.dart';
+import 'package:neorouter/discovery/charts.dart';
+import 'package:neorouter/discovery/models.dart';
 import 'package:neorouter/l10n/gen/app_localizations.dart';
 import 'package:neorouter/main_controller.dart';
-import 'package:neorouter/main_shared.dart';
 import 'package:neorouter/main_theme.dart';
 import 'package:neorouter/src/backend_client.dart';
 
@@ -36,34 +36,37 @@ class DiscoveryClient extends BackendClient {
     final uri = Uri.parse(path);
     requests.add(uri);
     if (uri.path.endsWith('/internal-benchmarks')) {
+      final task = uri.queryParameters['task'] == 'math' ? 'math' : 'coding';
       return {
         'enabled': showLocalEvidence,
+        'task': task,
+        'tasks': ['coding', 'math'],
+        'total': showLocalEvidence ? 1 : 0,
         'results': showLocalEvidence
             ? [
-                for (final task in ['coding', 'math'])
-                  {
-                    'model': 'example-local-model',
-                    'name': 'Example Local Model',
-                    'task': task,
-                    'samples': 8,
-                    'confidence': 0.85,
-                    'score': task == 'coding' ? 0.75 : 0.25,
-                    'evaluatedAt': 1794954000000,
-                    'evaluators': [
-                      {
-                        'method': 'constraints',
-                        'version': 'neorouter-constraints/1',
-                        'samples': 2,
-                        'score': 1,
-                      },
-                      {
-                        'method': 'judge',
-                        'version': 'neorouter-blind-pairwise/1',
-                        'samples': 6,
-                        'score': 0.65,
-                      },
-                    ],
-                  },
+                {
+                  'model': 'example-local-model',
+                  'name': 'Example Local Model',
+                  'task': task,
+                  'samples': 8,
+                  'confidence': 0.85,
+                  'score': task == 'coding' ? 0.75 : 0.25,
+                  'evaluatedAt': 1794954000000,
+                  'evaluators': [
+                    {
+                      'method': 'constraints',
+                      'version': 'neorouter-constraints/1',
+                      'samples': 2,
+                      'score': 1,
+                    },
+                    {
+                      'method': 'judge',
+                      'version': 'neorouter-blind-pairwise/1',
+                      'samples': 6,
+                      'score': 0.65,
+                    },
+                  ],
+                },
               ]
             : [],
       };
@@ -143,7 +146,7 @@ void main() {
     },
   );
   testWidgets(
-    'local preference chart groups tasks and opens evaluation details',
+    'ReplayBench shares the ranked chart and opens audits for the selected task',
     (tester) async {
       final client = DiscoveryClient()..showLocalEvidence = true;
       final controller = NeoRouterController(client: client);
@@ -159,27 +162,20 @@ void main() {
         find.text('See how models compare on sanitized, opt-in traffic.'),
         findsOneWidget,
       );
-      expect(find.text('Example Local Model'), findsOneWidget);
-      expect(find.text('Coding · 8 comparisons'), findsOneWidget);
-      expect(find.text('Math · 8 comparisons'), findsOneWidget);
+      final chart = find.byType(ScoreBarChart<ReplayBenchmarkResult>);
       expect(
         tester
-            .widgetList<BenchmarkScoreBar>(
-              find.descendant(
-                of: find.ancestor(
-                  of: section,
-                  matching: find.byType(SectionCard),
-                ),
-                matching: find.byType(BenchmarkScoreBar),
-              ),
-            )
-            .map((bar) => bar.score),
-        [75, 25],
+            .widget<ScoreBarChart<ReplayBenchmarkResult>>(chart)
+            .models
+            .single
+            .score,
+        75,
       );
+      expect(find.text('75.0%'), findsOneWidget);
+      expect(find.text('8 comparisons'), findsOneWidget);
       expect(find.text('Scoring breakdown'), findsNothing);
       expect(find.textContaining('confidence 85%'), findsNothing);
-      expect(find.text('First model'), findsWidgets);
-      final details = find.text('Coding · 8 comparisons');
+      final details = find.byTooltip('Scoring breakdown');
       await tester.ensureVisible(details);
       await tester.pumpAndSettle();
       await tester.tap(details);
@@ -191,6 +187,23 @@ void main() {
         find.text('6 comparisons · neorouter-blind-pairwise/1'),
         findsOneWidget,
       );
+      final task = find.byKey(const ValueKey<String?>('coding'));
+      await tester.ensureVisible(task);
+      await tester.pumpAndSettle();
+      await tester.tap(task);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Math').last);
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<ScoreBarChart<ReplayBenchmarkResult>>(chart)
+            .models
+            .single
+            .score,
+        25,
+      );
+      expect(find.text('25.0%'), findsOneWidget);
+      expect(find.text('Scoring breakdown'), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );

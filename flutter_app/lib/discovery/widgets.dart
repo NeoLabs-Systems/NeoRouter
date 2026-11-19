@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../main_theme.dart';
+import '../l10n/gen/app_localizations.dart';
+import 'models.dart';
 
 String discoveryDate(BuildContext context, DateTime date) => DateFormat.yMMMd(
   Localizations.localeOf(context).toLanguageTag(),
@@ -59,6 +61,153 @@ class BenchmarkScoreBar extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class BenchmarkRankRow extends StatelessWidget {
+  const BenchmarkRankRow({
+    super.key,
+    required this.model,
+    required this.rank,
+    required this.trailing,
+    this.detail,
+    this.selected = false,
+    this.percentage = false,
+    this.onTap,
+  });
+
+  final RankedBenchmark model;
+  final int rank;
+  final Widget trailing;
+  final String? detail;
+  final bool selected, percentage;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    final palette = neoRouterPaletteOf(context);
+    final score = model.score.toStringAsFixed(1);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 28,
+              child: Text(
+                '$rank',
+                style: TextStyle(color: palette.textMuted, fontSize: 12),
+              ),
+            ),
+            Expanded(
+              flex: 3,
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          model.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: palette.text, fontSize: 13),
+                        ),
+                        if (detail != null)
+                          Text(
+                            detail!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.textMuted,
+                              fontSize: 11,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (model.isFree) ...[
+                    const SizedBox(width: 6),
+                    Tooltip(
+                      message: t.discoveryFree,
+                      child: Icon(Icons.circle, size: 7, color: palette.accent),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: Semantics(
+                label: percentage
+                    ? t.lbPreference(score)
+                    : '${t.discoveryScore}: $score / 100',
+                excludeSemantics: true,
+                child: BenchmarkScoreBar(
+                  score: model.score,
+                  selected: selected,
+                ),
+              ),
+            ),
+            SizedBox(
+              width: percentage ? 54 : 44,
+              child: Text(
+                percentage ? '$score%' : score,
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  color: selected ? palette.accent : palette.text,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            trailing,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class BenchmarkPagination extends StatelessWidget {
+  const BenchmarkPagination({
+    super.key,
+    required this.offset,
+    required this.pageSize,
+    required this.total,
+    required this.busy,
+    required this.onPage,
+  });
+  final int offset, pageSize, total;
+  final bool busy;
+  final ValueChanged<int> onPage;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppL10n.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          tooltip: t.discoveryPrevious,
+          onPressed: busy || offset == 0
+              ? null
+              : () => onPage((offset - pageSize).clamp(0, total)),
+          icon: const Icon(Icons.chevron_left),
+        ),
+        IconButton(
+          tooltip: t.discoveryNext,
+          onPressed: busy || offset + pageSize >= total
+              ? null
+              : () => onPage(offset + pageSize),
+          icon: const Icon(Icons.chevron_right),
+        ),
+      ],
     );
   }
 }

@@ -53,11 +53,15 @@ function aggregate(snapshot, identity = canonicalId) {
     });
     const sourceScores = [...bySource].map(([sourceId, values]) => ({ sourceId, score: mean(values) }));
     return { ...group, score: mean(sourceScores.map((source) => source.score)), sourceCount: sourceScores.length, metricCount: scores.length, sourceScores, scores };
-  }).sort((a, b) => b.score - a.score || b.sourceCount - a.sourceCount || a.name.localeCompare(b.name));
+  }).sort(compareRank);
   return {
     models,
     sources: SOURCES.map(({ id, name, url }) => ({ id, name, url, updatedAt: snapshot.fetchedAt?.[id] || null, modelCount: models.filter((model) => model.sourceScores.some((source) => source.sourceId === id)).length })),
   };
 }
 
-module.exports = { aggregate, percentiles };
+function compareRank(a, b) {
+  return b.score - a.score || b.sourceCount - a.sourceCount || a.name.localeCompare(b.name) || a.id.localeCompare(b.id);
+}
+
+module.exports = { aggregate, percentiles, compareRank };

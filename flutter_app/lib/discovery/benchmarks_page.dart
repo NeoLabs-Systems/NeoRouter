@@ -312,30 +312,15 @@ class _BenchmarksScreenState extends State<BenchmarksScreen> {
                 ),
         ),
         if (data != null && data.total > _pageSize)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                tooltip: t.discoveryPrevious,
-                onPressed: _busy || _offset == 0
-                    ? null
-                    : () {
-                        _offset = (_offset - _pageSize).clamp(0, data.total);
-                        _load();
-                      },
-                icon: const Icon(Icons.chevron_left),
-              ),
-              IconButton(
-                tooltip: t.discoveryNext,
-                onPressed: _busy || _offset + _pageSize >= data.total
-                    ? null
-                    : () {
-                        _offset += _pageSize;
-                        _load();
-                      },
-                icon: const Icon(Icons.chevron_right),
-              ),
-            ],
+          BenchmarkPagination(
+            offset: _offset,
+            pageSize: _pageSize,
+            total: data.total,
+            busy: _busy,
+            onPage: (offset) {
+              _offset = offset;
+              _load();
+            },
           ),
         if (data != null)
           Wrap(
@@ -389,80 +374,23 @@ class _BenchmarkRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    return InkWell(
+    return BenchmarkRankRow(
+      model: model,
+      rank: rank,
+      selected: selected,
       onTap: canSelect ? onSelect : null,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 28,
-              child: Text(
-                '$rank',
-                style: TextStyle(color: palette.textMuted, fontSize: 12),
-              ),
-            ),
-            Expanded(
-              flex: 3,
-              child: Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      model.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: palette.text, fontSize: 13),
-                    ),
-                  ),
-                  if (model.isFree) ...[
-                    const SizedBox(width: 6),
-                    Tooltip(
-                      message: t.discoveryFree,
-                      child: Icon(Icons.circle, size: 7, color: palette.accent),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 2,
-              child: Semantics(
-                label:
-                    '${t.discoveryScore}: ${model.score.toStringAsFixed(1)} / 100',
-                child: BenchmarkScoreBar(
-                  score: model.score,
-                  selected: selected,
-                ),
-              ),
-            ),
-            SizedBox(
-              width: 44,
-              child: Text(
-                model.score.toStringAsFixed(1),
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  color: selected ? palette.accent : palette.text,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-            IconButton(
-              visualDensity: VisualDensity.compact,
-              iconSize: 18,
-              tooltip: canSelect
-                  ? selected
-                        ? t.discoveryRemoveCompare(model.name)
-                        : t.discoverySelectCompare(model.name)
-                  : t.discoveryCompareLimit,
-              onPressed: canSelect ? onSelect : null,
-              icon: Icon(
-                selected ? Icons.check_circle : Icons.add_circle_outline,
-                color: selected ? palette.accent : palette.textMuted,
-              ),
-            ),
-          ],
+      trailing: IconButton(
+        visualDensity: VisualDensity.compact,
+        iconSize: 18,
+        tooltip: canSelect
+            ? selected
+                  ? t.discoveryRemoveCompare(model.name)
+                  : t.discoverySelectCompare(model.name)
+            : t.discoveryCompareLimit,
+        onPressed: canSelect ? onSelect : null,
+        icon: Icon(
+          selected ? Icons.check_circle : Icons.add_circle_outline,
+          color: selected ? palette.accent : palette.textMuted,
         ),
       ),
     );

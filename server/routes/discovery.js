@@ -4,6 +4,7 @@ const { z } = require('zod');
 const { requirePermission } = require('../middleware/space');
 const { HttpError } = require('../middleware/error_handler');
 const benchmarks = require('../services/discovery/benchmark_service');
+const { compareRank } = require('../services/discovery/benchmarks/aggregate');
 const news = require('../services/discovery/news_service');
 const benchmarkEvidence = require('../services/benchmarks/evidence');
 const benchmarkConsent = require('../services/benchmarks/consent');
@@ -17,6 +18,7 @@ const query = z.object({
   limit: z.coerce.number().int().min(1).max(POLICY.maxPageSize).default(POLICY.pageSize),
   asOf: z.coerce.number().int().min(0).max(Number.MAX_SAFE_INTEGER).optional(),
   compare: z.string().max(1000).default(''),
+  task: z.string().max(50).optional(),
 });
 router.use(requirePermission('providers.view'));
 function options(req) {
@@ -26,7 +28,7 @@ function options(req) {
 }
 router.get('/benchmarks', (req, res) => res.json(benchmarks.list(options(req))));
 router.get('/internal-benchmarks', (req, res) => {
-  const { limit, offset } = options(req);
+  const { limit, offset, task: requestedTask } = options(req);
   const rows = benchmarkEvidence.list();
   const enabled = benchmarkConsent.globalSettings().enabled;
   const minSamples = benchmarkPolicy.minSamples;
@@ -36,13 +38,29 @@ router.get('/internal-benchmarks', (req, res) => {
       if (!byModel.has(row.model)) byModel.set(row.model, []);
       byModel.get(row.model).push(row);
     }
-    const page = [...byModel.values()].slice(offset, offset + limit).flat();
     const listings = new Map();
-    if (page.length) {
+    if (rows.length) {
       for (const entry of catalog.listForUser(req.space.ownerId, { includeUnavailable: true })) {
         const previous = listings.get(entry.canonicalId);
         if (!previous || (previous.name === previous.modelId && entry.name !== entry.modelId)) listings.set(entry.canonicalId, entry);
       }
+    }
+    let page;
+    let total = byModel.size;
+    let ranking = {};
+    if (requestedTask !== undefined) {
+      const coverage = new Map();
+      for (const { task } of rows) coverage.set(task, (coverage.get(task) || 0) + 1);
+      const tasks = [...coverage.keys()].sort((a, b) => coverage.get(b) - coverage.get(a) || a.localeCompare(b));
+      const task = coverage.has(requestedTask) ? requestedTask : tasks[0] ?? null;
+      const ranked = rows.filter((row) => row.task === task).map((row) => ({
+        row, id: row.model, score: row.score, name: listings.get(row.model)?.name || row.model, sourceCount: row.evaluators.length,
+      })).sort(compareRank);
+      page = ranked.slice(offset, offset + limit).map(({ row }) => row);
+      total = ranked.length;
+      ranking = { task, tasks };
+    } else {
+      page = [...byModel.values()].slice(offset, offset + limit).flat();
     }
     const results = page.map((row) => ({ ...row, name: listings.get(row.model)?.name,
       evaluators: row.evaluators.map(({ model, method, version, samples, score }) => ({
@@ -51,7 +69,7 @@ router.get('/internal-benchmarks', (req, res) => {
         version, samples, score,
       })),
     }));
-    return res.json({ enabled, minSamples, total: byModel.size, limit, offset, results });
+    return res.json({ enabled, minSamples, total, limit, offset, ...ranking, results });
   }
   res.json({ enabled, minSamples,
     total: rows.length, limit, offset, results: rows.slice(offset, offset + limit) });

@@ -12,22 +12,22 @@ Duration _motion(BuildContext context) =>
 
 /// Ranked score bars with the value on top and the name below, like a
 /// leaderboard. Free models carry the accent; the rest stay neutral.
-class ScoreBarChart extends StatelessWidget {
+class ScoreBarChart<T extends RankedBenchmark> extends StatelessWidget {
   const ScoreBarChart({
     super.key,
     required this.models,
     required this.selected,
     required this.onTap,
   });
-  final List<BenchmarkModel> models;
+  final List<T> models;
   final Set<String> selected;
-  final ValueChanged<BenchmarkModel> onTap;
+  final ValueChanged<T> onTap;
 
   @override
   Widget build(BuildContext context) {
     final palette = neoRouterPaletteOf(context);
     final top = models.take(20).toList();
-    Color colorOf(BenchmarkModel model) => selected.contains(model.id)
+    Color colorOf(T model) => selected.contains(model.id)
         ? palette.accentStrong
         : model.isFree
         ? palette.accent

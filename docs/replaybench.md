@@ -26,8 +26,10 @@ Constraint-based verdicts carry full weight and judge verdicts carry a weight
 of 0.85. The preference rate is a weighted average with a 30-day half-life.
 
 Results use the task category recognized during routing, such as coding,
-translation, math or summarization. A model needs eight scored comparisons in
-a category to appear in the chart. The rate reflects the specific tasks and
-opponents it faced, and the chart shows the comparison count alongside it.
-Expand a task row to see the evaluation period and each evaluator's comparison
+translation, math or summarization. Select a category to rank models by
+preference rate. A model needs eight scored comparisons in that category to
+appear. The rate reflects the specific tasks and opponents it faced. The ranked
+list shows each model's comparison count alongside its score.
+
+Expand a model to see the evaluation period and each evaluator's comparison
 count, preference rate and rubric version.

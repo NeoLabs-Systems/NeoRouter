@@ -285,6 +285,16 @@ test('only sufficiently supported, fresh aggregates influence routing and owners
   assert.ok(!JSON.stringify(grouped.body).includes('unlisted-judge'));
   const second = await api(other, 'get', '/discovery/internal-benchmarks?groupBy=model&limit=1&offset=1');
   assert.deepEqual(second.body.results.map(({ model }) => model), ['exampleb', 'exampleb']);
+  assert.equal(evidence.add(sample, [candidates[1], { canonicalId: 'examplec' }],
+    { score: 0, confidence: 1, evaluator: 'objective', version: objective.VERSION }, now), true);
+  const ranked = await api(other, 'get', '/discovery/internal-benchmarks?groupBy=model&task=');
+  assert.deepEqual(ranked.body.tasks, ['coding', 'math']);
+  assert.equal(ranked.body.task, 'coding');
+  assert.deepEqual(ranked.body.results.map(({ model, samples }) => [model, samples]),
+    [['examplea', policy.minSamples], ['exampleb', policy.minSamples + 1]]);
+  const rankedSecond = await api(other, 'get', '/discovery/internal-benchmarks?groupBy=model&task=math&limit=1&offset=1');
+  assert.equal(rankedSecond.body.task, 'math');
+  assert.deepEqual(rankedSecond.body.results.map(({ model, task }) => [model, task]), [['exampleb', 'math']]);
   assert.ok(evidence.blend(0.5, 'examplea', 'coding', now) > 0.5);
   assert.ok(evidence.blend(0.5, 'exampleb', 'coding', now) < 0.5);
   assert.equal(evidence.blend(0.5, 'examplea', 'coding', now + policy.evidenceLifetimeMs), 0.5);
