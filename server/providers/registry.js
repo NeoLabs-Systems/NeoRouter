@@ -95,6 +95,12 @@ const definitionSchema = z.object({
     extraPaths: z.array(z.string()).default([]),
     excludeFree: z.boolean().optional(),
     optIn: z.array(z.string()).default([]),
+    // Documented per-model limits for listings that omit them (id → facts).
+    // The listing itself always wins; these beat models.dev for this provider.
+    facts: z.record(z.object({
+      contextWindow: z.number().int().positive().optional(),
+      maxOutput: z.number().int().positive().optional(),
+    })).optional(),
   }).default({}),
   // Models a provider serves but does not list (NVIDIA's FLUX endpoints).
   extraModels: z.array(z.object({ id: z.string(), name: z.string().optional(), type: z.string().optional() })).default([]),

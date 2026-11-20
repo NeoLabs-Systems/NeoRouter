@@ -42,7 +42,7 @@ async function syncAccount(accountId) {
     for (const model of listed) {
       if (!model.id || seen.has(model.id)) continue;
       seen.add(model.id);
-      const facts = metadata.providerFacts(runtime.definitionId, model.id) || {};
+      const facts = { ...(metadata.providerFacts(runtime.definitionId, model.id) || {}), ...(definition.models.facts?.[model.id] || {}) };
       const priceFromFacts = !model.priceKnown && Number.isFinite(facts.priceIn) && Number.isFinite(facts.priceOut) && facts.priceIn >= 0 && facts.priceOut >= 0;
       upsert.run({
         account_id: accountId,
@@ -137,7 +137,7 @@ function cachePrice(row, overrides, field) {
   return Number.isFinite(value) && value >= 0 ? value : null;
 }
 
-const OVERRIDE_KEYS = ['free', 'billedAt', 'noFreeTier', 'priceUnit', 'unitPrice', 'priceIn', 'priceOut', 'priceCachedIn', 'priceCacheWrite', 'contextWindow', 'tools', 'vision', 'intelligence'];
+const OVERRIDE_KEYS = ['free', 'billedAt', 'noFreeTier', 'priceUnit', 'unitPrice', 'priceIn', 'priceOut', 'priceCachedIn', 'priceCacheWrite', 'contextWindow', 'maxOutput', 'tools', 'vision', 'intelligence'];
 
 function updateModel(userId, modelRef, { enabled, overrides }) {
   const db = getDatabase();
@@ -206,7 +206,7 @@ function toEntry(row) {
     accountEnabled: Boolean(row.account_enabled),
     accountStatus: row.account_status,
     contextWindow: pick(overrides.contextWindow, row.context_window, row.md_context),
-    maxOutput: row.max_output,
+    maxOutput: pick(overrides.maxOutput, row.max_output, null),
     tools: bool(pick(overrides.tools, row.supports_tools, row.md_tools)),
     vision: bool(pick(overrides.vision, row.supports_vision, row.md_vision)),
     json: bool(row.supports_json),

@@ -60,6 +60,7 @@ router.patch('/:ref', requirePermission('models.manage'), validate(z.object({
     priceCacheWrite: z.number().min(0).nullable().optional(),
     priceOut: z.number().min(0).nullable().optional(),
     contextWindow: z.number().int().positive().nullable().optional(),
+    maxOutput: z.number().int().positive().nullable().optional(),
     tools: z.boolean().nullable().optional(),
     vision: z.boolean().nullable().optional(),
     intelligence: z.number().min(0).max(1).nullable().optional(),
