@@ -38,11 +38,19 @@ module.exports = {
 
 Optional fields: `auth` (`bearer`, `header` + `header`, `none`, `anonymousKey`),
 `keyOptional`, `fields` (extra account inputs templated into `baseUrl` as `{key}`),
-`headers`, `chatPath`, `models.path` / `models.static`, `validate` (`{ path }`,
+`headers`, `chatPath`, `models.path` / `models.static` / `models.facts`, `validate` (`{ path }`,
 `{ chatProbe: true }` or `false`), `quota.headerPeriods`, `quota.probe`
 (`{ path, parse(data) → [{ metric, limit, remaining }] }`) and `quirks`
 (`timeoutMs`, `userAgent`, `singleToolCall`, `noTools`, `maxTokensField`,
 `minMaxTokens`, `dropFields`, `stripSchemaKeys`, `streamUsage`).
+
+`models.facts` records documented per-model limits (`id → { contextWindow, maxOutput }`)
+for hosts whose listing omits them — Kourier, for example, lists only ids. A sync
+fills in what the listing leaves empty: values the listing itself reports always
+win, and the definition's facts beat models.dev for that provider. Name the source
+and check date in a comment, as with billing facts. Without either source the
+catalog falls back to canonical metadata, which can overstate what a specific
+host serves.
 
 ## Free classification (strict)
 
