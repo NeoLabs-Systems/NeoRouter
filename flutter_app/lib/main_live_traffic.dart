@@ -45,41 +45,38 @@ class LiveTrafficHero extends StatefulWidget {
 
 // How long each leg of a request's trip takes on screen, in ms.
 const double _inMs = 950, _thinkMs = 750, _outMs = 620, _bounceMs = 520, _rethinkMs = 420, _backMs = 600, _homeMs = 820;
-const int _historySize = 40;
-// On opening, requests from this far back play in their real rhythm, so the
-// view starts in the middle of what is happening rather than from nothing.
-const Duration _backfill = Duration(seconds: 15);
 
 class _Attempt {
-  const _Attempt(this.provider, this.ok);
-  final int provider;
-  final bool ok;
+  _Attempt(this.provider);
+  int provider;
+  bool failed = false;
 }
 
+/// One live request, moved along by the router's events: it flies in, waits
+/// at the router until a provider attempt starts, waits inside that provider
+/// until it answers or fails, and flies home once the request is done.
 class _Packet {
-  _Packet({required this.app, required this.attempts, required this.label, required this.success, required this.latency, required this.live, this.queued = 0});
+  _Packet({required this.id, required this.app, required this.label});
 
+  final String id;
   int app;
-  final List<_Attempt> attempts;
   final String label;
-  final bool success;
-  final int latency;
-  final bool live;
-
-  /// How long it waited for a free model, in ms (0: none).
-  final int queued;
+  final List<_Attempt> attempts = <_Attempt>[];
+  bool finished = false;
+  bool success = false;
 
   String phase = 'in';
   double t0 = 0;
   double dur = _inMs;
   int attempt = 0;
 
-  int get provider => attempts.isEmpty ? -1 : attempts[attempt].provider;
+  bool get hasAttempt => attempt < attempts.length;
+  int get provider => hasAttempt ? attempts[attempt].provider : -1;
 }
 
 class _Chip {
-  _Chip(this.text, this.t0, this.dx, {this.waiting = false});
-  final bool waiting;
+  _Chip(this.text, this.t0, this.dx);
+  final bool waiting = false;
   final String text;
   final double t0;
   final double dx;
@@ -99,9 +96,6 @@ class _Scene extends ChangeNotifier {
   List<int> provBusy = <int>[];
   final math.Random random = math.Random();
 
-  /// Requests waiting on each provider card right now (live, from the
-  /// server): drawn as dots inside that card until they finish.
-  List<int> waitingOn = <int>[];
 
   void resize(int apps, int providers) {
     if (appGlow.length != apps) {
@@ -135,16 +129,19 @@ class _Scene extends ChangeNotifier {
     provBusy = moved(provBusy, provMap, providers, 0);
     for (final p in packets) {
       p.app = math.max(0, to(appMap, p.app));
-      for (var k = 0; k < p.attempts.length; k++) {
-        p.attempts[k] = _Attempt(to(provMap, p.attempts[k].provider), p.attempts[k].ok);
+      for (final attempt in p.attempts) {
+        attempt.provider = to(provMap, attempt.provider);
       }
     }
     // A request whose card is gone has nowhere to fly.
-    packets.removeWhere((p) => p.attempts.any((a) => a.provider < 0) && p.phase != 'home' && p.phase != 'fail');
+    // A request at a card that is gone heads back to the router.
+    for (final p in packets) {
+      if ((p.phase == 'out' || p.phase == 'work') && p.provider < 0) _go(p, 'think', _thinkMs);
+    }
   }
 
   int get thinking => packets.where((p) => p.phase == 'think' || p.phase == 'rethink').length;
-  int get waiting => packets.where((p) => p.phase == 'queue').length;
+  int get waiting => packets.where((p) => p.phase == 'work').length;
 
   /// The chip shown when a request starts waiting (localized by the view).
   String waitingLabel = 'waiting';
@@ -186,53 +183,61 @@ class _Scene extends ChangeNotifier {
     p.dur = dur;
   }
 
+  // Waiting phases ('think' at the router, 'work' at a provider) repeat
+  // until the event they wait for has arrived.
   void _next(_Packet p) {
+    void leaveProvider() {
+      if (p.provider >= 0 && p.provider < provBusy.length) provBusy[p.provider] = math.max(0, provBusy[p.provider] - 1);
+    }
+
     switch (p.phase) {
       case 'in':
-        // Every model was busy: it waits its turn on an outer lap first.
-        if (p.queued > 300) {
-          _go(p, 'queue', (p.queued / 6).clamp(1200, 4500).toDouble());
-          chips.add(_Chip(waitingLabel, t, (random.nextDouble() - 0.5) * 90, waiting: true));
-          return;
-        }
-        _go(p, 'think', _thinkMs);
-        pulses.add(t);
-        // One label at a time, so busy moments stay readable.
-        if (chips.isEmpty || t - chips.last.t0 > 450) chips.add(_Chip(p.label, t, (random.nextDouble() - 0.5) * 90));
-      case 'queue':
         _go(p, 'think', _thinkMs);
         pulses.add(t);
         if (chips.isEmpty || t - chips.last.t0 > 450) chips.add(_Chip(p.label, t, (random.nextDouble() - 0.5) * 90));
       case 'think':
       case 'rethink':
-        if (p.provider < 0) {
-          // Nothing could take it: straight back as a failure.
-          _go(p, 'fail', _homeMs);
-          return;
+        if (p.hasAttempt && p.provider >= 0) {
+          _go(p, 'out', _outMs);
+          if (p.provider < provGlow.length) provGlow[p.provider] = 1;
+        } else if (p.hasAttempt) {
+          // Its card is not on screen: skip that attempt.
+          p.attempt += 1;
+          _go(p, 'think', _thinkMs);
+        } else if (p.finished) {
+          _go(p, p.success ? 'home' : 'fail', _homeMs);
+        } else {
+          _go(p, 'think', _thinkMs);
         }
-        _go(p, 'out', _outMs);
-        if (p.provider < provGlow.length) provGlow[p.provider] = 1;
       case 'out':
-        final attempt = p.attempts[p.attempt];
-        if (!attempt.ok) {
-          if (attempt.provider < provFail.length) provFail[attempt.provider] = t;
+        if (p.attempts[p.attempt].failed) {
+          if (p.provider < provFail.length) provFail[p.provider] = t;
           _go(p, 'bounce', _bounceMs);
           return;
         }
-        _go(p, 'work', (p.latency / 4).clamp(240, 1500).toDouble());
         if (p.provider < provBusy.length) provBusy[p.provider] += 1;
-      case 'bounce':
-        if (p.attempt + 1 < p.attempts.length) {
-          p.attempt += 1;
-          _go(p, 'rethink', _rethinkMs);
-          pulses.add(t);
-        } else {
-          _go(p, 'fail', _homeMs);
-        }
+        _go(p, 'work', 600);
       case 'work':
-        if (p.provider < provBusy.length) provBusy[p.provider] = math.max(0, provBusy[p.provider] - 1);
-        _go(p, 'back', _backMs);
-        if (p.provider < provGlow.length) provGlow[p.provider] = 1;
+        final current = p.attempts[p.attempt];
+        if (current.failed || (p.finished && !p.success)) {
+          leaveProvider();
+          if (p.provider < provFail.length) provFail[p.provider] = t;
+          _go(p, 'bounce', _bounceMs);
+        } else if (p.finished) {
+          leaveProvider();
+          if (p.provider < provGlow.length) provGlow[p.provider] = 1;
+          _go(p, 'back', _backMs);
+        } else {
+          _go(p, 'work', 600);
+        }
+      case 'bounce':
+        p.attempt += 1;
+        if (p.finished && !p.hasAttempt) {
+          _go(p, p.success ? 'home' : 'fail', _homeMs);
+        } else {
+          _go(p, p.hasAttempt ? 'rethink' : 'think', p.hasAttempt ? _rethinkMs : _thinkMs);
+          pulses.add(t);
+        }
       case 'back':
         _go(p, 'home', _homeMs);
         if (p.app < appGlow.length) appGlow[p.app] = 1;
@@ -351,250 +356,199 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   @override
   bool get wantKeepAlive => true;
 
-  bool _loaded = false;
-
-  // Requests and the connections and keys they go between have all arrived.
-  bool get _ready => _loaded && widget.ready;
+  // The first snapshot (cards and what is in flight) has arrived.
+  bool _ready = false;
+  bool _disposed = false;
 
   final _Scene _scene = _Scene();
   late final Ticker _ticker;
   Duration _last = Duration.zero;
-  Timer? _poll;
-  final Set<String> _seen = <String>{};
+  Timer? _footerPoll;
+  int _seq = 0;
+  // Recent finished requests, only for the footer's numbers.
   final List<RequestLog> _history = <RequestLog>[];
-  final List<RequestLog> _queue = <RequestLog>[];
-  double _sinceSpawn = 0;
   double _lastLive = -1e9;
-  bool _warmed = false;
 
   List<String> _apps = <String>[];
   List<String> _providers = <String>[];
-  // Provider keys of the cards ("*": the rest), and which provider each account slug belongs to.
+  // Provider keys of the cards ("*": the rest, "#pool": pool partners).
   List<String> _providerSlugs = <String>[];
-  // Where the pool sits among the providers, when this person is in a pool.
   int? _poolIndex;
+  // Which card each connection (account slug) belongs to.
   Map<String, String> _slugToProvider = <String, String>{};
   final Map<String, int> _appRequests = <String, int>{};
   // The model each provider card answered with last, by card key.
   final Map<String, String> _lastModel = <String, String>{};
+  final Map<String, _Packet> _byId = <String, _Packet>{};
+
+  static const String _poolSlug = '#pool';
+  String get _otherLabel => AppL10n.of(context).liveOther;
 
   @override
   void initState() {
     super.initState();
     _ticker = createTicker(_tick)..start();
-    RouterLoad.instance
-      ..watch(widget.controller)
-      ..addListener(_onLoad);
-    _onLoad();
-    _fetch();
-    _poll = Timer.periodic(const Duration(seconds: 4), (_) => _fetch());
-  }
-
-  // The home screen loads connections and keys after this view starts.
-  @override
-  void didUpdateWidget(LiveTrafficHero oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.accounts != widget.accounts || oldWidget.keys != widget.keys || oldWidget.ready != widget.ready) {
-      _arrange();
-      if (_history.isNotEmpty && !_warmed && widget.ready) _warmUp();
-    }
+    _listen();
+    _fetchFooter();
+    _footerPoll = Timer.periodic(const Duration(seconds: 30), (_) => _fetchFooter());
   }
 
   @override
   void dispose() {
-    RouterLoad.instance
-      ..removeListener(_onLoad)
-      ..unwatch();
-    _poll?.cancel();
+    _disposed = true;
+    _footerPoll?.cancel();
     _ticker.dispose();
     _scene.dispose();
     super.dispose();
   }
 
-  // Live in-flight per account, added up per provider card.
-  void _onLoad() {
-    final idToSlug = <String, String>{for (final account in widget.accounts) account.id: account.slug};
-    final counts = List<int>.filled(_providerSlugs.length, 0);
-    for (final entry in RouterLoad.instance.accounts.entries) {
-      final slug = idToSlug[entry.key];
-      final index = slug == null ? (_poolIndex ?? -1) : _providerIndex(slug);
-      if (index >= 0 && index < counts.length) counts[index] += entry.value;
-    }
-    _scene.waitingOn = counts;
-  }
-
-  Future<void> _fetch() async {
-    try {
-      final logs = await widget.controller.api.logs(limit: _historySize);
-      if (!mounted) return;
-      _loaded = true;
-      final fresh = logs.where((log) => !_seen.contains(log.id)).toList();
-      _seen.addAll(fresh.map((log) => log.id));
-      final first = _history.isEmpty;
-      _history
-        ..insertAll(0, fresh)
-        ..length = math.min(_history.length, _historySize);
-      // The first load is history (only its last seconds play); later arrivals play live.
-      if (!first) _queue.addAll(fresh.reversed.take(30));
-      // New keys or connections need new cards: the stage only gets them on a rebuild.
-      setState(_arrange);
-      _onLoad();
-      if (first && !_warmed && widget.ready) _warmUp();
-    } catch (_) {
-      // The next poll tries again.
-    }
-  }
-
-  // Which apps (keys) and connections get a place: the busiest first.
-  void _arrange() {
-    final keyCounts = <String, int>{};
-    final slugCounts = <String, int>{};
-    for (final log in _history) {
-      final key = log.keyName ?? '';
-      if (key.isNotEmpty) keyCounts[key] = (keyCounts[key] ?? 0) + 1;
-      for (final slug in _slugsOf(log)) {
-        slugCounts[slug] = (slugCounts[slug] ?? 0) + 1;
+  // Snapshot first, then every event as it happens (long polling).
+  Future<void> _listen() async {
+    while (!_disposed) {
+      try {
+        final data = await widget.controller.api.routingLive(since: _seq, waitMs: _seq == 0 ? 0 : 20000);
+        if (_disposed || !mounted) return;
+        if (data['snapshot'] == true) {
+          _applySnapshot(data);
+        } else {
+          for (final event in (data['events'] as List).cast<Map>()) {
+            _apply(event);
+          }
+        }
+        _seq = (data['seq'] as num).toInt();
+      } catch (_) {
+        if (_disposed) return;
+        await Future<void>.delayed(const Duration(seconds: 3));
       }
     }
-    final oldApps = _apps;
-    final oldProviderSlugs = _providerSlugs;
-    final keyNames = <String>{...(keyCounts.keys.toList()..sort((a, b) => keyCounts[b]!.compareTo(keyCounts[a]!))), ...widget.keys.map((key) => key.name)}.toList();
+  }
+
+  Future<void> _fetchFooter() async {
+    try {
+      final logs = await widget.controller.api.logs(limit: 40);
+      if (!mounted) return;
+      setState(() => _history
+        ..clear()
+        ..addAll(logs));
+    } catch (_) {}
+  }
+
+  void _applySnapshot(Map data) {
+    final cards = (data['cards'] as Map?) ?? const <String, Object?>{};
+    final keys = ((cards['keys'] as List?) ?? const <Object>[]).cast<Map>();
+    final providers = ((cards['providers'] as List?) ?? const <Object>[]).cast<Map>();
+    final inFlight = ((data['inFlight'] as List?) ?? const <Object>[]).cast<Map>();
     final wide = MediaQuery.maybeSizeOf(context)?.width ?? 1200;
     final maxApps = wide < 640 ? 4 : 6;
-    _apps = _keepOrder(oldApps, keyNames.length > maxApps ? <String>[...keyNames.take(maxApps - 1), _otherLabel] : keyNames);
-    // One card per provider, however many of its accounts are connected.
-    _slugToProvider = <String, String>{for (final account in widget.accounts) account.slug: account.providerKey};
-    final providerCounts = <String, int>{};
-    final providerNames = <String, String>{};
-    for (final account in widget.accounts.where((account) => account.enabled)) {
-      providerNames.putIfAbsent(account.providerKey, () => account.providerName);
-      providerCounts[account.providerKey] = (providerCounts[account.providerKey] ?? 0) + (slugCounts[account.slug] ?? 0);
+    final keyNames = keys.map((key) => '${key['name']}').toList();
+    final oldApps = _apps, oldSlugs = _providerSlugs;
+    final apps = keyNames.length > maxApps ? <String>[...keyNames.take(maxApps - 1), _otherLabel] : keyNames;
+    final hasPoolTraffic = inFlight.any((item) => item['key'] == _poolSlug);
+    _apps = <String>[if (apps.isEmpty && !hasPoolTraffic) AppL10n.of(context).liveYourApp, ...apps, if (hasPoolTraffic || (widget.controller.pools?.inPool ?? false)) AppL10n.of(context).filterPool];
+    _appRequests.clear();
+    for (final key in keys) {
+      _appRequests[_appFor('${key['name']}')] = (_appRequests[_appFor('${key['name']}')] ?? 0) + ((key['requests'] as num?)?.toInt() ?? 0);
     }
-    final keys = providerNames.keys.toList()..sort((a, b) => providerCounts[b]!.compareTo(providerCounts[a]!));
     const maxProviders = 8;
-    final shown = keys.length > maxProviders ? keys.take(maxProviders - 1).toList() : keys;
-    // "Other" and the pool card always come last.
-    final slugs = _keepOrder(oldProviderSlugs.where((slug) => slug != '*' && slug != _poolSlug).toList(), shown);
-    if (keys.length > maxProviders) slugs.add('*');
+    final shown = providers.length > maxProviders ? providers.take(maxProviders - 1).toList() : providers;
+    _slugToProvider = <String, String>{
+      for (final card in providers)
+        for (final slug in (card['slugs'] as List).cast<String>()) slug: shown.contains(card) ? '${card['key']}' : '*',
+    };
     final inPool = widget.controller.pools?.inPool ?? false;
-    if (inPool) slugs.add(_poolSlug);
-    _providerSlugs = slugs;
+    _providerSlugs = <String>[for (final card in shown) '${card['key']}', if (providers.length > maxProviders) '*', if (inPool) _poolSlug];
     _providers = <String>[
-      for (final slug in slugs)
-        slug == '*'
-            ? _otherLabel
-            : slug == _poolSlug
-            ? AppL10n.of(context).filterPool
-            : providerNames[slug]!,
+      for (final card in shown) '${card['name']}',
+      if (providers.length > maxProviders) _otherLabel,
+      if (inPool) AppL10n.of(context).filterPool,
     ];
-    // Pool partners share one card, set a little apart from the providers.
-    _poolIndex = inPool ? slugs.length - 1 : null;
-    final apps = math.max(1, _apps.length), providers = math.max(1, _providers.length);
-    if (!listEquals(oldApps, _apps) || !listEquals(oldProviderSlugs, _providerSlugs)) {
-      // Cards that moved take what is in flight to them along.
-      _scene.remap(
-        <int>[for (final name in oldApps) _apps.indexOf(name)],
-        <int>[for (final slug in oldProviderSlugs) _providerSlugs.indexOf(slug)],
-        apps,
-        providers,
-      );
+    if (_providers.isEmpty) _providers = <String>[AppL10n.of(context).liveAddProvider];
+    _poolIndex = inPool ? _providerSlugs.length - 1 : null;
+    if (!listEquals(oldApps, _apps) || !listEquals(oldSlugs, _providerSlugs)) {
+      _scene.remap(<int>[for (final name in oldApps) _apps.indexOf(name)], <int>[for (final slug in oldSlugs) _providerSlugs.indexOf(slug)], math.max(1, _apps.length), math.max(1, _providers.length));
     }
-    _scene.resize(apps, providers);
+    _scene.resize(math.max(1, _apps.length), math.max(1, _providers.length));
+    // Requests already under way start where they are: at the router, or
+    // waiting inside the provider they went to.
+    _scene.packets.clear();
+    _byId.clear();
+    for (final item in inFlight) {
+      final packet = _newPacket('${item['id']}', '${item['key']}', '${item['task'] ?? 'chat'}');
+      for (final attempt in ((item['attempts'] as List?) ?? const <Object>[]).cast<Map>()) {
+        packet.attempts.add(_Attempt(_providerIndex('${attempt['slug']}'))..failed = attempt['state'] == 'failed');
+      }
+      while (packet.hasAttempt && packet.attempts[packet.attempt].failed) {
+        packet.attempt += 1;
+      }
+      _scene.add(packet);
+      if (packet.hasAttempt && packet.provider >= 0) {
+        packet
+          ..phase = 'work'
+          ..dur = 600
+          ..t0 = _scene.t - _scene.random.nextDouble() * 600;
+        if (packet.provider < _scene.provBusy.length) _scene.provBusy[packet.provider] += 1;
+      } else {
+        packet
+          ..phase = 'think'
+          ..dur = _thinkMs
+          ..t0 = _scene.t - _scene.random.nextDouble() * _thinkMs;
+      }
+    }
+    setState(() => _ready = true);
   }
 
-  // The wanted cards, but those already shown keep their place, so a card
-  // does not jump (and lose its label) just because traffic shifted a little.
-  static List<String> _keepOrder(List<String> current, List<String> wanted) {
-    final wantedSet = wanted.toSet();
-    final kept = current.where(wantedSet.contains).toList();
-    return <String>[...kept, ...wanted.where((name) => !kept.contains(name))];
+  void _apply(Map event) {
+    final id = '${event['id']}';
+    switch (event['type']) {
+      case 'start':
+        final packet = _newPacket(id, '${event['key']}', '${event['task'] ?? 'chat'}');
+        _appRequests[_apps[packet.app]] = (_appRequests[_apps[packet.app]] ?? 0) + 1;
+        _scene.add(packet);
+        _lastLive = _scene.t;
+      case 'attempt':
+        _byId[id]?.attempts.add(_Attempt(_providerIndex('${event['slug']}')));
+      case 'fail':
+        final packet = _byId[id];
+        final index = _providerIndex('${event['slug']}');
+        for (final attempt in packet?.attempts ?? const <_Attempt>[]) {
+          if (attempt.provider == index && !attempt.failed) {
+            attempt.failed = true;
+            break;
+          }
+        }
+      case 'done':
+        final packet = _byId.remove(id);
+        if (packet == null) return;
+        packet
+          ..finished = true
+          ..success = event['success'] == true;
+        final model = '${event['model'] ?? ''}';
+        if (packet.success && model.contains('/')) {
+          final card = _providerIndex(model.split('/').first);
+          if (card >= 0 && card < _providerSlugs.length) _lastModel[_providerSlugs[card]] = model.substring(model.indexOf('/') + 1);
+        }
+        _lastLive = _scene.t;
+    }
   }
 
-  String get _otherLabel => AppL10n.of(context).liveOther;
-  static const String _poolSlug = '#pool';
+  _Packet _newPacket(String id, String key, String task) {
+    final packet = _Packet(id: id, app: math.max(0, _apps.indexOf(_appFor(key))), label: task.replaceAll('_', ' '));
+    _byId[id] = packet;
+    return packet;
+  }
 
-  Iterable<String> _slugsOf(RequestLog log) sync* {
-    for (final step in log.trail) {
-      final model = '${step['model'] ?? ''}';
-      if (model.contains('/')) yield model.split('/').first;
-    }
-    if (log.trail.isEmpty && (log.model ?? '').contains('/')) yield log.model!.split('/').first;
+  String _appFor(String key) {
+    if (key == _poolSlug) return AppL10n.of(context).filterPool;
+    if (_apps.contains(key)) return key;
+    if (_apps.contains(_otherLabel)) return _otherLabel;
+    return _apps.isEmpty ? '' : _apps.first;
   }
 
   int _providerIndex(String slug) {
     // Partner connections are named pool-<partner>; they all go to the pool card.
     if (slug.startsWith('pool-') && _poolIndex != null) return _poolIndex!;
     final index = _providerSlugs.indexOf(_slugToProvider[slug] ?? slug);
-    if (index >= 0) return index;
-    return _providerSlugs.indexOf('*');
-  }
-
-  _Packet? _packetFor(RequestLog log, {required bool live}) {
-    var app = _apps.indexOf(log.keyName ?? '');
-    if (app < 0) app = _apps.indexOf(_otherLabel);
-    if (app < 0) app = 0;
-    final attempts = <_Attempt>[];
-    for (final step in log.trail) {
-      final outcome = '${step['outcome'] ?? ''}';
-      if (outcome == 'hedge_lost') continue;
-      final model = '${step['model'] ?? ''}';
-      final provider = model.contains('/') ? _providerIndex(model.split('/').first) : -1;
-      if (provider < 0) continue;
-      attempts.add(_Attempt(provider, outcome == 'success'));
-      if (outcome == 'success') _lastModel[_providerSlugs[provider]] = model.substring(model.indexOf('/') + 1);
-    }
-    if (attempts.isEmpty && log.success && (log.model ?? '').contains('/')) {
-      final provider = _providerIndex(log.model!.split('/').first);
-      if (provider >= 0) attempts.add(_Attempt(provider, true));
-    }
-    // A failed request ends on its last failed attempt; a successful one on a success.
-    if (log.success && attempts.isNotEmpty && !attempts.last.ok) attempts.add(_Attempt(attempts.last.provider, true));
-    final task = log.task ?? log.capability;
-    return _Packet(app: app, attempts: attempts, label: task.isEmpty ? 'chat' : task.replaceAll('_', ' '), success: log.success, latency: log.latencyMs ?? 900, live: live, queued: log.queuedMs);
-  }
-
-  void _spawn(RequestLog log, {required bool live, bool count = true}) {
-    final packet = _packetFor(log, live: live);
-    if (packet == null) return;
-    final key = _apps.isEmpty ? '' : _apps[packet.app];
-    if (count) _appRequests[key] = (_appRequests[key] ?? 0) + 1;
-    _scene.add(packet);
-    if (live) _lastLive = _scene.t;
-  }
-
-  // Starts mid-traffic, so the very first frame already has requests moving.
-  // What arrived in the last seconds plays as live, each request where it
-  // would be by now; with nothing that recent, the view starts quiet.
-  void _warmUp() {
-    _warmed = true;
-    // Request counts on the key cards cover the whole loaded history.
-    for (final log in _history) {
-      final key = _apps.contains(log.keyName ?? '') ? log.keyName! : (_apps.contains(_otherLabel) ? _otherLabel : (_apps.isEmpty ? '' : _apps.first));
-      _appRequests[key] = (_appRequests[key] ?? 0) + 1;
-    }
-    // The latest requests, played at their real spacing but squeezed into the
-    // backfill window, so the view opens mid-traffic as if it had been running.
-    final recent = _history.take(12).toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
-    if (recent.isEmpty) return;
-    final window = _backfill.inMilliseconds.toDouble();
-    final span = recent.last.createdAt.difference(recent.first.createdAt).inMilliseconds.toDouble();
-    final squeeze = span > window * 0.8 ? window * 0.8 / span : 1.0;
-    final first = recent.first.createdAt;
-    const frame = 16.0;
-    var clock = 0.0;
-    for (final log in recent) {
-      final at = window * 0.2 + log.createdAt.difference(first).inMilliseconds * squeeze;
-      while (clock < at) {
-        _scene.advance(frame);
-        clock += frame;
-      }
-      _spawn(log, live: true, count: false);
-    }
-    while (clock < window) {
-      _scene.advance(frame);
-      clock += frame;
-    }
-    _sinceSpawn = 0;
+    return index >= 0 ? index : _providerSlugs.indexOf('*');
   }
 
   double get _speed => MediaQuery.maybeDisableAnimationsOf(context) == true ? 0.5 : 1;
@@ -602,21 +556,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   void _tick(Duration elapsed) {
     final dt = math.min(100.0, (elapsed - _last).inMicroseconds / 1000);
     _last = elapsed;
-    _step(dt * _speed);
-  }
-
-  void _step(double dt) {
-    // Without the connections, a request would not know which card it goes to.
-    if (!widget.ready) {
-      _scene.advance(dt);
-      return;
-    }
-    _sinceSpawn += dt;
-    if (_queue.isNotEmpty && _sinceSpawn > 260) {
-      _sinceSpawn = 0;
-      _spawn(_queue.removeAt(0), live: true);
-    }
-    _scene.advance(dt);
+    _scene.advance(dt * _speed);
   }
 
   @override
@@ -859,13 +799,10 @@ class _Stage extends StatelessWidget {
           final s = scene;
           final thinking = s.thinking;
           final routing = s.packets.any((p) => p.phase == 'out' || p.phase == 'work');
-          final waiting = s.waiting;
           final coreLabel = !loaded
               ? t.liveLoadingTraffic
               : empty
               ? t.liveWaiting
-              : waiting > 0 && thinking == 0
-              ? t.liveQueued('$waiting')
               : thinking > 0
               ? t.liveScoring('$thinking')
               : routing
@@ -920,7 +857,7 @@ class _Stage extends StatelessWidget {
                     children: <Widget>[
                       RouterMascot(controller: controller, size: layout.radius * 0.95, tooltip: false),
                       const SizedBox(height: 4),
-                      ListenableBuilder(listenable: RouterLoad.instance, builder: (context, _) => Text(t.liveInFlight('${RouterLoad.instance.inFlight}'), style: GoogleFonts.geistMono(fontSize: 10, color: palette.textMuted))),
+                      Text(t.liveInFlight('${s.packets.where((p) => !p.finished).length}'), style: GoogleFonts.geistMono(fontSize: 10, color: palette.textMuted)),
                     ],
                   ),
                 ),
@@ -955,8 +892,8 @@ class _Stage extends StatelessWidget {
                 ),
               ),
               // Requests waiting on a provider sit inside its card as dots.
-              for (var j = 0; j < layout.provPos.length && j < providerNames.length && j < s.waitingOn.length; j++)
-                if (s.waitingOn[j] > 0 && providers.isNotEmpty) _waiting(palette, layout.provPos[j], layout.provW, s.waitingOn[j], s.t),
+              for (var j = 0; j < layout.provPos.length && j < providerNames.length && j < s.provBusy.length; j++)
+                if (s.provBusy[j] > 0 && providers.isNotEmpty) _waiting(palette, layout.provPos[j], layout.provW, s.provBusy[j], s.t),
               for (final chip in s.chips)
                 if (s.t >= chip.t0) _chip(palette, chip, s.t),
             ],
@@ -1287,7 +1224,8 @@ class _TrafficPainter extends CustomPainter {
         // A slow, wider lap, ending where scoring starts.
         return layout.core + (layout.onOrbit(layout.inAngle + u.clamp(0.0, 1.0) * 2 * math.pi) - layout.core) * 1.35;
       case 'think':
-        return layout.onOrbit(layout.inAngle + u.clamp(0.0, 1.0) * 3 * math.pi);
+        // Full laps, so a request still waiting circles on without a jump.
+        return layout.onOrbit(layout.inAngle + u.clamp(0.0, 1.0) * 2 * math.pi);
       case 'rethink':
         return layout.onOrbit(layout.outAngle + u.clamp(0.0, 1.0) * 2 * math.pi);
       case 'out':
@@ -1313,7 +1251,7 @@ class _TrafficPainter extends CustomPainter {
         ? palette.text
         : palette.accent;
     final orbit = p.phase == 'think' || p.phase == 'rethink';
-    final head = p.live ? 8.5 : 7.0;
+    const head = 8.5;
     for (var k = 3; k >= 0; k--) {
       final pos = _place(p, u - k * (orbit ? 0.05 : 0.045));
       if (pos == null) continue;

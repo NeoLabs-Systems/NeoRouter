@@ -23,6 +23,7 @@ const billing = require('../../services/providers/billing_check');
 const requestProcessing = require('../../services/processing/processing_service');
 const { restoreResponse, StreamRestorer } = require('../../services/processing/redaction');
 const requestBudget = require('../../services/routing/request_budget');
+const liveEvents = require('../../services/routing/live_events');
 const keyConcurrency = require('../../services/router_keys/key_concurrency');
 const routerKeys = require('../../services/router_keys/router_key_service');
 const sharePolicy = require('../../services/pools/share_policy');
@@ -294,6 +295,8 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
     sessionId,
     routingGroup: peer ? null : req.get?.('x-neorouter-group') || null,
   });
+  // The home screen's live view: this request has started (partners' requests come from the pool).
+  liveEvents.started(key.user_id, { id: requestId, key: peer ? '#pool' : key.name, task: plan.task?.primary || 'chat' });
   // The same conversation again right after an answer: that answer was no good.
   const retryId = internal || peer ? null : retries.fingerprint(key.id, canonical.messages);
   const repeated = retryId && retries.repeatedAnswer(retryId);
@@ -311,6 +314,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
   let freesUpAt = null;
 
   const finish = (fields) => {
+    liveEvents.finished(key.user_id, { id: requestId, success: fields.status === 'success', model: fields.model_label || null });
     if (shareOutcome && fields.status === 'success') shareOutcome.answered = true;
     try {
       traffic.recordFinished({ key, accountId: fields.account_id, success: fields.status === 'success', tokens: (fields.input_tokens || 0) + (fields.output_tokens || 0) });
@@ -497,6 +501,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
       .then((result) => ({ attempt, result }), (error) => ({ attempt, error }));
     running.add(attempt);
     attemptsStarted += 1;
+    liveEvents.attempt(key.user_id, { id: requestId, slug: String(entry.id).split('/')[0], model: entry.id });
     return true;
   };
 
@@ -577,6 +582,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
         // The provider rejected the attempt while it still occupied a slot.
         const accountInFlight = loadTracker.inflight(attempt.entry).account;
         settle(attempt);
+        liveEvents.failed(key.user_id, { id: requestId, slug: String(attempt.entry.id).split('/')[0] });
         attempt.reservation.release();
         const error = outcome.error instanceof ProviderError ? outcome.error : fromNetworkError(outcome.error);
         if (error.kind === KINDS.ABORTED && clientAbort.signal.aborted) break;
@@ -606,6 +612,7 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
         settle(other);
         other.reservation.release();
         trail.push(trailItem(other.entry, 'hedge_lost', { ms: Date.now() - other.started }));
+        liveEvents.failed(key.user_id, { id: requestId, slug: String(other.entry.id).split('/')[0] });
         learning.onSlow(other.entry, Date.now() - other.started);
       }
       running.delete(attempt);

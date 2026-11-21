@@ -134,6 +134,10 @@ class RouterApi {
   }
   Future<void> deleteRoutingGroup(String id) => client.delete('$_base/routing/groups/$id');
 
+  /// The live view's feed: a snapshot (cards and requests in flight) for
+  /// since 0, then the events after [since], waiting up to [waitMs] for one.
+  Future<Map<String, dynamic>> routingLive({int since = 0, int waitMs = 0}) => client.get('$_base/routing/live?since=$since&wait=$waitMs');
+
   /// Requests in flight right now, per model and per provider account.
   Future<Map<String, dynamic>> routingLoad() => client.get('$_base/routing/load');
 
