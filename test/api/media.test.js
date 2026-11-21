@@ -87,6 +87,31 @@ test('embeddings fall back across providers and pin auto to one model', async ()
   assert.ok(row.units >= 1);
 });
 
+test('an embedder that ignores the requested size is never used or pinned at that size', async () => {
+  const fixed = await createMockProvider({ models: ['fixed-embed'] });
+  try {
+    const added = await request(app).post('/api/v1/providers/accounts').set('Authorization', `Bearer ${session}`)
+      .send({ definitionId: 'custom_openai', slug: 'fixed', baseUrl: fixed.url, secret: 'good-key', billingMode: 'free_tier' });
+    assert.equal(added.status, 201);
+
+    const explicit = await gateway('post', '/embeddings').send({ model: 'fixed/fixed-embed', input: 'hello', dimensions: 4 });
+    assert.notEqual(explicit.status, 200, 'a vector of the wrong size is not passed on');
+    assert.match(explicit.body.error.message, /8 dimensions instead of the 4/);
+
+    await gateway('delete', '/embeddings/pin');
+    for (let index = 0; index < 4; index += 1) {
+      const auto = await gateway('post', '/embeddings').send({ input: `again ${index}`, dimensions: 6 });
+      assert.equal(auto.status, 200, JSON.stringify(auto.body));
+      assert.equal(auto.body.data[0].embedding.length, 6);
+      assert.notEqual(auto.headers['x-neorouter-embedding-pin'], 'fixed-embed');
+    }
+    assert.equal((await gateway('get', '/embeddings/pin')).body.pin.dimensions, 6);
+  } finally {
+    await gateway('delete', '/embeddings/pin');
+    await fixed.close();
+  }
+});
+
 test('images come back as base64 or as a short-lived URL', async () => {
   const b64 = await gateway('post', '/images/generations').send({ prompt: 'a lighthouse', n: 2 });
   assert.equal(b64.status, 200, JSON.stringify(b64.body));

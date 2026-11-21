@@ -81,7 +81,15 @@ async function embeddings({ req, res, key, body, freeOnly = false }) {
     filter: pin ? (entry) => entry.canonicalId === pin.canonicalId : null,
     onNoCandidate: () => (pin ? new HttpError(503, 'EMBEDDING_PIN_UNAVAILABLE', `This key is pinned to the embedding model ${pin.canonicalId}, and no provider can serve it right now. Mixing in another model would make your vectors incomparable; reset the pin to switch models (and re-embed your data).`) : null),
     estimateCost: (entry) => tokenCost(entry, tokens),
-    invoke: ({ adapter, entry, signal, timeoutMs }) => adapter.embed({ input: texts, dimensions, inputType }, { modelId: entry.modelId, signal, timeoutMs }),
+    invoke: async ({ adapter, entry, signal, timeoutMs }) => {
+      const result = await adapter.embed({ input: texts, dimensions, inputType }, { modelId: entry.modelId, signal, timeoutMs });
+      // Some embedders ignore the size they are asked for. Their vectors would
+      // not fit the caller's index, and pinning them would lock the key to a
+      // model that never answers at that size, so another model is tried.
+      const wrong = dimensions ? result.vectors.find((vector) => vector.length !== dimensions) : null;
+      if (wrong) throw new ProviderError(KINDS.BAD_REQUEST, `${entry.id} returned ${wrong.length} dimensions instead of the ${dimensions} asked for.`);
+      return result;
+    },
     costOf: (entry, result) => tokenCost(entry, result.inputTokens ?? tokens) || 0,
     respond: (result, entry) => {
       const size = result.vectors[0]?.length || null;

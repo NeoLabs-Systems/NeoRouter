@@ -108,7 +108,8 @@ function createMockProvider({ models, prices = {}, port = 0, failSearch = false,
   };
   app.post('/v1/embeddings', media('embed'), (req, res) => {
     const inputs = Array.isArray(req.body.input) ? req.body.input : [req.body.input];
-    const size = req.body.dimensions || 8;
+    // `fixed-` models ignore the requested size, as some real embedders do.
+    const size = String(req.body.model).startsWith('fixed-') ? 8 : req.body.dimensions || 8;
     res.json({ object: 'list', model: req.body.model, data: inputs.map((text, index) => ({ object: 'embedding', index, embedding: Array.from({ length: size }, (_, i) => (text.length + i) / 100) })), usage: { prompt_tokens: 3 * inputs.length, total_tokens: 3 * inputs.length } });
   });
   const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
