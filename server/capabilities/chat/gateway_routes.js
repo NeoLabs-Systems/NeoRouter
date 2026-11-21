@@ -9,11 +9,12 @@ const catalog = require('../../services/catalog/catalog_service');
 const accounts = require('../../services/providers/account_service');
 const experience = require('../../services/routing/task/experience');
 const { getDatabase } = require('../../db/database');
-const { allowedByKey, routeAllowedByKey, kindAllowed, modelKind, MODEL_KINDS } = require('../../services/routing/router');
+const { allowedByKey, routeAllowedByKey, kindAllowed, modelKind, MODEL_KINDS, UNKNOWN_CONTEXT_LIMIT } = require('../../services/routing/router');
 const profiles = require('../../services/routing/profiles');
 const sharePolicy = require('../../services/pools/share_policy');
 const { isPeerEntry } = require('../../services/pools/links');
 const keyActivity = require('../../services/apps/key_activity');
+const groupsService = require('../../services/routing/groups');
 const { createLogger } = require('../../utils/logger');
 
 const logger = createLogger('gateway');
@@ -146,6 +147,18 @@ function listedName(entry) {
   return provider && !entry.name.toLowerCase().includes(provider.toLowerCase()) ? `${entry.name} (${provider})` : entry.name;
 }
 
+// A routing group is a union of models, so what the client may safely send is
+// the smallest window in the group: any member may be the one that answers.
+// Members that publish no window are held to UNKNOWN_CONTEXT_LIMIT by routing,
+// so they cap the group too. The group itself is not a catalog entry and has no
+// limit of its own, which is why it used to be listed with none at all.
+function groupContextLength(group, entries) {
+  const members = entries.filter((entry) => groupsService.contains(group, entry));
+  if (!members.length) return null;
+  const windows = members.map((entry) => (entry.contextWindow > 0 ? entry.contextWindow : UNKNOWN_CONTEXT_LIMIT));
+  return Math.min(...windows);
+}
+
 router.get('/models', requireRouterKey, (req, res) => {
   const key = req.routerKey;
   // ?type=embedding (or image, speech, transcription, moderation, video) lists another kind.
@@ -156,21 +169,23 @@ router.get('/models', requireRouterKey, (req, res) => {
   // A partner's router picks models itself, so it gets no autos.
   const autos = key.peer_link_id ? [] : autoModels(key, reachable, kind).filter((auto) => routeAllowedByKey(auto.id, key));
   if (!key.peer_link_id) {
-    for (const group of require('../../services/routing/groups').list(key.user_id)) {
+    for (const group of groupsService.list(key.user_id)) {
       const id = `pool:${group.name}`;
-      if (routeAllowedByKey(id, key)) autos.push({ id, name: group.name, neorouter: { routingGroup: group.name } });
+      if (!routeAllowedByKey(id, key)) continue;
+      const contextLength = groupContextLength(group, reachable);
+      autos.push({ id, name: group.name, ...(contextLength ? { contextLength } : {}), neorouter: { routingGroup: group.name } });
     }
   }
   const entries = reachable.filter((entry) => routeAllowedByKey(entry.id, key));
   if (req.get('anthropic-version')) {
-    const data = [...autos.map((auto) => ({ type: 'model', id: auto.id, display_name: auto.name, created_at: new Date().toISOString() })),
+    const data = [...autos.map((auto) => ({ type: 'model', id: auto.id, display_name: auto.name, created_at: new Date().toISOString(), ...(auto.contextLength ? { context_length: auto.contextLength } : {}) })),
       ...entries.map((entry) => ({ type: 'model', id: entry.id, display_name: listedName(entry), created_at: new Date().toISOString() }))];
     return res.json({ data, has_more: false, first_id: data[0]?.id || null, last_id: data[data.length - 1]?.id || null });
   }
   return res.json({
     object: 'list',
     data: [
-      ...autos.map((auto) => ({ id: auto.id, object: 'model', created, owned_by: 'neorouter', name: auto.name, neorouter: auto.neorouter })),
+      ...autos.map((auto) => ({ id: auto.id, object: 'model', created, owned_by: 'neorouter', name: auto.name, ...(auto.contextLength ? { context_length: auto.contextLength } : {}), neorouter: auto.neorouter })),
       ...entries.map((entry) => ({
         id: entry.id,
         object: 'model',

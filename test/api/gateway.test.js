@@ -79,6 +79,10 @@ test('routing groups are managed, discovered, selected and recorded through the 
   const id = created.body.group.id;
   const listed = await request(app).get('/v1/models').set('Authorization', `Bearer ${freeKey}`);
   assert.ok(listed.body.data.some((model) => model.id === 'pool:small-work'));
+  // A group is a union: what a client may safely send is the smallest window in
+  // it, not nothing at all (which made clients guess a family default).
+  const group = listed.body.data.find((model) => model.id === 'pool:small-work');
+  assert.equal(group.context_length, 32768);
   for (const stream of [false, true]) {
     const response = await request(app).post('/v1/chat/completions').set('Authorization', `Bearer ${freeKey}`)
       .send({ model: 'pool:small-work', messages: [{ role: 'user', content: 'hi' }], stream });
