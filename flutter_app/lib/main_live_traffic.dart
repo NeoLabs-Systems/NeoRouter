@@ -99,11 +99,9 @@ class _Scene extends ChangeNotifier {
   List<int> provBusy = <int>[];
   final math.Random random = math.Random();
 
-  /// Requests the router has in flight right now (live, from the server):
-  /// drawn as dots circling the core until they finish.
-  int inFlight = 0;
-  // When each circling dot appeared, so new ones fly in from outside.
-  final List<double> inFlightSince = <double>[];
+  /// Requests waiting on each provider card right now (live, from the
+  /// server): drawn as dots inside that card until they finish.
+  List<int> waitingOn = <int>[];
 
   void resize(int apps, int providers) {
     if (appGlow.length != apps) {
@@ -413,7 +411,17 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
     super.dispose();
   }
 
-  void _onLoad() => _scene.inFlight = RouterLoad.instance.inFlight;
+  // Live in-flight per account, added up per provider card.
+  void _onLoad() {
+    final idToSlug = <String, String>{for (final account in widget.accounts) account.id: account.slug};
+    final counts = List<int>.filled(_providerSlugs.length, 0);
+    for (final entry in RouterLoad.instance.accounts.entries) {
+      final slug = idToSlug[entry.key];
+      final index = slug == null ? (_poolIndex ?? -1) : _providerIndex(slug);
+      if (index >= 0 && index < counts.length) counts[index] += entry.value;
+    }
+    _scene.waitingOn = counts;
+  }
 
   Future<void> _fetch() async {
     try {
@@ -430,6 +438,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
       if (!first) _queue.addAll(fresh.reversed.take(30));
       // New keys or connections need new cards: the stage only gets them on a rebuild.
       setState(_arrange);
+      _onLoad();
       if (first && !_warmed && widget.ready) _warmUp();
     } catch (_) {
       // The next poll tries again.
@@ -633,14 +642,14 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
                 child: LayoutBuilder(
                   builder: (context, stage) {
                     // While loading, skeleton slots stand in for keys and connections.
-                    final apps = _ready || _apps.isNotEmpty ? math.max(1, _apps.length) : (compact ? 3 : 4);
-                    final providers = _ready || _providers.isNotEmpty ? math.max(1, _providers.length) : (compact ? 4 : 5);
+                    final apps = _ready ? math.max(1, _apps.length) : (compact ? 3 : 4);
+                    final providers = _ready ? math.max(1, _providers.length) : (compact ? 4 : 5);
                     final layout = _Layout(Size(stage.maxWidth, stage.maxHeight), apps, providers, poolIndex: _poolIndex);
                     final lastModels = <int, String>{
                       for (var j = 0; j < _providerSlugs.length; j++)
                         if (_lastModel[_providerSlugs[j]] != null) j: _lastModel[_providerSlugs[j]]!,
                     };
-                    return _Stage(controller: widget.controller, scene: _scene, layout: layout, apps: _apps, providers: _providers, appRequests: _appRequests, lastModel: lastModels, empty: _history.isEmpty, loaded: _ready, poolIndex: _poolIndex);
+                    return _Stage(controller: widget.controller, scene: _scene, layout: layout, apps: _ready ? _apps : const <String>[], providers: _ready ? _providers : const <String>[], appRequests: _appRequests, lastModel: lastModels, empty: _history.isEmpty, loaded: _ready, poolIndex: _poolIndex);
                   },
                 ),
               ),
@@ -895,9 +904,9 @@ class _Stage extends StatelessWidget {
                   width: layout.provW,
                   tint: j == poolIndex ? palette.pool : null,
                 ),
-              if (!loaded && apps.isEmpty)
+              if (!loaded)
                 for (var i = 0; i < layout.appPos.length; i++) _skeleton(palette, layout.appPos[i], layout.appW, s.t, i),
-              if (!loaded && providers.isEmpty)
+              if (!loaded)
                 for (var j = 0; j < layout.provPos.length; j++) _skeleton(palette, layout.provPos[j], layout.provW, s.t, j + 3),
               // The router's own label inside the disk.
               Positioned(
@@ -945,11 +954,41 @@ class _Stage extends StatelessWidget {
                   ),
                 ),
               ),
+              // Requests waiting on a provider sit inside its card as dots.
+              for (var j = 0; j < layout.provPos.length && j < providerNames.length && j < s.waitingOn.length; j++)
+                if (s.waitingOn[j] > 0 && providers.isNotEmpty) _waiting(palette, layout.provPos[j], layout.provW, s.waitingOn[j], s.t),
               for (final chip in s.chips)
                 if (s.t >= chip.t0) _chip(palette, chip, s.t),
             ],
           );
         },
+      ),
+    );
+  }
+
+  // Up to five pulsing dots in the card's top-right corner, then "+n".
+  Widget _waiting(NeoRouterPalette palette, Offset center, double width, int count, double now) {
+    final shown = math.min(count, 5);
+    return Positioned(
+      left: center.dx + width / 2 - 14 - shown * 9 - (count > shown ? 22 : 0),
+      top: center.dy - layout.nodeH / 2 + 10,
+      child: IgnorePointer(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (var k = 0; k < shown; k++)
+              Container(
+                width: 6,
+                height: 6,
+                margin: const EdgeInsets.only(left: 3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: palette.accent.withValues(alpha: 0.45 + 0.55 * (0.5 + 0.5 * math.sin(now / 260 - k * 0.9))),
+                ),
+              ),
+            if (count > shown) Padding(padding: const EdgeInsets.only(left: 4), child: Text('+${count - shown}', style: GoogleFonts.geistMono(fontSize: 10, color: palette.accent))),
+          ],
+        ),
       ),
     );
   }
@@ -1226,26 +1265,6 @@ class _TrafficPainter extends CustomPainter {
           ..strokeCap = StrokeCap.round
           ..color = palette.accent,
       );
-    }
-
-    // One dot per request in flight, circling on two lanes; a new one swoops
-    // in from outside the rings before it joins its lane.
-    final shown = math.min(s.inFlight, 36);
-    while (s.inFlightSince.length < shown) {
-      s.inFlightSince.add(s.t);
-    }
-    if (s.inFlightSince.length > shown) s.inFlightSince.length = shown;
-    for (var k = 0; k < shown; k++) {
-      final lane = k.isEven ? 1.38 : 1.5;
-      final speed = k.isEven ? 4200.0 : 5600.0;
-      final angle = s.t / speed * math.pi * 2 * (k.isEven ? 1 : -1) + k * (math.pi * 2 / math.max(1, shown)) * 2;
-      final arrive = ((s.t - s.inFlightSince[k]) / 700).clamp(0.0, 1.0);
-      final radius = r * (lane + (1 - Curves.easeOutCubic.transform(arrive)) * 1.6);
-      final dot = c + Offset(math.cos(angle), math.sin(angle)) * radius;
-      canvas.drawCircle(dot, 6, Paint()
-        ..color = palette.accent.withValues(alpha: 0.25 * arrive)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
-      canvas.drawCircle(dot, 3.2, Paint()..color = palette.accent.withValues(alpha: 0.4 + 0.6 * arrive));
     }
 
     canvas.drawCircle(c, r, Paint()..color = palette.surfaceRaised);

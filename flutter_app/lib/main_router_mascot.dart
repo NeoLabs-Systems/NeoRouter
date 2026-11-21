@@ -24,6 +24,9 @@ class RouterLoad extends ChangeNotifier {
   static const int stressedAccount = 4;
 
   int inFlight = 0;
+
+  /// In flight per provider account id.
+  Map<String, int> accounts = const <String, int>{};
   int busiestAccount = 0;
   DateTime _lastBusy = DateTime.now();
   NeoRouterController? _controller;
@@ -64,12 +67,17 @@ class RouterLoad extends ChangeNotifier {
     if (controller == null) return;
     try {
       final load = await controller.api.routingLoad();
-      final accounts = ((load['accounts'] as Map?) ?? const <String, Object?>{}).values.whereType<num>().map((value) => value.toInt());
+      final byAccount = <String, int>{
+        for (final entry in ((load['accounts'] as Map?) ?? const <String, Object?>{}).entries)
+          if (entry.value is num) '${entry.key}': (entry.value as num).toInt(),
+      };
+      final accounts = byAccount.values;
       final total = accounts.fold<int>(0, (sum, value) => sum + value);
       final busiest = accounts.fold<int>(0, (top, value) => value > top ? value : top);
       if (total > 0) _lastBusy = DateTime.now();
       final before = mood;
-      final changed = total != inFlight || busiest != busiestAccount;
+      final changed = total != inFlight || busiest != busiestAccount || byAccount.toString() != this.accounts.toString();
+      this.accounts = byAccount;
       inFlight = total;
       busiestAccount = busiest;
       if (changed || mood != before) notifyListeners();
