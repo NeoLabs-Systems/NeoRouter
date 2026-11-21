@@ -74,6 +74,21 @@ class _Packet {
   int get provider => hasAttempt ? attempts[attempt].provider : -1;
 }
 
+/// A short-lived spark from a burst. Where it starts is resolved by the
+/// painter from [anchor] ('core', 'app' or 'prov' with [index]), so sparks
+/// follow cards that move.
+class _Spark {
+  _Spark(this.anchor, this.index, this.t0, this.angle, this.speed, this.tone, this.life);
+  final String anchor;
+  final int index;
+  final double t0;
+  final double angle;
+  final double speed;
+  // 0: request (gold), 1: failure (red), 2: answer (ink), 3: pool.
+  final int tone;
+  final double life;
+}
+
 class _Chip {
   _Chip(this.text, this.t0, this.dx);
   final bool waiting = false;
@@ -89,6 +104,16 @@ class _Scene extends ChangeNotifier {
   final List<_Packet> packets = <_Packet>[];
   final List<double> pulses = <double>[];
   final List<_Chip> chips = <_Chip>[];
+  final List<_Spark> sparks = <_Spark>[];
+
+  /// A small burst of sparks, fanned around [direction] (radians).
+  void burst(String anchor, int index, {required int tone, double direction = 0, double spread = math.pi, int count = 7}) {
+    if (sparks.length > 220) return;
+    for (var k = 0; k < count; k++) {
+      final angle = direction + (random.nextDouble() - 0.5) * spread;
+      sparks.add(_Spark(anchor, index, t, angle, 0.05 + random.nextDouble() * 0.09, tone, 380 + random.nextDouble() * 320));
+    }
+  }
   List<double> appGlow = <double>[];
   List<double> provGlow = <double>[];
   List<double> appFlash = <double>[];
@@ -174,6 +199,7 @@ class _Scene extends ChangeNotifier {
     }
     pulses.removeWhere((start) => t - start > 1500);
     chips.removeWhere((chip) => t - chip.t0 > 1700);
+    sparks.removeWhere((spark) => t - spark.t0 > spark.life);
     notifyListeners();
   }
 
@@ -194,6 +220,7 @@ class _Scene extends ChangeNotifier {
       case 'in':
         _go(p, 'think', _thinkMs);
         pulses.add(t);
+        burst('in', p.app, tone: 0, count: 6);
         if (chips.isEmpty || t - chips.last.t0 > 450) chips.add(_Chip(p.label, t, (random.nextDouble() - 0.5) * 90));
       case 'think':
       case 'rethink':
@@ -212,9 +239,11 @@ class _Scene extends ChangeNotifier {
       case 'out':
         if (p.attempts[p.attempt].failed) {
           if (p.provider < provFail.length) provFail[p.provider] = t;
+          burst('prov', p.provider, tone: 1, direction: math.pi, count: 10);
           _go(p, 'bounce', _bounceMs);
           return;
         }
+        burst('prov', p.provider, tone: 0, direction: math.pi, count: 6);
         if (p.provider < provBusy.length) provBusy[p.provider] += 1;
         _go(p, 'work', 600);
       case 'work':
@@ -222,6 +251,7 @@ class _Scene extends ChangeNotifier {
         if (current.failed || (p.finished && !p.success)) {
           leaveProvider();
           if (p.provider < provFail.length) provFail[p.provider] = t;
+          burst('prov', p.provider, tone: 1, direction: math.pi, count: 10);
           _go(p, 'bounce', _bounceMs);
         } else if (p.finished) {
           leaveProvider();
@@ -243,6 +273,7 @@ class _Scene extends ChangeNotifier {
         if (p.app < appGlow.length) appGlow[p.app] = 1;
       case 'home':
       case 'fail':
+        burst('app', p.app, tone: p.phase == 'home' ? 2 : 1, direction: 0, count: p.phase == 'home' ? 8 : 5);
         p.phase = 'done';
         if (p.app < appFlash.length) appFlash[p.app] = t;
     }
@@ -1094,6 +1125,7 @@ class _TrafficPainter extends CustomPainter {
     for (final p in s.packets) {
       _packet(canvas, p);
     }
+    _sparks(canvas);
   }
 
   // While loading: a soft light runs along every line, in and out of the router.
@@ -1138,6 +1170,48 @@ class _TrafficPainter extends CustomPainter {
   Path _path(List<Offset> c) => Path()
     ..moveTo(c[0].dx, c[0].dy)
     ..cubicTo(c[1].dx, c[1].dy, c[2].dx, c[2].dy, c[3].dx, c[3].dy);
+
+  // Sparks fly out, slow down and fade, with a little fall: a short streak
+  // from where they were a moment ago to where they are.
+  void _sparks(Canvas canvas) {
+    final s = scene;
+    final paint = Paint()
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    for (final spark in s.sparks) {
+      final Offset origin;
+      switch (spark.anchor) {
+        case 'in':
+          if (spark.index >= layout.appPos.length) continue;
+          origin = layout.appCurve(spark.index).last;
+        case 'prov':
+          if (spark.index < 0 || spark.index >= layout.provPos.length) continue;
+          origin = layout.provCurve(spark.index).last;
+        case 'app':
+          if (spark.index >= layout.appPos.length) continue;
+          origin = layout.appCurve(spark.index).first;
+        default:
+          origin = layout.core;
+      }
+      final age = s.t - spark.t0;
+      final u = (age / spark.life).clamp(0.0, 1.0);
+      Offset at(double ms) {
+        // Eases out: fast at first, then it drifts.
+        final travel = spark.speed * spark.life * (1 - math.pow(1 - (ms / spark.life).clamp(0.0, 1.0), 2.4));
+        return origin + Offset(math.cos(spark.angle), math.sin(spark.angle)) * travel + Offset(0, 0.00004 * ms * ms);
+      }
+      final color = switch (spark.tone) {
+        1 => palette.error,
+        2 => palette.text,
+        3 => palette.pool,
+        _ => palette.accent,
+      };
+      paint
+        ..strokeWidth = 2.2 * (1 - u) + 0.6
+        ..color = color.withValues(alpha: (1 - u) * 0.9);
+      canvas.drawLine(at(math.max(0, age - 60)), at(age), paint);
+    }
+  }
 
   void _core(Canvas canvas) {
     final s = scene;

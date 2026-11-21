@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'main_theme.dart';
+import 'src/mascot/mascot_mood.dart';
+import 'src/mascot/neo_mascot.dart';
 
 /// One member around the pool.
 class PoolGraphMember {
@@ -321,6 +323,16 @@ class _PoolPainter extends CustomPainter {
   bool shouldRepaint(_PoolPainter old) => old.members != members || old.level != level || old.active != active || old.layout.size != layout.size || old.palette != palette;
 }
 
+/// A partner's face says how it is going between you without numbers:
+/// asleep offline, waiting while paused or connecting, smiling when it has
+/// given you at least as much as it took today, busy when it mostly takes.
+MascotMood partnerMood(PoolGraphMember member) {
+  if (member.state == 'offline') return MascotMood.asleep;
+  if (member.state != 'online') return MascotMood.waiting;
+  if (member.gives == 0 && member.takes == 0) return MascotMood.idle;
+  return member.gives >= member.takes ? MascotMood.done : MascotMood.working;
+}
+
 class _MemberNode extends StatelessWidget {
   const _MemberNode({
     required this.member,
@@ -372,7 +384,7 @@ class _MemberNode extends StatelessWidget {
             child: Container(
               alignment: Alignment.center,
               decoration: BoxDecoration(shape: BoxShape.circle, color: member.isYou ? palette.accentSoft : palette.surfaceRaised),
-              child: face != null ? face!(size * 0.62) : Text(initials.toUpperCase(), style: TextStyle(fontWeight: FontWeight.w700, fontSize: size * 0.28, color: member.isYou ? palette.accent : palette.text)),
+              child: face != null ? face!(size * 0.62) : !member.isYou ? NeoMascot(mood: partnerMood(member), size: size * 0.62) : Text(initials.toUpperCase(), style: TextStyle(fontWeight: FontWeight.w700, fontSize: size * 0.28, color: member.isYou ? palette.accent : palette.text)),
             ),
           ),
         ),
