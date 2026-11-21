@@ -99,6 +99,12 @@ class _Scene extends ChangeNotifier {
   List<int> provBusy = <int>[];
   final math.Random random = math.Random();
 
+  /// Requests the router has in flight right now (live, from the server):
+  /// drawn as dots circling the core until they finish.
+  int inFlight = 0;
+  // When each circling dot appeared, so new ones fly in from outside.
+  final List<double> inFlightSince = <double>[];
+
   void resize(int apps, int providers) {
     if (appGlow.length != apps) {
       appGlow = List<double>.filled(apps, 0);
@@ -378,6 +384,10 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   void initState() {
     super.initState();
     _ticker = createTicker(_tick)..start();
+    RouterLoad.instance
+      ..watch(widget.controller)
+      ..addListener(_onLoad);
+    _onLoad();
     _fetch();
     _poll = Timer.periodic(const Duration(seconds: 4), (_) => _fetch());
   }
@@ -394,11 +404,16 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
 
   @override
   void dispose() {
+    RouterLoad.instance
+      ..removeListener(_onLoad)
+      ..unwatch();
     _poll?.cancel();
     _ticker.dispose();
     _scene.dispose();
     super.dispose();
   }
+
+  void _onLoad() => _scene.inFlight = RouterLoad.instance.inFlight;
 
   Future<void> _fetch() async {
     try {
@@ -1211,6 +1226,26 @@ class _TrafficPainter extends CustomPainter {
           ..strokeCap = StrokeCap.round
           ..color = palette.accent,
       );
+    }
+
+    // One dot per request in flight, circling on two lanes; a new one swoops
+    // in from outside the rings before it joins its lane.
+    final shown = math.min(s.inFlight, 36);
+    while (s.inFlightSince.length < shown) {
+      s.inFlightSince.add(s.t);
+    }
+    if (s.inFlightSince.length > shown) s.inFlightSince.length = shown;
+    for (var k = 0; k < shown; k++) {
+      final lane = k.isEven ? 1.38 : 1.5;
+      final speed = k.isEven ? 4200.0 : 5600.0;
+      final angle = s.t / speed * math.pi * 2 * (k.isEven ? 1 : -1) + k * (math.pi * 2 / math.max(1, shown)) * 2;
+      final arrive = ((s.t - s.inFlightSince[k]) / 700).clamp(0.0, 1.0);
+      final radius = r * (lane + (1 - Curves.easeOutCubic.transform(arrive)) * 1.6);
+      final dot = c + Offset(math.cos(angle), math.sin(angle)) * radius;
+      canvas.drawCircle(dot, 6, Paint()
+        ..color = palette.accent.withValues(alpha: 0.25 * arrive)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
+      canvas.drawCircle(dot, 3.2, Paint()..color = palette.accent.withValues(alpha: 0.4 + 0.6 * arrive));
     }
 
     canvas.drawCircle(c, r, Paint()..color = palette.surfaceRaised);

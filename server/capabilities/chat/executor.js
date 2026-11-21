@@ -550,82 +550,87 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
     attempt.release();
   };
 
-  await ensureRunning();
-  while (running.size) {
-    const newest = [...running].reduce((a, b) => (b.started > a.started ? b : a));
-    // Short of capacity: one attempt on the side at most. That still rescues a
-    // stuck request, but does not spend free quota others are queueing for.
-    const parallel = capacity.isShort(key.user_id) ? Math.min(2, config.routing.maxParallel) : config.routing.maxParallel;
-    const canHedge = config.routing.hedging && running.size < parallel
-      && attemptsStarted < config.routing.maxAttempts && [...running].every((item) => item.entry.isFree);
-    let timer = null;
-    const contenders = [...running].map((item) => item.promise);
-    if (canHedge) {
-      const wait = Math.max(0, hedgeDelay(newest.entry, stream) - (Date.now() - newest.started), nextHedgeAt - Date.now());
-      contenders.push(new Promise((resolve) => { timer = setTimeout(() => resolve({ hedge: true }), wait); }));
-    }
-    const outcome = await Promise.race(contenders);
-    clearTimeout(timer);
-    if (outcome.hedge) {
-      // Hedges only go to free models, so a slow attempt never costs money twice.
-      if (!startNext((entry) => entry.isFree)) nextHedgeAt = Date.now() + HEDGE_RETRY_MS;
-      continue;
-    }
-    const { attempt } = outcome;
-    if (outcome.error) {
-      // The provider rejected the attempt while it still occupied a slot.
-      const accountInFlight = loadTracker.inflight(attempt.entry).account;
-      settle(attempt);
-      attempt.reservation.release();
-      const error = outcome.error instanceof ProviderError ? outcome.error : fromNetworkError(outcome.error);
-      if (error.kind === KINDS.ABORTED && clientAbort.signal.aborted) break;
-      lastError = error;
-      trail.push(trailItem(attempt.entry, error.kind, { status: error.status, ms: Date.now() - attempt.started, message: String(error.message).slice(0, 200) }));
-      const policy = learning.onFailure(attempt.entry, error, { estimatedTokens: inputTokens, maxTokens: attempt.maxTokens, boosted: attempt.boosted, running: accountInFlight });
-      // A partner counts only the requests it answered, so a refused one does not use up our share of it here either.
-      if (isPeerEntry(attempt.entry)) quota.refundRequest(attempt.entry, inputTokens);
-      if (isPeerEntry(attempt.entry)) reachability.noteFailure(attempt.entry.accountId, error.kind);
-      plan.noteFailure(attempt.entry, error.kind);
-      if (error.kind === KINDS.AUTH) accounts.validateAccount(attempt.entry.accountId).catch(() => {});
-      badRequests = error.kind === KINDS.BAD_REQUEST ? badRequests + 1 : 0;
-      if (!policy.fallback || badRequests >= MAX_CONSECUTIVE_BAD_REQUESTS) {
-        for (const other of [...running]) {
-          other.controller.abort(new ProviderError(KINDS.ABORTED, 'Request stopped.'));
-          settle(other);
-          other.reservation.release();
-        }
-        break;
+  try {
+    await ensureRunning();
+    while (running.size) {
+      const newest = [...running].reduce((a, b) => (b.started > a.started ? b : a));
+      // Short of capacity: one attempt on the side at most. That still rescues a
+      // stuck request, but does not spend free quota others are queueing for.
+      const parallel = capacity.isShort(key.user_id) ? Math.min(2, config.routing.maxParallel) : config.routing.maxParallel;
+      const canHedge = config.routing.hedging && running.size < parallel
+        && attemptsStarted < config.routing.maxAttempts && [...running].every((item) => item.entry.isFree);
+      let timer = null;
+      const contenders = [...running].map((item) => item.promise);
+      if (canHedge) {
+        const wait = Math.max(0, hedgeDelay(newest.entry, stream) - (Date.now() - newest.started), nextHedgeAt - Date.now());
+        contenders.push(new Promise((resolve) => { timer = setTimeout(() => resolve({ hedge: true }), wait); }));
       }
-      if (!running.size) await ensureRunning();
-      continue;
+      const outcome = await Promise.race(contenders);
+      clearTimeout(timer);
+      if (outcome.hedge) {
+        // Hedges only go to free models, so a slow attempt never costs money twice.
+        if (!startNext((entry) => entry.isFree)) nextHedgeAt = Date.now() + HEDGE_RETRY_MS;
+        continue;
+      }
+      const { attempt } = outcome;
+      if (outcome.error) {
+        // The provider rejected the attempt while it still occupied a slot.
+        const accountInFlight = loadTracker.inflight(attempt.entry).account;
+        settle(attempt);
+        attempt.reservation.release();
+        const error = outcome.error instanceof ProviderError ? outcome.error : fromNetworkError(outcome.error);
+        if (error.kind === KINDS.ABORTED && clientAbort.signal.aborted) break;
+        lastError = error;
+        trail.push(trailItem(attempt.entry, error.kind, { status: error.status, ms: Date.now() - attempt.started, message: String(error.message).slice(0, 200) }));
+        const policy = learning.onFailure(attempt.entry, error, { estimatedTokens: inputTokens, maxTokens: attempt.maxTokens, boosted: attempt.boosted, running: accountInFlight });
+        // A partner counts only the requests it answered, so a refused one does not use up our share of it here either.
+        if (isPeerEntry(attempt.entry)) quota.refundRequest(attempt.entry, inputTokens);
+        if (isPeerEntry(attempt.entry)) reachability.noteFailure(attempt.entry.accountId, error.kind);
+        plan.noteFailure(attempt.entry, error.kind);
+        if (error.kind === KINDS.AUTH) accounts.validateAccount(attempt.entry.accountId).catch(() => {});
+        badRequests = error.kind === KINDS.BAD_REQUEST ? badRequests + 1 : 0;
+        if (!policy.fallback || badRequests >= MAX_CONSECUTIVE_BAD_REQUESTS) {
+          for (const other of [...running]) {
+            other.controller.abort(new ProviderError(KINDS.ABORTED, 'Request stopped.'));
+            settle(other);
+            other.reservation.release();
+          }
+          break;
+        }
+        if (!running.size) await ensureRunning();
+        continue;
+      }
+      for (const other of [...running]) {
+        if (other === attempt) continue;
+        other.controller.abort(new ProviderError(KINDS.ABORTED, 'Another attempt answered first.'));
+        settle(other);
+        other.reservation.release();
+        trail.push(trailItem(other.entry, 'hedge_lost', { ms: Date.now() - other.started }));
+        learning.onSlow(other.entry, Date.now() - other.started);
+      }
+      running.delete(attempt);
+      capacity.record(key.user_id, true);
+      if (isPeerEntry(attempt.entry)) reachability.noteSuccess(attempt.entry.accountId);
+      if (retryId && plan.task) retries.rememberAnswer(retryId, { ref: attempt.entry.ref, task: plan.task.primary });
+      try {
+        await commit(attempt, outcome.result);
+      } finally {
+        attempt.release();
+      }
+      return undefined;
     }
+  } finally {
+    // However the loop ends (an answer, no fallback, the client gone, or an
+    // error thrown), attempts still running stop here and free their slot,
+    // or the load tracker counts them as in flight forever.
     for (const other of [...running]) {
-      if (other === attempt) continue;
-      other.controller.abort(new ProviderError(KINDS.ABORTED, 'Another attempt answered first.'));
+      other.controller.abort(new ProviderError(KINDS.ABORTED, 'Request stopped.'));
       settle(other);
       other.reservation.release();
-      trail.push(trailItem(other.entry, 'hedge_lost', { ms: Date.now() - other.started }));
-      learning.onSlow(other.entry, Date.now() - other.started);
     }
-    running.delete(attempt);
-    capacity.record(key.user_id, true);
-    if (isPeerEntry(attempt.entry)) reachability.noteSuccess(attempt.entry.accountId);
-    if (retryId && plan.task) retries.rememberAnswer(retryId, { ref: attempt.entry.ref, task: plan.task.primary });
-    try {
-      await commit(attempt, outcome.result);
-    } finally {
-      attempt.release();
-    }
-    return undefined;
   }
 
-  // Leaving early (the client went away, or no fallback): attempts still
-  // running stop here and free their slot, or the load tracker counts them forever.
-  for (const other of [...running]) {
-    other.controller.abort(new ProviderError(KINDS.ABORTED, 'Request stopped.'));
-    settle(other);
-    other.reservation.release();
-  }
+
 
   if (clientAbort.signal.aborted) {
     finish({ status: 'error', http_status: 499, error_code: 'client_closed', error_message: 'The client disconnected.' });
