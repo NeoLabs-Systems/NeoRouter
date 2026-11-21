@@ -501,14 +501,6 @@ class _KeyFormState extends State<_KeyForm> {
   late DateTime? _expiresAt = widget.existing?.expiresAt == null ? null : DateTime.tryParse(widget.existing!.expiresAt!);
   bool _expiryChanged = false;
   late bool _advanced = widget.existing?.rpmLimit != null || widget.existing?.concurrentLimit != null;
-  late bool _benchmark = widget.existing?.raw['benchmarkCollection'] == true;
-  Map<String, dynamic>? _benchmarkSettings;
-  bool _benchmarkLoadFailed = false;
-  bool get _canCollectBenchmarks =>
-      _benchmarkSettings?['adminEnabled'] == true &&
-      _benchmarkSettings?['enabled'] == true &&
-      widget.existing?.raw['benchmarkEligible'] != false;
-  bool _benchmarkChanged = false;
   bool _saving = false;
   String? _error;
 
@@ -522,7 +514,6 @@ class _KeyFormState extends State<_KeyForm> {
           if (mounted) setState(() => _groups = groups);
         })
         .catchError((_) {});
-    if (!widget.controller.inSharedSpace) unawaited(_loadBenchmarkSettings());
     // The kinds of model this user has connected, for the kind chips.
     widget.controller.api
         .capabilities()
@@ -530,48 +521,6 @@ class _KeyFormState extends State<_KeyForm> {
           if (mounted) setState(() => _available = items.where((item) => item.routable && item.total > 0 && item.id != 'live').map((item) => item.id).toList());
         })
         .catchError((_) {});
-  }
-
-  Future<void> _loadBenchmarkSettings() async {
-    try {
-      final settings = await widget.controller.api.benchmarkConsent();
-      if (mounted) setState(() => _benchmarkSettings = settings);
-    } catch (error) {
-      if (mounted && !(error is ApiException && error.status == 404)) {
-        setState(() => _benchmarkLoadFailed = true);
-      }
-    }
-  }
-
-  Widget? _benchmarkSection(AppL10n t) {
-    final settings = _benchmarkSettings;
-    if (settings == null && !_benchmarkLoadFailed) return null;
-    final String? unavailable;
-    if (settings == null) {
-      unavailable = t.lbKeySettingsUnavailable;
-    } else if (settings['adminEnabled'] != true) {
-      unavailable = t.lbKeyAdminRequired;
-    } else if (settings['enabled'] != true) {
-      unavailable = t.lbKeyAccountRequired;
-    } else if (widget.existing?.raw['benchmarkEligible'] == false) {
-      unavailable = t.lbKeyPersonalRequired;
-    } else {
-      unavailable = null;
-    }
-    return _FormSection(
-      title: t.lbTitle,
-      child: unavailable != null
-          ? Text(unavailable, style: TextStyle(color: neoRouterPaletteOf(context).textSoft))
-          : _ToggleRow(
-              title: t.lbKeyEnable,
-              hint: t.lbKeyHint,
-              value: _benchmark,
-              onChanged: _saving ? null : (value) => setState(() {
-                _benchmark = value;
-                _benchmarkChanged = true;
-              }),
-            ),
-    );
   }
 
   bool _kindOn(String kind) => _kinds == null || _kinds!.contains(kind);
@@ -658,9 +607,8 @@ class _KeyFormState extends State<_KeyForm> {
       'profile': _profile,
       'routingGroup': _routingGroup.isEmpty ? null : _routingGroup,
       if (_expiryChanged) 'expiresAt': _expiresAt?.toUtc().toIso8601String(),
+      // Only sent while in a pool, so a key keeps its choice if the pool is left and rejoined.
       if (widget.controller.inPool) 'poolAccess': _pool ? 'pool' : 'own',
-      if (_canCollectBenchmarks && _benchmarkChanged)
-        'benchmarkCollection': _benchmark,
     };
     try {
       if (widget.existing != null) {
@@ -681,7 +629,6 @@ class _KeyFormState extends State<_KeyForm> {
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
     final palette = neoRouterPaletteOf(context);
-    final benchmarkSection = _benchmarkSection(t);
     final kinds = _available.length > 1
         ? Wrap(
             spacing: 6,
@@ -740,7 +687,6 @@ class _KeyFormState extends State<_KeyForm> {
                         _error = null;
                       }),
                     ),
-                    ?benchmarkSection,
                     _FormSection(
                       title: t.keySectionModels,
                       child: Column(
@@ -937,7 +883,7 @@ class _ToggleRow extends StatelessWidget {
             ),
             ?trailing,
             const SizedBox(width: AppSpacing.sm),
-            Semantics(label: title, child: Switch(value: value, onChanged: onChanged)),
+            Switch(value: value, onChanged: onChanged),
           ],
         ),
       ),

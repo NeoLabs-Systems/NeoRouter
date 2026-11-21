@@ -124,7 +124,6 @@ async function deleteAccount(userId, credentials) {
   }
   audit.record('account.deleted', { actorUserId: null, subjectUserId: null, detail: { username: user.username } });
   getDatabase().prepare('DELETE FROM users WHERE id = ?').run(userId);
-  require('../benchmarks/consent').revoke(userId);
   logger.info('Account deleted by its owner', { userId });
 }
 

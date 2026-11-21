@@ -1,7 +1,5 @@
 'use strict';
 
-const benchmarkConsent = require('../benchmarks/consent');
-
 const crypto = require('node:crypto');
 const { getDatabase } = require('../../db/database');
 const { HttpError } = require('../../middleware/error_handler');
@@ -62,8 +60,6 @@ function publicKey(row) {
     tokenResetsAt: budget.periodEnd(row.token_period || 'monthly') ? new Date(budget.periodEnd(row.token_period || 'monthly')).toISOString() : null,
     allowedModels: JSON.parse(row.allowed_models_json || '[]'),
     // 'pool': may also use pool partners' free models; 'own': own connections only.
-    benchmarkEligible: Boolean(benchmarkConsent.personalKey(row)),
-    benchmarkCollection: Boolean(row.benchmark_collection) && Boolean(benchmarkConsent.personalKey(row)),
     poolAccess: row.pool_access === 'pool' ? 'pool' : 'own',
     routingGroup: row.routing_group || null,
     profile: row.profile,
@@ -100,22 +96,18 @@ function create(userId, input, createdBy = userId, app = null) {
   const prefix = crypto.randomBytes(4).toString('hex');
   const secret = `${PREFIX}_${prefix}_${randomToken(32)}`;
   const allowed = kinds(input);
-  const db = getDatabase();
-  return db.transaction(() => {
-    db.prepare(`INSERT INTO router_keys
-      (id, user_id, name, prefix, key_hash, mode, budget_usd, budget_period, rpm_limit, concurrent_limit, allowed_models_json, profile, expires_at, created_by_user_id, allow_free, allow_plan,
-        app_name, app_origin, app_scopes_json, token_limit, token_period, priority, max_price_per_million, pool_access)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .run(id, userId, input.name, prefix, sha256(secret), allowed.mode, input.budgetUsd ?? null,
-        input.budgetPeriod || 'total', input.rpmLimit ?? null, input.concurrentLimit ?? null, JSON.stringify(input.allowedModels || []),
-        input.profile || 'balanced', input.expiresAt || null, createdBy, allowed.allowFree, allowed.allowPlan,
-        app?.name ?? null, app?.origin ?? null, app ? JSON.stringify(app.scopes || []) : null,
-        input.tokenLimit ?? null, input.tokenPeriod || 'monthly', input.priority || 'normal',
-        input.maxPricePerMillion ?? null, input.poolAccess === 'pool' ? 'pool' : 'own');
-    if (input.routingGroup) getDatabase().prepare('UPDATE router_keys SET routing_group = ? WHERE id = ?').run(input.routingGroup, id);
-    if (input.benchmarkCollection !== undefined) benchmarkConsent.saveKey(userId, id, input.benchmarkCollection);
-    return { key: get(userId, id), secret };
-  })();
+  getDatabase().prepare(`INSERT INTO router_keys
+    (id, user_id, name, prefix, key_hash, mode, budget_usd, budget_period, rpm_limit, concurrent_limit, allowed_models_json, profile, expires_at, created_by_user_id, allow_free, allow_plan,
+      app_name, app_origin, app_scopes_json, token_limit, token_period, priority, max_price_per_million, pool_access)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(id, userId, input.name, prefix, sha256(secret), allowed.mode, input.budgetUsd ?? null,
+      input.budgetPeriod || 'total', input.rpmLimit ?? null, input.concurrentLimit ?? null, JSON.stringify(input.allowedModels || []),
+      input.profile || 'balanced', input.expiresAt || null, createdBy, allowed.allowFree, allowed.allowPlan,
+      app?.name ?? null, app?.origin ?? null, app ? JSON.stringify(app.scopes || []) : null,
+      input.tokenLimit ?? null, input.tokenPeriod || 'monthly', input.priority || 'normal',
+      input.maxPricePerMillion ?? null, input.poolAccess === 'pool' ? 'pool' : 'own');
+  if (input.routingGroup) getDatabase().prepare('UPDATE router_keys SET routing_group = ? WHERE id = ?').run(input.routingGroup, id);
+  return { key: get(userId, id), secret };
 }
 
 function getRow(userId, id) {
@@ -139,52 +131,40 @@ function update(userId, id, input) {
   assertProfile(userId, input.profile);
   if (input.routingGroup) require('../routing/groups').requireGroup(userId, input.routingGroup);
   const allowed = kinds(input, row);
-  const db = getDatabase();
-  return db.transaction(() => {
-    db.prepare(`UPDATE router_keys SET name = ?, mode = ?, budget_usd = ?, budget_period = ?, rpm_limit = ?, concurrent_limit = ?,
-      allowed_models_json = ?, profile = ?, expires_at = ?, allow_free = ?, allow_plan = ?, token_limit = ?, token_period = ?, priority = ?, max_price_per_million = ?, pool_access = ? WHERE id = ?`)
-      .run(
-        input.name ?? row.name,
-        allowed.mode,
-        input.budgetUsd !== undefined ? input.budgetUsd : row.budget_usd,
-        input.budgetPeriod ?? row.budget_period,
-        input.rpmLimit !== undefined ? input.rpmLimit : row.rpm_limit,
-        input.concurrentLimit !== undefined ? input.concurrentLimit : row.concurrent_limit,
-        input.allowedModels !== undefined ? JSON.stringify(input.allowedModels) : row.allowed_models_json,
-        input.profile ?? row.profile,
-        input.expiresAt !== undefined ? input.expiresAt : row.expires_at,
-        allowed.allowFree,
-        allowed.allowPlan,
-        input.tokenLimit !== undefined ? input.tokenLimit : row.token_limit,
-        input.tokenPeriod ?? row.token_period,
-        input.priority ?? row.priority,
-        input.maxPricePerMillion !== undefined ? input.maxPricePerMillion : row.max_price_per_million,
-        input.poolAccess !== undefined ? (input.poolAccess === 'pool' ? 'pool' : 'own') : row.pool_access,
-        id,
-      );
-    if (input.routingGroup !== undefined) getDatabase().prepare('UPDATE router_keys SET routing_group = ? WHERE id = ?').run(input.routingGroup, id);
-    const updated = getRow(userId, id);
-    if (input.benchmarkCollection !== undefined) benchmarkConsent.saveKey(userId, id, input.benchmarkCollection);
-    else if (updated.benchmark_collection && !benchmarkConsent.personalKey(updated)) benchmarkConsent.saveKey(userId, id, false);
-    if (input.expiresAt !== undefined && input.expiresAt !== row.expires_at) {
-      db.prepare("UPDATE router_keys SET benchmark_revision = ? WHERE id = ?").run(crypto.randomUUID(), id);
-      benchmarkConsent.revoke(userId, id);
-    }
-    return get(userId, id);
-  })();
+  getDatabase().prepare(`UPDATE router_keys SET name = ?, mode = ?, budget_usd = ?, budget_period = ?, rpm_limit = ?, concurrent_limit = ?,
+    allowed_models_json = ?, profile = ?, expires_at = ?, allow_free = ?, allow_plan = ?, token_limit = ?, token_period = ?, priority = ?, max_price_per_million = ?, pool_access = ? WHERE id = ?`)
+    .run(
+      input.name ?? row.name,
+      allowed.mode,
+      input.budgetUsd !== undefined ? input.budgetUsd : row.budget_usd,
+      input.budgetPeriod ?? row.budget_period,
+      input.rpmLimit !== undefined ? input.rpmLimit : row.rpm_limit,
+      input.concurrentLimit !== undefined ? input.concurrentLimit : row.concurrent_limit,
+      input.allowedModels !== undefined ? JSON.stringify(input.allowedModels) : row.allowed_models_json,
+      input.profile ?? row.profile,
+      input.expiresAt !== undefined ? input.expiresAt : row.expires_at,
+      allowed.allowFree,
+      allowed.allowPlan,
+      input.tokenLimit !== undefined ? input.tokenLimit : row.token_limit,
+      input.tokenPeriod ?? row.token_period,
+      input.priority ?? row.priority,
+      input.maxPricePerMillion !== undefined ? input.maxPricePerMillion : row.max_price_per_million,
+      input.poolAccess !== undefined ? (input.poolAccess === 'pool' ? 'pool' : 'own') : row.pool_access,
+      id,
+    );
+  if (input.routingGroup !== undefined) getDatabase().prepare('UPDATE router_keys SET routing_group = ? WHERE id = ?').run(input.routingGroup, id);
+  return get(userId, id);
 }
 
 function revoke(userId, id) {
   getRow(userId, id);
   getDatabase().prepare("UPDATE router_keys SET revoked_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?").run(id);
-  benchmarkConsent.revoke(userId, id);
   return get(userId, id);
 }
 
 function remove(userId, id) {
   getRow(userId, id);
   getDatabase().prepare('DELETE FROM router_keys WHERE id = ?').run(id);
-  benchmarkConsent.revoke(userId, id);
 }
 
 function authenticate(token) {

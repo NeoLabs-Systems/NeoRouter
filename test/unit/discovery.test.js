@@ -4,7 +4,6 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { aggregate, percentiles } = require('../../server/services/discovery/benchmarks/aggregate');
 const metadata = require('../../server/services/catalog/metadata_service');
-const benchmarks = require('../../server/services/discovery/benchmark_service');
 const news = require('../../server/services/discovery/news_service');
 const { migrate } = require('../../server/db/migrate');
 const { getDatabase } = require('../../server/db/database');
@@ -67,8 +66,6 @@ test('news observes only benchmarked, confirmed-free strong models and persists 
   assert.equal(news.list().items[0].available, true);
   assert.equal(news.list().items[0].detectedAt, 1000, 'reappearing models are not reposted');
   assert.equal(news.list({ query: '%' }).total, 0, 'search uses literal characters');
-  assert.equal(benchmarks.list({ query: 'large', free: true }).total, 1);
-  assert.equal(benchmarks.list({ compare: ['chat:testsmall', 'chat:testlarge'], limit: 1 }).comparison.length, 2);
   assert.equal(getDatabase().prepare('SELECT COUNT(*) n FROM discovery_news').get().n, 1);
   const firstPage = news.list({ asOf: 1000, limit: 1 });
   metadata.resetForTests({ ...seed,

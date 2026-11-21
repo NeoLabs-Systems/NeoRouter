@@ -178,14 +178,4 @@ function onSuccess(entry, measurement, headers, now = Date.now()) {
   }
 }
 
-function observeBenchmarkFailure(entry, error) {
-  quota.observeHeaders(entry, error.headers);
-  if (error.learned?.value) quota.learnLimit(entry, error.learned);
-  if (error.kind === KINDS.QUOTA_EXHAUSTED) billing.observeFailure(entry, error);
-  if (error.retryAfterMs > 0 && (error.kind === KINDS.QUOTA_EXHAUSTED || (error.kind === KINDS.RATE_LIMIT && !concurrency.isConcurrencyError(error)))) {
-    quota.markExhausted(entry, error.kind === KINDS.QUOTA_EXHAUSTED ? 'rpd' : 'rpm', Date.now() + Math.min(MAX_RETRY_AFTER_MS, error.retryAfterMs));
-  }
-  return policyFor(error);
-}
-
-module.exports = { observeBenchmarkFailure, onFailure, onSuccess, onSlow, policyFor, cooldownFor, QUOTA_LADDER_MS };
+module.exports = { onFailure, onSuccess, onSlow, policyFor, cooldownFor, QUOTA_LADDER_MS };

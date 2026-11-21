@@ -34,6 +34,5 @@ router.use('/usage', require('./usage'));
 router.use('/playground', require('./playground'));
 router.use('/playground', require('./playground_media'));
 router.use('/processing', require('./processing'));
-router.use('/benchmarks', require('./benchmarks'));
 
 module.exports = router;

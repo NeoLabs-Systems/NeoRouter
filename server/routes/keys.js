@@ -4,14 +4,13 @@ const express = require('express');
 const { z } = require('zod');
 const keys = require('../services/router_keys/router_key_service');
 const { validate } = require('../middleware/validate');
-const { requirePermission, requireOwnSpace } = require('../middleware/space');
+const { requirePermission } = require('../middleware/space');
 const { LEVELS } = require('../services/routing/priority');
 
 const router = express.Router();
 
 const keyInput = z.object({
   name: z.string().min(1).max(80),
-  benchmarkCollection: z.boolean().optional(),
   mode: z.enum(['free_only', 'paid', 'both']).optional(),
   // The three kinds of models, chosen independently (preferred over mode).
   allowFree: z.boolean().optional(),
@@ -36,14 +35,9 @@ const keyInput = z.object({
   expiresAt: z.string().datetime({ offset: true }).nullable().optional(),
 });
 
-function benchmarkOwner(req, res, next) {
-  if (req.body.benchmarkCollection !== undefined) return requireOwnSpace(req, res, next);
-  return next();
-}
-
 router.get('/', requirePermission('keys.view'), (req, res) => res.json({ keys: keys.list(req.space.ownerId) }));
-router.post('/', requirePermission('keys.create'), validate(keyInput), benchmarkOwner, (req, res) => res.status(201).json(keys.create(req.space.ownerId, req.body, req.space.actorId)));
-router.patch('/:id', requirePermission('keys.edit'), validate(keyInput.partial()), benchmarkOwner, (req, res) => res.json({ key: keys.update(req.space.ownerId, req.params.id, req.body) }));
+router.post('/', requirePermission('keys.create'), validate(keyInput), (req, res) => res.status(201).json(keys.create(req.space.ownerId, req.body, req.space.actorId)));
+router.patch('/:id', requirePermission('keys.edit'), validate(keyInput.partial()), (req, res) => res.json({ key: keys.update(req.space.ownerId, req.params.id, req.body) }));
 router.post('/:id/revoke', requirePermission('keys.edit'), (req, res) => res.json({ key: keys.revoke(req.space.ownerId, req.params.id) }));
 router.delete('/:id', requirePermission('keys.delete'), (req, res) => { keys.remove(req.space.ownerId, req.params.id); res.status(204).end(); });
 

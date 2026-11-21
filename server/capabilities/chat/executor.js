@@ -1,10 +1,6 @@
 'use strict';
 
 const crypto = require('node:crypto');
-const benchmarkConsent = require('../../services/benchmarks/consent');
-const benchmarkPolicy = require('../../services/benchmarks/policy');
-const evaluatorTraffic = require('../../services/benchmarks/live_traffic');
-const { setTimeout: abortableSleep } = require('node:timers/promises');
 const cacheAffinity = require('../../services/routing/cache_affinity');
 const { clientSession, derivedSession } = require('../../providers/session_id');
 const { getConfig } = require('../../config/env');
@@ -133,7 +129,7 @@ function toolCallRequired(canonical) {
 
 const missingToolCall = () => new ProviderError(KINDS.INVALID_OUTPUT, 'The model ignored tool_choice and answered without a tool call.');
 
-async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs, sessionId, benchmark, answerBudgetMs = timeoutMs }) {
+async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs, sessionId }) {
   const startedAt = Date.now();
   const mustCallTool = toolCallRequired(canonical);
   if (!stream) {
@@ -153,8 +149,7 @@ async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs
   const combined = AbortSignal.any([signal, controller.signal]);
   let headers = null;
   const iterator = adapter.stream(canonical, { modelId: entry.modelId, signal: combined, onHeaders: (value) => { headers = value; }, model: entry, sessionId })[Symbol.asyncIterator]();
-  const answerTimedOut = () => controller.abort(new ProviderError(KINDS.TIMEOUT, 'No output before the first-token timeout.'));
-  let firstTimer = setTimeout(answerTimedOut, timeoutMs);
+  const firstTimer = setTimeout(() => controller.abort(new ProviderError(KINDS.TIMEOUT, 'No output before the first-token timeout.')), timeoutMs);
   const accumulator = new StreamAccumulator();
   const buffered = [];
   let ttftMs = null;
@@ -162,17 +157,7 @@ async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs
     for (;;) {
       const step = await iterator.next();
       if (step.done) break;
-      const reasoningLength = accumulator.reasoning.length;
       accumulator.push(step.value);
-      if (benchmark) {
-        checkBenchmarkOutput(accumulator);
-        // A reasoning stream is making progress even before it has a usable answer.
-        if (accumulator.reasoning.length > reasoningLength) {
-          clearTimeout(firstTimer);
-          const remaining = Math.max(1, startedAt + answerBudgetMs - Date.now());
-          firstTimer = setTimeout(answerTimedOut, Math.min(timeoutMs, remaining));
-        }
-      }
       buffered.push(step.value);
       // Commit on the first real answer token (reasoning is buffered), and
       // with a required tool call only once the call starts.
@@ -180,9 +165,7 @@ async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs
       if (accumulator.hasAnswer() && (!mustCallTool || accumulator.toolCalls.length)) break;
     }
   } catch (error) {
-    if (controller.signal.aborted && controller.signal.reason instanceof ProviderError) throw controller.signal.reason;
-    if (benchmark) controller.abort();
-    throw fromNetworkError(error);
+    throw controller.signal.aborted && controller.signal.reason instanceof ProviderError ? controller.signal.reason : fromNetworkError(error);
   } finally {
     clearTimeout(firstTimer);
   }
@@ -196,16 +179,6 @@ async function runAttempt({ entry, adapter, canonical, stream, signal, timeoutMs
  * canonical: an already translated request (web search turns); internal:
  * a turn of a request that already passed the key's rate limit.
  */
-function checkBenchmarkOutput(accumulator) {
-  if (estimateOutputTokens(accumulator) * 4 > benchmarkPolicy.maxPayloadBytes) {
-    throw new ProviderError(KINDS.INVALID_OUTPUT, 'Benchmark output exceeded its size limit.');
-  }
-}
-
-function executeBenchmark({ key, canonical, benchmark }) {
-  return run({ key, canonical: { ...canonical, stream: true }, benchmark, format: 'openai_chat', internal: true, freeOnly: true });
-}
-
 async function execute(options) {
   const { req, res, key } = options;
   // X-NeoRouter-Hop marks a request a pool partner passed on. Only a partner's
@@ -242,16 +215,12 @@ function peerSafeError(error) {
   return new HttpError(error.status, error.code, error.message, error.details?.retryAfterSeconds ? { retryAfterSeconds: error.details.retryAfterSeconds } : undefined);
 }
 
-async function run({ req = {}, res, key, format, body, freeOnly = false, canonical: preset = null, internal = false, shareReserve = null, sharePoolId = null, shareOutcome = null, benchmark = null }) {
+async function run({ req, res, key, format, body, freeOnly = false, canonical: preset = null, internal = false, shareReserve = null, sharePoolId = null, shareOutcome = null }) {
   const translator = translators[format];
   // A partner's request leaves no trace beyond counts: no headers about the
   // route, no stored error texts, no repeat detection, none of the owner's
   // request processing (the partner already applied its own).
   const peer = Boolean(key.peer_link_id);
-  let captureTicket = null;
-  if (!internal && !peer && key.benchmark_collection) {
-    try { captureTicket = benchmarkConsent.ticket(key.user_id, key.id); } catch { /* Optional capture. */ }
-  }
   // Built-in web search runs the request as several turns (web_search.js).
   if (!preset && !peer) {
     const search = webSearch.requested(format, body || {});
@@ -277,8 +246,8 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
     throw new HttpError(400, 'INVALID_REQUEST', `The request body could not be read: ${error.message}`);
   }
   if (!canonical.messages.length) throw new HttpError(400, 'INVALID_REQUEST', 'The request contains no messages.');
-  const sessionId = benchmark ? null : clientSession(req) || derivedSession(canonical, key.id);
-  if (sessionId && !canonical.prompt_cache_key) canonical.prompt_cache_key = sessionId;
+  const sessionId = clientSession(req) || derivedSession(canonical, key.id);
+  if (!canonical.prompt_cache_key) canonical.prompt_cache_key = sessionId;
 
   const rpm = internal ? { allowed: true } : routerKeys.consumeRpm(key);
   // What the key may still send, so clients pace themselves (not for partners).
@@ -304,7 +273,7 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
   // Compression and the privacy shield run before routing, so the router sees
   // the real request size and providers never see hidden values. A request
   // that may reach a pool partner gets at least the pool's shield.
-  const processing = peer || benchmark
+  const processing = peer
     ? { canonical, vault: null, stats: { redacted: 0, compression: { level: 'off', savedTokens: 0 } } }
     : await requestProcessing.apply(key.user_id, canonical, { compressionLevel: req.get?.('x-neorouter-compression') || null, poolMinimum: poolKey });
   canonical = processing.canonical;
@@ -322,8 +291,6 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
     keepPrivate,
     shareReserve,
     sharePoolId,
-    entryFilter: benchmark?.eligible,
-    internalEvidence: !benchmark,
     sessionId,
     routingGroup: peer ? null : req.get?.('x-neorouter-group') || null,
   });
@@ -331,21 +298,12 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
   const retryId = internal || peer ? null : retries.fingerprint(key.id, canonical.messages);
   const repeated = retryId && retries.repeatedAnswer(retryId);
   if (repeated) experience.recordFeedback(repeated.ref, repeated.task, false);
-  if (plan.pacing && !peer) res?.set('X-NeoRouter-Budget-Pace', plan.pacing.state);
-  if (plan.task && !peer) res?.set('X-NeoRouter-Task', `${plan.task.primary}; difficulty=${plan.task.difficulty}`);
+  if (plan.pacing && !peer) res.set('X-NeoRouter-Budget-Pace', plan.pacing.state);
+  if (plan.task && !peer) res.set('X-NeoRouter-Task', `${plan.task.primary}; difficulty=${plan.task.difficulty}`);
 
   const config = getConfig();
   const clientAbort = new AbortController();
-  res?.on('close', () => { if (!res.writableFinished) clientAbort.abort(new ProviderError(KINDS.ABORTED, 'The client disconnected.')); });
-  const signal = benchmark ? AbortSignal.any([clientAbort.signal, benchmark.signal]) : clientAbort.signal;
-  let contactedPool = false;
-  const capture = (entry, message, finishReason) => {
-    if (!captureTicket || contactedPool || signal.aborted) return;
-    try {
-      require('../../services/benchmarks/capture').schedule({ userId: key.user_id, keyId: key.id, ticket: captureTicket, entry,
-        canonical, message, finishReason, task: plan.task?.primary, findings: processing.findings, inputTokens, signal });
-    } catch { /* Optional capture. */ }
-  };
+  res.on('close', () => { if (!res.writableFinished) clientAbort.abort(new ProviderError(KINDS.ABORTED, 'The client disconnected.')); });
   const trail = [];
   let lastError = null;
   let badRequests = 0;
@@ -353,14 +311,6 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
   let freesUpAt = null;
 
   const finish = (fields) => {
-    if (benchmark) {
-      if (trail.length && !signal.aborted && benchmark.active()) {
-        evaluatorTraffic.record(key.user_id, key.id, {
-          id: requestId, status: fields.status, trail, latencyMs: Date.now() - startedAt, queuedMs: Math.round(queuedMs),
-        });
-      }
-      return;
-    }
     if (shareOutcome && fields.status === 'success') shareOutcome.answered = true;
     try {
       traffic.recordFinished({ key, accountId: fields.account_id, success: fields.status === 'success', tokens: (fields.input_tokens || 0) + (fields.output_tokens || 0) });
@@ -424,14 +374,14 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
   // Commits a successful attempt to the client (JSON or SSE) and records it.
   const commit = async (attempt, result) => {
     const { entry, reservation } = attempt;
-    if (res && !peer) {
+    if (!peer) {
       res.set('X-NeoRouter-Model', entry.id);
       if (entry.routingGroup) res.set('X-NeoRouter-Group', entry.routingGroup);
       res.set('X-NeoRouter-Trail', [...trail.map((item) => item.model), entry.id].join(','));
     }
-    if (keepPrivate) res?.set('X-NeoRouter-Kept-Private', keptPrivate.reasons.join(','));
-    if (processingStats.compression.level !== 'off') res?.set('X-NeoRouter-Compression', `${processingStats.compression.level}; saved~=${processingStats.compression.savedTokens}`);
-    if (processingStats.redacted) res?.set('X-NeoRouter-Redacted', String(processingStats.redacted));
+    if (keepPrivate) res.set('X-NeoRouter-Kept-Private', keptPrivate.reasons.join(','));
+    if (processingStats.compression.level !== 'off') res.set('X-NeoRouter-Compression', `${processingStats.compression.level}; saved~=${processingStats.compression.savedTokens}`);
+    if (processingStats.redacted) res.set('X-NeoRouter-Redacted', String(processingStats.redacted));
     if (!stream) {
       const tokens = normalizeUsage(result.response.usage) || {
         prompt_tokens: inputTokens,
@@ -449,7 +399,6 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
         routing_group: entry.routingGroup || null, cached_input_tokens: cacheAffinity.cachedTokens(tokens), cache_creation_tokens: tokens.cache_creation_input_tokens || 0,
         input_tokens: tokens.prompt_tokens, output_tokens: tokens.completion_tokens, cost_usd: cost, is_free: entry.isFree ? 1 : 0,
       });
-      capture(entry, result.response.choices[0].message, result.response.choices[0].finish_reason);
       const response = vault ? restoreResponse(result.response, vault) : result.response;
       const body = translator.responseFromCanonical({ ...response, usage: tokens }, entry.id);
       // An extra top-level field: OpenAI and Anthropic SDKs ignore what they do not know.
@@ -457,11 +406,9 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
       res.json(body);
       return;
     }
-    if (res) {
-      res.status(200);
-      res.set({ 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
-      res.flushHeaders();
-    }
+    res.status(200);
+    res.set({ 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
+    res.flushHeaders();
     const { accumulator } = result;
     // Placeholders are put back on the way out; usage accounting keeps the
     // chunks as the provider sent them.
@@ -482,40 +429,20 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
     }
     let streamError = null;
     try {
-      if (benchmark) {
-        for await (const _chunk of replay()) checkBenchmarkOutput(accumulator);
-      } else {
-        for await (const event of translator.streamFromCanonical(replay(), entry.id)) writeSse(res, event);
-      }
+      for await (const event of translator.streamFromCanonical(replay(), entry.id)) writeSse(res, event);
     } catch (error) {
       streamError = result.controller.signal.reason instanceof ProviderError ? result.controller.signal.reason : fromNetworkError(error);
-      if (res && streamError.kind !== KINDS.ABORTED) writeSse(res, streamErrorEvent(format, streamError));
+      if (streamError.kind !== KINDS.ABORTED) writeSse(res, streamErrorEvent(format, streamError));
     }
     const durationMs = Date.now() - attempt.started;
     const tokens = accumulator.usage || { prompt_tokens: inputTokens, completion_tokens: estimateOutputTokens(accumulator) };
     const cost = budget.costOf(entry, tokens);
     // An SSE comment line: every SSE parser skips it, readers who want it can parse it.
-    if (!benchmark && !peer && !streamError && !res.writableEnded) res.write(`: neorouter ${JSON.stringify(stats(attempt, { durationMs, ttftMs: result.ttftMs, tokens, cost }))}\n\n`);
-    res?.end();
+    if (!peer && !streamError && !res.writableEnded) res.write(`: neorouter ${JSON.stringify(stats(attempt, { durationMs, ttftMs: result.ttftMs, tokens, cost }))}\n\n`);
+    res.end();
     reservation.settle(cost, requestId);
     billing.observeCost(entry, accumulator.reportedCost);
     quota.recordTokens(entry, tokens.prompt_tokens + tokens.completion_tokens - inputTokens);
-    trail.push(trailItem(entry, streamError ? `stream_${streamError.kind}` : 'success', { ms: durationMs }));
-    if (benchmark) {
-      quota.observeHeaders(entry, result.headers);
-      billing.observeHeaders(entry, result.headers);
-      finish({ status: streamError ? 'error' : 'success' });
-      if (streamError) {
-        result.controller.abort();
-        if (!signal.aborted) benchmark.onFailure?.(entry, streamError);
-        throw streamError;
-      }
-      return { entry, message: accumulator.toMessage(), finishReason: accumulator.finishReason,
-        maxTokens: attempt.maxTokens, charged: accumulator.reportedCost > 0 };
-    }
-    if (captureTicket && !streamError && accumulator.hasAnswer() && !invalidToolCalls(accumulator.toolCalls)) {
-      capture(entry, accumulator.toMessage(), accumulator.finishReason);
-    }
     if (streamError) {
       if (streamError.kind !== KINDS.ABORTED) learning.onFailure(entry, streamError, { estimatedTokens: inputTokens });
     } else if (invalidToolCalls(accumulator.toolCalls)) {
@@ -526,6 +453,7 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
         latencyMs: durationMs, ttftMs: result.ttftMs, outputTokens: tokens.completion_tokens, generationMs: durationMs - result.ttftMs,
       }, result.headers);
     }
+    trail.push(trailItem(entry, streamError ? `stream_${streamError.kind}` : 'success', { ms: durationMs }));
     finish({
       status: streamError && streamError.kind !== KINDS.ABORTED ? 'error' : 'success',
       http_status: 200,
@@ -546,7 +474,6 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
   let nextHedgeAt = 0;
 
   const launch = (entry) => {
-    if (benchmark && (!benchmark.active() || !benchmark.eligible(entry, true))) return false;
     const runtime = accounts.getRuntime(entry.accountId);
     if (!runtime) return false;
     const adapter = accounts.adapterFor(runtime);
@@ -561,24 +488,20 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
       controller,
       started: Date.now(),
       reservation: budget.reserve(key, budget.estimateMaxCost(entry, inputTokens, maxOutputFor(canonical, entry)) || 0),
-      release: loadTracker.lease(entry, { benchmark: Boolean(benchmark) }),
+      release: loadTracker.lease(entry),
     };
     quota.recordRequest(entry, inputTokens);
-    if (!benchmark) plans.onSent(entry);
-    const remainingMs = config.routing.totalBudgetMs - (Date.now() - startedAt);
-    const timeoutMs = Math.min(adapter.timeoutMs, remainingMs);
-    // A failed or abandoned partner attempt can still have shared the request.
-    if (captureTicket && isPeerEntry(entry)) contactedPool = true;
-    attempt.promise = runAttempt({ entry, adapter, canonical: sent, stream, signal: AbortSignal.any([signal, controller.signal]), timeoutMs, sessionId, benchmark, answerBudgetMs: benchmark ? remainingMs : timeoutMs })
+    plans.onSent(entry);
+    const timeoutMs = Math.min(adapter.timeoutMs, config.routing.totalBudgetMs - (Date.now() - startedAt));
+    attempt.promise = runAttempt({ entry, adapter, canonical: sent, stream, signal: AbortSignal.any([clientAbort.signal, controller.signal]), timeoutMs, sessionId })
       .then((result) => ({ attempt, result }), (error) => ({ attempt, error }));
     running.add(attempt);
     attemptsStarted += 1;
     return true;
   };
 
-  const maxAttempts = benchmark?.pinned ? 1 : config.routing.maxAttempts;
   const startNext = (filter = null) => {
-    while (attemptsStarted < maxAttempts && Date.now() - startedAt < config.routing.totalBudgetMs && !signal.aborted) {
+    while (attemptsStarted < config.routing.maxAttempts && Date.now() - startedAt < config.routing.totalBudgetMs && !clientAbort.signal.aborted) {
       const choice = plan.next({ filter });
       if (!choice) return false;
       if (launch(choice.entry)) return true;
@@ -600,7 +523,7 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
     try {
       while (!running.size) {
         if (startNext()) return true;
-        if (signal.aborted || attemptsStarted >= maxAttempts) return false;
+        if (clientAbort.signal.aborted || attemptsStarted >= config.routing.maxAttempts) return false;
         const now = Date.now();
         freesUpAt = plan.freesUpAt(now);
         const until = busyUntil > waitUntil && plan.waitingOnBusy(now) ? busyUntil : waitUntil;
@@ -608,13 +531,12 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
           // Better to try what may work again than to answer "no model available".
           // A slow or weaker model that works comes before connections known to refuse.
           if (plan.enableLastResort({ now })) continue;
-          if (!benchmark && plan.enableLongShots({ now })) continue;
+          if (plan.enableLongShots({ now })) continue;
           return false;
         }
         plan.joinQueue(now);
         const pause = Math.min(until - now, Math.max(QUEUE_MIN_POLL_MS, Math.min(freesUpAt - now, QUEUE_POLL_MS)) * (0.5 + Math.random()));
-        if (benchmark) await abortableSleep(pause, undefined, { signal });
-        else await sleep(pause);
+        await sleep(pause);
         queuedMs += Date.now() - now;
       }
       return true;
@@ -634,8 +556,8 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
     // Short of capacity: one attempt on the side at most. That still rescues a
     // stuck request, but does not spend free quota others are queueing for.
     const parallel = capacity.isShort(key.user_id) ? Math.min(2, config.routing.maxParallel) : config.routing.maxParallel;
-    const canHedge = !benchmark?.pinned && config.routing.hedging && running.size < parallel
-      && attemptsStarted < maxAttempts && [...running].every((item) => item.entry.isFree);
+    const canHedge = config.routing.hedging && running.size < parallel
+      && attemptsStarted < config.routing.maxAttempts && [...running].every((item) => item.entry.isFree);
     let timer = null;
     const contenders = [...running].map((item) => item.promise);
     if (canHedge) {
@@ -656,24 +578,15 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
       settle(attempt);
       attempt.reservation.release();
       const error = outcome.error instanceof ProviderError ? outcome.error : fromNetworkError(outcome.error);
-      if (signal.aborted) {
-        for (const other of running) {
-          settle(other);
-          other.reservation.release();
-        }
-        break;
-      }
+      if (error.kind === KINDS.ABORTED && clientAbort.signal.aborted) break;
       lastError = error;
       trail.push(trailItem(attempt.entry, error.kind, { status: error.status, ms: Date.now() - attempt.started, message: String(error.message).slice(0, 200) }));
-      benchmark?.onFailure?.(attempt.entry, error);
-      const policy = benchmark
-        ? learning.observeBenchmarkFailure(attempt.entry, error)
-        : learning.onFailure(attempt.entry, error, { estimatedTokens: inputTokens, maxTokens: attempt.maxTokens, boosted: attempt.boosted, running: accountInFlight });
+      const policy = learning.onFailure(attempt.entry, error, { estimatedTokens: inputTokens, maxTokens: attempt.maxTokens, boosted: attempt.boosted, running: accountInFlight });
       // A partner counts only the requests it answered, so a refused one does not use up our share of it here either.
       if (isPeerEntry(attempt.entry)) quota.refundRequest(attempt.entry, inputTokens);
       if (isPeerEntry(attempt.entry)) reachability.noteFailure(attempt.entry.accountId, error.kind);
       plan.noteFailure(attempt.entry, error.kind);
-      if (!benchmark && error.kind === KINDS.AUTH) accounts.validateAccount(attempt.entry.accountId).catch(() => {});
+      if (error.kind === KINDS.AUTH) accounts.validateAccount(attempt.entry.accountId).catch(() => {});
       badRequests = error.kind === KINDS.BAD_REQUEST ? badRequests + 1 : 0;
       if (!policy.fallback || badRequests >= MAX_CONSECUTIVE_BAD_REQUESTS) {
         for (const other of [...running]) {
@@ -692,20 +605,21 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
       settle(other);
       other.reservation.release();
       trail.push(trailItem(other.entry, 'hedge_lost', { ms: Date.now() - other.started }));
-      if (!benchmark) learning.onSlow(other.entry, Date.now() - other.started);
+      learning.onSlow(other.entry, Date.now() - other.started);
     }
     running.delete(attempt);
-    if (!benchmark) capacity.record(key.user_id, true);
+    capacity.record(key.user_id, true);
     if (isPeerEntry(attempt.entry)) reachability.noteSuccess(attempt.entry.accountId);
     if (retryId && plan.task) retries.rememberAnswer(retryId, { ref: attempt.entry.ref, task: plan.task.primary });
     try {
-      return await commit(attempt, outcome.result);
+      await commit(attempt, outcome.result);
     } finally {
       attempt.release();
     }
+    return undefined;
   }
 
-  if (signal.aborted) {
+  if (clientAbort.signal.aborted) {
     finish({ status: 'error', http_status: 499, error_code: 'client_closed', error_message: 'The client disconnected.' });
     return undefined;
   }
@@ -735,10 +649,10 @@ async function run({ req = {}, res, key, format, body, freeOnly = false, canonic
     ? explainNoModel(rejected)
     : `All ${trail.length} attempt(s) failed. Last error: ${lastError?.message || 'unknown'}`;
   finish({ status: 'error', http_status: status, error_code: code, error_message: message });
-  if (!benchmark) capacity.record(key.user_id, false);
+  capacity.record(key.user_id, false);
   // When a model frees up later, say when to come back.
   const retryAfterSeconds = freesUpAt ? Math.max(1, Math.ceil((freesUpAt - Date.now()) / 1000)) : null;
-  if (res && retryAfterSeconds && !res.headersSent) res.set('Retry-After', String(retryAfterSeconds));
+  if (retryAfterSeconds && !res.headersSent) res.set('Retry-After', String(retryAfterSeconds));
   throw new HttpError(status, code, message, { trail, rejected, ...(retryAfterSeconds ? { retryAfterSeconds } : {}) });
 }
 
@@ -757,4 +671,4 @@ function safeTranslator(translator) {
   };
 }
 
-module.exports = { execute, executeBenchmark, translators };
+module.exports = { execute, translators };

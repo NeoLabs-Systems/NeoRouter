@@ -117,8 +117,6 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
 
 **Local models:** admins can run text, speech, transcription, embedding and safety models on the server itself; NeoRouter shows what fits the hardware, then downloads, runs and repairs them.
 
-Compare models head-to-head on your own opt-in traffic with [NeoRouter ReplayBench](docs/replaybench.md).
-
 **Search engines:** Tavily, Exa, Linkup, Parallel, Firecrawl, Serper, Brave Search, Jina and self-hosted SearXNG.
 
 **Providers:** Groq, Google Gemini, Deepgram, ElevenLabs, Cerebras, Mistral, OpenRouter, NVIDIA NIM, Cloudflare, Cohere, Z.ai, SiliconFlow, Hugging Face, Ollama Cloud, Kilo, OpenAI, Anthropic, xAI, DeepSeek, Together, Fireworks, DeepInfra, Nous, local Ollama and LM Studio, and any OpenAI- or Anthropic-compatible endpoint.

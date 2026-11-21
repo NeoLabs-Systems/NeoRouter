@@ -309,7 +309,6 @@ class RequestLog {
   String get id => raw['id'] as String;
   DateTime get createdAt => DateTime.fromMillisecondsSinceEpoch(_int(raw['createdAt']) ?? 0);
   String? get keyName => raw['keyName'] as String?;
-  bool get evaluator => raw['evaluator'] == true;
   String get apiFormat => raw['apiFormat'] as String? ?? '';
   String get requestedModel => raw['requestedModel'] as String? ?? '';
   String? get model => raw['model'] as String?;

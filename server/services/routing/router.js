@@ -435,7 +435,7 @@ class RoutingPlan {
   // taskHint: a task kind the client named (X-NeoRouter-Task).
   // keepPrivate: very sensitive content, kept off pool partners.
   // shareReserve: for a partner's request, the share of capacity kept for the owner.
-  constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null, taskHint = null, keepPrivate = false, shareReserve = null, sharePoolId = null, routingGroup = null, sessionId = null, workload = null, entryFilter = null, internalEvidence = true }) {
+  constructor({ userId, key, request, requestedModel, needs, inputTokens, freeOnly = false, random = Math.random, capability = 'chat', estimateCost = null, taskHint = null, keepPrivate = false, shareReserve = null, sharePoolId = null, routingGroup = null, sessionId = null, workload = null }) {
     this.startedAt = Date.now();
     this.slotWaitUntil = null;
     this.capability = capability;
@@ -450,7 +450,6 @@ class RoutingPlan {
     this.inputTokens = inputTokens;
     this.random = random;
     this.freeOnly = freeOnly;
-    this.internalEvidence = internalEvidence;
     this.tried = new Set();
     this.parsed = parseModel(requestedModel);
     // "auto:default" is plain auto for apps that cannot send a bare "auto".
@@ -494,7 +493,6 @@ class RoutingPlan {
     this.visitedGroups = new Set(this.group ? [this.group.name] : []);
     this.smoothing = smoothing.active(userId);
     this.entries = catalog.listForUser(userId, { capability }).map((entry) => plans.effective(entry));
-    if (entryFilter) this.entries = this.entries.filter(entryFilter);
     // Outcomes are learned per kind of task (learning.js).
     if (this.task) for (const entry of this.entries) entry.task = this.task.primary;
     this.primaryRefs = new Set();
@@ -546,7 +544,7 @@ class RoutingPlan {
         continue;
       }
       const quotaState = quota.evaluate(entry, this.inputTokens, now);
-      const result = scoring.score(entry, { weights: this.weights, quotaFactor: quotaState.factor, random: this.random, sample, now, task: this.task, need: this.need, internalEvidence: this.internalEvidence });
+      const result = scoring.score(entry, { weights: this.weights, quotaFactor: quotaState.factor, random: this.random, sample, now, task: this.task, need: this.need });
       ranked.push({ entry, details: result, quota: quotaState });
     }
     // Absolute intelligence, speed and cost estimates sit close together for

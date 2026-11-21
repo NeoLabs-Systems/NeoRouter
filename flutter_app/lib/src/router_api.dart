@@ -1,4 +1,3 @@
-import '../discovery/models.dart';
 import 'backend_client.dart';
 import 'capabilities.dart';
 import 'models.dart';
@@ -49,18 +48,6 @@ class RouterApi {
     ),
   );
   Future<Map<String, dynamic>> info() => client.get('$_base/info');
-
-  Future<BenchmarkPageData> benchmarks({String query = '', String capability = 'chat', String source = '', bool free = false, int offset = 0, List<String> compare = const []}) async =>
-      BenchmarkPageData(await client.get(Uri(path: '$_base/discovery/benchmarks', queryParameters: {
-        'query': query, 'capability': capability, 'source': source, 'free': free ? '1' : '0', 'offset': '$offset', 'compare': compare.join(','),
-      }).toString()));
-
-  Future<Map<String, dynamic>> benchmarkConsent() => client.get('$_base/benchmarks/settings');
-  Future<Map<String, dynamic>> setBenchmarkConsent(bool enabled) =>
-      client.putJson('$_base/benchmarks/settings', {'enabled': enabled});
-  Future<void> deleteBenchmarkCollection() => client.delete('$_base/benchmarks/collection');
-  Future<Map<String, dynamic>> internalBenchmarkResults({int offset = 0, String task = ''}) =>
-      client.get(Uri(path: '$_base/discovery/internal-benchmarks', queryParameters: {'groupBy': 'model', 'offset': '$offset', 'task': task}).toString());
 
   // ---- providers ------------------------------------------------------------
   Future<List<ProviderDefinition>> definitions() async => _list(await client.get('$_base/providers/definitions'), 'definitions', ProviderDefinition.new);
@@ -190,14 +177,6 @@ class RouterApi {
     'logs',
     RequestLog.new,
   );
-  Future<({List<RequestLog> logs, List<RequestLog> evaluatorLogs, bool evaluatorEnabled})> liveTraffic({required int limit}) async {
-    final data = await client.get('$_base/usage/logs?limit=$limit&live=1');
-    return (
-      logs: _list(data, 'logs', RequestLog.new),
-      evaluatorLogs: _list(data, 'evaluatorLogs', RequestLog.new),
-      evaluatorEnabled: data['evaluatorEnabled'] == true,
-    );
-  }
   Future<List<Map<String, dynamic>>> quotas() async =>
       ((await client.get('$_base/usage/quotas'))['accounts'] as List).map((item) => Map<String, dynamic>.from(item as Map)).toList();
   Future<Map<String, dynamic>> playground(Map<String, Object?> body) => client.post('$_base/playground/chat', _clean(body));
