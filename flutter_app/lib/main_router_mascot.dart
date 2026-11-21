@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -38,6 +39,13 @@ class RouterLoad extends ChangeNotifier {
     if (inFlight > 0) return MascotMood.working;
     if (DateTime.now().difference(_lastBusy) > _sleepAfter) return MascotMood.asleep;
     return MascotMood.idle;
+  }
+
+  /// How hard a stressed face shakes: a light tremble when it first gets
+  /// stressed, the full shake at three times the stressed load.
+  double get shake {
+    final over = math.max((inFlight - stressedTotal) / (stressedTotal * 2), (busiestAccount - stressedAccount) / (stressedAccount * 2));
+    return (0.2 + over * 0.8).clamp(0.2, 1.0);
   }
 
   String describe(AppL10n t) => switch (mood) {
@@ -137,12 +145,12 @@ class _RouterMascotState extends State<RouterMascot> {
 
   @override
   Widget build(BuildContext context) {
-    final face = NeoMascot(mood: _stabilizer.mood, size: widget.size);
-    if (!widget.tooltip) return face;
     return ListenableBuilder(
       listenable: _load,
-      builder: (context, child) => Tooltip(message: _load.describe(AppL10n.of(context)), child: child),
-      child: face,
+      builder: (context, _) {
+        final face = NeoMascot(mood: _stabilizer.mood, size: widget.size, shake: _load.shake);
+        return widget.tooltip ? Tooltip(message: _load.describe(AppL10n.of(context)), child: face) : face;
+      },
     );
   }
 }

@@ -21,7 +21,11 @@ class NeoMascot extends StatefulWidget {
     required this.mood,
     this.size = 40,
     this.animate = true,
+    this.shake = 1,
   });
+
+  /// How hard the face's sideways shake is, 0 (still) to 1 (as drawn).
+  final double shake;
 
   final MascotMood mood;
   final double size;
@@ -49,6 +53,7 @@ class _NeoMascotState extends State<NeoMascot>
   late final _MascotPainter _painter = _MascotPainter(
     picture: _picture,
     mix: _mix,
+    shake: () => widget.shake,
   );
   final math.Random _random = math.Random();
   Timer? _stepTimer;
@@ -210,8 +215,12 @@ class _MascotPicture extends ChangeNotifier {
 }
 
 class _MascotPainter extends CustomPainter {
-  _MascotPainter({required this.picture, required this.mix})
-    : super(repaint: Listenable.merge(<Listenable>[picture, mix]));
+  _MascotPainter({required this.picture, required this.mix, double Function()? shake})
+    : shake = shake ?? _full,
+      super(repaint: Listenable.merge(<Listenable>[picture, mix]));
+
+  static double _full() => 1;
+  final double Function() shake;
 
   final _MascotPicture picture;
   final Animation<double> mix;
@@ -256,7 +265,7 @@ class _MascotPainter extends CustomPainter {
     )!;
     final rim = lerpDouble(p.fromRim, p.toRim, t)!;
     final scale = lerpDouble(p.fromScale, p.toScale, t)!;
-    final shift = lerpDouble(p.fromShift, p.toShift, t)! * pitch;
+    final shift = lerpDouble(p.fromShift, p.toShift, t)! * pitch * shake().clamp(0.0, 1.0);
 
     canvas.save();
     final centre = tile.center;
