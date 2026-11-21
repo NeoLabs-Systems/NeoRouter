@@ -413,7 +413,8 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
         ..length = math.min(_history.length, _historySize);
       // The first load is history (only its last seconds play); later arrivals play live.
       if (!first) _queue.addAll(fresh.reversed.take(30));
-      _arrange();
+      // New keys or connections need new cards: the stage only gets them on a rebuild.
+      setState(_arrange);
       if (first && !_warmed && widget.ready) _warmUp();
     } catch (_) {
       // The next poll tries again.
@@ -528,11 +529,11 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
     return _Packet(app: app, attempts: attempts, label: task.isEmpty ? 'chat' : task.replaceAll('_', ' '), success: log.success, latency: log.latencyMs ?? 900, live: live, queued: log.queuedMs);
   }
 
-  void _spawn(RequestLog log, {required bool live}) {
+  void _spawn(RequestLog log, {required bool live, bool count = true}) {
     final packet = _packetFor(log, live: live);
     if (packet == null) return;
     final key = _apps.isEmpty ? '' : _apps[packet.app];
-    _appRequests[key] = (_appRequests[key] ?? 0) + 1;
+    if (count) _appRequests[key] = (_appRequests[key] ?? 0) + 1;
     _scene.add(packet);
     if (live) _lastLive = _scene.t;
   }
@@ -542,22 +543,30 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
   // would be by now; with nothing that recent, the view starts quiet.
   void _warmUp() {
     _warmed = true;
-    final now = DateTime.now();
-    final start = now.subtract(_backfill);
-    final recent = _history.where((log) => log.createdAt.isAfter(start)).toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    // Request counts on the key cards cover the whole loaded history.
+    for (final log in _history) {
+      final key = _apps.contains(log.keyName ?? '') ? log.keyName! : (_apps.contains(_otherLabel) ? _otherLabel : (_apps.isEmpty ? '' : _apps.first));
+      _appRequests[key] = (_appRequests[key] ?? 0) + 1;
+    }
+    // The latest requests, played at their real spacing but squeezed into the
+    // backfill window, so the view opens mid-traffic as if it had been running.
+    final recent = _history.take(12).toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     if (recent.isEmpty) return;
+    final window = _backfill.inMilliseconds.toDouble();
+    final span = recent.last.createdAt.difference(recent.first.createdAt).inMilliseconds.toDouble();
+    final squeeze = span > window * 0.8 ? window * 0.8 / span : 1.0;
+    final first = recent.first.createdAt;
     const frame = 16.0;
     var clock = 0.0;
     for (final log in recent) {
-      final at = log.createdAt.difference(start).inMilliseconds.toDouble();
+      final at = window * 0.2 + log.createdAt.difference(first).inMilliseconds * squeeze;
       while (clock < at) {
         _scene.advance(frame);
         clock += frame;
       }
-      _spawn(log, live: true);
+      _spawn(log, live: true, count: false);
     }
-    final end = _backfill.inMilliseconds.toDouble();
-    while (clock < end) {
+    while (clock < window) {
       _scene.advance(frame);
       clock += frame;
     }
@@ -887,7 +896,7 @@ class _Stage extends StatelessWidget {
                     children: <Widget>[
                       RouterMascot(controller: controller, size: layout.radius * 0.95, tooltip: false),
                       const SizedBox(height: 4),
-                      Text(t.liveInFlight('${s.packets.length}'), style: GoogleFonts.geistMono(fontSize: 10, color: palette.textMuted)),
+                      ListenableBuilder(listenable: RouterLoad.instance, builder: (context, _) => Text(t.liveInFlight('${RouterLoad.instance.inFlight}'), style: GoogleFonts.geistMono(fontSize: 10, color: palette.textMuted))),
                     ],
                   ),
                 ),

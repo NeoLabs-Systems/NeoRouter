@@ -619,6 +619,14 @@ async function run({ req, res, key, format, body, freeOnly = false, canonical: p
     return undefined;
   }
 
+  // Leaving early (the client went away, or no fallback): attempts still
+  // running stop here and free their slot, or the load tracker counts them forever.
+  for (const other of [...running]) {
+    other.controller.abort(new ProviderError(KINDS.ABORTED, 'Request stopped.'));
+    settle(other);
+    other.reservation.release();
+  }
+
   if (clientAbort.signal.aborted) {
     finish({ status: 'error', http_status: 499, error_code: 'client_closed', error_message: 'The client disconnected.' });
     return undefined;
