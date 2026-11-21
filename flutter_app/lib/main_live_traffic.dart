@@ -106,12 +106,32 @@ class _Scene extends ChangeNotifier {
   final List<_Chip> chips = <_Chip>[];
   final List<_Spark> sparks = <_Spark>[];
 
+  /// Expanding rings where something hit: (anchor, index, start, tone, strength).
+  final List<(String, int, double, int, double)> shocks = <(String, int, double, int, double)>[];
+
+  /// How hard the router is working, 0 (calm) to 1 (overloaded), eased.
+  double heat = 0;
+
+  /// How much of the recent trouble was failures, 0–1, eased.
+  double strain = 0;
+
+  /// Ring rotation, accumulated so a change of speed never jumps.
+  double spin = 0;
+
+  // When a card was last hit by an arriving request, for its punch.
+  List<double> provHit = <double>[];
+  List<double> appHit = <double>[];
+
+  void shock(String anchor, int index, {required int tone, double strength = 1}) {
+    if (shocks.length < 40) shocks.add((anchor, index, t, tone, strength));
+  }
+
   /// A small burst of sparks, fanned around [direction] (radians).
   void burst(String anchor, int index, {required int tone, double direction = 0, double spread = math.pi, int count = 7}) {
     if (sparks.length > 220) return;
     for (var k = 0; k < count; k++) {
       final angle = direction + (random.nextDouble() - 0.5) * spread;
-      sparks.add(_Spark(anchor, index, t, angle, 0.05 + random.nextDouble() * 0.09, tone, 380 + random.nextDouble() * 320));
+      sparks.add(_Spark(anchor, index, t, angle, 0.04 + random.nextDouble() * 0.06 * (1 + heat), tone, 320 + random.nextDouble() * 260));
     }
   }
   List<double> appGlow = <double>[];
@@ -127,6 +147,8 @@ class _Scene extends ChangeNotifier {
       appGlow = List<double>.filled(apps, 0);
       appFlash = List<double>.filled(apps, -1e9);
     }
+    if (appHit.length != apps) appHit = List<double>.filled(apps, -1e9);
+    if (provHit.length != providers) provHit = List<double>.filled(providers, -1e9);
     if (provGlow.length != providers) {
       provGlow = List<double>.filled(providers, 0);
       provFail = List<double>.filled(providers, -1e9);
@@ -200,6 +222,12 @@ class _Scene extends ChangeNotifier {
     pulses.removeWhere((start) => t - start > 1500);
     chips.removeWhere((chip) => t - chip.t0 > 1700);
     sparks.removeWhere((spark) => t - spark.t0 > spark.life);
+    shocks.removeWhere((shock) => t - shock.$3 > 900);
+    // Heat follows how many requests are under way (about 12 is a lot).
+    final target = (packets.length / 12).clamp(0.0, 1.0);
+    heat += (target - heat) * math.min(1, dt / 900);
+    strain = math.max(0, strain - dt / 6000);
+    spin += dt * (1 + heat * 2.5);
     notifyListeners();
   }
 
@@ -207,6 +235,13 @@ class _Scene extends ChangeNotifier {
     p.phase = phase;
     p.t0 = t;
     p.dur = dur;
+  }
+
+  // A failure lands hard: a red burst and ring, and the router feels it.
+  void _impactFail(int provider) {
+    burst('prov', provider, tone: 1, direction: math.pi, count: 9, spread: math.pi * 1.3);
+    shock('prov', provider, tone: 1, strength: 1.3);
+    strain = math.min(1, strain + 0.25);
   }
 
   // Waiting phases ('think' at the router, 'work' at a provider) repeat
@@ -220,7 +255,8 @@ class _Scene extends ChangeNotifier {
       case 'in':
         _go(p, 'think', _thinkMs);
         pulses.add(t);
-        burst('in', p.app, tone: 0, count: 6);
+        burst('in', p.app, tone: 0, count: 5);
+        shock('core', 0, tone: 0, strength: 0.5 + heat * 0.6);
         if (chips.isEmpty || t - chips.last.t0 > 450) chips.add(_Chip(p.label, t, (random.nextDouble() - 0.5) * 90));
       case 'think':
       case 'rethink':
@@ -239,11 +275,13 @@ class _Scene extends ChangeNotifier {
       case 'out':
         if (p.attempts[p.attempt].failed) {
           if (p.provider < provFail.length) provFail[p.provider] = t;
-          burst('prov', p.provider, tone: 1, direction: math.pi, count: 10);
+          _impactFail(p.provider);
           _go(p, 'bounce', _bounceMs);
           return;
         }
-        burst('prov', p.provider, tone: 0, direction: math.pi, count: 6);
+        burst('prov', p.provider, tone: 0, direction: math.pi, count: 5);
+        shock('prov', p.provider, tone: 0, strength: 0.6);
+        if (p.provider < provHit.length) provHit[p.provider] = t;
         if (p.provider < provBusy.length) provBusy[p.provider] += 1;
         _go(p, 'work', 600);
       case 'work':
@@ -251,7 +289,7 @@ class _Scene extends ChangeNotifier {
         if (current.failed || (p.finished && !p.success)) {
           leaveProvider();
           if (p.provider < provFail.length) provFail[p.provider] = t;
-          burst('prov', p.provider, tone: 1, direction: math.pi, count: 10);
+          _impactFail(p.provider);
           _go(p, 'bounce', _bounceMs);
         } else if (p.finished) {
           leaveProvider();
@@ -273,7 +311,9 @@ class _Scene extends ChangeNotifier {
         if (p.app < appGlow.length) appGlow[p.app] = 1;
       case 'home':
       case 'fail':
-        burst('app', p.app, tone: p.phase == 'home' ? 2 : 1, direction: 0, count: p.phase == 'home' ? 8 : 5);
+        burst('app', p.app, tone: p.phase == 'home' ? 2 : 1, direction: 0, count: p.phase == 'home' ? 6 : 5);
+        shock('app', p.app, tone: p.phase == 'home' ? 2 : 1, strength: p.phase == 'home' ? 0.5 : 0.8);
+        if (p.app < appHit.length) appHit[p.app] = t;
         p.phase = 'done';
         if (p.app < appFlash.length) appFlash[p.app] = t;
     }
@@ -855,6 +895,7 @@ class _Stage extends StatelessWidget {
                   title: appNames[i],
                   subtitle: apps.isEmpty ? '' : t.liveRequests('${appRequests[appNames[i]] ?? 0}'),
                   glow: i < s.appFlash.length ? (1 - (s.t - s.appFlash[i]) / 700).clamp(0.0, 1.0) : 0,
+                  hitAt: i < s.appHit.length ? s.t - s.appHit[i] : 1e9,
                   dashed: apps.isEmpty,
                   width: layout.appW,
                 ),
@@ -868,6 +909,7 @@ class _Stage extends StatelessWidget {
                   glow: j < s.provBusy.length && s.provBusy[j] > 0 ? 0.7 : 0,
                   fail: j < s.provFail.length ? (1 - (s.t - s.provFail[j]) / 1300).clamp(0.0, 1.0) : 0,
                   shakeAt: j < s.provFail.length ? s.t - s.provFail[j] : 1e9,
+                  hitAt: j < s.provHit.length ? s.t - s.provHit[j] : 1e9,
                   dashed: providers.isEmpty,
                   width: layout.provW,
                   tint: j == poolIndex ? palette.pool : null,
@@ -1032,12 +1074,15 @@ class _Stage extends StatelessWidget {
     double glow = 0,
     double fail = 0,
     double shakeAt = 1e9,
+    double hitAt = 1e9,
     bool dashed = false,
     required double width,
     // The pool card: its own colour instead of the accent.
     Color? tint,
   }) {
-    final shake = fail > 0 ? math.sin(shakeAt / 28) * 4 * fail : 0.0;
+    final shake = fail > 0 ? math.sin(shakeAt / 28) * 6 * fail : 0.0;
+    // A landing request knocks the card back a little; it springs back.
+    final punch = hitAt < 320 ? math.sin(hitAt / 320 * math.pi) * (1 - hitAt / 320) : 0.0;
     final rest = tint == null ? palette.border : tint.withValues(alpha: 0.55);
     final hot = tint ?? palette.accent;
     final border = fail > 0
@@ -1051,7 +1096,9 @@ class _Stage extends StatelessWidget {
       top: center.dy - layout.nodeH / 2,
       width: width,
       height: layout.nodeH,
-      child: Container(
+      child: Transform.scale(
+        scale: 1 + punch * 0.07,
+        child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color: tint == null ? palette.surfaceRaised : Color.alphaBlend(tint.withValues(alpha: 0.08), palette.surfaceRaised),
@@ -1079,6 +1126,7 @@ class _Stage extends StatelessWidget {
           ],
         ),
       ),
+      )
     );
   }
 }
@@ -1125,6 +1173,7 @@ class _TrafficPainter extends CustomPainter {
     for (final p in s.packets) {
       _packet(canvas, p);
     }
+    _shocks(canvas);
     _sparks(canvas);
   }
 
@@ -1171,6 +1220,38 @@ class _TrafficPainter extends CustomPainter {
     ..moveTo(c[0].dx, c[0].dy)
     ..cubicTo(c[1].dx, c[1].dy, c[2].dx, c[2].dy, c[3].dx, c[3].dy);
 
+  Offset? _anchor(String anchor, int index) => switch (anchor) {
+    'prov' => index >= 0 && index < layout.provPos.length ? layout.provCurve(index).last : null,
+    'app' => index < layout.appPos.length ? layout.appCurve(index).first : null,
+    'in' => index < layout.appPos.length ? layout.appCurve(index).last : null,
+    _ => layout.core,
+  };
+
+  // A thin ring that races out from an impact and thins as it goes.
+  void _shocks(Canvas canvas) {
+    final s = scene;
+    for (final (anchor, index, t0, tone, strength) in s.shocks) {
+      final origin = _anchor(anchor, index);
+      if (origin == null) continue;
+      final u = ((s.t - t0) / 900).clamp(0.0, 1.0);
+      final e = 1 - math.pow(1 - u, 3).toDouble();
+      final base = anchor == 'core' ? layout.radius : 6.0;
+      final color = switch (tone) {
+        1 => palette.error,
+        2 => palette.text,
+        _ => palette.accent,
+      };
+      canvas.drawCircle(
+        origin,
+        base + e * 46 * strength,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = (2.6 * strength) * (1 - u) + 0.3
+          ..color = color.withValues(alpha: 0.55 * (1 - u) * math.min(1, strength)),
+      );
+    }
+  }
+
   // Sparks fly out, slow down and fade, with a little fall: a short streak
   // from where they were a moment ago to where they are.
   void _sparks(Canvas canvas) {
@@ -1207,7 +1288,7 @@ class _TrafficPainter extends CustomPainter {
         _ => palette.accent,
       };
       paint
-        ..strokeWidth = 2.2 * (1 - u) + 0.6
+        ..strokeWidth = 1.5 * (1 - u) + 0.4
         ..color = color.withValues(alpha: (1 - u) * 0.9);
       canvas.drawLine(at(math.max(0, age - 60)), at(age), paint);
     }
@@ -1231,13 +1312,19 @@ class _TrafficPainter extends CustomPainter {
       );
     }
 
-    final glow = (0.16 + thinking * 0.1).clamp(0.16, 0.6);
+    // Hotter and redder as load and failures build up; trembles when overloaded.
+    final heat = s.heat;
+    final core = Color.lerp(palette.accent, palette.error, (s.strain * 0.8).clamp(0.0, 0.8))!;
+    final glow = (0.16 + thinking * 0.08 + heat * 0.34).clamp(0.16, 0.7);
+    final tremble = heat > 0.6 ? Offset(math.sin(s.t / 37) , math.cos(s.t / 41)) * (heat - 0.6) * 4 : Offset.zero;
+    canvas.save();
+    canvas.translate(tremble.dx, tremble.dy);
     canvas.drawCircle(
       c,
-      r * 1.05,
+      r * (1.05 + heat * 0.25 + 0.03 * math.sin(s.t / (420 - heat * 220))),
       Paint()
-        ..color = palette.accent.withValues(alpha: glow)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 16 + thinking * 5.0),
+        ..color = core.withValues(alpha: glow)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 16 + thinking * 4.0 + heat * 18),
     );
 
     // Outer ring with a slow satellite.
@@ -1246,21 +1333,21 @@ class _TrafficPainter extends CustomPainter {
       ..strokeWidth = 1
       ..color = palette.border;
     canvas.drawCircle(c, r * 1.62, outer);
-    final sat = s.t / 5000 * math.pi * 2;
+    final sat = s.spin / 5000 * math.pi * 2;
     canvas.drawCircle(c + Offset(math.cos(-sat), math.sin(-sat)) * r * 1.62, 3, Paint()..color = palette.accent.withValues(alpha: 0.6));
 
     // Dashed middle ring, turning the other way.
     final dash = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2
-      ..color = palette.accent.withValues(alpha: 0.4);
-    final turn = s.t / 9000 * math.pi * 2;
+      ..color = core.withValues(alpha: 0.4 + heat * 0.3);
+    final turn = s.spin / 9000 * math.pi * 2;
     const segments = 18;
     for (var k = 0; k < segments; k++) {
       final start = turn + k * (math.pi * 2 / segments);
       canvas.drawArc(Rect.fromCircle(center: c, radius: r * 1.25), start, math.pi * 2 / segments * 0.55, false, dash);
     }
-    canvas.drawCircle(c + Offset(math.cos(turn), math.sin(turn)) * r * 1.25, 3.5, Paint()..color = palette.accent);
+    canvas.drawCircle(c + Offset(math.cos(turn), math.sin(turn)) * r * 1.25, 3.5, Paint()..color = core);
 
     // Spinner while something is being scored.
     if (thinking > 0 || loading) {
@@ -1285,8 +1372,9 @@ class _TrafficPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.2
-        ..color = palette.accent.withValues(alpha: 0.5),
+        ..color = core.withValues(alpha: 0.5 + heat * 0.4),
     );
+    canvas.restore();
   }
 
   Offset? _place(_Packet p, double u) {
