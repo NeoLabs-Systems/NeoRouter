@@ -3213,6 +3213,24 @@
   "pgGroupLookup": "Look up",
   "pgGroupOther": "More",
   "pickModel": "Choose a model",
+  "mascotIdle": "Ready for requests",
+  "mascotAsleep": "Resting: no requests for a while",
+  "mascotWorking": "Routing {count} requests",
+  "@mascotWorking": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mascotStressed": "Very busy: {count} requests at once",
+  "@mascotStressed": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "presetsTitle": "Presets",
   "presetSave": "Save as preset",
   "presetName": "Preset name",

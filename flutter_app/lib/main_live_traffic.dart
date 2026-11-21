@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
+import 'main_router_mascot.dart';
 import 'main_theme.dart';
 import 'src/models.dart';
 
@@ -615,7 +616,7 @@ class _LiveTrafficHeroState extends State<LiveTrafficHero> with SingleTickerProv
                       for (var j = 0; j < _providerSlugs.length; j++)
                         if (_lastModel[_providerSlugs[j]] != null) j: _lastModel[_providerSlugs[j]]!,
                     };
-                    return _Stage(scene: _scene, layout: layout, apps: _apps, providers: _providers, appRequests: _appRequests, lastModel: lastModels, empty: _history.isEmpty, loaded: _ready, poolIndex: _poolIndex);
+                    return _Stage(controller: widget.controller, scene: _scene, layout: layout, apps: _apps, providers: _providers, appRequests: _appRequests, lastModel: lastModels, empty: _history.isEmpty, loaded: _ready, poolIndex: _poolIndex);
                   },
                 ),
               ),
@@ -798,8 +799,9 @@ class _Footer extends StatelessWidget {
 /// The animated part: the painter underneath and the app and connection
 /// cards on top, both following the scene every frame.
 class _Stage extends StatelessWidget {
-  const _Stage({required this.scene, required this.layout, required this.apps, required this.providers, required this.appRequests, required this.lastModel, required this.empty, required this.loaded, this.poolIndex});
+  const _Stage({required this.controller, required this.scene, required this.layout, required this.apps, required this.providers, required this.appRequests, required this.lastModel, required this.empty, required this.loaded, this.poolIndex});
 
+  final NeoRouterController controller;
   final _Scene scene;
   final _Layout layout;
   final List<String> apps;
@@ -883,11 +885,8 @@ class _Stage extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      Text(
-                        'NeoRouter',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: layout.radius > 50 ? 13 : 11, color: palette.text),
-                      ),
-                      const SizedBox(height: 2),
+                      RouterMascot(controller: controller, size: layout.radius * 0.95, tooltip: false),
+                      const SizedBox(height: 4),
                       Text(t.liveInFlight('${s.packets.length}'), style: GoogleFonts.geistMono(fontSize: 10, color: palette.textMuted)),
                     ],
                   ),

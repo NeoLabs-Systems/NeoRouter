@@ -5116,6 +5116,22 @@ class AppL10nDe extends AppL10n {
   String get pickModel => 'Modell wählen';
 
   @override
+  String get mascotIdle => 'Bereit für Anfragen';
+
+  @override
+  String get mascotAsleep => 'Ruht: seit einer Weile keine Anfragen';
+
+  @override
+  String mascotWorking(String count) {
+    return 'Leitet $count Anfragen weiter';
+  }
+
+  @override
+  String mascotStressed(String count) {
+    return 'Sehr beschäftigt: $count Anfragen gleichzeitig';
+  }
+
+  @override
   String get presetsTitle => 'Vorlagen';
 
   @override

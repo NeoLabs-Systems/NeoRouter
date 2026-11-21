@@ -9,6 +9,7 @@ import 'l10n/gen/app_localizations.dart';
 import 'main_activity.dart';
 import 'main_controller.dart';
 import 'main_pool_graph.dart';
+import 'main_router_mascot.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
@@ -650,6 +651,7 @@ class _PoolOverviewState extends State<_PoolOverview> {
     final level = pool.partners.isEmpty ? 1.0 : (1 - you.gave / capacity).clamp(0.0, 1.0);
     final selected = members.where((member) => member.id == _selected).firstOrNull ?? you;
     final graph = PoolGraph(
+      youFace: (size) => RouterMascot(controller: widget.controller, size: size),
       members: <PoolGraphMember>[
         for (final member in members)
           PoolGraphMember(

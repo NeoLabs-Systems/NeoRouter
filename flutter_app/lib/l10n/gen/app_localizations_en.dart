@@ -5085,6 +5085,22 @@ class AppL10nEn extends AppL10n {
   String get pickModel => 'Choose a model';
 
   @override
+  String get mascotIdle => 'Ready for requests';
+
+  @override
+  String get mascotAsleep => 'Resting: no requests for a while';
+
+  @override
+  String mascotWorking(String count) {
+    return 'Routing $count requests';
+  }
+
+  @override
+  String mascotStressed(String count) {
+    return 'Very busy: $count requests at once';
+  }
+
+  @override
   String get presetsTitle => 'Presets';
 
   @override

@@ -8887,6 +8887,30 @@ abstract class AppL10n {
   /// **'Choose a model'**
   String get pickModel;
 
+  /// No description provided for @mascotIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready for requests'**
+  String get mascotIdle;
+
+  /// No description provided for @mascotAsleep.
+  ///
+  /// In en, this message translates to:
+  /// **'Resting: no requests for a while'**
+  String get mascotAsleep;
+
+  /// No description provided for @mascotWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing {count} requests'**
+  String mascotWorking(String count);
+
+  /// No description provided for @mascotStressed.
+  ///
+  /// In en, this message translates to:
+  /// **'Very busy: {count} requests at once'**
+  String mascotStressed(String count);
+
   /// No description provided for @presetsTitle.
   ///
   /// In en, this message translates to:

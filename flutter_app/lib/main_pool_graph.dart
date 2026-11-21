@@ -53,7 +53,11 @@ class PoolGraph extends StatefulWidget {
     required this.selectedId,
     required this.onSelect,
     this.height = 520,
+    this.youFace,
   });
+
+  /// Drawn inside your own node instead of initials (the router mascot).
+  final Widget Function(double size)? youFace;
 
   final List<PoolGraphMember> members;
 
@@ -146,6 +150,7 @@ class _PoolGraphState extends State<PoolGraph> with SingleTickerProviderStateMix
                     selected: widget.members[i].id == widget.selectedId,
                     labelAbove: layout.labelAbove(i),
                     labelHeight: layout.labelHeight,
+                    face: widget.members[i].isYou ? widget.youFace : null,
                     onTap: () => widget.onSelect(widget.members[i].id),
                   ),
                 ),
@@ -326,8 +331,10 @@ class _MemberNode extends StatelessWidget {
     required this.labelAbove,
     required this.labelHeight,
     required this.onTap,
+    this.face,
   });
 
+  final Widget Function(double size)? face;
   final PoolGraphMember member;
   final double size;
   final bool compact;
@@ -365,7 +372,7 @@ class _MemberNode extends StatelessWidget {
             child: Container(
               alignment: Alignment.center,
               decoration: BoxDecoration(shape: BoxShape.circle, color: member.isYou ? palette.accentSoft : palette.surfaceRaised),
-              child: Text(initials.toUpperCase(), style: TextStyle(fontWeight: FontWeight.w700, fontSize: size * 0.28, color: member.isYou ? palette.accent : palette.text)),
+              child: face != null ? face!(size * 0.62) : Text(initials.toUpperCase(), style: TextStyle(fontWeight: FontWeight.w700, fontSize: size * 0.28, color: member.isYou ? palette.accent : palette.text)),
             ),
           ),
         ),

@@ -134,6 +134,9 @@ class RouterApi {
   }
   Future<void> deleteRoutingGroup(String id) => client.delete('$_base/routing/groups/$id');
 
+  /// Requests in flight right now, per model and per provider account.
+  Future<Map<String, dynamic>> routingLoad() => client.get('$_base/routing/load');
+
   // ---- model presets --------------------------------------------------------
   Future<List<Map<String, dynamic>>> modelPresets() async =>
       ((await client.get('$_base/model-presets'))['presets'] as List).cast<Map<String, dynamic>>();

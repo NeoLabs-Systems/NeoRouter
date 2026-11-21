@@ -16,6 +16,7 @@ import 'main_routing_groups.dart';
 import 'main_connect_apps.dart';
 import 'main_settings.dart';
 import 'main_team.dart';
+import 'main_router_mascot.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
@@ -118,7 +119,14 @@ class _NeoRouterShellState extends State<NeoRouterShell> {
                 surfaceTintColor: Colors.transparent,
                 scrolledUnderElevation: 0,
                 titleSpacing: 0,
-                title: const BrandLockup(logoSize: 26),
+                title: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    RouterMascot(controller: controller, size: 26),
+                    const SizedBox(width: 10),
+                    Text('NeoRouter', style: TextStyle(color: palette.text, fontSize: 15.5, fontWeight: FontWeight.w700, letterSpacing: -0.3)),
+                  ],
+                ),
                 shape: Border(bottom: BorderSide(color: palette.border)),
               ),
         drawer: wide ? null : Drawer(backgroundColor: palette.surface, shape: const RoundedRectangleBorder(), child: sidebar),
@@ -221,7 +229,7 @@ class _Sidebar extends StatelessWidget {
                 ),
                 child: Row(
                   children: <Widget>[
-                    const BrandLockup(logoSize: 38, showName: false),
+                    RouterMascot(controller: controller, size: 38),
                     const SizedBox(width: 11),
                     Expanded(
                       child: Column(
