@@ -1413,11 +1413,12 @@ class _TrafficPainter extends CustomPainter {
         ? palette.text
         : palette.accent;
     final orbit = p.phase == 'think' || p.phase == 'rethink';
-    const head = 8.5;
+    // Smaller when it is busy, so many requests at once stay tidy.
+    final head = 7.5 - scene.heat * 2.5;
     for (var k = 3; k >= 0; k--) {
       final pos = _place(p, u - k * (orbit ? 0.05 : 0.045));
       if (pos == null) continue;
-      final size = math.max(2.5, head - k * 1.8);
+      final size = math.max(2.0, head - k * 1.6);
       if (k == 0) {
         canvas.drawCircle(
           pos,
