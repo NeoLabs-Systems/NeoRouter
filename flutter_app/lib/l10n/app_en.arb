@@ -1652,6 +1652,97 @@
   "proxyResting": "Resting",
   "proxyOff": "Off",
   "proxyLatencyChart": "Fastest proxies",
+  "discoveryBenchmarks": "Benchmarks",
+  "discoveryBenchHint": "Measured model performance, brought together. Explore the evidence and compare two models side by side.",
+  "discoveryMeasuredModels": "Measured models",
+  "discoveryMethod": "How scores are combined",
+  "discoveryMethodHint": "Raw scores stay on their original scales. Each test becomes a percentile among models measured by that source, within the same model kind. Test percentiles are averaged per source, then sources receive equal weight. Missing tests are excluded, never scored as zero. Coverage differs: compare shared tests for a fairer view. This is a relative ranking, not an accuracy percentage.",
+  "discoverySources": "Sources",
+  "discoverySourceHint": "Uses the latest successfully collected data. Refresh reloads this view; source collection follows the instance sync schedule.",
+  "discoveryNotSynced": "Not collected yet",
+  "discoveryUpdated": "Updated {date}",
+  "@discoveryUpdated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "discoveryCoverage": "{sources} sources · {tests} tests",
+  "@discoveryCoverage": {
+    "placeholders": {
+      "sources": {
+        "type": "String"
+      },
+      "tests": {
+        "type": "String"
+      }
+    }
+  },
+  "discoveryScore": "Combined score",
+  "discoverySourceFilter": "Benchmark source",
+  "discoveryAllSources": "All sources",
+  "discoveryKind": "Model kind",
+  "discoveryFreeHint": "Verified zero-price OpenRouter listings. Provider free tiers depend on your connected accounts.",
+  "discoveryFreeOnly": "Confirmed free only",
+  "discoveryFree": "Free listing",
+  "discoverySearchModels": "Search models",
+  "discoveryCompare": "Compare two models",
+  "discoveryCompareHint": "Choose up to two models from the ranking. They must be the same kind.",
+  "discoverySelectCompare": "Compare {name}",
+  "@discoverySelectCompare": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "discoveryRemoveCompare": "Remove {name} from comparison",
+  "@discoveryRemoveCompare": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "discoveryCompareLimit": "Remove a selection first, or choose the same model kind.",
+  "discoveryChartScore": "Score",
+  "discoveryChartValue": "Score vs price",
+  "discoveryPriceAxis": "Price per 1M tokens (log)",
+  "discoveryNoPrices": "No prices known for these models.",
+  "discoveryShared": "{count} shared tests",
+  "@discoveryShared": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "discoveryBreakdown": "Benchmark breakdown",
+  "discoveryNoShared": "These models have no shared tests in the collected data. Their overall rankings use different evidence.",
+  "discoveryTestScale": "Raw score · percentile bar · {count} measured peers",
+  "@discoveryTestScale": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "discoveryEmpty": "No measured results yet",
+  "discoveryEmptyHint": "Results appear after metadata sources have been collected. Try a different search or filter if sources are already available.",
+  "discoveryPrevious": "Previous page",
+  "discoveryNext": "Next page",
+  "discoveryPage": "Page {page} · {count} models",
+  "@discoveryPage": {
+    "placeholders": {
+      "page": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "mostUsedProviders": "Most used providers",
   "providerUsageTotal": "Total",
   "providerUsageAverage": "Average per key",

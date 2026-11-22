@@ -2680,6 +2680,137 @@ class AppL10nDe extends AppL10n {
   String get proxyLatencyChart => 'Schnellste Proxys';
 
   @override
+  String get discoveryBenchmarks => 'Benchmarks';
+
+  @override
+  String get discoveryBenchHint =>
+      'Gemessene Modellleistung an einem Ort. Ergebnisse entdecken und zwei Modelle direkt vergleichen.';
+
+  @override
+  String get discoveryMeasuredModels => 'Gemessene Modelle';
+
+  @override
+  String get discoveryMethod => 'Wie die Bewertung entsteht';
+
+  @override
+  String get discoveryMethodHint =>
+      'Rohwerte behalten ihre ursprüngliche Skala. Jeder Test wird zum Perzentil innerhalb derselben Quelle und Modellart. Test-Perzentile werden je Quelle gemittelt, danach zählen Quellen gleich viel. Fehlende Tests werden ausgelassen, nie als null gewertet. Die Abdeckung variiert: Gemeinsame Tests erlauben einen faireren Vergleich. Dies ist eine relative Rangfolge, keine Genauigkeit in Prozent.';
+
+  @override
+  String get discoverySources => 'Quellen';
+
+  @override
+  String get discoverySourceHint =>
+      'Verwendet die zuletzt erfolgreich gesammelten Daten. Aktualisieren lädt diese Ansicht neu; Quellen folgen dem Synchronisationsplan der Instanz.';
+
+  @override
+  String get discoveryNotSynced => 'Noch nicht gesammelt';
+
+  @override
+  String discoveryUpdated(String date) {
+    return 'Aktualisiert: $date';
+  }
+
+  @override
+  String discoveryCoverage(String sources, String tests) {
+    return '$sources Quellen · $tests Tests';
+  }
+
+  @override
+  String get discoveryScore => 'Kombinierte Bewertung';
+
+  @override
+  String get discoverySourceFilter => 'Benchmark-Quelle';
+
+  @override
+  String get discoveryAllSources => 'Alle Quellen';
+
+  @override
+  String get discoveryKind => 'Modellart';
+
+  @override
+  String get discoveryFreeHint =>
+      'Bestätigte OpenRouter-Angebote zum Nullpreis. Anbieter-Freikontingente hängen von deinen verbundenen Konten ab.';
+
+  @override
+  String get discoveryFreeOnly => 'Nur bestätigt kostenlos';
+
+  @override
+  String get discoveryFree => 'Kostenlos gelistet';
+
+  @override
+  String get discoverySearchModels => 'Modelle suchen';
+
+  @override
+  String get discoveryCompare => 'Zwei Modelle vergleichen';
+
+  @override
+  String get discoveryCompareHint =>
+      'Wähle bis zu zwei Modelle aus der Rangliste. Beide müssen derselben Modellart angehören.';
+
+  @override
+  String discoverySelectCompare(String name) {
+    return '$name vergleichen';
+  }
+
+  @override
+  String discoveryRemoveCompare(String name) {
+    return '$name aus dem Vergleich entfernen';
+  }
+
+  @override
+  String get discoveryCompareLimit =>
+      'Entferne zuerst eine Auswahl oder wähle dieselbe Modellart.';
+
+  @override
+  String get discoveryChartScore => 'Bewertung';
+
+  @override
+  String get discoveryChartValue => 'Bewertung vs. Preis';
+
+  @override
+  String get discoveryPriceAxis => 'Preis pro 1 Mio. Tokens (log)';
+
+  @override
+  String get discoveryNoPrices =>
+      'Für diese Modelle sind keine Preise bekannt.';
+
+  @override
+  String discoveryShared(String count) {
+    return '$count gemeinsame Tests';
+  }
+
+  @override
+  String get discoveryBreakdown => 'Benchmark-Details';
+
+  @override
+  String get discoveryNoShared =>
+      'Diese Modelle haben keine gemeinsamen Tests in den gesammelten Daten. Ihre Gesamtbewertungen beruhen auf unterschiedlichen Ergebnissen.';
+
+  @override
+  String discoveryTestScale(String count) {
+    return 'Rohwert · Perzentil-Balken · $count gemessene Vergleichsmodelle';
+  }
+
+  @override
+  String get discoveryEmpty => 'Noch keine gemessenen Ergebnisse';
+
+  @override
+  String get discoveryEmptyHint =>
+      'Ergebnisse erscheinen, sobald Metadatenquellen gesammelt wurden. Falls Quellen bereits verfügbar sind, ändere Suche oder Filter.';
+
+  @override
+  String get discoveryPrevious => 'Vorherige Seite';
+
+  @override
+  String get discoveryNext => 'Nächste Seite';
+
+  @override
+  String discoveryPage(String page, String count) {
+    return 'Seite $page · $count Modelle';
+  }
+
+  @override
   String get mostUsedProviders => 'Meistgenutzte Anbieter';
 
   @override

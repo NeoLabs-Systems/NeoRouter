@@ -7,12 +7,13 @@ import 'src/backend_client.dart';
 import 'src/models.dart';
 import 'src/router_api.dart';
 
-enum AppPage { home, playground, models, providers, keys, activity, routing, groups, processing, team, settings, admin }
+enum AppPage { home, playground, models, providers, keys, activity, routing, groups, processing, team, settings, admin, benchmarks }
 
 /// What a team member needs to open a page in someone else's space. Pages
 /// missing here are only ever shown in the user's own space.
 const Map<AppPage, String> pagePermissions = <AppPage, String>{
   AppPage.home: 'activity.view',
+  AppPage.benchmarks: 'providers.view',
   AppPage.activity: 'activity.view',
   AppPage.playground: 'playground.use',
   AppPage.models: 'providers.view',

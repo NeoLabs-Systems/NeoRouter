@@ -4711,6 +4711,222 @@ abstract class AppL10n {
   /// **'Fastest proxies'**
   String get proxyLatencyChart;
 
+  /// No description provided for @discoveryBenchmarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmarks'**
+  String get discoveryBenchmarks;
+
+  /// No description provided for @discoveryBenchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured model performance, brought together. Explore the evidence and compare two models side by side.'**
+  String get discoveryBenchHint;
+
+  /// No description provided for @discoveryMeasuredModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured models'**
+  String get discoveryMeasuredModels;
+
+  /// No description provided for @discoveryMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'How scores are combined'**
+  String get discoveryMethod;
+
+  /// No description provided for @discoveryMethodHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw scores stay on their original scales. Each test becomes a percentile among models measured by that source, within the same model kind. Test percentiles are averaged per source, then sources receive equal weight. Missing tests are excluded, never scored as zero. Coverage differs: compare shared tests for a fairer view. This is a relative ranking, not an accuracy percentage.'**
+  String get discoveryMethodHint;
+
+  /// No description provided for @discoverySources.
+  ///
+  /// In en, this message translates to:
+  /// **'Sources'**
+  String get discoverySources;
+
+  /// No description provided for @discoverySourceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses the latest successfully collected data. Refresh reloads this view; source collection follows the instance sync schedule.'**
+  String get discoverySourceHint;
+
+  /// No description provided for @discoveryNotSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Not collected yet'**
+  String get discoveryNotSynced;
+
+  /// No description provided for @discoveryUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {date}'**
+  String discoveryUpdated(String date);
+
+  /// No description provided for @discoveryCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'{sources} sources · {tests} tests'**
+  String discoveryCoverage(String sources, String tests);
+
+  /// No description provided for @discoveryScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Combined score'**
+  String get discoveryScore;
+
+  /// No description provided for @discoverySourceFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmark source'**
+  String get discoverySourceFilter;
+
+  /// No description provided for @discoveryAllSources.
+  ///
+  /// In en, this message translates to:
+  /// **'All sources'**
+  String get discoveryAllSources;
+
+  /// No description provided for @discoveryKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Model kind'**
+  String get discoveryKind;
+
+  /// No description provided for @discoveryFreeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified zero-price OpenRouter listings. Provider free tiers depend on your connected accounts.'**
+  String get discoveryFreeHint;
+
+  /// No description provided for @discoveryFreeOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed free only'**
+  String get discoveryFreeOnly;
+
+  /// No description provided for @discoveryFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free listing'**
+  String get discoveryFree;
+
+  /// No description provided for @discoverySearchModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Search models'**
+  String get discoverySearchModels;
+
+  /// No description provided for @discoveryCompare.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare two models'**
+  String get discoveryCompare;
+
+  /// No description provided for @discoveryCompareHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose up to two models from the ranking. They must be the same kind.'**
+  String get discoveryCompareHint;
+
+  /// No description provided for @discoverySelectCompare.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare {name}'**
+  String discoverySelectCompare(String name);
+
+  /// No description provided for @discoveryRemoveCompare.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from comparison'**
+  String discoveryRemoveCompare(String name);
+
+  /// No description provided for @discoveryCompareLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove a selection first, or choose the same model kind.'**
+  String get discoveryCompareLimit;
+
+  /// No description provided for @discoveryChartScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score'**
+  String get discoveryChartScore;
+
+  /// No description provided for @discoveryChartValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Score vs price'**
+  String get discoveryChartValue;
+
+  /// No description provided for @discoveryPriceAxis.
+  ///
+  /// In en, this message translates to:
+  /// **'Price per 1M tokens (log)'**
+  String get discoveryPriceAxis;
+
+  /// No description provided for @discoveryNoPrices.
+  ///
+  /// In en, this message translates to:
+  /// **'No prices known for these models.'**
+  String get discoveryNoPrices;
+
+  /// No description provided for @discoveryShared.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} shared tests'**
+  String discoveryShared(String count);
+
+  /// No description provided for @discoveryBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmark breakdown'**
+  String get discoveryBreakdown;
+
+  /// No description provided for @discoveryNoShared.
+  ///
+  /// In en, this message translates to:
+  /// **'These models have no shared tests in the collected data. Their overall rankings use different evidence.'**
+  String get discoveryNoShared;
+
+  /// No description provided for @discoveryTestScale.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw score · percentile bar · {count} measured peers'**
+  String discoveryTestScale(String count);
+
+  /// No description provided for @discoveryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No measured results yet'**
+  String get discoveryEmpty;
+
+  /// No description provided for @discoveryEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Results appear after metadata sources have been collected. Try a different search or filter if sources are already available.'**
+  String get discoveryEmptyHint;
+
+  /// No description provided for @discoveryPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous page'**
+  String get discoveryPrevious;
+
+  /// No description provided for @discoveryNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next page'**
+  String get discoveryNext;
+
+  /// No description provided for @discoveryPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} · {count} models'**
+  String discoveryPage(String page, String count);
+
   /// No description provided for @mostUsedProviders.
   ///
   /// In en, this message translates to:

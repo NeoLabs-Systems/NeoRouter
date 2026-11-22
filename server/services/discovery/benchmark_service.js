@@ -1,6 +1,7 @@
 'use strict';
 const metadata = require('../catalog/metadata_service');
 const { aggregate } = require('./benchmarks/aggregate');
+const POLICY = require('./policy');
 const { getDatabase } = require('../../db/database');
 let cache;
 
@@ -55,4 +56,34 @@ function freeCandidates() {
   return out;
 }
 
-module.exports = { freeListings, freeCandidates };
+// Cheapest known blended price per million tokens (3 input : 1 output), for the cost chart.
+function prices() {
+  const found = new Map();
+  for (const model of metadata.discoverySnapshot().openrouter || []) {
+    if (!Number.isFinite(model.priceIn) || !Number.isFinite(model.priceOut)) continue;
+    const blended = (3 * model.priceIn + model.priceOut) / 4;
+    if (blended <= 0) continue;
+    const id = `chat:${metadata.benchmarkIdentity(model.id, 'chat')}`;
+    if (!found.has(id) || found.get(id) > blended) found.set(id, blended);
+  }
+  return found;
+}
+
+function list({ query = '', capability = 'chat', source = '', free = false, offset = 0, limit = POLICY.pageSize, compare = [] } = {}) {
+  const data = snapshot();
+  const freeModels = freeListings();
+  const priced = prices();
+  const present = (model) => ({ ...model, isFree: freeModels.has(model.id), price: priced.get(model.id) ?? null,
+    vendor: model.canonicalId.includes('/') ? model.canonicalId.split('/')[0] : null });
+  const search = query.trim().toLowerCase();
+  const models = data.models.filter((model) => (!capability || model.capability === capability)
+    && (!source || model.sourceScores.some((item) => item.sourceId === source))
+    && (!free || freeModels.has(model.id))
+    && (!search || `${model.name} ${model.canonicalId}`.toLowerCase().includes(search)));
+  return {
+    models: models.slice(offset, offset + limit).map(present), total: models.length, offset, limit,
+    comparison: compare.slice(0, 2).map((id) => data.models.find((model) => model.id === id)).filter(Boolean).map(present),
+    sources: data.sources, capabilities: [...new Set(data.models.map((model) => model.capability))],
+  };
+}
+module.exports = { snapshot, freeListings, freeCandidates, list };

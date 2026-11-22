@@ -1,7 +1,7 @@
 'use strict';
 const { getDatabase } = require('../../db/database');
 const metadata = require('../catalog/metadata_service');
-const candidatesSource = require('./news_candidates');
+const benchmarks = require('./benchmark_service');
 const POLICY = require('./policy');
 
 // Called after metadata refresh, not by page reads. A model gets one persistent
@@ -9,8 +9,8 @@ const POLICY = require('./policy');
 function observe(now = Date.now()) {
   const sourceAt = Date.parse(metadata.discoverySnapshot().fetchedAt.openrouter || '');
   if (!Number.isFinite(sourceAt)) return;
-  const free = candidatesSource.freeListings();
-  const candidates = candidatesSource.freeCandidates();
+  const free = benchmarks.freeListings();
+  const candidates = benchmarks.freeCandidates();
   const threshold = new Map();
   for (const capability of new Set(candidates.map((model) => model.capability))) {
     const scores = candidates.filter((model) => model.capability === capability).map((model) => model.score).sort((a, b) => a - b);
