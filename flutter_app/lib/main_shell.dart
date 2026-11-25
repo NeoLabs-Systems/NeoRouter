@@ -1,8 +1,8 @@
+import 'discovery/benchmarks_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
-import 'discovery/benchmarks_page.dart';
 import 'main_activity.dart';
 import 'main_admin.dart';
 import 'main_controller.dart';
@@ -17,6 +17,7 @@ import 'main_routing_groups.dart';
 import 'main_connect_apps.dart';
 import 'main_settings.dart';
 import 'main_team.dart';
+import 'main_router_mascot.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
@@ -47,8 +48,8 @@ List<NavGroup> navigationGroups(BuildContext context, NeoRouterController contro
   final groups = <NavGroup>[
     NavGroup(t.groupOverview, Icons.space_dashboard_outlined, <NavItem>[
       NavItem(AppPage.home, t.navHome, Icons.space_dashboard_outlined),
-      NavItem(AppPage.benchmarks, t.discoveryBenchmarks, Icons.query_stats_outlined),
       NavItem(AppPage.activity, t.navActivity, Icons.insights_outlined),
+      NavItem(AppPage.benchmarks, t.discoveryBenchmarks, Icons.query_stats_outlined),
       NavItem(AppPage.playground, t.navPlayground, Icons.forum_outlined),
     ]),
     NavGroup(t.groupModels, Icons.hub_outlined, <NavItem>[
@@ -120,7 +121,14 @@ class _NeoRouterShellState extends State<NeoRouterShell> {
                 surfaceTintColor: Colors.transparent,
                 scrolledUnderElevation: 0,
                 titleSpacing: 0,
-                title: const BrandLockup(logoSize: 26),
+                title: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    RouterMascot(controller: controller, size: 26),
+                    const SizedBox(width: 10),
+                    Text('NeoRouter', style: TextStyle(color: palette.text, fontSize: 15.5, fontWeight: FontWeight.w700, letterSpacing: -0.3)),
+                  ],
+                ),
                 shape: Border(bottom: BorderSide(color: palette.border)),
               ),
         drawer: wide ? null : Drawer(backgroundColor: palette.surface, shape: const RoundedRectangleBorder(), child: sidebar),
@@ -144,10 +152,10 @@ class _NeoRouterShellState extends State<NeoRouterShell> {
   }
 
   Widget _page(AppPage page) => switch (page) {
-        AppPage.benchmarks => BenchmarksScreen(controller: controller),
         AppPage.home => DashboardScreen(controller: controller),
         AppPage.playground => PlaygroundScreen(controller: controller),
         AppPage.activity => ActivityScreen(controller: controller),
+        AppPage.benchmarks => BenchmarksScreen(controller: controller),
         AppPage.models => ModelsScreen(controller: controller),
         AppPage.providers => ProvidersScreen(controller: controller),
         AppPage.keys => KeysScreen(controller: controller),
@@ -224,7 +232,7 @@ class _Sidebar extends StatelessWidget {
                 ),
                 child: Row(
                   children: <Widget>[
-                    const BrandLockup(logoSize: 38, showName: false),
+                    RouterMascot(controller: controller, size: 38),
                     const SizedBox(width: 11),
                     Expanded(
                       child: Column(

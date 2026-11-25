@@ -1054,8 +1054,8 @@ abstract class AppL10n {
   /// No description provided for @modelsCount.
   ///
   /// In en, this message translates to:
-  /// **'{total} models · {free} free'**
-  String modelsCount(String total, String free);
+  /// **'{count} chosen'**
+  String modelsCount(String count);
 
   /// No description provided for @revalidate.
   ///
@@ -1156,7 +1156,7 @@ abstract class AppL10n {
   /// No description provided for @modelsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Models'**
+  /// **'Models and routings'**
   String get modelsTitle;
 
   /// No description provided for @modelsDescription.
@@ -4639,6 +4639,78 @@ abstract class AppL10n {
   /// **'Routing'**
   String get keySectionRouting;
 
+  /// No description provided for @proxyCheckNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Check all now'**
+  String get proxyCheckNow;
+
+  /// No description provided for @proxyLastCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked {ago} · {ok} of {count} working · every hour'**
+  String proxyLastCheck(String ago, String ok, String count);
+
+  /// No description provided for @proxyNotChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked automatically every hour'**
+  String get proxyNotChecked;
+
+  /// No description provided for @proxySelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get proxySelectAll;
+
+  /// No description provided for @proxySelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String proxySelected(String count);
+
+  /// No description provided for @proxyEnableAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get proxyEnableAction;
+
+  /// No description provided for @proxyDisableAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable'**
+  String get proxyDisableAction;
+
+  /// No description provided for @proxyDeleteSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} proxies? This cannot be undone.'**
+  String proxyDeleteSelected(String count);
+
+  /// No description provided for @proxyHealthy.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get proxyHealthy;
+
+  /// No description provided for @proxyResting.
+  ///
+  /// In en, this message translates to:
+  /// **'Resting'**
+  String get proxyResting;
+
+  /// No description provided for @proxyOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get proxyOff;
+
+  /// No description provided for @proxyLatencyChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest proxies'**
+  String get proxyLatencyChart;
+
   /// No description provided for @discoveryBenchmarks.
   ///
   /// In en, this message translates to:
@@ -4801,78 +4873,6 @@ abstract class AppL10n {
   /// **'No prices known for these models.'**
   String get discoveryNoPrices;
 
-  /// No description provided for @proxyCheckNow.
-  ///
-  /// In en, this message translates to:
-  /// **'Check all now'**
-  String get proxyCheckNow;
-
-  /// No description provided for @proxyLastCheck.
-  ///
-  /// In en, this message translates to:
-  /// **'Checked {ago} · {ok} of {count} working · every hour'**
-  String proxyLastCheck(String ago, String ok, String count);
-
-  /// No description provided for @proxyNotChecked.
-  ///
-  /// In en, this message translates to:
-  /// **'Checked automatically every hour'**
-  String get proxyNotChecked;
-
-  /// No description provided for @proxySelectAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Select all'**
-  String get proxySelectAll;
-
-  /// No description provided for @proxySelected.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} selected'**
-  String proxySelected(String count);
-
-  /// No description provided for @proxyEnableAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Enable'**
-  String get proxyEnableAction;
-
-  /// No description provided for @proxyDisableAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Disable'**
-  String get proxyDisableAction;
-
-  /// No description provided for @proxyDeleteSelected.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete {count} proxies? This cannot be undone.'**
-  String proxyDeleteSelected(String count);
-
-  /// No description provided for @proxyHealthy.
-  ///
-  /// In en, this message translates to:
-  /// **'Ready'**
-  String get proxyHealthy;
-
-  /// No description provided for @proxyResting.
-  ///
-  /// In en, this message translates to:
-  /// **'Resting'**
-  String get proxyResting;
-
-  /// No description provided for @proxyOff.
-  ///
-  /// In en, this message translates to:
-  /// **'Off'**
-  String get proxyOff;
-
-  /// No description provided for @proxyLatencyChart.
-  ///
-  /// In en, this message translates to:
-  /// **'Fastest proxies'**
-  String get proxyLatencyChart;
-
   /// No description provided for @discoveryShared.
   ///
   /// In en, this message translates to:
@@ -4908,18 +4908,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Results appear after metadata sources have been collected. Try a different search or filter if sources are already available.'**
   String get discoveryEmptyHint;
-
-  /// No description provided for @discoveryOwnTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'NeoRouter benchmarks'**
-  String get discoveryOwnTitle;
-
-  /// No description provided for @discoveryOwnHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Coming later. A preview of our own evaluations — no results yet.'**
-  String get discoveryOwnHint;
 
   /// No description provided for @discoveryPrevious.
   ///
@@ -9114,6 +9102,78 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Choose a model'**
   String get pickModel;
+
+  /// No description provided for @mascotIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready for requests'**
+  String get mascotIdle;
+
+  /// No description provided for @mascotAsleep.
+  ///
+  /// In en, this message translates to:
+  /// **'Resting: no requests for a while'**
+  String get mascotAsleep;
+
+  /// No description provided for @mascotWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing {count} requests'**
+  String mascotWorking(String count);
+
+  /// No description provided for @mascotStressed.
+  ///
+  /// In en, this message translates to:
+  /// **'Very busy: {count} requests at once'**
+  String mascotStressed(String count);
+
+  /// No description provided for @presetsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Presets'**
+  String get presetsTitle;
+
+  /// No description provided for @presetSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as preset'**
+  String get presetSave;
+
+  /// No description provided for @presetName.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset name'**
+  String get presetName;
+
+  /// No description provided for @presetNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Smart models'**
+  String get presetNameHint;
+
+  /// No description provided for @presetDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete preset \"{name}\"?'**
+  String presetDelete(String name);
+
+  /// No description provided for @presetApplyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to add, long-press to delete'**
+  String get presetApplyHint;
+
+  /// No description provided for @modelsAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any model. Choose some to limit this to them.'**
+  String get modelsAny;
+
+  /// No description provided for @modelsClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get modelsClear;
 
   /// No description provided for @pickModels.
   ///

@@ -228,13 +228,10 @@
   "statusError": "Not reachable",
   "statusUnknown": "Not checked",
   "statusDisabled": "Disabled",
-  "modelsCount": "{total} models · {free} free",
+  "modelsCount": "{count} chosen",
   "@modelsCount": {
     "placeholders": {
-      "total": {
-        "type": "String"
-      },
-      "free": {
+      "count": {
         "type": "String"
       }
     }
@@ -293,7 +290,7 @@
   },
   "quotaProbeEmpty": "This provider does not report a balance.",
   "modelsEyebrow": "Catalog",
-  "modelsTitle": "Models",
+  "modelsTitle": "Models and routings",
   "modelsDescription": "Everything your connections offer. NeoRouter learns how smart, fast and reliable each model is and picks the best one for you.",
   "searchModels": "Search models…",
   "filterAll": "All",
@@ -1616,6 +1613,45 @@
   "topModelsTitle": "Most used models",
   "keySectionModels": "Models",
   "keySectionRouting": "Routing",
+  "proxyCheckNow": "Check all now",
+  "proxyLastCheck": "Checked {ago} · {ok} of {count} working · every hour",
+  "@proxyLastCheck": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      },
+      "ok": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyNotChecked": "Checked automatically every hour",
+  "proxySelectAll": "Select all",
+  "proxySelected": "{count} selected",
+  "@proxySelected": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyEnableAction": "Enable",
+  "proxyDisableAction": "Disable",
+  "proxyDeleteSelected": "Delete {count} proxies? This cannot be undone.",
+  "@proxyDeleteSelected": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "proxyHealthy": "Ready",
+  "proxyResting": "Resting",
+  "proxyOff": "Off",
+  "proxyLatencyChart": "Fastest proxies",
   "discoveryBenchmarks": "Benchmarks",
   "discoveryBenchHint": "Measured model performance, brought together. Explore the evidence and compare two models side by side.",
   "discoveryMeasuredModels": "Measured models",
@@ -1674,45 +1710,6 @@
   "discoveryChartValue": "Score vs price",
   "discoveryPriceAxis": "Price per 1M tokens (log)",
   "discoveryNoPrices": "No prices known for these models.",
-  "proxyCheckNow": "Check all now",
-  "proxyLastCheck": "Checked {ago} · {ok} of {count} working · every hour",
-  "@proxyLastCheck": {
-    "placeholders": {
-      "ago": {
-        "type": "String"
-      },
-      "ok": {
-        "type": "String"
-      },
-      "count": {
-        "type": "String"
-      }
-    }
-  },
-  "proxyNotChecked": "Checked automatically every hour",
-  "proxySelectAll": "Select all",
-  "proxySelected": "{count} selected",
-  "@proxySelected": {
-    "placeholders": {
-      "count": {
-        "type": "String"
-      }
-    }
-  },
-  "proxyEnableAction": "Enable",
-  "proxyDisableAction": "Disable",
-  "proxyDeleteSelected": "Delete {count} proxies? This cannot be undone.",
-  "@proxyDeleteSelected": {
-    "placeholders": {
-      "count": {
-        "type": "String"
-      }
-    }
-  },
-  "proxyHealthy": "Ready",
-  "proxyResting": "Resting",
-  "proxyOff": "Off",
-  "proxyLatencyChart": "Fastest proxies",
   "discoveryShared": "{count} shared tests",
   "@discoveryShared": {
     "placeholders": {
@@ -1733,8 +1730,6 @@
   },
   "discoveryEmpty": "No measured results yet",
   "discoveryEmptyHint": "Results appear after metadata sources have been collected. Try a different search or filter if sources are already available.",
-  "discoveryOwnTitle": "NeoRouter benchmarks",
-  "discoveryOwnHint": "Coming later. A preview of our own evaluations — no results yet.",
   "discoveryPrevious": "Previous page",
   "discoveryNext": "Next page",
   "discoveryPage": "Page {page} · {count} models",
@@ -3309,6 +3304,39 @@
   "pgGroupLookup": "Look up",
   "pgGroupOther": "More",
   "pickModel": "Choose a model",
+  "mascotIdle": "Ready for requests",
+  "mascotAsleep": "Resting: no requests for a while",
+  "mascotWorking": "Routing {count} requests",
+  "@mascotWorking": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mascotStressed": "Very busy: {count} requests at once",
+  "@mascotStressed": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "presetsTitle": "Presets",
+  "presetSave": "Save as preset",
+  "presetName": "Preset name",
+  "presetNameHint": "e.g. Smart models",
+  "presetDelete": "Delete preset \"{name}\"?",
+  "@presetDelete": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "presetApplyHint": "Tap to add, long-press to delete",
+  "modelsAny": "Any model. Choose some to limit this to them.",
+  "modelsClear": "Clear",
   "pickModels": "Choose models",
   "pickModelNone": "No model matches.",
   "pickModelsCount": "{count} chosen",

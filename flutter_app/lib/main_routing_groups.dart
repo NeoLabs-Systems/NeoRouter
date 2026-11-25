@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
-import 'main_model_picker.dart';
+import 'main_model_selection.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'routing_group_setup.dart';
@@ -306,7 +306,6 @@ class _GroupEditorState extends State<_GroupEditor> {
     text: widget.group?['name'] as String? ?? '',
   );
   final _search = TextEditingController();
-  final _pattern = TextEditingController();
   late final Set<String> _selected = Set<String>.from(
     widget.group?['accounts'] as List? ?? [],
   );
@@ -365,7 +364,6 @@ class _GroupEditorState extends State<_GroupEditor> {
   void dispose() {
     _name.dispose();
     _search.dispose();
-    _pattern.dispose();
     super.dispose();
   }
 
@@ -379,29 +377,7 @@ class _GroupEditorState extends State<_GroupEditor> {
     return null;
   }
 
-  Future<void> _pickModels() async {
-    final picked = await showModelPicker(
-      context,
-      controller: widget.controller,
-      selected: _models.where((item) => !item.contains('*')).toList(),
-      multi: true,
-    );
-    if (picked == null || !mounted) return;
-    setState(() {
-      _models
-        ..removeWhere((item) => !item.contains('*'))
-        ..addAll(picked);
-    });
-  }
 
-  void _addPattern() {
-    final value = _pattern.text.trim();
-    if (value.isEmpty) return;
-    setState(() {
-      if (!_models.contains(value)) _models.add(value);
-      _pattern.clear();
-    });
-  }
 
   Future<void> _save() async {
     final t = AppL10n.of(context);
@@ -581,52 +557,15 @@ class _GroupEditorState extends State<_GroupEditor> {
     );
   }
 
-  Widget _modelList(AppL10n t) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        if (_models.isNotEmpty) ...<Widget>[
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: <Widget>[
-              for (final model in _models)
-                InputChip(
-                  label: Text(model),
-                  onDeleted: () => setState(() => _models.remove(model)),
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-        ],
-        Row(
-          children: <Widget>[
-            OutlinedButton.icon(
-              onPressed: _pickModels,
-              icon: const Icon(Icons.add, size: 18),
-              label: Text(t.routingGroupPickModels),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: TextField(
-                controller: _pattern,
-                onSubmitted: (_) => _addPattern(),
-                decoration: InputDecoration(
-                  isDense: true,
-                  hintText: t.routingGroupPatternHint,
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.keyboard_return, size: 18),
-                    tooltip: t.routingGroupAddPattern,
-                    onPressed: _addPattern,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+  Widget _modelList(AppL10n t) => ModelSelectionField(
+    controller: widget.controller,
+    title: t.routingGroupPickModels,
+    emptyHint: '',
+    value: _models,
+    onChanged: (value) => setState(() => _models
+      ..clear()
+      ..addAll(value)),
+  );
 
   Widget _withOptionHelp({
     required String title,

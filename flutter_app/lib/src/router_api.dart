@@ -140,6 +140,18 @@ class RouterApi {
   }
   Future<void> deleteRoutingGroup(String id) => client.delete('$_base/routing/groups/$id');
 
+  /// The live view's feed: a snapshot (cards and requests in flight) for
+  /// since 0, then the events after [since], waiting up to [waitMs] for one.
+  Future<Map<String, dynamic>> routingLive({int since = 0, int waitMs = 0}) => client.get('$_base/routing/live?since=$since&wait=$waitMs');
+
+  /// Requests in flight right now, per model and per provider account.
+  Future<Map<String, dynamic>> routingLoad() => client.get('$_base/routing/load');
+
+  // ---- model presets --------------------------------------------------------
+  Future<List<Map<String, dynamic>>> modelPresets() async =>
+      ((await client.get('$_base/model-presets'))['presets'] as List).cast<Map<String, dynamic>>();
+  Future<void> saveModelPresets(List<Map<String, Object>> presets) => client.putJson('$_base/model-presets', <String, Object>{'presets': presets});
+
   Future<List<RoutingProfile>> profiles() async => _list(await client.get('$_base/routing/profiles'), 'profiles', RoutingProfile.new);
   Future<RoutingProfile> createProfile(String name, RoutingWeights weights, Map<String, Object?> constraints) async => RoutingProfile(
     Map<String, dynamic>.from(

@@ -528,8 +528,8 @@ class AppL10nDe extends AppL10n {
   String get statusDisabled => 'Deaktiviert';
 
   @override
-  String modelsCount(String total, String free) {
-    return '$total Modelle · $free gratis';
+  String modelsCount(String count) {
+    return '$count gewählt';
   }
 
   @override
@@ -593,7 +593,7 @@ class AppL10nDe extends AppL10n {
   String get modelsEyebrow => 'Katalog';
 
   @override
-  String get modelsTitle => 'Modelle';
+  String get modelsTitle => 'Modelle und Routings';
 
   @override
   String get modelsDescription =>
@@ -2638,6 +2638,48 @@ class AppL10nDe extends AppL10n {
   String get keySectionRouting => 'Routing';
 
   @override
+  String get proxyCheckNow => 'Jetzt alle prüfen';
+
+  @override
+  String proxyLastCheck(String ago, String ok, String count) {
+    return 'Geprüft $ago · $ok von $count funktionieren · stündlich';
+  }
+
+  @override
+  String get proxyNotChecked => 'Wird stündlich automatisch geprüft';
+
+  @override
+  String get proxySelectAll => 'Alle auswählen';
+
+  @override
+  String proxySelected(String count) {
+    return '$count ausgewählt';
+  }
+
+  @override
+  String get proxyEnableAction => 'Aktivieren';
+
+  @override
+  String get proxyDisableAction => 'Deaktivieren';
+
+  @override
+  String proxyDeleteSelected(String count) {
+    return '$count Proxys löschen? Das lässt sich nicht rückgängig machen.';
+  }
+
+  @override
+  String get proxyHealthy => 'Bereit';
+
+  @override
+  String get proxyResting => 'Pausiert';
+
+  @override
+  String get proxyOff => 'Aus';
+
+  @override
+  String get proxyLatencyChart => 'Schnellste Proxys';
+
+  @override
   String get discoveryBenchmarks => 'Benchmarks';
 
   @override
@@ -2734,48 +2776,6 @@ class AppL10nDe extends AppL10n {
       'Für diese Modelle sind keine Preise bekannt.';
 
   @override
-  String get proxyCheckNow => 'Jetzt alle prüfen';
-
-  @override
-  String proxyLastCheck(String ago, String ok, String count) {
-    return 'Geprüft $ago · $ok von $count funktionieren · stündlich';
-  }
-
-  @override
-  String get proxyNotChecked => 'Wird stündlich automatisch geprüft';
-
-  @override
-  String get proxySelectAll => 'Alle auswählen';
-
-  @override
-  String proxySelected(String count) {
-    return '$count ausgewählt';
-  }
-
-  @override
-  String get proxyEnableAction => 'Aktivieren';
-
-  @override
-  String get proxyDisableAction => 'Deaktivieren';
-
-  @override
-  String proxyDeleteSelected(String count) {
-    return '$count Proxys löschen? Das lässt sich nicht rückgängig machen.';
-  }
-
-  @override
-  String get proxyHealthy => 'Bereit';
-
-  @override
-  String get proxyResting => 'Pausiert';
-
-  @override
-  String get proxyOff => 'Aus';
-
-  @override
-  String get proxyLatencyChart => 'Schnellste Proxys';
-
-  @override
   String discoveryShared(String count) {
     return '$count gemeinsame Tests';
   }
@@ -2798,13 +2798,6 @@ class AppL10nDe extends AppL10n {
   @override
   String get discoveryEmptyHint =>
       'Ergebnisse erscheinen, sobald Metadatenquellen gesammelt wurden. Falls Quellen bereits verfügbar sind, ändere Suche oder Filter.';
-
-  @override
-  String get discoveryOwnTitle => 'NeoRouter-Benchmarks';
-
-  @override
-  String get discoveryOwnHint =>
-      'Kommt später. Eine Vorschau auf unsere eigenen Bewertungen – noch keine Ergebnisse.';
 
   @override
   String get discoveryPrevious => 'Vorherige Seite';
@@ -5252,6 +5245,50 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get pickModel => 'Modell wählen';
+
+  @override
+  String get mascotIdle => 'Bereit für Anfragen';
+
+  @override
+  String get mascotAsleep => 'Ruht: seit einer Weile keine Anfragen';
+
+  @override
+  String mascotWorking(String count) {
+    return 'Leitet $count Anfragen weiter';
+  }
+
+  @override
+  String mascotStressed(String count) {
+    return 'Sehr beschäftigt: $count Anfragen gleichzeitig';
+  }
+
+  @override
+  String get presetsTitle => 'Vorlagen';
+
+  @override
+  String get presetSave => 'Als Vorlage speichern';
+
+  @override
+  String get presetName => 'Name der Vorlage';
+
+  @override
+  String get presetNameHint => 'z. B. Kluge Modelle';
+
+  @override
+  String presetDelete(String name) {
+    return 'Vorlage „$name“ löschen?';
+  }
+
+  @override
+  String get presetApplyHint =>
+      'Tippen zum Hinzufügen, lange drücken zum Löschen';
+
+  @override
+  String get modelsAny =>
+      'Jedes Modell. Wähle welche aus, um es darauf zu beschränken.';
+
+  @override
+  String get modelsClear => 'Leeren';
 
   @override
   String get pickModels => 'Modelle wählen';

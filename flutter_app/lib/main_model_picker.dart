@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
+import 'main_model_selection.dart';
 import 'main_models.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
@@ -172,6 +173,17 @@ class _ModelPickerState extends State<_ModelPicker> {
             decoration: InputDecoration(isDense: true, prefixIcon: const Icon(Icons.search_rounded, size: 18), hintText: t.searchModels),
           ),
         ),
+        if (widget.multi)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+            child: PresetBar(
+              controller: widget.controller,
+              selected: _chosen.toList(),
+              onChanged: (next) => setState(() => _chosen
+                ..clear()
+                ..addAll(next)),
+            ),
+          ),
         if (widget.capabilities.length > 1)
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
@@ -230,8 +242,15 @@ class _ModelPickerState extends State<_ModelPicker> {
                     ],
                     for (final entry in groups.entries) ...<Widget>[
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
-                        child: Text(names[entry.key]!.toUpperCase(), style: sectionEyebrowStyle(palette)),
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+                        child: Row(
+                          children: <Widget>[
+                            ProviderAvatar(label: names[entry.key]!, size: 22),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(names[entry.key]!.toUpperCase(), style: sectionEyebrowStyle(palette))),
+                            Text('${entry.value.length}', style: TextStyle(fontSize: 11.5, color: palette.textMuted)),
+                          ],
+                        ),
                       ),
                       for (final copies in entry.value.values) _row(t, palette, copies.first, copies.map((model) => model.id).toList()),
                     ],
@@ -280,9 +299,16 @@ class _ModelPickerState extends State<_ModelPicker> {
     final chosen = (copies ?? <String>[id]).any(_chosen.contains);
     return InkWell(
       onTap: () => _tap(id, copies),
-      child: Container(
-        color: chosen ? palette.accentSoft : null,
-        padding: const EdgeInsets.fromLTRB(20, 9, 16, 9),
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+        decoration: BoxDecoration(
+          color: chosen ? palette.accentSoft : null,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: chosen ? palette.accent.withValues(alpha: 0.45) : Colors.transparent),
+        ),
+        padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
         child: Row(
           children: <Widget>[
             if (widget.multi) ...<Widget>[

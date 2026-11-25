@@ -525,8 +525,8 @@ class AppL10nEn extends AppL10n {
   String get statusDisabled => 'Disabled';
 
   @override
-  String modelsCount(String total, String free) {
-    return '$total models · $free free';
+  String modelsCount(String count) {
+    return '$count chosen';
   }
 
   @override
@@ -590,7 +590,7 @@ class AppL10nEn extends AppL10n {
   String get modelsEyebrow => 'Catalog';
 
   @override
-  String get modelsTitle => 'Models';
+  String get modelsTitle => 'Models and routings';
 
   @override
   String get modelsDescription =>
@@ -2615,6 +2615,48 @@ class AppL10nEn extends AppL10n {
   String get keySectionRouting => 'Routing';
 
   @override
+  String get proxyCheckNow => 'Check all now';
+
+  @override
+  String proxyLastCheck(String ago, String ok, String count) {
+    return 'Checked $ago · $ok of $count working · every hour';
+  }
+
+  @override
+  String get proxyNotChecked => 'Checked automatically every hour';
+
+  @override
+  String get proxySelectAll => 'Select all';
+
+  @override
+  String proxySelected(String count) {
+    return '$count selected';
+  }
+
+  @override
+  String get proxyEnableAction => 'Enable';
+
+  @override
+  String get proxyDisableAction => 'Disable';
+
+  @override
+  String proxyDeleteSelected(String count) {
+    return 'Delete $count proxies? This cannot be undone.';
+  }
+
+  @override
+  String get proxyHealthy => 'Ready';
+
+  @override
+  String get proxyResting => 'Resting';
+
+  @override
+  String get proxyOff => 'Off';
+
+  @override
+  String get proxyLatencyChart => 'Fastest proxies';
+
+  @override
   String get discoveryBenchmarks => 'Benchmarks';
 
   @override
@@ -2710,48 +2752,6 @@ class AppL10nEn extends AppL10n {
   String get discoveryNoPrices => 'No prices known for these models.';
 
   @override
-  String get proxyCheckNow => 'Check all now';
-
-  @override
-  String proxyLastCheck(String ago, String ok, String count) {
-    return 'Checked $ago · $ok of $count working · every hour';
-  }
-
-  @override
-  String get proxyNotChecked => 'Checked automatically every hour';
-
-  @override
-  String get proxySelectAll => 'Select all';
-
-  @override
-  String proxySelected(String count) {
-    return '$count selected';
-  }
-
-  @override
-  String get proxyEnableAction => 'Enable';
-
-  @override
-  String get proxyDisableAction => 'Disable';
-
-  @override
-  String proxyDeleteSelected(String count) {
-    return 'Delete $count proxies? This cannot be undone.';
-  }
-
-  @override
-  String get proxyHealthy => 'Ready';
-
-  @override
-  String get proxyResting => 'Resting';
-
-  @override
-  String get proxyOff => 'Off';
-
-  @override
-  String get proxyLatencyChart => 'Fastest proxies';
-
-  @override
   String discoveryShared(String count) {
     return '$count shared tests';
   }
@@ -2774,13 +2774,6 @@ class AppL10nEn extends AppL10n {
   @override
   String get discoveryEmptyHint =>
       'Results appear after metadata sources have been collected. Try a different search or filter if sources are already available.';
-
-  @override
-  String get discoveryOwnTitle => 'NeoRouter benchmarks';
-
-  @override
-  String get discoveryOwnHint =>
-      'Coming later. A preview of our own evaluations — no results yet.';
 
   @override
   String get discoveryPrevious => 'Previous page';
@@ -5220,6 +5213,48 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get pickModel => 'Choose a model';
+
+  @override
+  String get mascotIdle => 'Ready for requests';
+
+  @override
+  String get mascotAsleep => 'Resting: no requests for a while';
+
+  @override
+  String mascotWorking(String count) {
+    return 'Routing $count requests';
+  }
+
+  @override
+  String mascotStressed(String count) {
+    return 'Very busy: $count requests at once';
+  }
+
+  @override
+  String get presetsTitle => 'Presets';
+
+  @override
+  String get presetSave => 'Save as preset';
+
+  @override
+  String get presetName => 'Preset name';
+
+  @override
+  String get presetNameHint => 'e.g. Smart models';
+
+  @override
+  String presetDelete(String name) {
+    return 'Delete preset \"$name\"?';
+  }
+
+  @override
+  String get presetApplyHint => 'Tap to add, long-press to delete';
+
+  @override
+  String get modelsAny => 'Any model. Choose some to limit this to them.';
+
+  @override
+  String get modelsClear => 'Clear';
 
   @override
   String get pickModels => 'Choose models';

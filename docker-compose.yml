@@ -38,6 +38,7 @@ services:
       # Bind to loopback when a reverse proxy in front of it handles TLS.
       - "4600:4600"
     environment:
+      ANALYTICS_ENABLED:
       # Shown in the dashboard and used for OAuth callbacks. Change it when the
       # router is reachable under another address.
       NEOROUTER_PUBLIC_URL: ${NEOROUTER_PUBLIC_URL:-http://localhost:4600}
