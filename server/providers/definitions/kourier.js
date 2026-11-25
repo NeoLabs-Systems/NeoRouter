@@ -12,7 +12,13 @@ module.exports = {
   adapter: 'openai_compatible',
   baseUrl: 'https://api.kourier.sh/v1',
   auth: { type: 'bearer' },
-  models: { path: '/models' },
+  models: {
+    path: '/models',
+    // The listing is bare (id/owned_by only), so the documented limits live
+    // here: 256K total context, 16K output cap per response
+    // (https://docs.kourier.sh/docs/models, checked 2026-11-20).
+    facts: { 'deepseek-v4.1-flash': { contextWindow: 262144, maxOutput: 16384 } },
+  },
   billing: {
     defaultMode: 'flat_rate',
     trustListingFree: false,
