@@ -1,0 +1,17 @@
+[
+  { "id": "email", "token": "EMAIL", "defaultMode": "restore", "priority": 4 },
+  { "id": "phone", "token": "PHONE", "defaultMode": "restore", "priority": 5 },
+  { "id": "person", "token": "LASTNAME", "defaultMode": "restore", "priority": 5 },
+  { "id": "address", "token": "ADDRESS", "defaultMode": "restore", "priority": 5 },
+  { "id": "birthdate", "token": "BIRTHDATE", "defaultMode": "restore", "priority": 5 },
+  { "id": "iban", "token": "IBAN", "defaultMode": "restore", "priority": 2 },
+  { "id": "card", "token": "CARD", "defaultMode": "hide", "priority": 1 },
+  { "id": "crypto", "token": "WALLET", "defaultMode": "hide", "priority": 1 },
+  { "id": "id", "token": "ID", "defaultMode": "restore", "priority": 3 },
+  { "id": "ip", "token": "IP", "defaultMode": "restore", "priority": 5 },
+  { "id": "location", "token": "LOCATION", "defaultMode": "restore", "priority": 5 },
+  { "id": "vehicle", "token": "VEHICLE", "defaultMode": "restore", "priority": 5 },
+  { "id": "secret", "token": "SECRET", "defaultMode": "hide", "priority": 0 },
+  { "id": "custom", "token": "PRIVATE", "defaultMode": "restore", "priority": 3 },
+  { "id": "organization", "token": "ORG", "defaultMode": "restore", "priority": 5, "aiOnly": true }
+]
