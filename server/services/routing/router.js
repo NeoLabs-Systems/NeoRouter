@@ -863,4 +863,4 @@ function preview({ userId, key, requestedModel = 'auto', request, needs, inputTo
   return { ...result, selection: selected ? { model: selected.id, group: selected.routingGroup } : null };
 }
 
-module.exports = { LONG_SHOT_REASONS, MAX_LONG_SHOTS, LONG_SHOT_GAP_MS, resetLongShotsForTests, needsCredits, RoutingPlan, explainNoModel, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, routeAllowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor, boostedMaxTokens };
+module.exports = { LONG_SHOT_REASONS, MAX_LONG_SHOTS, LONG_SHOT_GAP_MS, resetLongShotsForTests, UNKNOWN_CONTEXT_LIMIT, needsCredits, RoutingPlan, explainNoModel, preview, parseModel, isAutoModel, modelKind, MODEL_KINDS, allowedByKey, routeAllowedByKey, kindAllowed, globToRegExp, rejection, maxOutputFor, boostedMaxTokens };
