@@ -25,11 +25,12 @@ import (
 // openai_media.js installs them on the JS class.
 type openAICompatible struct {
 	baseAdapter
+	media *MediaMethods
 }
 
 // newOpenAICompatible builds the OpenAI-compatible dialect.
 func newOpenAICompatible(def providers.Definition, deps providers.AdapterDeps) *openAICompatible {
-	adapter := &openAICompatible{baseAdapter: newBaseAdapter(def, deps)}
+	adapter := &openAICompatible{baseAdapter: newBaseAdapter(def, deps), media: NewMediaMethods(def, deps)}
 	adapter.self = adapter
 	adapter.supported = chatMediaCapabilities(def)
 	return adapter
@@ -568,7 +569,8 @@ func chatInList(list []string, value string) bool {
 }
 
 // chatMediaCapabilities is the capability set of an OpenAI-compatible adapter:
-// chat, plus every media endpoint the definition opts into.
+// chat, plus every media endpoint the definition opts into or the OpenAI
+// default an editable endpoint falls back to (installOpenAIMedia + mediaPath).
 func chatMediaCapabilities(def providers.Definition) providers.Capabilities {
 	set := providers.Of(providers.CapChat)
 	for _, method := range []providers.Capability{
@@ -576,7 +578,7 @@ func chatMediaCapabilities(def providers.Definition) providers.Capabilities {
 		providers.CapModerate, providers.CapClassify, providers.CapCreateVideo, providers.CapDecide,
 		providers.CapSearch, providers.CapWeather,
 	} {
-		if _, ok := def.Media.Endpoint(method); ok {
+		if _, ok := MediaPath(def, method, ""); ok {
 			set[method] = true
 		}
 	}

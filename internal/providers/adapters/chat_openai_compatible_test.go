@@ -480,22 +480,32 @@ func TestOpenAICompatibleFetchQuota(t *testing.T) {
 }
 
 func TestOpenAICompatibleCapabilities(t *testing.T) {
-	// A custom endpoint serves every media endpoint its user configures; a
-	// definition without media serves chat only.
+	// The media methods are installed on the dialect (installOpenAIMedia): a
+	// configured endpoint is claimed, and an editable custom endpoint falls
+	// back to the OpenAI default paths.
 	custom := chatDefinition(t, "custom_openai")
 	custom.Media = providers.MediaSpec{Embed: "/embeddings", Speech: "/audio/speech"}
 	adapter := newOpenAICompatible(custom, chatDeps{baseURL: "http://127.0.0.1:1/v1", secret: "k"}.deps())
 	if !adapter.Supports(providers.CapChat) {
 		t.Error("chat must always be supported")
 	}
-	// The media methods are installed by the media adapter files; until they are,
-	// the set does not claim them.
-	if adapter.Supports(providers.CapEmbed) {
-		t.Error("an adapter without an embed method must not claim embed")
+	if !adapter.Supports(providers.CapEmbed) {
+		t.Error("a configured embed endpoint must be claimed")
+	}
+	if !adapter.Supports(providers.CapSpeech) {
+		t.Error("a configured speech endpoint must be claimed")
 	}
 	plain := newOpenAICompatible(chatDefinition(t, "custom_openai"), chatDeps{baseURL: "http://127.0.0.1:1/v1", secret: "k"}.deps())
-	if plain.Supports(providers.CapSpeech) {
-		t.Error("a definition without media must not claim speech")
+	if !plain.Supports(providers.CapSpeech) {
+		t.Error("a custom endpoint serves the default speech path")
+	}
+	// A fixed host that declares no media endpoint does not serve it.
+	fixed := chatDefinition(t, "custom_openai")
+	fixed.EditableBaseURL = false
+	fixed.Media = providers.MediaSpec{}
+	fixedAdapter := newOpenAICompatible(fixed, chatDeps{baseURL: "http://127.0.0.1:1/v1", secret: "k"}.deps())
+	if fixedAdapter.Supports(providers.CapSpeech) {
+		t.Error("a fixed host without a speech endpoint must not claim speech")
 	}
 }
 
