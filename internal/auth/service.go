@@ -42,6 +42,8 @@ type Service struct {
 
 	// Settings answers whether registration is open beyond the first account.
 	Settings RegistrationGate
+	// AccountData exports and deletes the caller's own account (settings domain).
+	AccountData AccountData
 	// Secrets seals the second-factor secrets at rest. When nil the install's
 	// secret.key is used (see NewSecrets).
 	Secrets Secrets

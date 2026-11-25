@@ -122,7 +122,7 @@ func Open(ctx context.Context, opts Options) (*App, error) {
 		WebDevURL:  func() string { return cfgFn().WebDevURL },
 	}))
 
-	a.Handler = httpserver.RequestID(httpserver.CORS(getenv, httpserver.Gzip(mux)))
+	a.Handler = httpserver.RequestID(httpserver.CORS(getenv, httpserver.Gzip(httpserver.MethodFallback(mux))))
 	return a, nil
 }
 

@@ -14,7 +14,7 @@ import (
 // router.use(requireSession) of server/routes/auth.js.
 //
 // The account data endpoints (/auth/account/export, /export-keys, /delete) are
-// served by the settings domain, which owns the export payloads.
+// registered here and delegate to the settings domain's AccountData surface.
 func (s *Service) Routes(mux *http.ServeMux) {
 	signIn := func() *httpserver.SlidingWindow {
 		return httpserver.NewSlidingWindow(httpserver.SlidingWindowOptions{
@@ -41,6 +41,17 @@ func (s *Service) Routes(mux *http.ServeMux) {
 	mux.Handle("POST /api/v1/auth/logout", s.Middleware(http.HandlerFunc(s.logoutHandler)))
 	mux.Handle("PUT /api/v1/auth/password", s.Middleware(http.HandlerFunc(s.changePasswordHandler)))
 	mux.Handle("PATCH /api/v1/auth/profile", s.Middleware(http.HandlerFunc(s.profileHandler)))
+
+	// Your own account: export it, export the saved keys, delete it. Each route
+	// gets its own 5-per-minute limiter, as the three accountLimit() calls in JS.
+	accountLimit := func() *httpserver.SlidingWindow {
+		return httpserver.NewSlidingWindow(httpserver.SlidingWindowOptions{
+			Window: time.Minute, Limit: 5, Key: s.userKey, Log: s.Log,
+		})
+	}
+	mux.Handle("POST /api/v1/auth/account/export", s.Middleware(accountLimit().Middleware(s.accountHandler("export"))))
+	mux.Handle("POST /api/v1/auth/account/export-keys", s.Middleware(accountLimit().Middleware(s.accountHandler("export-keys"))))
+	mux.Handle("POST /api/v1/auth/account/delete", s.Middleware(accountLimit().Middleware(s.accountHandler("delete"))))
 }
 
 // userKey is the rate limiter's default key, req.auth?.userId || req.ip.
