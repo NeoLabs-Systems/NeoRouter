@@ -1,6 +1,7 @@
 import 'discovery/benchmarks_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:neolabs_flutter/neolabs_flutter.dart' show NeoSidebarButton;
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_activity.dart';
@@ -189,24 +190,35 @@ class _Sidebar extends StatelessWidget {
     }
 
     final items = <Widget>[];
+    final libraryPalette = neoLabsPaletteOf(context);
     for (final group in groups) {
       final parent = group.items.first;
       final hasChildren = group.items.length > 1;
       final open = expanded == group.label;
-      items.add(_SidebarButton(
+      items.add(NeoSidebarButton(
         label: group.label,
         icon: group.icon,
+        iconSize: 18,
         active: controller.page == parent.page,
         trailing: hasChildren
             ? Icon(open ? Icons.expand_less : Icons.expand_more, size: 16, color: controller.page == parent.page ? palette.textSoft : palette.textMuted)
             : null,
         onTap: hasChildren ? () => onToggle(group.label) : () => go(parent.page),
+        palette: libraryPalette,
       ));
       if (hasChildren && open) {
         items.add(_SidebarSubnav(
           children: <Widget>[
             for (final item in group.items)
-              _SidebarButton(label: item.label, icon: item.icon, compact: true, active: controller.page == item.page, onTap: () => go(item.page)),
+              NeoSidebarButton(
+                label: item.label,
+                icon: item.icon,
+                compact: true,
+                iconSize: 16,
+                active: controller.page == item.page,
+                onTap: () => go(item.page),
+                palette: libraryPalette,
+              ),
           ],
         ));
       }
@@ -386,84 +398,6 @@ class _SidebarSettingsButton extends StatelessWidget {
               ),
               Icon(Icons.settings_outlined, size: 17, color: active ? palette.accent : palette.textSoft),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SidebarButton extends StatefulWidget {
-  const _SidebarButton({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-    this.active = false,
-    this.compact = false,
-    this.trailing,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool active;
-  final bool compact;
-  final Widget? trailing;
-
-  @override
-  State<_SidebarButton> createState() => _SidebarButtonState();
-}
-
-class _SidebarButtonState extends State<_SidebarButton> {
-  bool _hovering = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = neoRouterPaletteOf(context);
-    final active = widget.active;
-    final radius = BorderRadius.circular(widget.compact ? 12 : 14);
-    // Flat finish as in NeoAgent: the active row is one accent wash plus a
-    // gold glyph, no gradient, shadow or rail bar.
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hovering = true),
-        onExit: (_) => setState(() => _hovering = false),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: radius,
-            onTap: widget.onTap,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 160),
-              curve: Curves.easeOutCubic,
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(horizontal: widget.compact ? 10 : 11, vertical: widget.compact ? 7 : 9),
-              decoration: BoxDecoration(
-                color: active ? palette.accentSoft : (_hovering ? palette.surfaceRaised.withValues(alpha: 0.66) : Colors.transparent),
-                borderRadius: radius,
-              ),
-              child: Row(
-                children: <Widget>[
-                  Icon(widget.icon, size: widget.compact ? 16 : 18, color: active ? palette.accent : palette.textMuted),
-                  SizedBox(width: widget.compact ? 9 : 11),
-                  Expanded(
-                    child: Text(
-                      widget.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.geist(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: -0.1,
-                        color: active ? palette.text : palette.textSoft,
-                      ),
-                    ),
-                  ),
-                  if (widget.trailing != null) ...<Widget>[const SizedBox(width: 8), widget.trailing!],
-                ],
-              ),
-            ),
           ),
         ),
       ),

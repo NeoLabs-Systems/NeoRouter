@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
-# NeoRouter standalone installer
+# NeoRouter installer: downloads the neorouter binary for this computer from the
+# latest GitHub release and runs `neorouter install`. Existing Node.js or Go
+# installations under $NEOROUTER_HOME (or ~/.neorouter) keep all data and are
+# automatically backed up and migrated.
 # Usage: bash <(curl -fsSL https://raw.githubusercontent.com/NeoLabs-Systems/NeoRouter/main/install.sh)
 
 set -euo pipefail
+
+REPOSITORY="NeoLabs-Systems/NeoRouter"
 
 if [[ -t 1 ]]; then
   BOLD='\033[1m'; RESET='\033[0m'; RED='\033[1;31m'; GRN='\033[1;32m'
@@ -14,73 +19,159 @@ fi
 ok()   { echo -e "  ${GRN}✓${RESET}  $*"; }
 info() { echo -e "  ${CYN}→${RESET}  $*"; }
 err()  { echo -e "  ${RED}✗${RESET}  $*" >&2; }
-ask()  {
-  local var="$1" prompt="$2" default="${3:-}"
-  [[ -n "$default" ]] \
-    && echo -ne "  ${CYN}?${RESET}  ${prompt} ${DIM}[${default}]${RESET} " \
-    || echo -ne "  ${CYN}?${RESET}  ${prompt} "
-  read -r input </dev/tty
-  [[ -z "$input" && -n "$default" ]] && input="$default"
-  eval "$var=\"\$input\""
-}
 
 echo -e "${CYN}${BOLD}NeoRouter installer${RESET}"
 echo
 
-MISSING=()
-command -v git  &>/dev/null && ok "git $(git --version | awk '{print $3}')"   || MISSING+=("git")
-command -v node &>/dev/null && ok "Node.js $(node --version)"                  || MISSING+=("node (https://nodejs.org)")
-command -v npm  &>/dev/null && ok "npm $(npm --version)"                       || MISSING+=("npm")
+case "$(uname -s)" in
+  Darwin) OS="macos" ;;
+  Linux)  OS="linux" ;;
+  *) err "This installer supports macOS and Linux. On Windows, download neorouter-cli-windows-x64.exe from the release page."; exit 1 ;;
+esac
+case "$(uname -m)" in
+  x86_64|amd64)  ARCH="x64" ;;
+  arm64|aarch64) ARCH="arm64" ;;
+  *) err "NeoRouter is not available for this processor ($(uname -m))."; exit 1 ;;
+esac
+command -v curl &>/dev/null || { err "curl is required."; exit 1; }
 
-if [[ ${#MISSING[@]} -gt 0 ]]; then
-  echo
-  err "Missing requirements:"
-  for m in "${MISSING[@]}"; do echo "     • $m"; done
-  echo
+CHANNEL="${NEOROUTER_RELEASE_CHANNEL:-}"
+if [[ -z "$CHANNEL" && -r /dev/tty && -t 1 ]]; then
+  echo -ne "  ${CYN}?${RESET}  Release channel (stable/beta) ${DIM}[beta]${RESET} "
+  read -r CHANNEL </dev/tty || true
+fi
+CHANNEL="$(echo "${CHANNEL:-beta}" | tr '[:upper:]' '[:lower:]')"
+[[ "$CHANNEL" == "stable" ]] || CHANNEL="beta"
+ok "Channel: ${CHANNEL}"
+
+RUNTIME_DIR="${NEOROUTER_HOME:-$HOME/.neorouter}"
+if [[ -f "$RUNTIME_DIR/data/neorouter.sqlite3" || -f "$RUNTIME_DIR/.env" ]]; then
+  info "Existing NeoRouter data found at ${RUNTIME_DIR}; it will be backed up and preserved."
+fi
+
+info "Looking up the latest release..."
+if ! RELEASES="$(curl -fsSL -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/${REPOSITORY}/releases?per_page=50")"; then
+  err "Could not fetch releases from GitHub (network error or API rate limit). Wait a minute and try again."
+  exit 1
+fi
+read -r URL DIGEST < <(printf '%s\n' "$RELEASES" | awk -v channel="$CHANNEL" -v want="neorouter-cli-${OS}-${ARCH}" '
+  function trim_v(s) { sub(/^v/, "", s); return s }
+  function is_semver(t) { return t ~ /^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$/ }
+  function parse_ver(raw,    core_pre, core, pre, parts, n) {
+    raw = trim_v(raw)
+    n = index(raw, "-")
+    if (n > 0) {
+      core = substr(raw, 1, n - 1)
+      pre = substr(raw, n + 1)
+    } else {
+      core = raw
+      pre = ""
+    }
+    split(core, parts, ".")
+    maj = parts[1] + 0; min = parts[2] + 0; pat = parts[3] + 0
+    is_pre = (pre != "")
+    pre_num = -1
+    if (pre ~ /^beta\.[0-9]+$/) {
+      pre_num = substr(pre, 6) + 0
+    }
+  }
+  function cmp_ver(a, b,    amaj, amin, apat, apre, aprenum, bmaj, bmin, bpat, bpre, bprenum) {
+    if (b == "") return 1
+    parse_ver(a); amaj = maj; amin = min; apat = pat; apre = is_pre; aprenum = pre_num
+    parse_ver(b); bmaj = maj; bmin = min; bpat = pat; bpre = is_pre; bprenum = pre_num
+    if (amaj != bmaj) return (amaj > bmaj) ? 1 : -1
+    if (amin != bmin) return (amin > bmin) ? 1 : -1
+    if (apat != bpat) return (apat > bpat) ? 1 : -1
+    if (!apre && bpre) return 1
+    if (apre && !bpre) return -1
+    if (aprenum >= 0 && bprenum >= 0 && aprenum != bprenum) return (aprenum > bprenum) ? 1 : -1
+    if (a == b) return 0
+    return (a > b) ? 1 : -1
+  }
+  function flush_release() {
+    if (tag != "" && is_semver(tag) && !draft && (channel == "beta" || !pre) && cand_url != "") {
+      if (cmp_ver(tag, best_tag) > 0) {
+        best_tag = tag
+        best_url = cand_url
+        best_digest = (cand_digest == "" ? "-" : cand_digest)
+      }
+    }
+  }
+  /"tag_name":/ {
+    flush_release()
+    split($0, t, "\""); tag = t[4]
+    draft = 0; pre = 0; digest = ""; cand_url = ""; cand_digest = ""
+  }
+  /"draft": true/ { draft = 1 }
+  /"prerelease": true/ { pre = 1 }
+  /"digest":/ { split($0, d, "\""); digest = d[4] }
+  /"browser_download_url":/ {
+    split($0, u, "\""); url = u[4]; n = split(url, parts, "/"); name = parts[n]
+    if (index(name, want) == 1 && name !~ /\.(sig|json)$/) {
+      cand_url = url
+      cand_digest = digest
+    }
+    digest = ""
+  }
+  END {
+    flush_release()
+    if (best_url != "") {
+      print best_url, best_digest
+    }
+  }') || true
+if [[ -z "${URL:-}" ]]; then
+  err "No NeoRouter ${CHANNEL} release has a CLI binary for ${OS}-${ARCH} yet."
   exit 1
 fi
 
-NODE_MAJOR="$(node -p "process.versions.node.split('.')[0]")"
-if [[ "$NODE_MAJOR" -lt 20 ]]; then
-  err "NeoRouter requires Node.js 20 or newer. Current runtime is $(node --version)."
-  exit 1
-fi
-
-DEFAULT_DIR="$HOME/NeoRouter"
-ask INSTALL_DIR "Install directory" "$DEFAULT_DIR"
-
-if [[ -d "$INSTALL_DIR/.git" ]]; then
-  info "Existing repo found at ${INSTALL_DIR} — pulling latest..."
-  BRANCH="$(git -C "$INSTALL_DIR" rev-parse --abbrev-ref HEAD)"
-  # Files an earlier install run changed itself (npm rewrites the lockfile,
-  # Flutter its own lock) are not local edits: put them back first.
-  for file in package-lock.json flutter_app/pubspec.lock; do
-    git -C "$INSTALL_DIR" checkout -- "$file" 2>/dev/null || true
-  done
-  # Anything else that changed is kept aside and put back after the update.
-  if ! git -C "$INSTALL_DIR" pull --rebase --autostash origin "$BRANCH"; then
-    err "Could not update ${INSTALL_DIR}. Your local changes are kept in 'git stash list' there."
-    err "To start fresh: rm -rf \"${INSTALL_DIR}\" and run this installer again."
+BIN_DIR="${NEOROUTER_BIN_DIR:-$HOME/.local/bin}"
+mkdir -p "$BIN_DIR"
+TMP="$(mktemp "${BIN_DIR}/.neorouter.XXXXXX")"
+trap 'rm -f "$TMP"' EXIT
+info "Downloading ${URL##*/}..."
+curl -fSL --proto '=https' --progress-bar -o "$TMP" "$URL"
+if [[ "$DIGEST" == sha256:* ]]; then
+  if command -v sha256sum &>/dev/null; then SUM="$(sha256sum "$TMP" | awk '{print $1}')"; else SUM="$(shasum -a 256 "$TMP" | awk '{print $1}')"; fi
+  if [[ "sha256:${SUM}" != "$DIGEST" ]]; then
+    err "The download did not match its published checksum; nothing was installed."
     exit 1
   fi
-  ok "Updated"
-elif [[ -d "$INSTALL_DIR" && -n "$(ls -A "$INSTALL_DIR" 2>/dev/null)" ]]; then
-  err "Directory ${INSTALL_DIR} exists and is not empty. Choose a different path or remove it."
-  exit 1
-else
-  info "Cloning into ${INSTALL_DIR}..."
-  git clone https://github.com/NeoLabs-Systems/NeoRouter.git "$INSTALL_DIR"
-  ok "Cloned"
+  ok "Checksum verified"
+fi
+chmod 755 "$TMP"
+if [[ "$OS" == "macos" ]]; then
+  xattr -d com.apple.quarantine "$TMP" 2>/dev/null || true
+fi
+mv -f "$TMP" "$BIN_DIR/neorouter"
+trap - EXIT
+ok "Installed ${BIN_DIR}/neorouter"
+
+# Remove any stale npm symlink from the previous Node.js CLI so it cannot shadow Go.
+OLD_CLI="$(command -v neorouter 2>/dev/null || true)"
+if [[ -n "$OLD_CLI" && "$OLD_CLI" != "$BIN_DIR/neorouter" && -L "$OLD_CLI" ]]; then
+  case "$(readlink "$OLD_CLI")" in
+    *bin/neo*call.js|*bin/neorouter.js) rm -f "$OLD_CLI"; info "Removed the legacy Node.js neorouter command at ${OLD_CLI}" ;;
+  esac
 fi
 
-echo
-info "Installing Node.js dependencies..."
-cd "$INSTALL_DIR"
-# npm ci installs exactly the lockfile and never rewrites it, so the
-# checkout stays clean for the next update.
-npm ci --omit=dev --no-audit --no-fund || npm install --omit=dev --no-audit --no-fund
-ok "Dependencies ready"
+case ":${PATH}:" in
+  *":${BIN_DIR}:"*) ;;
+  *)
+    for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
+      if [[ -f "$rc" || "$rc" == "$HOME/.bashrc" ]] && ! grep -qs "${BIN_DIR}" "$rc"; then
+        # shellcheck disable=SC2016 # $PATH is written into the file, not expanded here.
+        printf '\n# Added by the neorouter installer\nexport PATH="%s:$PATH"\n' "$BIN_DIR" >> "$rc"
+      fi
+    done
+    if [[ -d "$HOME/.config/fish" ]]; then
+      mkdir -p "$HOME/.config/fish/conf.d"
+      printf 'fish_add_path %s\n' "$BIN_DIR" > "$HOME/.config/fish/conf.d/neorouter.fish"
+    fi
+    export PATH="${BIN_DIR}:$PATH"
+    info "Added ${BIN_DIR} to PATH (open a new terminal to use neorouter there)"
+    ;;
+esac
+hash -r
 
 echo
-info "Running Node manager installer..."
-exec node ./bin/neorouter.js install
+exec "$BIN_DIR/neorouter" install --channel "$CHANNEL"

@@ -1,6 +1,6 @@
 # Publishes the landing page at / and the GET /api reference at /api/
 # (scripts/build_api_docs.js) to GitHub Pages, like NeoAgent's site.
-name: Deploy Site
+name: Build Site
 
 on:
   push:
@@ -8,6 +8,9 @@ on:
       - main
     paths:
       - landing/**
+      # The reference itself: the Go gateway serves it, the page is built from
+      # the Node copy while the JavaScript tree is still in the repository.
+      - internal/gateway/**
       - server/routes/api_docs.js
       - server/core/capability_registry.js
       - server/services/routing/profiles.js
@@ -15,7 +18,7 @@ on:
       - scripts/build_api_docs.js
       - package.json
       - package-lock.json
-      - .github/workflows/deploy-site.yml
+      - .github/workflows/build-site.yml
   workflow_dispatch:
 
 permissions:

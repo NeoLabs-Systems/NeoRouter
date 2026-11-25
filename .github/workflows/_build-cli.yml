@@ -1,0 +1,91 @@
+name: Reusable CLI & Web Bundle Builds
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to build CLI binaries from
+        required: true
+        type: string
+      release_tag:
+        description: Release tag used to name the web bundle artifact
+        required: true
+        type: string
+    secrets:
+      NEOROUTER_RUNTIME_SIGNING_PRIVATE_KEY:
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-cli:
+    name: Build CLI binaries and web bundle
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Go
+        uses: NeoLabs-Systems/neolabs-go/.github/actions/setup-go@1cd3668653c972a8c10cffcf52be95638bba74f8
+
+      # config.Version is a const (spec 00), so the version comes from the source
+      # the release workflow committed, not from -ldflags -X.
+      - name: Build static CLI binaries and web bundle
+        env:
+          CGO_ENABLED: '0'
+          GOWORK: 'off'
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          VERSION="${RELEASE_TAG#v}"
+          LDFLAGS="-s -w"
+
+          for target in \
+            linux/amd64:neorouter-cli-linux-x64 \
+            linux/arm64:neorouter-cli-linux-arm64 \
+            darwin/amd64:neorouter-cli-macos-x64 \
+            darwin/arm64:neorouter-cli-macos-arm64 \
+            windows/amd64:neorouter-cli-windows-x64.exe
+          do
+            os_arch="${target%%:*}"
+            out_name="${target##*:}"
+            GOOS="${os_arch%/*}" GOARCH="${os_arch#*/}" \
+              go build -trimpath -ldflags "$LDFLAGS" -o "dist/${out_name}" ./cmd/neorouter
+          done
+
+          # The dashboard and the landing page travel with the binary: an install
+          # serves both from the directory it is unpacked into.
+          tar -czf "dist/neorouter-web-${VERSION}.tar.gz" \
+            flutter_app/build/web \
+            landing
+          ls -lh dist
+
+      - name: Build signed runtime bundles
+        env:
+          GOWORK: 'off'
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          NEOROUTER_RUNTIME_SIGNING_PRIVATE_KEY: ${{ secrets.NEOROUTER_RUNTIME_SIGNING_PRIVATE_KEY }}
+        run: go run ./cmd/neorouter-release runtime-bundles --version "$RELEASE_TAG"
+
+      - name: Upload CLI and web bundle artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: neorouter-cli-bundle
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Attach CLI and web bundle to release
+        if: inputs.release_tag != ''
+        uses: ./.github/actions/attach-release-assets
+        with:
+          release_tag: ${{ inputs.release_tag }}
+          files: |
+            dist/neorouter-cli-*
+            dist/neorouter-web-*.tar.gz
+            dist/neorouter-runtime-*.zip
+            dist/neorouter-runtime-manifest-*.json
+            dist/neorouter-runtime-manifest-*.json.sig
