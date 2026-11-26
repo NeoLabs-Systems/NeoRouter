@@ -32,8 +32,8 @@ jobs:
           set -euo pipefail
 
           if [[ -z "$DISCORD_WEBHOOK_URL" ]]; then
-            echo "::error::DISCORD_RELEASE_WEBHOOK_URL is not configured."
-            exit 1
+            echo "::notice::DISCORD_RELEASE_WEBHOOK_URL is not configured; skipping the release notification."
+            exit 0
           fi
           if [[ -z "$RELEASE_TAG" ]]; then
             echo "::error::No GitHub release tag was provided."
