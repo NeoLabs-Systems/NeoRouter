@@ -1,3 +1,13 @@
+# Go build and test output
+/neorouter
+/neorouter.exe
+/dist/
+/coverage.out
+/coverage.html
+*.test
+go.work
+go.work.sum
+
 # Logs
 logs/
 *.log
@@ -80,7 +90,11 @@ flutter_app/.flutter-plugins-dependencies
 flutter_app/.packages
 flutter_app/.pub-cache/
 flutter_app/.pub/
-flutter_app/build/
+# The Docker image, the CLI web bundle and the runtime archives all ship the
+# built dashboard, so it travels with the checkout; every other build output
+# stays ignored.
+flutter_app/build/*
+!flutter_app/build/web/
 flutter_app/.idea/
 flutter_app/*.iml
 flutter_app/linux/flutter/ephemeral/

@@ -1,0 +1,2721 @@
+[
+ {
+  "id": "email",
+  "kind": "rule",
+  "file": "contact.js",
+  "match": [
+   {
+    "text": "Mail anna.schmidt@example.de now"
+   }
+  ],
+  "ignore": [
+   "@channel see the docs"
+  ]
+ },
+ {
+  "id": "phone",
+  "kind": "rule",
+  "file": "contact.js",
+  "match": [
+   {
+    "text": "call +49 170 1234567 today",
+    "value": "+49 170 1234567"
+   },
+   {
+    "text": "(030) 1234 5678"
+   }
+  ],
+  "ignore": [
+   "in 2026 we sold 1500 units",
+   "released 2026-10-29",
+   "version 1.20.3",
+   "Order 4711-0815"
+  ]
+ },
+ {
+  "id": "ipv4",
+  "kind": "rule",
+  "file": "contact.js",
+  "match": [
+   {
+    "text": "server 10.0.4.17 down"
+   }
+  ],
+  "ignore": [
+   "listen on 127.0.0.1",
+   "bind 0.0.0.0"
+  ]
+ },
+ {
+  "id": "ipv6",
+  "kind": "rule",
+  "file": "contact.js",
+  "match": [
+   {
+    "text": "host 2a00:1450:4001:82a::200e answered"
+   },
+   {
+    "text": "fe80::1ff:fe23:4567:890a%eth0"
+   }
+  ],
+  "ignore": [
+   "meet at 12:30:45",
+   "std::vector",
+   "see 2001:db8::1 in the docs"
+  ]
+ },
+ {
+  "id": "mac_address",
+  "kind": "rule",
+  "file": "contact.js",
+  "match": [
+   {
+    "text": "wifi 3C:22:FB:9A:10:7E"
+   },
+   {
+    "text": "port 0023.ac4f.1b2c"
+   }
+  ],
+  "ignore": [
+   "broadcast ff:ff:ff:ff:ff:ff"
+  ]
+ },
+ {
+  "id": "btc_base58",
+  "kind": "rule",
+  "file": "crypto.js",
+  "match": [
+   {
+    "text": "send to 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+   }
+  ],
+  "ignore": [
+   "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNb"
+  ]
+ },
+ {
+  "id": "bech32_address",
+  "kind": "rule",
+  "file": "crypto.js",
+  "match": [
+   {
+    "text": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq"
+   }
+  ],
+  "ignore": [
+   "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdx"
+  ]
+ },
+ {
+  "id": "eth_address",
+  "kind": "rule",
+  "file": "crypto.js",
+  "match": [
+   {
+    "text": "wallet 0x742d35cc6634c0532925a3b844bc454e4438f44e"
+   }
+  ],
+  "ignore": [
+   "hash 0x742d35cc6634c0532925a3b844bc454e4438f44e"
+  ]
+ },
+ {
+  "id": "eth_address_checksummed",
+  "kind": "rule",
+  "file": "crypto.js",
+  "match": [
+   {
+    "text": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+   }
+  ],
+  "ignore": [
+   "0x742d35cc6634c0532925a3b844bc454e4438f44e"
+  ]
+ },
+ {
+  "id": "monero_address",
+  "kind": "rule",
+  "file": "crypto.js",
+  "match": [
+   {
+    "text": "44AFFq5kSiGBoZ4NMDwYtN18obc8AemS33DBLWs3H7otXft3XjrpDtQGv7SqSsaBYBb98uNbr2VBBEt7f2wfn3RVGQBEP3A"
+   }
+  ],
+  "ignore": []
+ },
+ {
+  "id": "solana_address",
+  "kind": "rule",
+  "file": "crypto.js",
+  "match": [
+   {
+    "text": "Solana wallet 7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV"
+   }
+  ],
+  "ignore": [
+   "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV"
+  ]
+ },
+ {
+  "id": "iban",
+  "kind": "rule",
+  "file": "finance.js",
+  "match": [
+   {
+    "text": "IBAN DE89 3704 0044 0532 0130 00 ok",
+    "value": "DE89 3704 0044 0532 0130 00"
+   },
+   {
+    "text": "GB82WEST12345698765432"
+   }
+  ],
+  "ignore": [
+   "IBAN DE89 3704 0044 0532 0130 01"
+  ]
+ },
+ {
+  "id": "bic",
+  "kind": "rule",
+  "file": "finance.js",
+  "match": [
+   {
+    "text": "BIC: COBADEFFXXX"
+   }
+  ],
+  "ignore": [
+   "DEUTSCHE Bahn",
+   "COBADEFFXXX alone"
+  ]
+ },
+ {
+  "id": "bank_account_de",
+  "kind": "rule",
+  "file": "finance.js",
+  "match": [
+   {
+    "text": "Kontonummer 1234567890"
+   }
+  ],
+  "ignore": [
+   "Kontostand 12345 EUR",
+   "order 1234567890"
+  ]
+ },
+ {
+  "id": "blz",
+  "kind": "rule",
+  "file": "finance.js",
+  "match": [
+   {
+    "text": "BLZ 370 400 44"
+   }
+  ],
+  "ignore": [
+   "370 400 44 Stück"
+  ]
+ },
+ {
+  "id": "us_routing",
+  "kind": "rule",
+  "file": "finance.js",
+  "match": [
+   {
+    "text": "routing number 021000021"
+   }
+  ],
+  "ignore": [
+   "ticket 021000021",
+   "routing number 021000022"
+  ]
+ },
+ {
+  "id": "card",
+  "kind": "rule",
+  "file": "finance.js",
+  "match": [
+   {
+    "text": "card 4111 1111 1111 1111"
+   },
+   {
+    "text": "5500-0000-0000-0004"
+   }
+  ],
+  "ignore": [
+   "order 4111 1111 1111 1112"
+  ]
+ },
+ {
+  "id": "card_cvv",
+  "kind": "rule",
+  "file": "finance.js",
+  "match": [
+   {
+    "text": "CVV: 123"
+   },
+   {
+    "text": "Prüfziffer 4321"
+   }
+  ],
+  "ignore": [
+   "room 123"
+  ]
+ },
+ {
+  "id": "card_expiry",
+  "kind": "rule",
+  "file": "finance.js",
+  "match": [
+   {
+    "text": "valid thru 09/28"
+   },
+   {
+    "text": "gültig bis 11/2027"
+   }
+  ],
+  "ignore": [
+   "ratio 09/28"
+  ]
+ },
+ {
+  "id": "de_tax_id",
+  "kind": "rule",
+  "file": "ids_de.js",
+  "match": [
+   {
+    "text": "Steuer-ID: 86 095 742 719"
+   },
+   {
+    "text": "86095742719"
+   }
+  ],
+  "ignore": [
+   "86095742718",
+   "11111111111"
+  ]
+ },
+ {
+  "id": "de_vat_id",
+  "kind": "rule",
+  "file": "ids_de.js",
+  "match": [
+   {
+    "text": "USt-IdNr. DE136695976"
+   }
+  ],
+  "ignore": [
+   "DE136695975"
+  ]
+ },
+ {
+  "id": "de_tax_number",
+  "kind": "rule",
+  "file": "ids_de.js",
+  "match": [
+   {
+    "text": "Steuernummer 21/815/08150"
+   }
+  ],
+  "ignore": [
+   "Seite 21/815/08150"
+  ]
+ },
+ {
+  "id": "de_pension_number",
+  "kind": "rule",
+  "file": "ids_de.js",
+  "match": [
+   {
+    "text": "RV-Nr. 12 150385 M 01 4"
+   },
+   {
+    "text": "65 170839 J 00 3"
+   }
+  ],
+  "ignore": [
+   "12 150385 M 01 5"
+  ]
+ },
+ {
+  "id": "de_health_insurance_number",
+  "kind": "rule",
+  "file": "ids_de.js",
+  "match": [
+   {
+    "text": "Versichertennummer A123456780"
+   }
+  ],
+  "ignore": [
+   "Artikel A123456780",
+   "Versichertennummer A123456781"
+  ]
+ },
+ {
+  "id": "de_id_card",
+  "kind": "rule",
+  "file": "ids_de.js",
+  "match": [
+   {
+    "text": "Ausweisnummer T220001293"
+   }
+  ],
+  "ignore": [
+   "Seriennummer T220001293"
+  ]
+ },
+ {
+  "id": "de_document_number",
+  "kind": "rule",
+  "file": "ids_de.js",
+  "match": [
+   {
+    "text": "Reisepass C01X00T47"
+   }
+  ],
+  "ignore": [
+   "Modell C01X00T47"
+  ]
+ },
+ {
+  "id": "de_driving_licence",
+  "kind": "rule",
+  "file": "ids_de.js",
+  "match": [
+   {
+    "text": "Führerschein B072RRE2I55"
+   }
+  ],
+  "ignore": [
+   "Produkt B072RRE2I55"
+  ]
+ },
+ {
+  "id": "eu_vat_id",
+  "kind": "rule",
+  "file": "ids_eu.js",
+  "match": [
+   {
+    "text": "VAT: FR40303265045"
+   },
+   {
+    "text": "P.IVA IT12345678901"
+   },
+   {
+    "text": "UID ATU12345678"
+   }
+  ],
+  "ignore": [
+   "IT12345678901 Bestellung"
+  ]
+ },
+ {
+  "id": "eu_vat_id_distinct",
+  "kind": "rule",
+  "file": "ids_eu.js",
+  "match": [
+   {
+    "text": "ATU12345678"
+   },
+   {
+    "text": "NL123456789B01"
+   },
+   {
+    "text": "CHE-123.456.789"
+   }
+  ],
+  "ignore": [
+   "ATU1234567"
+  ]
+ },
+ {
+  "id": "ch_ahv",
+  "kind": "rule",
+  "file": "ids_eu.js",
+  "match": [
+   {
+    "text": "AHV 756.1234.5678.97"
+   }
+  ],
+  "ignore": [
+   "756.1234.5678.98"
+  ]
+ },
+ {
+  "id": "at_social_security",
+  "kind": "rule",
+  "file": "ids_eu.js",
+  "match": [
+   {
+    "text": "SV-Nummer 1237 010180"
+   }
+  ],
+  "ignore": [
+   "Rechnung 1237 010180",
+   "SV-Nummer 1238 010180"
+  ]
+ },
+ {
+  "id": "fr_nir",
+  "kind": "rule",
+  "file": "ids_eu.js",
+  "match": [
+   {
+    "text": "NIR 1 84 12 76 451 089 46"
+   }
+  ],
+  "ignore": [
+   "1 84 12 76 451 089 47"
+  ]
+ },
+ {
+  "id": "es_dni",
+  "kind": "rule",
+  "file": "ids_eu.js",
+  "match": [
+   {
+    "text": "DNI 12345678Z"
+   },
+   {
+    "text": "NIE X1234567L"
+   }
+  ],
+  "ignore": [
+   "12345678A"
+  ]
+ },
+ {
+  "id": "it_codice_fiscale",
+  "kind": "rule",
+  "file": "ids_eu.js",
+  "match": [
+   {
+    "text": "CF RSSMRA85T10A562S"
+   }
+  ],
+  "ignore": [
+   "RSSMRA85T10A562T"
+  ]
+ },
+ {
+  "id": "nl_bsn",
+  "kind": "rule",
+  "file": "ids_eu.js",
+  "match": [
+   {
+    "text": "BSN 111222333"
+   }
+  ],
+  "ignore": [
+   "order 111222333"
+  ]
+ },
+ {
+  "id": "pl_pesel",
+  "kind": "rule",
+  "file": "ids_eu.js",
+  "match": [
+   {
+    "text": "PESEL 44051401359"
+   }
+  ],
+  "ignore": [
+   "44051401359"
+  ]
+ },
+ {
+  "id": "be_national_number",
+  "kind": "rule",
+  "file": "ids_eu.js",
+  "match": [
+   {
+    "text": "85.07.30-033.28"
+   }
+  ],
+  "ignore": [
+   "85.07.30-033.29"
+  ]
+ },
+ {
+  "id": "us_ssn",
+  "kind": "rule",
+  "file": "ids_intl.js",
+  "match": [
+   {
+    "text": "SSN 078-05-1120"
+   }
+  ],
+  "ignore": [
+   "phone 555-12-3456",
+   "000-12-3456"
+  ]
+ },
+ {
+  "id": "us_ssn_plain",
+  "kind": "rule",
+  "file": "ids_intl.js",
+  "match": [
+   {
+    "text": "SSN: 078051120"
+   }
+  ],
+  "ignore": [
+   "ticket 078051120"
+  ]
+ },
+ {
+  "id": "us_itin",
+  "kind": "rule",
+  "file": "ids_intl.js",
+  "match": [
+   {
+    "text": "ITIN 912-70-1234"
+   }
+  ],
+  "ignore": [
+   "912-40-1234"
+  ]
+ },
+ {
+  "id": "uk_national_insurance",
+  "kind": "rule",
+  "file": "ids_intl.js",
+  "match": [
+   {
+    "text": "NI number AB 12 34 56 C"
+   }
+  ],
+  "ignore": [
+   "GB 12 34 56 A"
+  ]
+ },
+ {
+  "id": "uk_nhs",
+  "kind": "rule",
+  "file": "ids_intl.js",
+  "match": [
+   {
+    "text": "NHS number 943 476 5919"
+   }
+  ],
+  "ignore": [
+   "call 943 476 5919"
+  ]
+ },
+ {
+  "id": "mrz_passport_line",
+  "kind": "rule",
+  "file": "ids_intl.js",
+  "match": [
+   {
+    "text": "L898902C36UTO7408122F1204159ZE184226B<<<<<10"
+   }
+  ],
+  "ignore": [
+   "L898902C36UTO7408122F1204159ZE184226B<<<<<11"
+  ]
+ },
+ {
+  "id": "mrz_name_line",
+  "kind": "rule",
+  "file": "ids_intl.js",
+  "match": [
+   {
+    "text": "P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<"
+   }
+  ],
+  "ignore": [
+   "ANNA MARIA ERIKSSON"
+  ]
+ },
+ {
+  "id": "birthdate",
+  "kind": "rule",
+  "file": "personal.js",
+  "match": [
+   {
+    "text": "geb. 12.03.1985"
+   },
+   {
+    "text": "Date of birth: March 12, 1985"
+   },
+   {
+    "text": "geboren am 3. Mai 1990"
+   }
+  ],
+  "ignore": [
+   "Termin am 12.03.2026",
+   "released 2026-10-29"
+  ]
+ },
+ {
+  "id": "gps_decimal",
+  "kind": "rule",
+  "file": "personal.js",
+  "match": [
+   {
+    "text": "Standort: 52.520008, 13.404954"
+   },
+   {
+    "text": "https://maps.example/@48.13743,11.57549,15z"
+   }
+  ],
+  "ignore": [
+   "weights 0.1234, 0.5678",
+   "GPS 95.12345, 13.40495"
+  ]
+ },
+ {
+  "id": "gps_hemisphere",
+  "kind": "rule",
+  "file": "personal.js",
+  "match": [
+   {
+    "text": "52.5200° N, 13.4050° E"
+   },
+   {
+    "text": "52°31'12\" N 13°24'18\" E"
+   }
+  ],
+  "ignore": [
+   "5 N, 10 E"
+  ]
+ },
+ {
+  "id": "plus_code",
+  "kind": "rule",
+  "file": "personal.js",
+  "match": [
+   {
+    "text": "meet at 9F4MGC22+22"
+   }
+  ],
+  "ignore": [
+   "C++ code"
+  ]
+ },
+ {
+  "id": "de_number_plate",
+  "kind": "rule",
+  "file": "personal.js",
+  "match": [
+   {
+    "text": "Kennzeichen: M-AB 1234"
+   },
+   {
+    "text": "Auto B XY 99E"
+   }
+  ],
+  "ignore": [
+   "Typ M-AB 1234"
+  ]
+ },
+ {
+  "id": "vin_checked",
+  "kind": "rule",
+  "file": "personal.js",
+  "match": [
+   {
+    "text": "1HGCM82633A004352"
+   }
+  ],
+  "ignore": [
+   "1HGCM82633A004353"
+  ]
+ },
+ {
+  "id": "vin",
+  "kind": "rule",
+  "file": "personal.js",
+  "match": [
+   {
+    "text": "FIN: WVWZZZ1JZXW000001"
+   }
+  ],
+  "ignore": [
+   "Artikel WVWZZZ1JZXW000001"
+  ]
+ },
+ {
+  "id": "private_key_block",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAA\n-----END OPENSSH PRIVATE KEY-----"
+   },
+   {
+    "text": "-----BEGIN PGP PRIVATE KEY BLOCK-----\nlQOYBF\n-----END PGP PRIVATE KEY BLOCK-----"
+   }
+  ],
+  "ignore": [
+   "-----BEGIN PUBLIC KEY-----\nMIIB\n-----END PUBLIC KEY-----"
+  ]
+ },
+ {
+  "id": "ai_provider_key",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "key sk-or-v1-abcdefghijklmnopqrstuvwxyz0123456789"
+   },
+   {
+    "text": "hf_abcdefghijklmnopqrstuvwxyz1234"
+   }
+  ],
+  "ignore": [
+   "task-list"
+  ]
+ },
+ {
+  "id": "github_token",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789"
+   }
+  ],
+  "ignore": []
+ },
+ {
+  "id": "slack_token",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "xoxb-1234567890-abcdefghij"
+   }
+  ],
+  "ignore": []
+ },
+ {
+  "id": "aws_access_key",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "AKIAIOSFODNN7EXAMPLE"
+   }
+  ],
+  "ignore": []
+ },
+ {
+  "id": "google_api_key",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "AIzaSyA1234567890abcdefghijklmnopqrstuv"
+   }
+  ],
+  "ignore": []
+ },
+ {
+  "id": "stripe_key",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "sk_live_abcdefghijklmnop1234"
+   }
+  ],
+  "ignore": []
+ },
+ {
+  "id": "jwt",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"
+   }
+  ],
+  "ignore": []
+ },
+ {
+  "id": "bearer_token",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "Authorization header Bearer abcdefghijklmnopqrstuvwxyz123",
+    "value": "abcdefghijklmnopqrstuvwxyz123"
+   }
+  ],
+  "ignore": []
+ },
+ {
+  "id": "basic_auth",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l",
+    "value": "YWxhZGRpbjpvcGVuc2VzYW1l"
+   }
+  ],
+  "ignore": [
+   "Basic Grundlagenkurs"
+  ]
+ },
+ {
+  "id": "password_assignment",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "password: hunter2pw",
+    "value": "hunter2pw"
+   },
+   {
+    "text": "das Server-Passwort: hunter2pw.",
+    "value": "hunter2pw"
+   },
+   {
+    "text": "Mein Kennwort lautet Sommer2026",
+    "value": "Sommer2026"
+   },
+   {
+    "text": "the pin is 4711",
+    "value": "4711"
+   }
+  ],
+  "ignore": [
+   "the topic is passwords in general",
+   "password: ${DB_PASSWORD}",
+   "password: <your-password>"
+  ]
+ },
+ {
+  "id": "password_in_sentence",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "the temporary password from the onboarding email was RheinTech!2026#Reset.",
+    "value": "RheinTech!2026#Reset"
+   },
+   {
+    "text": "Das neue Passwort für den Router ist Sommer2026!",
+    "value": "Sommer2026"
+   }
+  ],
+  "ignore": [
+   "the password is required for every login",
+   "my password was changed yesterday",
+   "the password is [SECRET_1]"
+  ]
+ },
+ {
+  "id": "url_credentials",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "postgres://app:s3cr3tpass@db.local/x",
+    "value": "s3cr3tpass"
+   }
+  ],
+  "ignore": [
+   "https://example.org/a:b"
+  ]
+ },
+ {
+  "id": "env_secret",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "DB_PASSWORD=Zx9!kq2Lm",
+    "value": "Zx9!kq2Lm"
+   },
+   {
+    "text": "export STRIPE_SECRET_KEY=\"rk_abc12345\"",
+    "value": "rk_abc12345"
+   }
+  ],
+  "ignore": [
+   "API_KEY=${API_KEY}",
+   "TOKEN=changeme"
+  ]
+ },
+ {
+  "id": "connection_string_secret",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "DefaultEndpointsProtocol=https;AccountName=x;AccountKey=abc123+/def==;",
+    "value": "abc123+/def=="
+   },
+   {
+    "text": "Server=db;User Id=sa;Password=Pa55word!;",
+    "value": "Pa55word!"
+   }
+  ],
+  "ignore": []
+ },
+ {
+  "id": "auth_header",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "X-Api-Key: 9f8e7d6c5b4a3210",
+    "value": "9f8e7d6c5b4a3210"
+   }
+  ],
+  "ignore": [
+   "Authorization: <token>"
+  ]
+ },
+ {
+  "id": "cookie_header",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "Cookie: session=abc123def456; theme=dark",
+    "value": "session=abc123def456; theme=dark"
+   }
+  ],
+  "ignore": []
+ },
+ {
+  "id": "webhook_url",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX"
+   },
+   {
+    "text": "https://discord.com/api/webhooks/123456789/abcDEF-ghi"
+   }
+  ],
+  "ignore": []
+ },
+ {
+  "id": "signed_url_param",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "https://bucket.s3.amazonaws.com/f.pdf?X-Amz-Signature=8f2a9c1d7e3b",
+    "value": "8f2a9c1d7e3b"
+   },
+   {
+    "text": "https://x.blob.core.windows.net/c?sv=2022&sig=AbC%2Fdef123",
+    "value": "AbC%2Fdef123"
+   }
+  ],
+  "ignore": [
+   "https://example.org/?page=2&sort=newest"
+  ]
+ },
+ {
+  "id": "one_time_code",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "Your verification code is 482913"
+   },
+   {
+    "text": "TAN: 553201"
+   }
+  ],
+  "ignore": [
+   "error code 5003 occurred",
+   "in 2026"
+  ]
+ },
+ {
+  "id": "high_entropy_token",
+  "kind": "rule",
+  "file": "secrets.js",
+  "match": [
+   {
+    "text": "token wJalrXUtnFEMI/K7MDENG/bPxRfiCYzEXAMPLEKEY9"
+   }
+  ],
+  "ignore": [
+   "commit 9fceb02d0ae598e95dc970b74767f19372d61af8"
+  ]
+ },
+ {
+  "id": "gitleaks.1password-secret-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.1password-service-account-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.adafruit-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.adobe-client-id",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.adobe-client-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.age-secret-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.airtable-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.airtable-personnal-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.algolia-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.alibaba-access-key-id",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.alibaba-secret-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.anthropic-admin-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.anthropic-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.artifactory-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.artifactory-reference-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.asana-client-id",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.asana-client-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.atlassian-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.authress-service-client-access-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.aws-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.aws-amazon-bedrock-api-key-long-lived",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.aws-amazon-bedrock-api-key-short-lived",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.azure-ad-client-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.beamer-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.bitbucket-client-id",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.bitbucket-client-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.bittrex-access-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.bittrex-secret-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.cisco-meraki-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.clickhouse-cloud-api-secret-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.clojars-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.cloudflare-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.cloudflare-global-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.cloudflare-origin-ca-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.codecov-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.cohere-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.coinbase-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.confluent-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.confluent-secret-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.contentful-delivery-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.curl-auth-header",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.curl-auth-user",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.databricks-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.datadog-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.defined-networking-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.digitalocean-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.digitalocean-pat",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.digitalocean-refresh-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.discord-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.discord-client-id",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.discord-client-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.doppler-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.droneci-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.dropbox-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.dropbox-long-lived-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.dropbox-short-lived-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.duffel-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.dynatrace-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.easypost-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.easypost-test-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.etsy-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.facebook-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.facebook-page-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.facebook-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.fastly-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.finicity-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.finicity-client-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.finnhub-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.flickr-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.flutterwave-encryption-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.flutterwave-public-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.flutterwave-secret-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.flyio-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.frameio-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.freemius-secret-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.freshbooks-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gcp-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.generic-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.github-app-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.github-fine-grained-pat",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.github-oauth",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.github-pat",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.github-refresh-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitlab-cicd-job-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitlab-deploy-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitlab-feature-flag-client-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitlab-feed-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitlab-incoming-mail-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitlab-kubernetes-agent-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitlab-oauth-app-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitlab-pat",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitlab-pat-routable",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitlab-ptt",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitlab-rrt",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitlab-runner-authentication-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitlab-runner-authentication-token-routable",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitlab-scim-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitlab-session-cookie",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gitter-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.gocardless-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.grafana-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.grafana-cloud-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.grafana-service-account-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.harness-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.hashicorp-tf-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.hashicorp-tf-password",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.heroku-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.heroku-api-key-v2",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.hubspot-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.huggingface-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.huggingface-organization-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.infracost-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.intercom-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.intra42-client-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.jfrog-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.jfrog-identity-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.jwt",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.jwt-base64",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.kraken-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.kubernetes-secret-yaml",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.kucoin-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.kucoin-secret-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.launchdarkly-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.linear-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.linear-client-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.linkedin-client-id",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.linkedin-client-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.lob-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.lob-pub-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.looker-client-id",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.looker-client-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.mailchimp-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.mailgun-private-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.mailgun-pub-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.mailgun-signing-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.mapbox-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.mattermost-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.maxmind-license-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.messagebird-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.messagebird-client-id",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.microsoft-teams-webhook",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.netlify-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.new-relic-browser-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.new-relic-insert-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.new-relic-user-api-id",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.new-relic-user-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.notion-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.npm-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.nuget-config-password",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.nytimes-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.octopus-deploy-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.okta-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.openai-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.openshift-user-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.perplexity-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.plaid-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.plaid-client-id",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.plaid-secret-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.planetscale-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.planetscale-oauth-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.planetscale-password",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.postman-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.prefect-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.private-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.privateai-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.pulumi-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.pypi-upload-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.rapidapi-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.readme-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.rubygems-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.scalingo-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.sendbird-access-id",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.sendbird-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.sendgrid-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.sendinblue-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.sentry-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.sentry-org-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.sentry-user-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.settlemint-application-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.settlemint-personal-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.settlemint-service-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.shippo-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.shopify-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.shopify-custom-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.shopify-private-app-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.shopify-shared-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.sidekiq-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.sidekiq-sensitive-url",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.slack-app-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.slack-bot-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.slack-config-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.slack-config-refresh-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.slack-legacy-bot-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.slack-legacy-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.slack-legacy-workspace-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.slack-user-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.slack-webhook-url",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.snyk-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.sonar-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.sourcegraph-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.square-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.squarespace-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.stripe-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.sumologic-access-id",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.sumologic-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.telegram-bot-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.travisci-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.twilio-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.twitch-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.twitter-access-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.twitter-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.twitter-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.twitter-api-secret",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.twitter-bearer-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.typeform-api-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.vault-batch-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.vault-service-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.yandex-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.yandex-api-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.yandex-aws-access-token",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "gitleaks.zendesk-secret-key",
+  "kind": "rule",
+  "file": "secrets_gitleaks.json",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "postal_address",
+  "kind": "detector",
+  "file": "address.js",
+  "match": [
+   {
+    "text": "Ich wohne in der Hauptstraße 5, 10115 Berlin.",
+    "value": "Hauptstraße 5, 10115 Berlin"
+   },
+   {
+    "text": "Lieferung an Berliner Straße 12a",
+    "value": "Berliner Straße 12a"
+   },
+   {
+    "text": "Adresse: Am Markt 3",
+    "value": "Am Markt 3"
+   },
+   {
+    "text": "Ship to 1600 Pennsylvania Avenue, Washington, DC 20500",
+    "value": "1600 Pennsylvania Avenue, Washington, DC 20500"
+   },
+   {
+    "text": "Karl-Marx-Allee 34\n10178 Berlin",
+    "value": "Karl-Marx-Allee 34\n10178 Berlin"
+   }
+  ],
+  "ignore": [
+   "Im Jahr 2026",
+   "Der Platz 3 ging an uns",
+   "10115 Berlin ist schön",
+   "Kapitel 3"
+  ]
+ },
+ {
+  "id": "last_names",
+  "kind": "detector",
+  "file": "names.js",
+  "match": [
+   {
+    "text": "Hallo, ich bin Anna Schmidt.",
+    "value": "Schmidt"
+   },
+   {
+    "text": "Termin mit Frau Schneider morgen",
+    "value": "Schneider"
+   },
+   {
+    "text": "Dear Mr. Thompson,",
+    "value": "Thompson"
+   },
+   {
+    "text": "Gespräch mit Richard von Weizsäcker",
+    "value": "von Weizsäcker"
+   },
+   {
+    "text": "Viele Grüße\nMaria Müller-Lüdenscheid",
+    "value": "Müller-Lüdenscheid"
+   },
+   {
+    "text": "Teilnehmer: Schmidt, Anna",
+    "value": "Schmidt"
+   },
+   {
+    "text": "Mike Wojciechowski called",
+    "value": "Wojciechowski"
+   },
+   {
+    "text": "hallo, ich bin anna schmidt",
+    "value": "schmidt"
+   },
+   {
+    "text": "grüße\njonas becker",
+    "value": "becker"
+   },
+   {
+    "text": "herr müller hat angerufen",
+    "value": "müller"
+   },
+   {
+    "text": "NAME: ANNA SCHMIDT",
+    "value": "SCHMIDT"
+   }
+  ],
+  "ignore": [
+   "Max Bescheid geben",
+   "Hallo Anna, wie geht es?",
+   "Grace Period ends",
+   "Frau Doktor, bitte",
+   "Anna Maria kommt",
+   "Anna in Berlin",
+   "will you do it so",
+   "ich weiß das",
+   "paul hat das gemacht",
+   "talked to joan waters about it",
+   "frau doktor, bitte",
+   "ICH BIN DA"
+  ]
+ },
+ {
+  "id": "seed_phrase",
+  "kind": "detector",
+  "file": "seed_phrase.js",
+  "match": [
+   {
+    "text": "my seed: abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+   },
+   {
+    "text": "1. legal 2. winner 3. thank 4. year 5. wave 6. sausage 7. worth 8. useful 9. legal 10. winner 11. thank 12. yellow"
+   }
+  ],
+  "ignore": [
+   "Please review the budget and approve the final plan for the next quarter today."
+  ]
+ },
+ {
+  "id": "custom_terms",
+  "kind": "detector",
+  "file": "terms.js",
+  "match": [],
+  "ignore": []
+ },
+ {
+  "id": "ai_entities",
+  "kind": "detector",
+  "file": "terms.js",
+  "match": [],
+  "ignore": []
+ }
+]

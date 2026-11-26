@@ -3,19 +3,28 @@
 ## Development
 
 ```bash
-npm install
 cd flutter_app && flutter pub get && cd ..
-npm run dev                      # server on http://127.0.0.1:4600 (watch mode)
+go run ./cmd/neorouter serve     # server on http://127.0.0.1:4600
 cd flutter_app && flutter run -d chrome --dart-define NEOROUTER_API_BASE=http://127.0.0.1:4600
 ```
+
+The backend is Go 1.27 (`cmd/neorouter`, `internal/`); the dashboard is Flutter
+web. See `GUIDELINES.md` for the package layout and conventions, and
+`AGENTS.md` for the product rules.
 
 ## Tests
 
 ```bash
-npm test                         # node:test unit + API tests (mock provider, no network)
-npm run flutter:analyze
-npm run flutter:test
+gofmt -l .                       # must be empty
+go vet ./...
+staticcheck ./...                # honnef.co/go/tools; see staticcheck.conf
+go test -race ./...              # real temp SQLite + httptest, no network
+cd flutter_app && flutter analyze
+cd flutter_app && flutter test
 ```
+
+The Go tests port the former Node `node:test` suites case for case; they are the
+behavioural oracle for the byte-compatible HTTP API.
 
 ## Strings
 
@@ -25,8 +34,9 @@ after changing them. Never edit the `.arb` files by hand.
 
 ## Adding a provider
 
-See `docs/providers.md`. Most providers are a single entry in
-`server/providers/definitions/`.
+See `docs/providers.md`. Most providers are a single data entry in
+`internal/providers/definitions.json`; a new protocol dialect is an adapter in
+`internal/providers/adapters/` built on `neolabs-go/llm`.
 
 ## Web UI during development
 

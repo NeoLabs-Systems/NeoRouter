@@ -14,7 +14,7 @@
 <p align="center">
   <a href="https://github.com/NeoLabs-Systems/NeoRouter/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/NeoLabs-Systems/NeoRouter?style=flat-square&label=release&color=111827"></a>
   <a href="LICENSE"><img alt="AGPL-3.0 license" src="https://img.shields.io/badge/license-AGPL--3.0-a855f7?style=flat-square"></a>
-  <a href="https://nodejs.org"><img alt="Node.js 20 or newer" src="https://img.shields.io/badge/node-20%2B-5fa04e?style=flat-square&logo=nodedotjs&logoColor=white"></a>
+  <a href="https://go.dev"><img alt="Go 1.27 single binary" src="https://img.shields.io/badge/go-1.27-00ADD8?style=flat-square&logo=go&logoColor=white"></a>
   <a href="https://neolabs-systems.github.io/NeoRouter/api/"><img alt="API docs: OpenAI and Anthropic compatible" src="https://img.shields.io/badge/API%20docs-OpenAI%20%C2%B7%20Anthropic%20%C2%B7%20Responses-e3b655?style=flat-square"></a>
 </p>
 
@@ -53,15 +53,9 @@ https://github.com/user-attachments/assets/f42be679-1e12-4cb1-9c00-d0f3c15bf403
 bash <(curl -fsSL https://raw.githubusercontent.com/NeoLabs-Systems/NeoRouter/main/install.sh)
 ```
 
-or with npm:
+On fish, wrap the command: `bash -c 'bash <(curl -fsSL https://raw.githubusercontent.com/NeoLabs-Systems/NeoRouter/main/install.sh)'`. Afterwards the `neorouter` command works in a new terminal (`neorouter update`, `neorouter doctor`, …); if your shell does not pick up `~/.local/bin` yet, the installer prints the one line to add it.
 
-```bash
-npm i -g --allow-git=root --allow-scripts=bcrypt,better-sqlite3,onnxruntime-node,protobufjs github:NeoLabs-Systems/NeoRouter && neorouter install
-```
-
-On fish, wrap the first command: `bash -c 'bash <(curl -fsSL https://raw.githubusercontent.com/NeoLabs-Systems/NeoRouter/main/install.sh)'`. Afterwards the `neorouter` command works in a new terminal (`neorouter update`, `neorouter doctor`, …); if your shell does not pick up `~/.local/bin` yet, the installer prints the one line to add it.
-
-You need Node.js 20+ and git. The web app comes prebuilt; if it cannot be downloaded, the installer sets up Flutter for you and builds it.
+NeoRouter is a single native Go binary — no runtime to install. The web app comes prebuilt; if it cannot be downloaded, the installer sets up Flutter for you and builds it.
 
 Then open **http://localhost:4600/app**. The first account you create becomes the administrator. Add a provider, create a router key, and point any OpenAI or Anthropic SDK at `http://localhost:4600/v1`.
 

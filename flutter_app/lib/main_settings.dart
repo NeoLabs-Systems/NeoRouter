@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:neolabs_flutter/neolabs_flutter.dart' show NeoSettingsLayout;
 import 'package:qr_flutter/qr_flutter.dart';
 
 import 'l10n/gen/app_localizations.dart';
@@ -12,6 +13,12 @@ import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
 import 'src/backend_client.dart';
+
+/// Width from which the rail sits beside the open page instead of replacing it.
+/// These are the neolabs_flutter defaults, stated here because the navigation's
+/// finish follows the same breakpoint.
+const double _railBreakpoint = 760;
+const double _railWidth = 268;
 
 enum _SettingsPage { account, usage, connect, appearance }
 
@@ -88,34 +95,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final pages = _pages(t);
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth >= 760) {
-          final shown = _page ?? _SettingsPage.account;
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Container(
-                width: 268,
-                decoration: BoxDecoration(color: palette.surface, border: Border(right: BorderSide(color: palette.border))),
-                child: _SettingsNav(pages: pages, search: _search, onSearch: () => setState(() {}), selected: shown, compact: false, onOpen: _open),
-              ),
-              Expanded(child: _SettingsPageView(key: ValueKey<_SettingsPage>(shown), controller: widget.controller, page: shown)),
-            ],
-          );
-        }
-        final page = _page;
-        if (page == null) {
-          return _SettingsNav(pages: pages, search: _search, onSearch: () => setState(() {}), selected: null, compact: true, onOpen: _open);
-        }
-        return PopScope(
-          canPop: false,
-          onPopInvokedWithResult: (didPop, _) {
-            if (!didPop) setState(() => _page = null);
-          },
-          child: _SettingsPageView(
-            key: ValueKey<_SettingsPage>(page),
+        // The rail beside the open page, and the phone's one-or-the-other
+        // switch, come from neolabs_flutter; this builder only tells the
+        // navigation which of its two finishes the width allows.
+        final compact = constraints.maxWidth < _railBreakpoint;
+        final shown = _page ?? _SettingsPage.account;
+        return NeoSettingsLayout(
+          breakpoint: _railBreakpoint,
+          railWidth: _railWidth,
+          railColor: palette.surface,
+          borderColor: palette.border,
+          showNavigationOnCompact: _page == null,
+          navigation: _SettingsNav(pages: pages, search: _search, onSearch: () => setState(() {}), selected: compact ? null : shown, compact: compact, onOpen: _open),
+          content: _SettingsPageView(
+            key: ValueKey<_SettingsPage>(shown),
             controller: widget.controller,
-            page: page,
-            onBack: () => setState(() => _page = null),
+            page: shown,
+            onBack: compact ? () => setState(() => _page = null) : null,
           ),
         );
       },
@@ -272,7 +268,8 @@ class _SettingsPageView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppL10n.of(context);
-    return ListView(
+    final back = onBack;
+    final list = ListView(
       padding: pagePadding(context),
       children: <Widget>[
         Align(
@@ -306,6 +303,16 @@ class _SettingsPageView extends StatelessWidget {
         ),
       ],
     );
+    // A phone page covers the list, so the browser's back gesture returns to it.
+    return back == null
+        ? list
+        : PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, _) {
+              if (!didPop) back();
+            },
+            child: list,
+          );
   }
 }
 

@@ -1,0 +1,238 @@
+{
+ "rules": [
+  {
+   "id": "birthdate",
+   "label": {
+    "en": "Date of birth",
+    "de": "Geburtsdatum"
+   },
+   "category": "birthdate",
+   "pattern": {
+    "source": "(?<![\\p{L}\\p{N}])(?:0?[1-9]|[12]\\d|3[01])[./-](?:0?[1-9]|1[0-2])[./-](?:19|20)\\d{2}(?![\\p{L}\\p{N}])|(?<![\\p{L}\\p{N}])(?:19|20)\\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])(?![\\p{L}\\p{N}])|(?<![\\p{L}\\p{N}])(?:0?[1-9]|[12]\\d|3[01])\\.?\\s+(?:Jan(?:uar|uary)?|Feb(?:ruar|ruary)?|Mär(?:z)?|Maerz|Mar(?:ch)?|Apr(?:il)?|Mai|May|June?|Juni|July?|Juli|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Okt(?:ober)?|Oct(?:ober)?|Nov(?:ember)?|Dez(?:ember)?|Dec(?:ember)?)\\.?\\s+(?:19|20)\\d{2}(?![\\p{L}\\p{N}])|(?<![\\p{L}\\p{N}])(?:Jan(?:uar|uary)?|Feb(?:ruar|ruary)?|Mär(?:z)?|Maerz|Mar(?:ch)?|Apr(?:il)?|Mai|May|June?|Juni|July?|Juli|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Okt(?:ober)?|Oct(?:ober)?|Nov(?:ember)?|Dez(?:ember)?|Dec(?:ember)?)\\.?\\s+(?:0?[1-9]|[12]\\d|3[01])(?:st|nd|rd|th)?,?\\s+(?:19|20)\\d{2}(?![\\p{L}\\p{N}])",
+    "flags": "giu"
+   },
+   "score": 0.2,
+   "context": {
+    "positive": [
+     "geb.",
+     "geb",
+     "geboren",
+     "geburtsdatum",
+     "geburtstag",
+     "dob",
+     "d.o.b.",
+     "born",
+     "date of birth",
+     "birth date",
+     "birthdate",
+     "birthday",
+     "né le",
+     "née le",
+     "fecha de nacimiento",
+     "data di nascita"
+    ],
+    "window": 30
+   },
+   "tests": {
+    "match": [
+     "geb. 12.03.1985",
+     "Date of birth: March 12, 1985",
+     "geboren am 3. Mai 1990"
+    ],
+    "ignore": [
+     "Termin am 12.03.2026",
+     "released 2026-10-29"
+    ]
+   }
+  },
+  {
+   "id": "gps_decimal",
+   "label": {
+    "en": "GPS coordinates",
+    "de": "GPS-Koordinaten"
+   },
+   "category": "location",
+   "pattern": {
+    "source": "(?<![\\d.])-?\\d{1,2}\\.\\d{4,}\\s*,\\s*-?\\d{1,3}\\.\\d{4,}(?![\\d.])",
+    "flags": "g"
+   },
+   "accept": "coordinates",
+   "score": 0.3,
+   "context": {
+    "positive": [
+     "lat",
+     "lon",
+     "lng",
+     "latitude",
+     "longitude",
+     "koordinaten",
+     "coordinates",
+     "gps",
+     "standort",
+     "location",
+     "position",
+     "geo",
+     "maps",
+     "wohnort",
+     "ort"
+    ],
+    "window": 40
+   },
+   "tests": {
+    "match": [
+     "Standort: 52.520008, 13.404954",
+     "https://maps.example/@48.13743,11.57549,15z"
+    ],
+    "ignore": [
+     "weights 0.1234, 0.5678",
+     "GPS 95.12345, 13.40495"
+    ]
+   }
+  },
+  {
+   "id": "gps_hemisphere",
+   "label": {
+    "en": "GPS coordinates",
+    "de": "GPS-Koordinaten"
+   },
+   "category": "location",
+   "pattern": {
+    "source": "(?<![\\d.])\\d{1,2}(?:\\.\\d{3,}°?|°\\s?\\d{1,2}['′](?:\\s?\\d{1,2}(?:[.,]\\d+)?[\"″])?)\\s?[NS],?\\s*\\d{1,3}(?:\\.\\d{3,}°?|°\\s?\\d{1,2}['′](?:\\s?\\d{1,2}(?:[.,]\\d+)?[\"″])?)\\s?[EWO](?![\\p{L}])",
+    "flags": "gu"
+   },
+   "score": 0.8,
+   "tests": {
+    "match": [
+     "52.5200° N, 13.4050° E",
+     "52°31'12\" N 13°24'18\" E"
+    ],
+    "ignore": [
+     "5 N, 10 E"
+    ]
+   }
+  },
+  {
+   "id": "plus_code",
+   "label": {
+    "en": "Plus Code location",
+    "de": "Plus-Code-Standort"
+   },
+   "category": "location",
+   "keywords": [
+    "+"
+   ],
+   "pattern": {
+    "source": "\\b[23456789CFGHJMPQRVWX]{8}\\+[23456789CFGHJMPQRVWX]{2,3}\\b",
+    "flags": "g"
+   },
+   "score": 0.6,
+   "tests": {
+    "match": [
+     "meet at 9F4MGC22+22"
+    ],
+    "ignore": [
+     "C++ code"
+    ]
+   }
+  },
+  {
+   "id": "de_number_plate",
+   "label": {
+    "en": "Number plate",
+    "de": "Kfz-Kennzeichen"
+   },
+   "category": "vehicle",
+   "pattern": {
+    "source": "(?<![\\p{L}\\p{N}])[A-ZÄÖÜ]{1,3}[- ][A-Z]{1,2}[- ]?[1-9]\\d{0,3}[EH]?(?![\\p{L}\\p{N}])",
+    "flags": "gu"
+   },
+   "score": 0.2,
+   "context": {
+    "positive": [
+     "kennzeichen",
+     "nummernschild",
+     "kfz",
+     "kfz-kennzeichen",
+     "auto",
+     "fahrzeug",
+     "pkw",
+     "lkw",
+     "wagen",
+     "license plate",
+     "licence plate",
+     "number plate",
+     "plate",
+     "amtliches kennzeichen"
+    ],
+    "window": 30
+   },
+   "tests": {
+    "match": [
+     "Kennzeichen: M-AB 1234",
+     "Auto B XY 99E"
+    ],
+    "ignore": [
+     "Typ M-AB 1234"
+    ]
+   }
+  },
+  {
+   "id": "vin_checked",
+   "label": {
+    "en": "Vehicle identification number",
+    "de": "Fahrgestellnummer"
+   },
+   "category": "vehicle",
+   "pattern": {
+    "source": "\\b[A-HJ-NPR-Z0-9]{17}\\b",
+    "flags": "g"
+   },
+   "accept": "mixedAlnum",
+   "validator": "vinCheck",
+   "score": 0.3,
+   "tests": {
+    "match": [
+     "1HGCM82633A004352"
+    ],
+    "ignore": [
+     "1HGCM82633A004353"
+    ]
+   }
+  },
+  {
+   "id": "vin",
+   "label": {
+    "en": "Vehicle identification number",
+    "de": "Fahrgestellnummer"
+   },
+   "category": "vehicle",
+   "pattern": {
+    "source": "\\b[A-HJ-NPR-Z0-9]{17}\\b",
+    "flags": "g"
+   },
+   "accept": "mixedAlnum",
+   "score": 0.2,
+   "context": {
+    "positive": [
+     "vin",
+     "fin",
+     "fahrgestellnummer",
+     "fahrzeug-identifizierungsnummer",
+     "fahrzeugidentifizierungsnummer",
+     "chassis",
+     "chassis number",
+     "vehicle identification"
+    ],
+    "window": 30
+   },
+   "tests": {
+    "match": [
+     "FIN: WVWZZZ1JZXW000001"
+    ],
+    "ignore": [
+     "Artikel WVWZZZ1JZXW000001"
+    ]
+   }
+  }
+ ]
+}

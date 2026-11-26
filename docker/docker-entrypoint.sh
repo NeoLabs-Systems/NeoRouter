@@ -4,7 +4,7 @@
 #   docker run … neorouter doctor
 #   docker compose exec neorouter reset-password admin 'a-long-password'
 #
-# `sh`, `bash` and `node` are run as given, for debugging.
+# `sh` and `bash` are run as given, for debugging.
 set -eu
 
 if [ "$#" -eq 0 ]; then
@@ -12,7 +12,7 @@ if [ "$#" -eq 0 ]; then
 fi
 
 case "$1" in
-  sh|bash|/bin/sh|/bin/bash|node)
+  sh|bash|/bin/sh|/bin/bash)
     exec "$@"
     ;;
 esac
@@ -29,10 +29,9 @@ if ! touch "$home/.write-test" 2>/dev/null; then
 fi
 rm -f "$home/.write-test"
 
-# `neorouter serve` copies .env.example into the runtime home when there is no
-# configuration yet, and that example binds 127.0.0.1 — which inside a
-# container means the published port answers nothing. Seed the file with the
-# container defaults first so the first start is usable as-is.
+# The server reads its configuration from .env in the runtime home. Seed it with
+# the container defaults first so the first start is usable as-is; the example
+# binds 0.0.0.0, which is what a published port needs.
 if [ ! -f "$home/.env" ] && [ -f /app/docker/env.example ]; then
   cp /app/docker/env.example "$home/.env"
   # The image was built for one channel; the file must not claim another.
@@ -42,4 +41,4 @@ if [ ! -f "$home/.env" ] && [ -f /app/docker/env.example ]; then
   chmod 0600 "$home/.env"
 fi
 
-exec node /app/bin/neorouter.js "$@"
+exec neorouter "$@"

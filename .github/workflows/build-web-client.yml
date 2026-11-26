@@ -1,0 +1,63 @@
+name: Build Web Client
+
+# flutter_app/build/web (the dashboard served at /app) is generated output that
+# travels with the checkout: the Docker image, the CLI web bundle and the runtime
+# archives all ship it, so a source checkout has a working dashboard without the
+# Flutter SDK installed. This workflow rebuilds it on every push that could
+# change it and commits the result back to the branch. Guarded against
+# github-actions[bot] pushes to avoid retriggering itself in a loop.
+
+on:
+  push:
+    branches:
+      - main
+      - beta
+    paths:
+      - 'flutter_app/**'
+      - '.github/actions/build-web/**'
+      - '.github/workflows/build-web-client.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-web-client-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and commit bundled web client
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.9
+          cache: true
+
+      - name: Build web client
+        uses: ./.github/actions/build-web
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and push web bundle
+        run: |
+          git add -f flutter_app/build/web
+          if git diff --cached --quiet; then
+            echo "Web bundle unchanged, nothing to commit."
+            exit 0
+          fi
+          git commit -m "chore(web-client): rebuild bundled web client [skip ci]"
+          git pull --rebase --autostash origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"

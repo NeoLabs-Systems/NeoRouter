@@ -1,0 +1,8 @@
+{
+ "redactionInstruction": "Some private values in this conversation were replaced by placeholders in square brackets, such as [EMAIL_1] or [LASTNAME_2]. Treat each placeholder as the real value it stands for and write it exactly as given whenever you refer to it. Do not invent new placeholders and do not try to guess the original values.",
+ "repeatedLine": "[… previous line repeated %d more times …]",
+ "omittedChars": "[… %s characters omitted to save space …]",
+ "duplicateBlock": "[Same content as a later message – omitted to save space.]",
+ "maskedTool": "[Older tool output omitted to save space. Run the tool again if you need it.]",
+ "earlierMessage": "[Earlier message omitted to fit the context budget.]"
+}

@@ -1,0 +1,6928 @@
+[
+  {
+    "id": "together",
+    "label": "Together AI",
+    "description": "Open models, pay per token (prepaid, 5 USD minimum).",
+    "category": "aggregator",
+    "website": "https://together.ai",
+    "keyUrl": "https://api.together.ai/settings/projects/~current/api-keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.together.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.together.ai/docs/billing-credits",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": false,
+      "note": "Prepaid; a 5 USD credit purchase is required before any use. No free models."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "fireworks",
+    "label": "Fireworks AI",
+    "description": "Fast serverless open models.",
+    "category": "aggregator",
+    "website": "https://fireworks.ai",
+    "keyUrl": "https://app.fireworks.ai/settings/users/api-keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.fireworks.ai/inference/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.fireworks.ai/guides/quotas_usage/rate-limits",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Prepaid credits, no free models. 10 requests a minute until a payment method is added."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "deepinfra",
+    "label": "DeepInfra",
+    "description": "Low-cost open model hosting.",
+    "category": "aggregator",
+    "website": "https://deepinfra.com",
+    "keyUrl": "https://deepinfra.com/dash/api_keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.deepinfra.com/v1/openai",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://deepinfra.com/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Needs a card or prepaid balance before any use; no free models."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "novita",
+    "label": "Novita AI",
+    "description": "Open model hosting.",
+    "category": "aggregator",
+    "website": "https://novita.ai",
+    "keyUrl": "https://novita.ai/settings/key-management",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.novita.ai/openai",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.novita.ai/guides/llm-api",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Credit balance with optional auto top-up; no free models."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "hyperbolic",
+    "label": "Hyperbolic",
+    "description": "Open model hosting.",
+    "category": "aggregator",
+    "website": "https://hyperbolic.ai",
+    "keyUrl": "https://app.hyperbolic.ai/settings/api-keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.hyperbolic.ai/inference/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://hyperbolic.ai/docs/inference/overview.md",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Prepaid balance; requests are refused at zero. Verifying a phone adds a one-time 1 USD credit."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 300
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "nebius",
+    "label": "Nebius Token Factory",
+    "description": "European open model hosting.",
+    "category": "aggregator",
+    "website": "https://tokenfactory.nebius.com",
+    "keyUrl": "https://tokenfactory.nebius.com/project/api-keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.tokenfactory.nebius.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.tokenfactory.nebius.com/quickstart",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Pay per token; no free models."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "requesty",
+    "label": "Requesty",
+    "description": "LLM router with many upstreams; a few models are free (200 requests a day).",
+    "category": "aggregator",
+    "website": "https://requesty.ai",
+    "keyUrl": "https://app.requesty.ai/api-keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://router.requesty.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://requesty.ai/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free models: 200 requests a day, no card. Other models are billed at provider price plus 5%."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpd": 200
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "cerebras",
+    "label": "Cerebras",
+    "description": "Wafer-scale inference, very high tokens per second.",
+    "category": "paid",
+    "website": "https://cerebras.ai",
+    "keyUrl": "https://cloud.cerebras.ai",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.cerebras.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://inference-docs.cerebras.ai/support/rate-limits",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "No permanent free tier: a 5 USD trial credit (verified payment method required, expires after 30 days), then prepaid credits."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {
+        "rpm": 5,
+        "tpm": 30000,
+        "tpd": 1000000
+      },
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "cloudflare",
+    "label": "Cloudflare Workers AI",
+    "description": "Serverless models on Cloudflare with a daily free allowance.",
+    "category": "free",
+    "website": "https://developers.cloudflare.com/workers-ai",
+    "keyUrl": "https://dash.cloudflare.com/profile/api-tokens",
+    "adapter": "cloudflare",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "embed": "/embeddings",
+      "generateImage": true,
+      "speech": true,
+      "transcribe": true
+    },
+    "live": [],
+    "baseUrl": "https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [
+      {
+        "key": "accountId",
+        "label": "Account ID",
+        "required": true,
+        "placeholder": "32-character account id"
+      }
+    ],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": false,
+      "freeTierModels": [
+        "^(?!(@cf/)?(moonshotai/kimi-k2\\.(6|7)|zai-org/glm-5\\.[23]|deepseek-ai/deepseek-v4)).*$"
+      ],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free only on the Workers Free plan: 10,000 neurons a day, then requests fail. Some models (Kimi K2.6/K2.7, GLM-5.2/5.3, DeepSeek V4) need Workers Paid and are never free. On Workers Paid the overage is billed: choose paid for such accounts."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 300
+      },
+      "defaults": {},
+      "models": [
+        {
+          "rpm": 20,
+          "match": "kimi-k2\\.[67]|glm-5\\.[23]|deepseek-v4"
+        }
+      ]
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "cohere",
+    "label": "Cohere",
+    "description": "Command models via the OpenAI compatibility API.",
+    "category": "free",
+    "website": "https://cohere.com",
+    "keyUrl": "https://dashboard.cohere.com/api-keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "embed": "/embeddings"
+    },
+    "live": [],
+    "baseUrl": "https://api.cohere.ai/compatibility/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "path": "https://api.cohere.com/v1/models?endpoint=chat&page_size=1000",
+      "extraPaths": [
+        "https://api.cohere.com/v1/models?endpoint=embed&page_size=1000"
+      ],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "https://api.cohere.com/v1/models?endpoint=chat&page_size=1"
+    },
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.cohere.com/docs/rate-limits",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Trial keys are free: 1,000 API calls a month and 20 chat requests a minute; requests fail beyond that. Production keys are billed per token."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 20
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "stripSchemaKeys": [
+        "additionalProperties",
+        "$schema"
+      ],
+      "streamUsage": false
+    }
+  },
+  {
+    "id": "deepgram",
+    "label": "Deepgram",
+    "description": "Nova speech-to-text and Aura voices.",
+    "category": "paid",
+    "website": "https://deepgram.com",
+    "keyUrl": "https://console.deepgram.com/project/default/keys",
+    "adapter": "deepgram",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "speech": true,
+      "transcribe": true
+    },
+    "live": [],
+    "baseUrl": "https://api.deepgram.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "id": "nova-3",
+          "name": "Nova-3",
+          "kind": "transcription",
+          "price_per_minute": 0.0043
+        },
+        {
+          "id": "nova-2",
+          "name": "Nova-2",
+          "kind": "transcription",
+          "price_per_minute": 0.0058
+        },
+        {
+          "id": "aura-2",
+          "name": "Aura-2",
+          "kind": "speech",
+          "price_per_mchar": 30
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "/projects"
+    },
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://deepgram.com/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "New projects get a one-time 200 USD credit (no card needed, does not expire); after that, usage is billed per minute and per character."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 100
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "elevenlabs",
+    "label": "ElevenLabs",
+    "description": "Natural voices and Scribe speech-to-text.",
+    "category": "free",
+    "website": "https://elevenlabs.io",
+    "keyUrl": "https://elevenlabs.io/app/settings/api-keys",
+    "adapter": "elevenlabs",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "speech": true,
+      "transcribe": true
+    },
+    "live": [],
+    "baseUrl": "https://api.elevenlabs.io/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "header",
+      "header": "xi-api-key"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [
+      {
+        "id": "scribe_v2",
+        "name": "Scribe v2",
+        "type": "transcription"
+      }
+    ],
+    "validate": {
+      "path": "/models"
+    },
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://elevenlabs.io/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free plan: 10,000 credits a month, non-commercial with attribution, default voices only (library voices need a paid plan). Requests fail beyond it unless a pay-as-you-go balance was topped up, which is then spent: choose paid for paid-plan keys or accounts with a top-up balance."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "concurrent": 2
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "google",
+    "label": "Google Gemini",
+    "description": "Gemini and Gemma models through the Gemini API (AI Studio).",
+    "category": "free",
+    "website": "https://ai.google.dev",
+    "keyUrl": "https://aistudio.google.com/apikey",
+    "adapter": "google_gemini",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [
+      "gemini_live"
+    ],
+    "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": false,
+      "freeTierModels": [
+        "^gemini-(2\\.5|3|3\\.\\d)-flash(-lite)?(-preview)?$",
+        "^gemini-flash(-lite)?-latest$",
+        "^gemini-2\\.5-pro$",
+        "^gemma-",
+        "^gemini-embedding-(001|2)(-preview)?$",
+        "^gemini-(2\\.5|3\\.\\d)-flash(-lite)?(-preview)?-tts(-preview)?$",
+        "^gemini-\\d+(\\.\\d+)?-transcribe$",
+        "^gemini-.*(-live|-native-audio)"
+      ],
+      "verify": {
+        "type": "paid_model_probe",
+        "paidOnlyModels": [
+          "^gemini-\\d+(\\.\\d+)?-pro-preview$",
+          "^gemini-4-argon$",
+          "^gemini-pro-latest$"
+        ]
+      },
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://aistudio.google.com/docs/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free only while the Google Cloud project behind the key has no billing account; with billing enabled every request is charged. NeoRouter verifies this automatically and only treats models with a free tier as free."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {
+        "rpm": 10,
+        "rpd": 250,
+        "tpm": 250000
+      },
+      "models": [
+        {
+          "rpm": 15,
+          "rpd": 1000,
+          "tpm": 250000,
+          "match": "flash-lite"
+        },
+        {
+          "rpm": 5,
+          "rpd": 100,
+          "tpm": 250000,
+          "match": "-pro"
+        },
+        {
+          "rpm": 30,
+          "rpd": 14400,
+          "tpm": 15000,
+          "match": "^gemma"
+        },
+        {
+          "rpm": 100,
+          "rpd": 1000,
+          "tpm": 30000,
+          "match": "embedding"
+        },
+        {
+          "rpm": 3,
+          "rpd": 15,
+          "tpm": 10000,
+          "match": "-tts"
+        },
+        {
+          "rpm": 10,
+          "rpd": 250,
+          "tpm": 250000,
+          "match": "transcribe"
+        }
+      ]
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "groq",
+    "label": "Groq",
+    "description": "LPU inference with a generous free tier for open models.",
+    "category": "free",
+    "website": "https://groq.com",
+    "keyUrl": "https://console.groq.com/keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "speech": "/audio/speech",
+      "transcribe": "/audio/transcriptions"
+    },
+    "live": [],
+    "baseUrl": "https://api.groq.com/openai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "verify": {
+        "type": "ratelimit_headers",
+        "maxFreeRequestsPerDay": 14400,
+        "probeModels": [
+          "gpt-oss-20b",
+          "llama",
+          "prompt-guard"
+        ]
+      },
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://console.groq.com/docs/billing-faqs",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free while the Groq organisation is on the Free plan (no payment method). NeoRouter checks the plan limits on every response and stops treating models as free as soon as the account is on a paid plan."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {
+        "rpm": 30,
+        "rpd": 1000,
+        "tpm": 8000,
+        "tpd": 200000
+      },
+      "models": [
+        {
+          "rpm": 3,
+          "rpd": 1000,
+          "tpm": 2000,
+          "tpd": 200000,
+          "match": "safeguard"
+        },
+        {
+          "rpm": 30,
+          "rpd": 1000,
+          "tpm": 8000,
+          "tpd": 200000,
+          "match": "gpt-oss"
+        },
+        {
+          "rpm": 30,
+          "rpd": 1000,
+          "tpm": 8000,
+          "tpd": 200000,
+          "match": "qwen"
+        },
+        {
+          "rpm": 20,
+          "rpd": 2000,
+          "match": "whisper"
+        },
+        {
+          "rpm": 10,
+          "rpd": 100,
+          "tpm": 1200,
+          "tpd": 3600,
+          "match": "orpheus"
+        },
+        {
+          "rpm": 30,
+          "rpd": 14400,
+          "tpm": 15000,
+          "tpd": 500000,
+          "match": "prompt-guard"
+        }
+      ]
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "day",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "defaultVoice": "troy",
+      "voices": [
+        "autumn",
+        "diana",
+        "hannah",
+        "austin",
+        "daniel",
+        "troy"
+      ],
+      "modelVoices": [
+        {
+          "match": "orpheus-arabic",
+          "voices": [
+            "abdullah",
+            "fahad",
+            "sultan",
+            "lulwa",
+            "noura",
+            "aisha"
+          ],
+          "defaultVoice": "fahad"
+        }
+      ],
+      "speechFormats": [
+        "wav"
+      ],
+      "maxSpeechChars": 200
+    }
+  },
+  {
+    "id": "huggingface",
+    "label": "Hugging Face",
+    "description": "Inference Providers router across many hosts.",
+    "category": "free",
+    "website": "https://huggingface.co",
+    "keyUrl": "https://huggingface.co/settings/tokens",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://router.huggingface.co/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "https://huggingface.co/api/whoami-v2"
+    },
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://huggingface.co/docs/inference-providers/pricing",
+      "checkedAt": "2026-10-28",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "No free tier: usage is paid from purchased credits (PRO accounts get $2 a month)."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "kilo",
+    "label": "Kilo Gateway",
+    "description": "Gateway with free models, no key required.",
+    "category": "free",
+    "website": "https://kilo.ai",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://ai-gateway.kilo.ai/api/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": true,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://kilo.ai/docs/gateway/authentication",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [
+        ":free$",
+        "^kilo-auto/free$",
+        "^openrouter/free$",
+        "^reflection/beam-free$"
+      ],
+      "trustListingFree": false,
+      "note": "Only :free models (and kilo-auto/free) are free; everything else, including some models listed at price 0, is paid from credits. Without a key: 200 requests an hour per IP."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "llm7",
+    "label": "LLM7",
+    "description": "Free OpenAI-compatible endpoint; a key raises the limits.",
+    "category": "free",
+    "website": "https://llm7.io",
+    "keyUrl": "https://token.llm7.io",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.llm7.io/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": true,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": false,
+      "freeTierModels": [
+        "^codestral-latest$",
+        "^gpt-oss:20b$",
+        "^mistral-nemo-instruct-2407$",
+        "^nemotron-3-nano:30b$"
+      ],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://api.llm7.io/v1/models",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Only the turbo-tier models are free; the rest are usage-based."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "ovh",
+    "label": "OVHcloud AI Endpoints",
+    "description": "European hosting, anonymous access with low limits.",
+    "category": "free",
+    "website": "https://endpoints.ai.cloud.ovh.net",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "speech": "https://{model}.endpoints.kepler.ai.cloud.ovh.net/api/v1/tts/text_to_audio",
+      "transcribe": "/audio/transcriptions"
+    },
+    "live": [],
+    "baseUrl": "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": true,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": true,
+      "source": "https://docs.ovhcloud.com/en/guides/public-cloud/ai-machine-learning/ai-endpoints-capabilities",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": false,
+      "note": "Free only without a key (anonymous, 2 requests a minute per model). With an API key usage is billed in EUR to your Public Cloud project, including Whisper per second of audio."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {
+        "rpm": 2
+      },
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "speechApi": "riva"
+    }
+  },
+  {
+    "id": "pollinations",
+    "label": "Pollinations",
+    "description": "Community-funded free text, image and embedding models.",
+    "category": "free",
+    "website": "https://pollinations.ai",
+    "keyUrl": "https://enter.pollinations.ai",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "embed": "/embeddings",
+      "generateImage": "/images/generations"
+    },
+    "live": [],
+    "baseUrl": "https://gen.pollinations.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": true,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [
+        "https://gen.pollinations.ai/image/models",
+        "https://gen.pollinations.ai/embeddings/models"
+      ],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "https://gen.pollinations.ai/account/key"
+    },
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free models spend free Quest Pollen; models marked paid_only need purchased pollen and are never free. Choose paid if the account holds paid pollen."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "aihorde",
+    "label": "AI Horde",
+    "description": "Crowdsourced volunteer workers. Slow, queued, free.",
+    "category": "free",
+    "website": "https://aihorde.net",
+    "keyUrl": "https://aihorde.net/register",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://oai.aihorde.net/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer",
+      "anonymousKey": "0000000000"
+    },
+    "keyOptional": true,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://aihorde.net/faq",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Volunteer capacity; expect queueing. Anonymous use works; a free key gives priority from kudos."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "timeoutMs": 600000,
+      "noTools": true,
+      "minMaxTokens": 16,
+      "streamUsage": false
+    }
+  },
+  {
+    "id": "kourier",
+    "label": "Kourier",
+    "description": "Flat-rate inference billed by simultaneous requests.",
+    "category": "plan",
+    "website": "https://kourier.sh",
+    "keyUrl": "https://app.kourier.sh",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.kourier.sh/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "path": "/models",
+      "extraPaths": [],
+      "optIn": [],
+      "facts": {
+        "deepseek-v4.1-flash": {
+          "contextWindow": 262144,
+          "maxOutput": 16384
+        }
+      }
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "flat_rate",
+      "plan": {
+        "note": "Paid concurrency slots with no token or request-volume allowance. Choose your plan and edit the concurrent limit for bonuses."
+      },
+      "flatRate": {
+        "defaultPlan": "starter",
+        "plans": [
+          {
+            "id": "starter",
+            "label": "Starter",
+            "concurrent": 1
+          },
+          {
+            "id": "pro",
+            "label": "Pro",
+            "concurrent": 3
+          }
+        ]
+      },
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.kourier.sh/docs/models",
+      "checkedAt": "2026-11-16",
+      "alwaysFree": [],
+      "trustListingFree": false,
+      "note": "Keys on the same Kourier account share the plan slots; extra keys do not add capacity."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "concurrent": 1
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "ollama",
+    "label": "Ollama (local)",
+    "description": "Models running on your own Ollama server.",
+    "category": "local",
+    "website": "https://ollama.com",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "http://127.0.0.1:11434/v1",
+    "editableBaseUrl": true,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": true,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": true,
+      "keylessOnly": false,
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free only for a server on this machine or your private network; a public host such as ollama.com may charge."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "timeoutMs": 600000
+    }
+  },
+  {
+    "id": "lmstudio",
+    "label": "LM Studio (local)",
+    "description": "Models served by LM Studio on your network.",
+    "category": "local",
+    "website": "https://lmstudio.ai",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "http://127.0.0.1:1234/v1",
+    "editableBaseUrl": true,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": true,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": true,
+      "keylessOnly": false,
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free only for a server on this machine or your private network; a public host such as ollama.com may charge."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "timeoutMs": 600000
+    }
+  },
+  {
+    "id": "custom_openai",
+    "label": "Custom OpenAI-compatible",
+    "description": "Any endpoint that speaks /v1/chat/completions (vLLM, LiteLLM, TGI, proxies, …).",
+    "category": "custom",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [
+      "openai_live",
+      "openai_realtime"
+    ],
+    "baseUrl": "",
+    "editableBaseUrl": true,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": true,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Choose \"free\" only if this endpoint never charges you."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "custom_anthropic",
+    "label": "Custom Anthropic-compatible",
+    "description": "Any endpoint that speaks the Anthropic Messages API.",
+    "category": "custom",
+    "adapter": "anthropic",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "",
+    "editableBaseUrl": true,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": true,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Choose \"free\" only if this endpoint never charges you."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "mistral",
+    "label": "Mistral AI",
+    "description": "Mistral, Codestral and Magistral models.",
+    "category": "paid",
+    "website": "https://mistral.ai",
+    "keyUrl": "https://console.mistral.ai/api-keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "embed": "/embeddings",
+      "transcribe": "/audio/transcriptions",
+      "moderate": "/moderations"
+    },
+    "live": [],
+    "baseUrl": "https://api.mistral.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.mistral.ai/admin/billing-usage/usage-limits",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "API use needs billing activation and is pay as you go; the free mode has no API access. Choose free only for an old Experiment workspace without a payment method."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 60,
+        "tpm": 500000
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "embeddingDimensionsField": "output_dimension"
+    }
+  },
+  {
+    "id": "modelscope",
+    "label": "ModelScope",
+    "description": "Free API-Inference for open models (ModelScope account required).",
+    "category": "free",
+    "website": "https://modelscope.cn",
+    "keyUrl": "https://modelscope.cn/my/myaccesstoken",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api-inference.modelscope.cn/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "chatProbe": true
+    },
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://www.modelscope.cn/docs/model-service/API-Inference/limits",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free daily points (about 250 calls to mainstream models a day); needs an Alibaba Cloud account with real-name verification. Points cannot be bought, so nothing is charged."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpd": 250
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "neorouter_local",
+    "label": "NeoRouter Local",
+    "description": "Models running on this server, managed by your admin.",
+    "category": "local",
+    "adapter": "local_runtime",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "embed": true,
+      "speech": true,
+      "transcribe": true
+    },
+    "live": [],
+    "baseUrl": "",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": true,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Runs on this server: requests cost nothing."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "timeoutMs": 600000
+    }
+  },
+  {
+    "id": "nous",
+    "label": "Nous Research",
+    "description": "Hermes models via the Nous Portal inference API.",
+    "category": "paid",
+    "connect": "nous_device",
+    "website": "https://portal.nousresearch.com",
+    "keyUrl": "https://portal.nousresearch.com/api-keys",
+    "adapter": "nous",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://inference-api.nousresearch.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://portal.nousresearch.com/",
+      "checkedAt": "2026-10-28",
+      "alwaysFree": [
+        ":free$"
+      ],
+      "trustListingFree": true,
+      "note": "Paid models draw from prepaid Portal credits; only :free models are free."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "nvidia",
+    "label": "NVIDIA NIM",
+    "description": "Hosted NIM endpoints on build.nvidia.com for developers.",
+    "category": "free",
+    "website": "https://build.nvidia.com",
+    "keyUrl": "https://build.nvidia.com/settings/api-keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "embed": "/embeddings",
+      "generateImage": "https://ai.api.nvidia.com/v1/genai/{model}"
+    },
+    "live": [],
+    "baseUrl": "https://integrate.api.nvidia.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [
+      {
+        "id": "black-forest-labs/flux.2-klein-4b",
+        "name": "FLUX.2 [klein] 4B",
+        "type": "image"
+      }
+    ],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://forums.developer.nvidia.com/t/nvidia-nim-faq/300317",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "No-cost trial API for prototyping (about 40 requests a minute, not for production per the terms). No payment method can be attached, so it cannot be charged."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 40
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "singleToolCall": true,
+      "embeddingInputType": true,
+      "imageApi": "nvidia_genai"
+    }
+  },
+  {
+    "id": "ollama_cloud",
+    "label": "Ollama Cloud",
+    "description": "Large open models hosted by Ollama.",
+    "category": "paid",
+    "website": "https://ollama.com",
+    "keyUrl": "https://ollama.com/settings/keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://ollama.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "plan": {
+        "note": "Pro ($20) and Max ($100) include monthly usage credits ($60 and $300) for all cloud models; with \"plan, then pay per use\", bought credits are used afterwards."
+      },
+      "freeTierAll": false,
+      "freeTierModels": [
+        "^beam(:|$)",
+        "^gemma4:31b",
+        "^gpt-oss:(120b|20b)",
+        "^nemotron-3-(nano:30b|super|ultra)"
+      ],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://ollama.com/pricing",
+      "checkedAt": "2026-10-28",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Only a few cloud models are covered by the free monthly usage; all others are pay-per-token. Keep the usage-credit balance at $0 with auto-reload off so nothing can be charged once the free usage is used up."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "timeoutMs": 180000
+    }
+  },
+  {
+    "id": "openrouter",
+    "label": "OpenRouter",
+    "description": "Aggregator for hundreds of models. Models ending in :free cost nothing.",
+    "category": "aggregator",
+    "website": "https://openrouter.ai",
+    "keyUrl": "https://openrouter.ai/settings/keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "embed": "/embeddings",
+      "generateImage": "/images",
+      "speech": "/audio/speech",
+      "transcribe": "/audio/transcriptions",
+      "createVideo": "/videos",
+      "decide": "/systemone"
+    },
+    "live": [],
+    "baseUrl": "https://openrouter.ai/api/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {
+      "HTTP-Referer": "https://github.com/NeoLabs-Systems/NeoRouter",
+      "X-Title": "NeoRouter"
+    },
+    "models": {
+      "extraPaths": [
+        "/embeddings/models",
+        "/images/models",
+        "/videos/models",
+        "/models?output_modalities=decisions",
+        "/models?output_modalities=speech"
+      ],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "/key"
+    },
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [
+        ":free$",
+        "^openrouter/free$"
+      ],
+      "trustListingFree": true,
+      "note": "Paid models draw from your credits. :free models allow 20 requests a minute and 50 a day (1,000 a day once 10 USD of credits were bought); a negative balance blocks them too."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {
+        "rpm": 20,
+        "rpd": 50
+      },
+      "defaults": {},
+      "models": [],
+      "poolMatch": ":free$"
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm",
+      "probe": {
+        "path": "/key",
+        "parse": "openrouter_credits"
+      }
+    },
+    "quirks": {
+      "noImageResponseFormat": true,
+      "speechFormats": [
+        "pcm",
+        "mp3"
+      ],
+      "speechVoicesPath": "/models?output_modalities=speech",
+      "transcriptionJson": true,
+      "videoDuration": true
+    }
+  },
+  {
+    "id": "openai",
+    "label": "OpenAI",
+    "description": "GPT and o-series models.",
+    "category": "paid",
+    "website": "https://openai.com",
+    "keyUrl": "https://platform.openai.com/api-keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [
+      "openai_live",
+      "openai_realtime"
+    ],
+    "baseUrl": "https://api.openai.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://developers.openai.com/api/docs/guides/rate-limits",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Prepaid credits; no free models through the API."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "maxTokensField": "max_completion_tokens"
+    }
+  },
+  {
+    "id": "anthropic",
+    "label": "Anthropic",
+    "description": "Claude models via the native Messages API.",
+    "category": "paid",
+    "website": "https://anthropic.com",
+    "keyUrl": "https://platform.claude.com/settings/keys",
+    "adapter": "anthropic",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.anthropic.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://platform.claude.com/docs/en/api/rate-limits",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Prepaid credits; no free tier."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "xai",
+    "label": "xAI",
+    "description": "Grok models.",
+    "category": "paid",
+    "website": "https://x.ai",
+    "keyUrl": "https://console.x.ai",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.x.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.x.ai/docs/key-information/billing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Prepaid credits; requests are refused once they run out (unless invoiced billing is on)."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "deepseek",
+    "label": "DeepSeek",
+    "description": "DeepSeek chat and reasoner models.",
+    "category": "paid",
+    "website": "https://deepseek.com",
+    "keyUrl": "https://platform.deepseek.com/api_keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.deepseek.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://api-docs.deepseek.com/quick_start/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Prepaid top-up; no free models."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm",
+      "probe": {
+        "path": "https://api.deepseek.com/user/balance",
+        "parse": "deepseek_balance"
+      }
+    },
+    "quirks": {}
+  },
+  {
+    "id": "moonshot",
+    "label": "Moonshot AI",
+    "description": "Kimi models.",
+    "category": "paid",
+    "website": "https://moonshot.ai",
+    "keyUrl": "https://platform.kimi.ai/console/api-keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.moonshot.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://platform.kimi.ai/docs/guide/start-using-kimi-api",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Prepaid; a 1 USD recharge activates the API."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "minimax",
+    "label": "MiniMax",
+    "description": "MiniMax text models.",
+    "category": "paid",
+    "website": "https://www.minimax.io",
+    "keyUrl": "https://platform.minimax.io/user-center/basic-information/interface-key",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.minimax.io/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://platform.minimax.io/docs/guides/pricing-paygo",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Pay as you go from balance. M Plan subscription keys are separate (see MiniMax M Plan)."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "dashscope",
+    "label": "Alibaba Model Studio",
+    "description": "Qwen models (international DashScope endpoint).",
+    "category": "paid",
+    "website": "https://www.alibabacloud.com/product/modelstudio",
+    "keyUrl": "https://modelstudio.console.alibabacloud.com",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://www.alibabacloud.com/help/en/model-studio/new-free-quota",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "New accounts get a one-time quota (about 1M tokens per model, 90 days). After that you are billed unless Free Quota Only is turned on per model in Model Studio."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "chatgpt",
+    "label": "ChatGPT",
+    "description": "Your ChatGPT plan through the Codex sign-in.",
+    "category": "plan",
+    "connect": "codex_device",
+    "website": "https://chatgpt.com/codex",
+    "keyUrl": "https://chatgpt.com/codex",
+    "adapter": "codex",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://chatgpt.com/backend-api/codex",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": true,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "plan",
+      "plan": {
+        "note": "Uses your ChatGPT plan's Codex limits (a 5-hour window on most plans, plus weekly limits); ChatGPT reports them with each answer."
+      },
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://learn.chatgpt.com/docs/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Device sign-in must first be enabled in the ChatGPT security settings (or by a workspace admin). Extra credits are bought separately. Signs in the way Codex, OpenClaw and OpenCode do. Meant for your own plan: Team, Business and Enterprise workspaces follow their admins' rules, and sharing one plan between people is against the terms."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "timeoutMs": 300000
+    }
+  },
+  {
+    "id": "synthetic",
+    "label": "Synthetic",
+    "description": "Open models on a flat subscription, for any OpenAI-compatible tool.",
+    "category": "plan",
+    "website": "https://synthetic.new",
+    "keyUrl": "https://synthetic.new/user-settings/api",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.synthetic.new/openai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "plan",
+      "plan": {
+        "note": "Go 9 USD, Standard 30 USD, Big 90 USD a month. A weekly credit limit that refills 2% every 3.4 hours; NeoRouter reads what is left from Synthetic."
+      },
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://synthetic.new/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Requests within the plan cost nothing extra; extra usage beyond it is billed at API prices if you allow it."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm",
+      "probe": {
+        "path": "https://api.synthetic.new/v2/quotas",
+        "parse": "synthetic_plan"
+      }
+    },
+    "quirks": {}
+  },
+  {
+    "id": "minimax_plan",
+    "label": "MiniMax M Plan",
+    "description": "The MiniMax subscription (Go, Explore, Build) with its own plan key.",
+    "category": "plan",
+    "website": "https://www.minimax.io",
+    "keyUrl": "https://platform.minimax.io/console/plan",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.minimax.io/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "id": "MiniMax-M3.1-Flash",
+          "name": "MiniMax M3.1 Flash",
+          "context_length": 1000000
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": false,
+    "billing": {
+      "defaultMode": "plan",
+      "plan": {
+        "note": "Usage windows of 5 hours and a week; MiniMax reports what is left of each."
+      },
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://platform.minimax.io/docs/m-plan/intro",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "The M Plan key works in any OpenAI- or Anthropic-compatible tool; usage from all tools counts against the same windows."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm",
+      "probe": {
+        "path": "https://www.minimax.io/v1/token_plan/remains",
+        "parse": "minimax_windows"
+      }
+    },
+    "quirks": {}
+  },
+  {
+    "id": "kimi_code",
+    "label": "Kimi Code",
+    "description": "The Kimi membership coding plan with its own API key.",
+    "category": "plan",
+    "website": "https://www.kimi.com/coding",
+    "keyUrl": "https://www.kimi.com/code/console",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.kimi.ai/coding/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "id": "k3.1-pro",
+          "name": "Kimi K3.1 Pro",
+          "reasoning": true
+        },
+        {
+          "id": "k3.1-pro-highspeed",
+          "name": "Kimi K3.1 Pro HighSpeed",
+          "reasoning": true
+        },
+        {
+          "id": "k3",
+          "name": "Kimi K3",
+          "context_length": 1000000
+        },
+        {
+          "id": "k3-256k",
+          "name": "Kimi K3 256K",
+          "context_length": 256000
+        },
+        {
+          "id": "kimi-for-coding",
+          "name": "Kimi for Coding",
+          "context_length": 1000000
+        },
+        {
+          "id": "kimi-for-coding-highspeed",
+          "name": "Kimi for Coding HighSpeed"
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "plan",
+      "plan": {
+        "note": "Plus and higher: a rolling 5-hour limit plus the membership's monthly credit pool (older plans also have a weekly limit). The Go tier does not include Kimi Code."
+      },
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://www.kimi.com/en/help/membership/membership-pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Kimi lists the tools it supports and forbids disguising the client; NeoRouter identifies itself honestly, so Kimi may refuse it. Check the membership terms before relying on it."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "userAgent": "NeoRouter"
+    }
+  },
+  {
+    "id": "opencode_go",
+    "label": "OpenCode Go",
+    "description": "The OpenCode Go subscription: open and partner models for coding agents, with monthly usage limits.",
+    "category": "plan",
+    "website": "https://opencode.ai/go",
+    "keyUrl": "https://opencode.ai/console",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://opencode.ai/inference/go/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "sessionHeader": "x-opencode-session",
+    "models": {
+      "extraPaths": [],
+      "optIn": [
+        "contributor"
+      ]
+    },
+    "extraModels": [],
+    "validate": {
+      "chatProbe": true,
+      "probeModels": [
+        "glm-5.3-flash"
+      ]
+    },
+    "billing": {
+      "defaultMode": "plan",
+      "plan": {
+        "note": "A monthly dollar limit per model, with a 5-hour window (20% of it) and a weekly one (50%). NeoRouter reads the three windows from the OpenCode usage endpoint. With Extra Usage on, OpenCode carries on from your balance."
+      },
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://opencode.ai/docs/go/",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Needs the Go subscription ($10 a month, Go Plus $40, Teams $20 a member). Some models (DeepSeek among them) need the workspace Privacy setting on Global regions. Muse Spark Contributor and Iceman Contributor train on your prompts, so they start switched off. Grok, GPT and Claude Haiku keep requests for 30 days; most others keep none."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm",
+      "probe": {
+        "path": "/usage",
+        "parse": "opencode_go_windows"
+      }
+    },
+    "quirks": {
+      "userAgent": "NeoRouter"
+    }
+  },
+  {
+    "id": "neorouter_peer",
+    "label": "Pool partner",
+    "description": "Free capacity a pool partner shares with you.",
+    "category": "pool",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "",
+    "editableBaseUrl": true,
+    "baseUrlSchemes": [
+      "http",
+      "https",
+      "relay"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {
+      "X-NeoRouter-Hop": "1"
+    },
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Runs on a partner’s free connections."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "day",
+        "tokens": "day"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "userAgent": "NeoRouter-Pool",
+      "dropFields": [
+        "user",
+        "metadata",
+        "safety_identifier",
+        "prompt_cache_key",
+        "store",
+        "service_tier"
+      ]
+    }
+  },
+  {
+    "id": "tavily",
+    "label": "Tavily",
+    "description": "Search built for AI agents, with page extracts.",
+    "category": "search",
+    "search": {
+      "engine": "tavily"
+    },
+    "website": "https://tavily.com",
+    "keyUrl": "https://app.tavily.com/home",
+    "adapter": "search",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "search": true
+    },
+    "live": [],
+    "baseUrl": "https://api.tavily.com",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "type": "search",
+          "id": "tavily-search",
+          "name": "Tavily Search"
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://www.tavily.com/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "1,000 free credits a month on the Researcher plan, no card needed (a basic search costs 1, an advanced one 2); requests stop at zero until the 1st. With pay-as-you-go turned on, searches beyond are billed at about 0.008 USD a credit."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 60
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "exa",
+    "label": "Exa",
+    "description": "Neural web search that returns page text.",
+    "category": "search",
+    "search": {
+      "engine": "exa"
+    },
+    "website": "https://exa.ai",
+    "keyUrl": "https://dashboard.exa.ai/api-keys",
+    "adapter": "search",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "search": true
+    },
+    "live": [],
+    "baseUrl": "https://api.exa.ai",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "header",
+      "header": "x-api-key"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "type": "search",
+          "id": "exa-search",
+          "name": "Exa Search"
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://exa.ai/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "10 USD of free credit every month, no card needed (about 1,400 to 2,500 searches; first team only). At zero, requests fail; a card is only charged if auto recharge is on."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 60
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "linkup",
+    "label": "Linkup",
+    "description": "Web search API with sourced page content.",
+    "category": "search",
+    "search": {
+      "engine": "linkup"
+    },
+    "website": "https://www.linkup.so",
+    "keyUrl": "https://app.linkup.so",
+    "adapter": "search",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "search": true
+    },
+    "live": [],
+    "baseUrl": "https://api.linkup.so/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "type": "search",
+          "id": "linkup-standard",
+          "name": "Linkup Standard"
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://www.linkup.so/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "20 USD of free credit a month (about 4,000 standard searches) for accounts with a work email; requests fail when it runs out. Top-ups are manual."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 60
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "parallel",
+    "label": "Parallel",
+    "description": "Search with excerpts ranked for LLMs.",
+    "category": "search",
+    "search": {
+      "engine": "parallel"
+    },
+    "website": "https://parallel.ai",
+    "keyUrl": "https://platform.parallel.ai",
+    "adapter": "search",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "search": true
+    },
+    "live": [],
+    "baseUrl": "https://api.parallel.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "header",
+      "header": "x-api-key"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "type": "search",
+          "id": "parallel-search",
+          "name": "Parallel Search"
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://parallel.ai/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Up to 80 USD of credit once at sign-up. The 5 USD monthly credit needs a card on file, and use beyond it is billed to that card: choose free only for a key without a card."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 60
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "firecrawl",
+    "label": "Firecrawl",
+    "description": "Search plus scraping into clean markdown.",
+    "category": "search",
+    "search": {
+      "engine": "firecrawl"
+    },
+    "website": "https://www.firecrawl.dev",
+    "keyUrl": "https://www.firecrawl.dev/app/api-keys",
+    "adapter": "search",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "search": true
+    },
+    "live": [],
+    "baseUrl": "https://api.firecrawl.dev/v2",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "type": "search",
+          "id": "firecrawl-search",
+          "name": "Firecrawl Search"
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://www.firecrawl.dev/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free plan: 1,000 credits a month, no card (a search of 10 results costs 2, so about 500 searches), 10 searches a minute. Requests fail when credits run out."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 10
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "serper",
+    "label": "Serper",
+    "description": "Google results as JSON.",
+    "category": "search",
+    "search": {
+      "engine": "serper"
+    },
+    "website": "https://serper.dev",
+    "keyUrl": "https://serper.dev/api-key",
+    "adapter": "search",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "search": true
+    },
+    "live": [],
+    "baseUrl": "https://google.serper.dev",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "header",
+      "header": "X-API-KEY"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "type": "search",
+          "id": "serper-google",
+          "name": "Google (Serper)"
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://serper.dev",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "2,500 free queries once at sign-up, then prepaid credit packs: it never bills automatically. Paid credits expire after 6 months."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 60
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "brave_search",
+    "label": "Brave Search",
+    "description": "Independent web index.",
+    "category": "search",
+    "search": {
+      "engine": "brave"
+    },
+    "website": "https://brave.com/search/api",
+    "keyUrl": "https://api-dashboard.search.brave.com/app/keys",
+    "adapter": "search",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "search": true
+    },
+    "live": [],
+    "baseUrl": "https://api.search.brave.com/res/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "header",
+      "header": "X-Subscription-Token"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "type": "search",
+          "id": "brave-web-search",
+          "name": "Brave Web Search",
+          "price_per_search": 0.005
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://brave.com/search/api",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "No free plan any more: a card is required. Every plan includes 5 USD of credit a month (about 1,000 searches, if Brave is credited on your site); searches beyond are billed at about 5 USD per 1,000."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 60
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "jina_search",
+    "label": "Jina Search",
+    "description": "Search that returns the pages as LLM-ready text.",
+    "category": "search",
+    "search": {
+      "engine": "jina"
+    },
+    "website": "https://jina.ai/reader",
+    "keyUrl": "https://jina.ai/api-dashboard",
+    "adapter": "search",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "search": true
+    },
+    "live": [],
+    "baseUrl": "https://s.jina.ai",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "type": "search",
+          "id": "jina-search",
+          "name": "Jina Search"
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://jina.ai/reader",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "A new key comes with 10M free tokens, once (a search costs from 10,000). After that, prepaid top-ups; a saved card is only charged automatically if auto recharge is on."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 60
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "searxng",
+    "label": "SearXNG",
+    "description": "Your own self-hosted metasearch instance (JSON output enabled).",
+    "category": "search",
+    "search": {
+      "engine": "searxng"
+    },
+    "website": "https://docs.searxng.org",
+    "adapter": "search",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "search": true
+    },
+    "live": [],
+    "baseUrl": "",
+    "editableBaseUrl": true,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": true,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "type": "search",
+          "id": "searxng",
+          "name": "SearXNG"
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.searxng.org/dev/search_api.html",
+      "checkedAt": "2026-10-29",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Self-hosted and free. The instance must allow format=json in its settings."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 60
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "siliconflow",
+    "label": "SiliconFlow",
+    "description": "Open model hosting; new accounts get a small trial credit.",
+    "category": "aggregator",
+    "website": "https://siliconflow.com",
+    "keyUrl": "https://cloud.siliconflow.com/account/ak",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.siliconflow.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "path": "/models?type=text&sub_type=chat",
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "/user/info"
+    },
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://siliconflow.com/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Balance-based. New accounts get about 1 USD of trial credit; the international service has no permanently free models."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm",
+      "probe": {
+        "path": "/user/info",
+        "parse": "siliconflow_balance"
+      }
+    },
+    "quirks": {}
+  },
+  {
+    "id": "sealion",
+    "label": "SEA-LION",
+    "description": "AI Singapore’s Southeast Asian language models; a free trial key, 10 requests a minute.",
+    "category": "free",
+    "website": "https://sea-lion.ai",
+    "keyUrl": "https://playground.sea-lion.ai",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.sea-lion.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.sea-lion.ai/guides/inferencing/api",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free trial key, one per person; there is no billing."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 10
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "typhoon",
+    "label": "Typhoon",
+    "description": "Thai language models from SCB 10X; a free research API.",
+    "category": "free",
+    "website": "https://opentyphoon.ai",
+    "keyUrl": "https://playground.opentyphoon.ai/api-key",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.opentyphoon.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.opentyphoon.ai/th/faq",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free research API; usage data is collected to improve the models."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {
+        "rpm": 200
+      },
+      "models": [
+        {
+          "rpm": 20,
+          "match": "^typhoon-ocr"
+        },
+        {
+          "rpm": 100,
+          "match": "asr"
+        }
+      ]
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "longcat",
+    "label": "LongCat",
+    "description": "Meituan’s LongCat models; prepaid, no free tier.",
+    "category": "paid",
+    "website": "https://longcat.chat",
+    "keyUrl": "https://longcat.chat/platform/api_keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.longcat.chat/openai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://longcat.chat/platform/docs/api-pay-as-you-go",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Prepaid balance or 30-day token packs; requests are refused at 0 USD."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "electronhub",
+    "label": "Electron Hub",
+    "description": "About 600 models on one key; models ending in :free cost nothing, about 10 a day.",
+    "category": "aggregator",
+    "website": "https://electronhub.ai",
+    "keyUrl": "https://app.electronhub.ai",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.electronhub.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "/user/me"
+    },
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.electronhub.ai/billing/credits",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [
+        ":free$"
+      ],
+      "trustListingFree": true,
+      "note": "Models ending in :free use daily \"Neutrinos\", not money: 10 a day (reset 21:00 UTC), failed requests count too, and phone verification is needed. Other models use plan credits or a prepaid balance."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 5
+      },
+      "defaults": {},
+      "models": [
+        {
+          "rpd": 10,
+          "match": ":free$"
+        }
+      ]
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "kenari",
+    "label": "Kenari",
+    "description": "Indonesian gateway priced in rupiah; models ending in :free cost nothing.",
+    "category": "aggregator",
+    "website": "https://kenari.id",
+    "keyUrl": "https://kenari.id/keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://kenari.id/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "/account/balance"
+    },
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://kenari.id/api/public/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [
+        ":free$"
+      ],
+      "trustListingFree": true,
+      "note": "Models ending in :free: 50 a day, 5 a minute (1,000 a day after a Rp 10.000 top-up). Others use a prepaid rupiah balance."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 5,
+        "rpd": 50
+      },
+      "defaults": {},
+      "models": [],
+      "poolMatch": ":free$"
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "bazaarlink",
+    "label": "BazaarLink",
+    "description": "Taiwanese gateway; models ending in :free cost nothing within a daily cap.",
+    "category": "aggregator",
+    "website": "https://bazaarlink.ai",
+    "keyUrl": "https://bazaarlink.ai/keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.bazaarlink.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {
+      "X-Free-Fallback": "false"
+    },
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://bazaarlink.ai/docs#free-models",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [
+        ":free$"
+      ],
+      "trustListingFree": true,
+      "note": "Models ending in :free: 10 a minute, 60 a day (120 after a top-up). NeoRouter tells it to refuse past the cap instead of billing. Others use a prepaid balance."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 20
+      },
+      "defaults": {},
+      "models": [
+        {
+          "rpm": 10,
+          "rpd": 60,
+          "match": ":free$"
+        }
+      ]
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "reka",
+    "label": "Reka",
+    "description": "Reka’s own models plus open models; prepaid.",
+    "category": "paid",
+    "website": "https://reka.ai",
+    "keyUrl": "https://developer.reka.ai/keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.reka.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.reka.ai/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Prepaid credits, no free tier; requests fail at 0 USD."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "qianfan",
+    "label": "Baidu Qianfan",
+    "description": "Baidu’s ERNIE and hosted open models, billed in CNY.",
+    "category": "paid",
+    "website": "https://cloud.baidu.com/product-s/qianfan_home",
+    "keyUrl": "https://console.bce.baidu.com/iam/#/iam/apikey/list",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://qianfan.baidubce.com/v2",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Billed in CNY after use, so the account can run into debt. No free models confirmed."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "volcengine",
+    "label": "Volcengine Ark",
+    "description": "ByteDance’s Doubao and hosted open models, billed in CNY.",
+    "category": "paid",
+    "website": "https://www.volcengine.com/product/ark",
+    "keyUrl": "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://www.volcengine.com/docs/82379/1465347",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "One-time free tokens per model at sign-up (safe-trial mode stops there). With that mode off, use is billed in CNY after the fact."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "xfyun",
+    "label": "iFlytek Spark",
+    "description": "iFlytek’s Spark models; Spark Lite is free.",
+    "category": "paid",
+    "website": "https://xinghuo.xfyun.cn",
+    "keyUrl": "https://console.xfyun.cn/services/cbm",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://spark-api-open.xf-yun.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [
+        "^lite$"
+      ],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://www.xfyun.cn/doc/spark/HTTP%E8%B0%83%E7%94%A8%E6%96%87%E6%A1%A3.html",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Spark Lite is free with daily caps; other models need bought quota. Each key works for one model only."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "bai",
+    "label": "B.AI",
+    "description": "Gateway to Claude, GPT, Gemini, DeepSeek and more; prepaid credits.",
+    "category": "aggregator",
+    "website": "https://b.ai",
+    "keyUrl": "https://chat.b.ai/key",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.b.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "https://api.b.ai/balance"
+    },
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.b.ai/llmservice/faq/",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Prepaid credits, no free models."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "anyapi",
+    "label": "AnyAPI",
+    "description": "Gateway with a small daily free allowance on its free models.",
+    "category": "aggregator",
+    "website": "https://anyapi.ai",
+    "keyUrl": "https://dash.anyapi.ai",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.anyapi.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [
+        ":free$"
+      ],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://anyapi.ai/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free plan without a card: free models only, about 100K tokens a day (the cap may be shared). On pay as you go, overage is charged automatically."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "radeon",
+    "label": "AMD Radeon Cloud",
+    "description": "AMD’s free model API on its China site, with a daily cap.",
+    "category": "free",
+    "website": "https://developer.amd.com.cn/radeon/",
+    "keyUrl": "https://developer.amd.com.cn/radeon/",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://developer.amd.com.cn/radeon/api/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://amd-aim.github.io/radeon-cloud-docs/guides/token-factory/",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free trial service with a daily points cap (reset 00:00 Beijing time); not for production and there is no way to pay."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "concurrent": 8,
+        "rpm": 20
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "timeoutMs": 600000,
+      "singleToolCall": true
+    }
+  },
+  {
+    "id": "agnes",
+    "label": "Agnes AI",
+    "description": "Agnes’ own models; the Flash models are free during a promotion.",
+    "category": "free",
+    "website": "https://agnes-ai.com",
+    "keyUrl": "https://platform.agnes-ai.com",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://apihub.agnes-ai.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": false,
+      "freeTierModels": [
+        "-flash$"
+      ],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://wiki.agnes-ai.com/en/docs/pricing.md",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Flash text, image and video models are free for people without a plan during a limited-time promotion. Pro models are charged from plan or pack credits."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {
+        "rpm": 20
+      },
+      "models": [
+        {
+          "rpm": 1,
+          "match": "video"
+        }
+      ]
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "routeway",
+    "label": "Routeway",
+    "description": "About 280 models; models ending in :free cost nothing, 200 a day.",
+    "category": "aggregator",
+    "website": "https://routeway.ai",
+    "keyUrl": "https://routeway.ai/dashboard",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.routeway.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.routeway.ai/getting-started/faq.md",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [
+        ":free$"
+      ],
+      "trustListingFree": true,
+      "note": "Models ending in :free: 200 a day (reset 00:00 UTC), one at a time. Paid models need a positive balance."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 5,
+        "rpd": 200
+      },
+      "defaults": {},
+      "models": [],
+      "poolMatch": ":free$"
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+    }
+  },
+  {
+    "id": "ainative",
+    "label": "AINative Studio",
+    "description": "Developer platform with a model API on monthly credit plans.",
+    "category": "plan",
+    "website": "https://ainative.studio",
+    "keyUrl": "https://ainative.studio/dashboard",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.ainative.studio/api/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://ainative.studio/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Paid plans from 5 USD a month (3-day trial) with monthly credits."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "aion",
+    "label": "Aion Labs",
+    "description": "Aion Labs’ roleplay and storytelling models with a small daily free allowance.",
+    "category": "free",
+    "website": "https://www.aionlabs.ai",
+    "keyUrl": "https://www.aionlabs.ai/app/api-keys/",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.aionlabs.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://www.aionlabs.ai/docs/rate-limits/",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free tier without a card: about 20,000 tokens a day. Once you top up, credits are spent; switch to paid then."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 15,
+        "tpm": 20000,
+        "tpd": 20000
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "navy",
+    "label": "NavyAI",
+    "description": "One key for 130+ models on daily token plans; the free plan has 150K tokens a day.",
+    "category": "plan",
+    "website": "https://api.navy",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.navy/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://api.navy",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free plan: 150K tokens a day, 20 requests a minute; each model uses tokens at its own multiplier. Premium models need a paid plan (from 10 USD a month)."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 20,
+        "tpd": 150000
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+    }
+  },
+  {
+    "id": "nara",
+    "label": "NaraRouter",
+    "description": "Indonesian gateway with a small free plan (one model) and day or week token passes.",
+    "category": "plan",
+    "website": "https://router.bynara.id",
+    "keyUrl": "https://router.bynara.id",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://router.bynara.id/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://router.bynara.id/#pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free plan: one model, 7M tokens a day, 15 requests a minute, after Telegram verification or a 1 USD top-up. Everything else is prepaid credit or day/week passes."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "orcarouter",
+    "label": "OrcaRouter",
+    "description": "Zero-markup gateway; models ending in -free cost nothing within tight daily caps.",
+    "category": "aggregator",
+    "website": "https://www.orcarouter.ai",
+    "keyUrl": "https://www.orcarouter.ai/console",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.orcarouter.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": false,
+      "freeTierModels": [
+        "-free$",
+        "^orcarouter/free$"
+      ],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.orcarouter.ai/routing/free-models",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Models ending in -free never touch the wallet: about 10 requests a minute and 50 a day (more after 20 USD lifetime spend), with a small prompt cap; needs an established GitHub account linked. Others bill a prepaid wallet."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": [
+        {
+          "rpm": 10,
+          "rpd": 50,
+          "match": "-free$"
+        }
+      ]
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "unorouter",
+    "label": "UnoRouter",
+    "description": "300+ models on one key; models ending in :free cost nothing, about one request a minute each.",
+    "category": "aggregator",
+    "website": "https://unorouter.com",
+    "keyUrl": "https://unorouter.com/en/token",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.unorouter.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": false,
+      "freeTierModels": [
+        ":free$"
+      ],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://unorouter.com/en/docs/platform/errors-and-rate-limits",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Models ending in :free never use your balance, about one request a minute each. Some need a one-time consent per provider at unorouter.com/consents and are refused if you objected to data use. All others bill a prepaid USD balance."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": [
+        {
+          "rpm": 1,
+          "match": ":free$"
+        }
+      ]
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "xkiro",
+    "label": "xKiro",
+    "description": "69 models on one key; about a third are free within a daily token allowance.",
+    "category": "aggregator",
+    "website": "https://xkiro.com",
+    "keyUrl": "https://xkiro.com/dashboard/api/keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.xkiro.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "/usage"
+    },
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.xkiro.com/guides/pricing/",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Models marked free share 500K tokens a day (1M with Telegram verified). Paid models bill a prepaid wallet; images past the free allowance and web tools also charge it."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "tpd": 500000
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "opencode",
+    "label": "OpenCode Console",
+    "description": "Pay-as-you-go access to coding models tested by OpenCode (formerly Zen).",
+    "category": "paid",
+    "website": "https://opencode.ai/docs/console/models/",
+    "keyUrl": "https://opencode.ai/console",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://opencode.ai/inference/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "sessionHeader": "x-opencode-session",
+    "models": {
+      "extraPaths": [],
+      "excludeFree": true,
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "chatProbe": true,
+      "probeModels": [
+        "glm-5.3-flash"
+      ]
+    },
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://opencode.ai/docs/console/models/",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Prepaid credits with a 4.6% + 0.31 USD fee per purchase; auto-recharge can charge your card. Its free models only work inside OpenCode, so NeoRouter leaves them out. OpenAI and Anthropic models keep requests 30 days; most others keep nothing."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {
+      "userAgent": "NeoRouter"
+    }
+  },
+  {
+    "id": "airforce",
+    "label": "Api.Airforce",
+    "description": "Cheap gateway to 790 models; the free plan is 1 request a minute on about 28 basic models.",
+    "category": "aggregator",
+    "website": "https://api.airforce",
+    "keyUrl": "https://api.airforce/dashboard/",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.airforce/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://api.airforce/pricing/",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free plan: models marked free, 1 request a minute, 1,000 a day. Topping up switches on pay as you go automatically; plans from 9.99 USD a month."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 1,
+        "rpd": 1000
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "apinex",
+    "label": "APInex",
+    "description": "Crypto-funded gateway to 46 models; models starting with free/ use a daily free allowance.",
+    "category": "aggregator",
+    "website": "https://apinex.bond",
+    "keyUrl": "https://apinex.bond/keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.apinex.bond/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "/balance"
+    },
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": false,
+      "freeTierModels": [
+        "^free/"
+      ],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://apinex.bond/llms-full.txt",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Models starting with free/ never touch the wallet and use a daily allowance metered by weight. Others bill a prepaid USD wallet topped up with crypto."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 15
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "blaze",
+    "label": "BlazeAPI",
+    "description": "Discounted gateway to 150+ models; 18 free/ models with 450K tokens a day.",
+    "category": "aggregator",
+    "website": "https://blazeapi.org",
+    "keyUrl": "https://blazeapi.org/dashboard",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.blazeapi.org/paid/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "/usage"
+    },
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": false,
+      "freeTierModels": [
+        "^free/"
+      ],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://blazeapi.org/faq",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Models starting with free/ are free: 450K tokens a day, 10 requests a minute, after email verification. Others bill a prepaid crypto balance (from 1 USD)."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 10,
+        "tpd": 450000
+      },
+      "defaults": {},
+      "models": [],
+      "poolMatch": "^free/"
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "blockrun",
+    "label": "BlockRun",
+    "description": "Pay-per-call API for 117 models, by card or USDC; nine open models are free.",
+    "category": "paid",
+    "website": "https://blockrun.ai",
+    "keyUrl": "https://user.blockrun.ai",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.blockrun.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "/account"
+    },
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://blockrun.ai/docs/api-reference/rate-limits",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Nine open models are free (30 requests a minute and 300 an hour per IP). Others bill prepaid credit, or a monthly invoice on enterprise accounts."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "clod",
+    "label": "CLōD",
+    "description": "Low-cost inference for 50+ models; 100 free requests a day on 8 open models.",
+    "category": "aggregator",
+    "website": "https://clod.io",
+    "keyUrl": "https://app.clod.io",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.clod.io/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://clod.io/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "100 free requests a day on 8 open models (1,000 after a 25 USD purchase). Past that, even free models bill the wallet per token if it has money."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpd": 100
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "dreamprompting",
+    "label": "DreamPrompting",
+    "description": "Free router over providers’ free tiers; every model is free within a daily quota.",
+    "category": "free",
+    "website": "https://dreamprompting.com",
+    "keyUrl": "https://dreamprompting.com/account",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://dreamprompting.com/api/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://dreamprompting.com/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Every model is free: 5,000 requests and 500K tokens a day, 100 a minute. Pro is a flat 9 USD a month with no per-use charges."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 100,
+        "rpd": 5000,
+        "tpd": 500000
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "experiential",
+    "label": "Experiential Labs",
+    "description": "One key for 959 models; the free plan covers three models with 1M tokens a day (card check needed).",
+    "category": "plan",
+    "website": "https://www.experientiallabs.ai",
+    "keyUrl": "https://platform.experientiallabs.ai/api-keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.experientiallabs.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://platform.experientiallabs.ai/docs/billing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [
+        ":free$"
+      ],
+      "trustListingFree": true,
+      "note": "Free plan: GPT-6 Luna, DeepSeek V4.1 Flash and Clef share 1M tokens a day, 10 requests a minute, after a 1 USD card hold. With \"Keep going on credits\" on, use past that bills your balance; models ending in :free always stop instead."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 10,
+        "tpd": 1000000
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "gizmo",
+    "label": "Gizmo Platforms",
+    "description": "Playground and API at provider cost plus a small fee; zero-cost models are free within a monthly quota.",
+    "category": "aggregator",
+    "website": "https://gizmoplatforms.com",
+    "keyUrl": "https://gizmoplatforms.com/developers",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.gizmoplatforms.com/api/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://gizmoplatforms.com/developers",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free plan: 1 USD of usage a week and 1,000 free-model API calls a month, 20 a minute. Beyond that, provider cost plus 5% from a prepaid balance."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 20
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "inferbase",
+    "label": "Inferbase",
+    "description": "AI gateway with its own hosted models; the free plan covers cheap models within daily caps.",
+    "category": "aggregator",
+    "website": "https://inferbase.ai",
+    "keyUrl": "https://inferbase.ai/register",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.inferbase.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "https://api.inferbase.ai/api/v1/inference/credits"
+    },
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://inferbase.ai/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free plan without a card: 5,000 requests a month; hosted models up to 2 USD per million output tokens are free within 100 requests and 0.50 USD a day. Dearer models need credit and are refused without it, not charged."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 10,
+        "rpd": 100
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "iteracompute",
+    "label": "IteraCompute",
+    "description": "Open models (Qwen, GLM, Kimi, DeepSeek) pay as you go, with one free Qwen model.",
+    "category": "paid",
+    "website": "https://iteracompute.com",
+    "keyUrl": "https://platform.iteracompute.com/api-keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.iteracompute.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": false,
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://iteracompute.com/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Qwen3.8-27B is free (30M tokens a month, no card) until 24 November 2026; other models are charged from your balance."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": [
+        {
+          "tpm": 160000,
+          "match": "^qwen/qwen3\\.8-27b$"
+        }
+      ]
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "kiosapi",
+    "label": "KiosAPI",
+    "description": "Indonesian AI gateway priced in rupiah, with five free models.",
+    "category": "aggregator",
+    "website": "https://kiosapi.id",
+    "keyUrl": "https://kiosapi.id/dashboard/keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.kiosapi.id/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://kiosapi.id/docs",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Five models are free: 50 requests a day, 5 a minute, after email verification. Other models are charged in rupiah from a prepaid balance."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": [
+        {
+          "rpm": 5,
+          "rpd": 50,
+          "match": "^(meta/llama-3\\.1-8b|qwen/qwen3-30b|zai/glm-4\\.7-flash|google/gemma-4-26b|aisingapore/sea-lion-27b)$"
+        }
+      ]
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "llmtr",
+    "label": "LLMTR",
+    "description": "Turkish AI gateway with Turkey-hosted and global models, prepaid credit.",
+    "category": "aggregator",
+    "website": "https://llmtr.com",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://llmtr.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": false,
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://llmtr.com/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [
+        "-free$"
+      ],
+      "trustListingFree": true,
+      "note": "Prepaid credit (top-ups carry an 8% margin). Models ending in -free cost nothing; their limits are not published."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "logfare",
+    "label": "Logfare",
+    "description": "Free inference with fair-use limits; prompts are logged.",
+    "category": "free",
+    "website": "https://logfare.ai",
+    "keyUrl": "https://logfare.ai/register",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://logfare.ai/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://logfare.ai/docs",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free, no card, no paid tier. All traffic is logged and may be used for evaluation; premium models need a training opt-in. New accounts have lower limits for their first day."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "concurrent": 6,
+        "rpm": 40,
+        "rpd": 5000
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "lucidity",
+    "label": "Lucidity Composite",
+    "description": "Roleplay-oriented API proxy with a small daily free allowance.",
+    "category": "aggregator",
+    "website": "https://composite.lucidity.sh",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://composite.lucidity.sh/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": false,
+      "freeTierModels": [
+        ":free$",
+        "^lucidityai/synth-2\\.5-flash$"
+      ],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://composite.lucidity.sh",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Models ending in :free share 80 requests a day; Synth has its own 80. Some free \"contributor\" models train on prompts. Others need credits (provider price + 25%) or a plan."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpd": 80
+      },
+      "defaults": {},
+      "models": [],
+      "poolMatch": ":free$"
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "onomeo",
+    "label": "Onomeo",
+    "description": "Pay-as-you-go API for major models (beta).",
+    "category": "paid",
+    "website": "https://onomeo.com",
+    "keyUrl": "https://onomeo.com/dashboard",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://onomeo.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://onomeo.com/models",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Prepaid balance (from 5 USD). Free answers apply only to its web chat, not the API."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {
+        "rpm": 12
+      },
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "plugsky",
+    "label": "PlugSky",
+    "description": "Its own routed models; two free models, the rest on monthly plans.",
+    "category": "plan",
+    "website": "https://plugsky.com",
+    "keyUrl": "https://plugsky.com/dashboard",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://plugsky.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "https://plugsky.com/v1/plugsky/usage"
+    },
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": false,
+      "freeTierModels": [
+        "^plugsky-(micro|lite)$"
+      ],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://plugsky.com/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free plan without a card: plugsky-micro and plugsky-lite, 500 requests and 250K tokens a day (less for new accounts). Others need a plan (8 to 120 USD a month)."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 30,
+        "rpd": 500,
+        "tpd": 250000
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "router9",
+    "label": "Router9",
+    "description": "Image, video and chat models on a monthly credit plan.",
+    "category": "plan",
+    "website": "https://router9.com",
+    "keyUrl": "https://router9.com/connect/keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.router9.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "plan",
+      "plan": {
+        "note": "Monthly credits: Free (about 1 USD), Pro 29 USD, Max 59 USD."
+      },
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://router9.com/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Which models the free plan covers is not published."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "septor",
+    "label": "Septor Labs",
+    "description": "Gateway to open and frontier models, with a 1 USD trial and capped free models.",
+    "category": "aggregator",
+    "website": "https://septorlabs.com",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.septorlabs.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://septorlabs.com/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "A one-time 1 USD trial credit (90 days) and free models capped at 50 requests and 500K tokens a day; free traffic goes through third-party aggregators. Plans from 20 USD a month."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "simplellm",
+    "label": "SimpleLLM",
+    "description": "EU-hosted open models, pay per token.",
+    "category": "paid",
+    "website": "https://simplellm.eu",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.simplellm.eu/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "validate": {
+      "path": "/rate-limit"
+    },
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Its terms could not be verified on the official site."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "speka",
+    "label": "Speka",
+    "description": "Gateway to open models with 1 USD of free usage a month.",
+    "category": "aggregator",
+    "website": "https://speka.me",
+    "keyUrl": "https://speka.me/dashboard/keys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://speka.me/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://speka.me/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free plan without a card: 1 USD of model usage a month, 10 requests a minute; requests are refused once it is spent. Paid plans (19 to 399 USD) bill overage."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 10
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "waterfall",
+    "label": "Waterfall",
+    "description": "Gateway that routes to free models first, then paid ones.",
+    "category": "aggregator",
+    "website": "https://getwaterfall.org",
+    "keyUrl": "https://getwaterfall.org/dashboard/",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.getwaterfall.org/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": false,
+      "freeTierModels": [
+        "-free$"
+      ],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://getwaterfall.org/pricing/",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free without a card on models ending in -free (community rate limits). Paid models need card credits (from 10 USD, 4% markup) or x402; its auto route may use them when credit exists."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "open_meteo",
+    "label": "Open-Meteo",
+    "description": "Open weather forecasts from national weather services. No key needed.",
+    "category": "weather",
+    "weather": {
+      "service": "open_meteo"
+    },
+    "website": "https://open-meteo.com",
+    "keyUrl": "https://open-meteo.com/en/pricing",
+    "adapter": "weather",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "weather": true
+    },
+    "live": [],
+    "baseUrl": "https://api.open-meteo.com/v1",
+    "editableBaseUrl": true,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": true,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "type": "weather",
+          "id": "open-meteo-forecast",
+          "name": "Open-Meteo Forecast"
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://open-meteo.com/en/pricing",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free without a key for non-commercial use: 600 calls a minute, 5,000 an hour, 10,000 a day, 300,000 a month. Commercial use needs a paid plan (a key and customer-api.open-meteo.com as the base URL). Data is CC BY 4.0: credit Open-Meteo."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 600,
+        "rpd": 10000
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "openweathermap",
+    "label": "OpenWeatherMap",
+    "description": "Current weather and a 5-day forecast in 3-hour steps.",
+    "category": "weather",
+    "weather": {
+      "service": "openweathermap"
+    },
+    "website": "https://openweathermap.org",
+    "keyUrl": "https://home.openweathermap.org/api_keys",
+    "adapter": "weather",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "weather": true
+    },
+    "live": [],
+    "baseUrl": "https://api.openweathermap.org",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "none"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "type": "weather",
+          "id": "openweathermap-forecast",
+          "name": "OpenWeatherMap Forecast"
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://openweathermap.org/price",
+      "checkedAt": "2026-10-30",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free plan: 60 calls a minute and 1,000,000 a month for current weather, the 5-day forecast and geocoding. A place name costs one extra geocoding call. Requests fail beyond the limits."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 60
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "weatherapi",
+    "label": "WeatherAPI.com",
+    "description": "Current weather and forecasts by place name or coordinates.",
+    "category": "weather",
+    "weather": {
+      "service": "weatherapi"
+    },
+    "website": "https://www.weatherapi.com",
+    "keyUrl": "https://www.weatherapi.com/my/",
+    "adapter": "weather",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "weather": true
+    },
+    "live": [],
+    "baseUrl": "https://api.weatherapi.com/v1",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "none"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "type": "weather",
+          "id": "weatherapi-forecast",
+          "name": "WeatherAPI Forecast"
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://www.weatherapi.com/pricing.aspx",
+      "checkedAt": "2026-10-30",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free plan: 100,000 calls a month with a 3-day forecast. Beyond that no data until the next month: it never bills automatically."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpm": 60
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "tomorrow_io",
+    "label": "Tomorrow.io",
+    "description": "Hyperlocal forecasts with hourly and daily steps.",
+    "category": "weather",
+    "weather": {
+      "service": "tomorrow"
+    },
+    "website": "https://www.tomorrow.io/weather-api",
+    "keyUrl": "https://app.tomorrow.io/development/keys",
+    "adapter": "weather",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "weather": true
+    },
+    "live": [],
+    "baseUrl": "https://api.tomorrow.io/v4",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "none"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "type": "weather",
+          "id": "tomorrow-forecast",
+          "name": "Tomorrow.io Forecast"
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://support.tomorrow.io/hc/en-us/articles/20273728362644-Free-API-Plan-Rate-Limits",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free plan: 500 calls a day, 25 an hour, 3 a second. Asking for current weather and a forecast uses two calls. Requests fail beyond the limits."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpd": 500
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "visual_crossing",
+    "label": "Visual Crossing",
+    "description": "Timeline weather: current, hourly and 15-day forecasts in one call.",
+    "category": "weather",
+    "weather": {
+      "service": "visual_crossing"
+    },
+    "website": "https://www.visualcrossing.com/weather-api",
+    "keyUrl": "https://www.visualcrossing.com/account",
+    "adapter": "weather",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {
+      "weather": true
+    },
+    "live": [],
+    "baseUrl": "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "none"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "static": [
+        {
+          "type": "weather",
+          "id": "visual-crossing-timeline",
+          "name": "Visual Crossing Timeline",
+          "price_per_call": 0.0001
+        }
+      ],
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "free_tier",
+      "freeTierAll": true,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://www.visualcrossing.com/weather-data-editions",
+      "checkedAt": "2026-11-07",
+      "alwaysFree": [],
+      "trustListingFree": true,
+      "note": "Free plan: about 1,000 records a day (30,000 a month), commercial use allowed; one forecast for one place is one record. Paid use is the separate Metered plan: choose paid for such keys."
+    },
+    "limits": {
+      "pool": "account",
+      "account": {
+        "rpd": 1000
+      },
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "zai",
+    "label": "Z.ai (GLM)",
+    "description": "GLM models from Zhipu, international endpoint. Flash models are free.",
+    "category": "free",
+    "website": "https://z.ai",
+    "keyUrl": "https://z.ai/manage-apikey/apikey-list",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://api.z.ai/api/paas/v4",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.z.ai/guides/overview/pricing",
+      "checkedAt": "2026-10-28",
+      "alwaysFree": [
+        "^glm-4\\.7-flash$",
+        "^glm-4\\.5-flash$",
+        "^glm-4\\.6v-flash$"
+      ],
+      "trustListingFree": true,
+      "note": "Only GLM-4.7-Flash, GLM-4.5-Flash and GLM-4.6V-Flash are free; newer Flash models such as GLM-5.3-Flash are paid."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  },
+  {
+    "id": "zhipu",
+    "label": "Zhipu BigModel",
+    "description": "GLM models from Zhipu, mainland China endpoint. Flash models are free.",
+    "category": "free",
+    "website": "https://open.bigmodel.cn",
+    "keyUrl": "https://open.bigmodel.cn/usercenter/apikeys",
+    "adapter": "openai_compatible",
+    "capabilities": [
+      "chat"
+    ],
+    "media": {},
+    "live": [],
+    "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
+    "editableBaseUrl": false,
+    "baseUrlSchemes": [
+      "http",
+      "https"
+    ],
+    "auth": {
+      "type": "bearer"
+    },
+    "keyOptional": false,
+    "fields": [],
+    "headers": {},
+    "models": {
+      "extraPaths": [],
+      "optIn": []
+    },
+    "extraModels": [],
+    "billing": {
+      "defaultMode": "paid",
+      "freeTierAll": false,
+      "freeTierModels": [],
+      "localOnly": false,
+      "keylessOnly": false,
+      "source": "https://docs.z.ai/guides/overview/pricing",
+      "checkedAt": "2026-10-28",
+      "alwaysFree": [
+        "^glm-4\\.7-flash$",
+        "^glm-4\\.5-flash$",
+        "^glm-4\\.6v-flash$"
+      ],
+      "trustListingFree": true,
+      "note": "Only GLM-4.7-Flash, GLM-4.5-Flash and GLM-4.6V-Flash are free; newer Flash models such as GLM-5.3-Flash are paid."
+    },
+    "limits": {
+      "pool": "model",
+      "account": {},
+      "defaults": {},
+      "models": []
+    },
+    "quota": {
+      "headerPeriods": {
+        "requests": "minute",
+        "tokens": "minute"
+      },
+      "plainHeaderMetric": "rpm"
+    },
+    "quirks": {}
+  }
+]

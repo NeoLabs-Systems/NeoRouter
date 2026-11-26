@@ -1,0 +1,182 @@
+name: Reusable Release Asset Publisher
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: Existing GitHub release tag to publish
+        required: true
+        type: string
+      release_sha:
+        description: Commit SHA the release tag must resolve to
+        required: true
+        type: string
+      prerelease:
+        description: Whether to publish the draft as a prerelease
+        required: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  publish-release-assets:
+    name: Complete GitHub release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release tooling
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
+
+      - name: Set up Go
+        uses: NeoLabs-Systems/neolabs-go/.github/actions/setup-go@1cd3668653c972a8c10cffcf52be95638bba74f8
+
+      - name: Verify draft release target
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          release_json="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json databaseId,isDraft,isPrerelease,tagName)"
+          if [[ "$(jq -r '.isDraft' <<<"$release_json")" != "true" ]]; then
+            echo "::error::Release $RELEASE_TAG must remain a draft until assets are verified."
+            exit 1
+          fi
+          tag_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${RELEASE_TAG}" --jq '.sha')"
+          if [[ "$tag_sha" != "$RELEASE_SHA" ]]; then
+            echo "::error::Release tag $RELEASE_TAG resolves to $tag_sha, expected $RELEASE_SHA."
+            exit 1
+          fi
+
+      - name: Download CLI and web bundle artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          name: neorouter-cli-bundle
+        continue-on-error: true
+
+      - name: Verify and upload missing release assets
+        id: cli_assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          expected_assets=(
+            "dist/neorouter-cli-linux-x64"
+            "dist/neorouter-cli-linux-arm64"
+            "dist/neorouter-cli-macos-x64"
+            "dist/neorouter-cli-macos-arm64"
+            "dist/neorouter-cli-windows-x64.exe"
+            "dist/neorouter-web-${version}.tar.gz"
+            "dist/neorouter-runtime-linux-x64-${version}.zip"
+            "dist/neorouter-runtime-linux-arm64-${version}.zip"
+            "dist/neorouter-runtime-macos-x64-${version}.zip"
+            "dist/neorouter-runtime-macos-arm64-${version}.zip"
+            "dist/neorouter-runtime-windows-x64-${version}.zip"
+            "dist/neorouter-runtime-manifest-${version}.json"
+            "dist/neorouter-runtime-manifest-${version}.json.sig"
+          )
+
+          available_assets=()
+          missing_assets=()
+          for asset in "${expected_assets[@]}"; do
+            if [[ -f "$asset" ]]; then
+              available_assets+=("$asset")
+            else
+              missing_assets+=("$asset")
+            fi
+          done
+
+          if [[ "${#available_assets[@]}" -eq 0 ]]; then
+            echo "::error::No release build produced an artifact."
+            exit 1
+          fi
+
+          # Upload only missing or size-mismatched artifacts cleanly using shared helper.
+          existing_json="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets)"
+          to_upload=()
+          for asset in "${available_assets[@]}"; do
+            name="$(basename "$asset")"
+            size="$(wc -c < "$asset" | tr -d ' ')"
+            if ! jq --exit-status --arg name "$name" --argjson size "$size" \
+              '.assets | any(.name == $name and .size == $size)' <<<"$existing_json" >/dev/null; then
+              to_upload+=("$asset")
+            fi
+          done
+          if [[ "${#to_upload[@]}" -gt 0 ]]; then
+            uploaded=0
+            for attempt in 1 2 3 4 5; do
+              if gh release upload "$RELEASE_TAG" "${to_upload[@]}" --repo "$GITHUB_REPOSITORY" --clobber; then
+                uploaded=1
+                break
+              fi
+              echo "Upload attempt ${attempt} failed; retrying..."
+              sleep $((attempt * 5))
+            done
+            if [[ "$uploaded" -ne 1 ]]; then
+              echo "::error::Failed uploading missing assets to $RELEASE_TAG."
+              exit 1
+            fi
+          fi
+
+          uploaded_assets="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets)"
+          for asset in "${available_assets[@]}"; do
+            name="$(basename "$asset")"
+            if ! jq --exit-status --arg name "$name" '.assets | map(.name) | index($name) != null' <<<"$uploaded_assets" >/dev/null; then
+              echo "::error::Release asset was not attached: $name"
+              exit 1
+            fi
+          done
+
+          {
+            echo "missing_count=${#missing_assets[@]}"
+            echo "missing<<EOF"
+            printf '%s\n' "${missing_assets[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Refresh release download notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOWORK: 'off'
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: go run ./cmd/neorouter-release release-download --tag "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY"
+
+      - name: Publish completed GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IS_PRERELEASE: ${{ inputs.prerelease }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          publish_args=(
+            "$RELEASE_TAG"
+            --repo "$GITHUB_REPOSITORY"
+            --draft=false
+          )
+          if [[ "$IS_PRERELEASE" == "true" ]]; then
+            publish_args+=(--prerelease)
+          else
+            publish_args+=(--latest)
+          fi
+          gh release edit "${publish_args[@]}"
+
+          release_json="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,url)"
+          if [[ "$(jq -r '.isDraft' <<<"$release_json")" != "false" ]]; then
+            echo "::error::Release $RELEASE_TAG is still a draft after publishing."
+            exit 1
+          fi
+          echo "Published release: $(jq -r '.url' <<<"$release_json")"
+
+      - name: Warn about missing platform assets
+        if: steps.cli_assets.outputs.missing_count != '0'
+        env:
+          MISSING_ASSETS: ${{ steps.cli_assets.outputs.missing }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          echo "::warning::Release $RELEASE_TAG published with missing asset(s):"
+          printf '%s\n' "$MISSING_ASSETS"
