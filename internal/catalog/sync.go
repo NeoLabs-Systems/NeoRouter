@@ -17,7 +17,7 @@ type SyncResult struct {
 // by hand.
 var overrideKeys = []string{
 	"free", "billedAt", "noFreeTier", "priceUnit", "unitPrice", "priceIn", "priceOut",
-	"priceCachedIn", "priceCacheWrite", "contextWindow", "tools", "vision", "intelligence",
+	"priceCachedIn", "priceCacheWrite", "contextWindow", "maxOutput", "tools", "vision", "intelligence",
 }
 
 // rawListing is the models.raw_json the sync writes: what the provider's own
@@ -83,7 +83,7 @@ func (s *Service) SyncAccount(ctx context.Context, accountID string) (*SyncResul
 			continue
 		}
 		seen[model.ID] = true
-		facts := s.Metadata.ProviderFacts(definitionID, model.ID)
+		facts := mergeFacts(s.Metadata.ProviderFacts(definitionID, model.ID), definition.FactsFor(model.ID))
 		priceFromFacts := !model.PriceKnown && facts.PriceIn != nil && facts.PriceOut != nil &&
 			*facts.PriceIn >= 0 && *facts.PriceOut >= 0
 		displayName := firstNonEmpty(model.Name, facts.Name, model.ID)

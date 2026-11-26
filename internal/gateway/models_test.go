@@ -40,6 +40,23 @@ func modelIDs(t *testing.T, f *fixture, secret string) []string {
 	return ids
 }
 
+// listedPool is the `pool:<group>` entry of GET /v1/models, nil when the listing
+// does not carry it. Headers pick the shape: none for OpenAI, an
+// anthropic-version for Anthropic.
+func listedPool(t *testing.T, f *fixture, secret, name string, headers map[string]string) *Obj {
+	t.Helper()
+	response := f.do(http.MethodGet, "/v1/models", secret, nil, headers)
+	if response.Code != http.StatusOK {
+		t.Fatalf("models status = %d: %s", response.Code, response.Body.String())
+	}
+	for _, item := range getList(decode(t, response), "data") {
+		if model := asObj(item); getString(model, "id") == "pool:"+name {
+			return model
+		}
+	}
+	return nil
+}
+
 // twoKinds is a free model and a paid one, as the JS oracle's two providers.
 func twoKinds(t *testing.T, f *fixture) {
 	t.Helper()
@@ -169,7 +186,8 @@ func TestRoutingGroupsAreListedAsModels(t *testing.T) {
 	}, nil); err != nil {
 		t.Fatalf("save group: %v", err)
 	}
-	ids := modelIDs(t, f, kindsKey(t, f, true, true, false))
+	secret := kindsKey(t, f, true, true, false)
+	ids := modelIDs(t, f, secret)
 	found := false
 	for _, id := range ids {
 		if id == "pool:small-work" {
@@ -178,6 +196,12 @@ func TestRoutingGroupsAreListedAsModels(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("no pool:small-work in %v", ids)
+	}
+	// A group is a union: what a client may safely send is the smallest window in
+	// it, not nothing at all (which made clients guess a family default).
+	group := listedPool(t, f, secret, "small-work", nil)
+	if window, ok := getNumber(group, "context_length"); !ok || window != 128000 {
+		t.Errorf("context_length = %v, want 128000", window)
 	}
 	// The group routes, and the answer names the group.
 	response := f.chat(kindsKey(t, f, true, true, false), newObjOf(
@@ -192,6 +216,81 @@ func TestRoutingGroupsAreListedAsModels(t *testing.T) {
 	}
 	if model := response.Header().Get("X-NeoRouter-Model"); model != "mock/ok-alpha" {
 		t.Errorf("X-NeoRouter-Model = %q", model)
+	}
+}
+
+// TestRoutingGroupListsItsSmallestMemberWindow is the upstream case: a group is
+// a union of models, so the window a client may fill is the one of its smallest
+// member — any member may be the one that answers.
+func TestRoutingGroupListsItsSmallestMemberWindow(t *testing.T) {
+	f := newFixture(t, nil)
+	f.mockProvider("mock", "free_tier")
+	f.model("mock", "ok-wide", func(entry *routing.Entry) { entry.ContextWindow = 1000000 })
+	f.model("mock", "ok-narrow", func(entry *routing.Entry) { entry.ContextWindow = 32768 })
+	if _, err := f.routing.SaveGroup(f.userID, routing.GroupInput{
+		Name:   "small-work",
+		Models: []string{"mock/ok-wide", "mock/ok-narrow"},
+	}, nil); err != nil {
+		t.Fatalf("save group: %v", err)
+	}
+	secret := kindsKey(t, f, true, true, false)
+	for _, shape := range []struct {
+		name    string
+		headers map[string]string
+	}{
+		{name: "openai"},
+		{name: "anthropic", headers: map[string]string{"anthropic-version": "2023-06-01"}},
+	} {
+		listed := listedPool(t, f, secret, "small-work", shape.headers)
+		if listed == nil {
+			t.Fatalf("%s: no pool:small-work", shape.name)
+		}
+		if window, ok := getNumber(listed, "context_length"); !ok || window != 32768 {
+			t.Errorf("%s: context_length = %v, want 32768", shape.name, window)
+		}
+	}
+}
+
+// TestRoutingGroupHoldsAMemberWithoutAWindowToTheUnknownLimit: routing treats an
+// unpublished window as routing.UnknownContextLimit rather than as infinite, so
+// such a member caps the group too.
+func TestRoutingGroupHoldsAMemberWithoutAWindowToTheUnknownLimit(t *testing.T) {
+	f := newFixture(t, nil)
+	f.mockProvider("mock", "free_tier")
+	f.model("mock", "ok-wide", func(entry *routing.Entry) { entry.ContextWindow = 1000000 })
+	f.model("mock", "ok-unpublished", func(entry *routing.Entry) { entry.ContextWindow = 0 })
+	if _, err := f.routing.SaveGroup(f.userID, routing.GroupInput{
+		Name:   "unpublished-work",
+		Models: []string{"mock/ok-wide", "mock/ok-unpublished"},
+	}, nil); err != nil {
+		t.Fatalf("save group: %v", err)
+	}
+	listed := listedPool(t, f, kindsKey(t, f, true, true, false), "unpublished-work", nil)
+	if listed == nil {
+		t.Fatal("no pool:unpublished-work")
+	}
+	if window, ok := getNumber(listed, "context_length"); !ok || window != float64(routing.UnknownContextLimit) {
+		t.Errorf("context_length = %v, want %d", window, routing.UnknownContextLimit)
+	}
+}
+
+// TestRoutingGroupWithNoReachableMemberListsNoWindow: there is no member to take
+// a minimum of, so the entry is listed with no context_length at all.
+func TestRoutingGroupWithNoReachableMemberListsNoWindow(t *testing.T) {
+	f := newFixture(t, nil)
+	f.mockProvider("mock", "free_tier", "ok-alpha")
+	if _, err := f.routing.SaveGroup(f.userID, routing.GroupInput{
+		Name:   "off-catalog",
+		Models: []string{"mock/ok-missing"},
+	}, nil); err != nil {
+		t.Fatalf("save group: %v", err)
+	}
+	listed := listedPool(t, f, kindsKey(t, f, true, true, false), "off-catalog", nil)
+	if listed == nil {
+		t.Fatal("no pool:off-catalog")
+	}
+	if window, ok := listed.Get("context_length"); ok {
+		t.Errorf("context_length = %v, want none", window)
 	}
 }
 

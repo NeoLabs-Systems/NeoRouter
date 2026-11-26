@@ -135,7 +135,21 @@ func (d definitionsOf) Definition(id string) (catalog.Definition, bool) {
 			KeylessOnly:      def.Billing.KeylessOnly,
 			TrustListingFree: &trust,
 		},
+		ModelFacts: modelFactsOf(def.Models.Facts),
 	}, true
+}
+
+// modelFactsOf adapts the documented per-model limits of a definition to the
+// catalog's view, nil when the definition documents none.
+func modelFactsOf(facts map[string]providers.ModelFacts) map[string]catalog.ModelFacts {
+	if len(facts) == 0 {
+		return nil
+	}
+	adapted := make(map[string]catalog.ModelFacts, len(facts))
+	for modelID, entry := range facts {
+		adapted[modelID] = catalog.ModelFacts{ContextWindow: entry.ContextWindow, MaxOutput: entry.MaxOutput}
+	}
+	return adapted
 }
 
 // accountModels lists a connection's models for a catalog sync

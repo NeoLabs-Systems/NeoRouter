@@ -161,6 +161,18 @@ type ModelsSpec struct {
 	ExcludeFree bool `json:"excludeFree,omitempty"`
 	// OptIn are patterns of models that are listed but start switched off.
 	OptIn []string `json:"optIn"`
+	// Facts are documented per-model limits for hosts whose listing omits them,
+	// keyed by model id (registry.js models.facts). The listing itself always
+	// wins; these beat models.dev for this provider.
+	Facts map[string]ModelFacts `json:"facts,omitempty"`
+}
+
+// ModelFacts are the limits a provider documents for one model whose listing
+// does not report them. An absent field is a limit the provider does not
+// document, so the catalog falls back to models.dev for it.
+type ModelFacts struct {
+	ContextWindow *int64 `json:"contextWindow,omitempty"`
+	MaxOutput     *int64 `json:"maxOutput,omitempty"`
 }
 
 // ExtraModel is a model a provider serves but does not list (NVIDIA's FLUX

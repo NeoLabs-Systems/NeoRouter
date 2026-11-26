@@ -360,6 +360,46 @@ func (s *Service) modelJSON(key *Key, entry *routing.Entry, capability string, c
 	return model
 }
 
+// groupContextLength is groupContextLength: a routing group is a union of
+// models, so what a client may safely send is the smallest window in the group,
+// because any member may be the one that answers. Members that publish no window
+// are held to routing.UnknownContextLimit, so they cap the group too. The group
+// itself is not a catalog entry and has no limit of its own, which is why it used
+// to be listed with none at all. A group with no reachable member has no window
+// to report (nil, so the key is left out of the listing altogether).
+func (s *Service) groupContextLength(group *routing.Group, entries []*routing.Entry) any {
+	smallest := 0
+	members := 0
+	for _, entry := range entries {
+		if !s.opts.Routing.Contains(group, entry) {
+			continue
+		}
+		window := routing.UnknownContextLimit
+		if entry.ContextWindow > 0 {
+			window = entry.ContextWindow
+		}
+		if members == 0 || window < smallest {
+			smallest = window
+		}
+		members++
+	}
+	if members == 0 {
+		return nil
+	}
+	return float64(smallest)
+}
+
+// poolModel is one `pool:<group>` entry of the auto list: the group's name, the
+// smallest window its members offer (when it has one) and the routing group.
+func (s *Service) poolModel(group *routing.Group, entries []*routing.Entry) *Obj {
+	model := newObjOf("id", "pool:"+group.Name, "name", group.Name)
+	if contextLength := s.groupContextLength(group, entries); contextLength != nil {
+		model.Set("context_length", contextLength)
+	}
+	model.Set("neorouter", newObjOf("routingGroup", group.Name))
+	return model
+}
+
 // handleModels is GET /v1/models: the models this key may use, autos first.
 func (s *Service) handleModels(w http.ResponseWriter, r *http.Request, key *Key) {
 	capability := "chat"
@@ -378,11 +418,10 @@ func (s *Service) handleModels(w http.ResponseWriter, r *http.Request, key *Key)
 			}
 		}
 		for _, group := range s.opts.Routing.Groups(key.UserID()) {
-			id := "pool:" + group.Name
-			if !s.opts.Routing.RouteAllowedByKey(id, key.Routing) {
+			if !s.opts.Routing.RouteAllowedByKey("pool:"+group.Name, key.Routing) {
 				continue
 			}
-			autos = append(autos, newObjOf("id", id, "name", group.Name, "neorouter", newObjOf("routingGroup", group.Name)))
+			autos = append(autos, s.poolModel(group, reachable))
 		}
 	}
 	entries := make([]*routing.Entry, 0, len(reachable))
@@ -395,7 +434,11 @@ func (s *Service) handleModels(w http.ResponseWriter, r *http.Request, key *Key)
 		createdAt := time.Now().UTC().Format("2006-01-02T15:04:05.000Z")
 		data := make([]any, 0, len(autos)+len(entries))
 		for _, auto := range autos {
-			data = append(data, newObjOf("type", "model", "id", getString(auto, "id"), "display_name", getString(auto, "name"), "created_at", createdAt))
+			model := newObjOf("type", "model", "id", getString(auto, "id"), "display_name", getString(auto, "name"), "created_at", createdAt)
+			if contextLength, ok := get(auto, "context_length"); ok {
+				model.Set("context_length", contextLength)
+			}
+			data = append(data, model)
 		}
 		for _, entry := range entries {
 			data = append(data, newObjOf("type", "model", "id", entry.ID, "display_name", s.listedName(entry), "created_at", createdAt))
@@ -410,14 +453,20 @@ func (s *Service) handleModels(w http.ResponseWriter, r *http.Request, key *Key)
 	}
 	data := make([]any, 0, len(autos)+len(entries))
 	for _, auto := range autos {
-		data = append(data, newObjOf(
+		model := newObjOf(
 			"id", getString(auto, "id"),
 			"object", "model",
 			"created", created,
 			"owned_by", "neorouter",
 			"name", getString(auto, "name"),
-			"neorouter", getValue(auto, "neorouter"),
-		))
+		)
+		// A group's window comes after its name and before its routing group,
+		// as the Node listing sends it.
+		if contextLength, ok := get(auto, "context_length"); ok {
+			model.Set("context_length", contextLength)
+		}
+		model.Set("neorouter", getValue(auto, "neorouter"))
+		data = append(data, model)
 	}
 	for _, entry := range entries {
 		data = append(data, s.modelJSON(key, entry, capability, created))

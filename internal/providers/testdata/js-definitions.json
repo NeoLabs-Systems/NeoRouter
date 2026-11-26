@@ -1434,7 +1434,13 @@
     "models": {
       "path": "/models",
       "extraPaths": [],
-      "optIn": []
+      "optIn": [],
+      "facts": {
+        "deepseek-v4.1-flash": {
+          "contextWindow": 262144,
+          "maxOutput": 16384
+        }
+      }
     },
     "extraModels": [],
     "billing": {

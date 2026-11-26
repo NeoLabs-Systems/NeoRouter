@@ -82,6 +82,9 @@ type Definition struct {
 	BaseURL  string
 	Quirks   Quirks
 	Billing  Billing
+	// ModelFacts are the limits the definition documents for models whose
+	// listing omits them (models.facts), keyed by model id.
+	ModelFacts map[string]ModelFacts
 }
 
 // Definitions is the provider registry as the catalog consumes it

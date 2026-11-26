@@ -25,7 +25,7 @@ func (p *RoutingPlan) Rank(opts RankOptions) []*Candidate {
 	slotPriority := false
 	if p.parsed.Auto {
 		for _, entry := range p.Entries {
-			if entry.IsFlatRate && (p.Group == nil || p.svc.groupContains(p.Group, entry)) {
+			if entry.IsFlatRate && (p.Group == nil || p.svc.Contains(p.Group, entry)) {
 				slotPriority = true
 				break
 			}

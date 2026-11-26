@@ -260,6 +260,14 @@ func TestDefinitionValidation(t *testing.T) {
 		{"field without a key", func(def map[string]any) {
 			def["fields"] = []any{map[string]any{"label": "Account id"}}
 		}, "fields.key: Required"},
+		{"zero documented context window", func(def map[string]any) {
+			def["models"] = map[string]any{"extraPaths": []any{}, "optIn": []any{},
+				"facts": map[string]any{"m": map[string]any{"contextWindow": 0}}}
+		}, "models.facts.m.contextWindow: Number must be greater than 0"},
+		{"negative documented output cap", func(def map[string]any) {
+			def["models"] = map[string]any{"extraPaths": []any{}, "optIn": []any{},
+				"facts": map[string]any{"m": map[string]any{"maxOutput": -1}}}
+		}, "models.facts.m.maxOutput: Number must be greater than 0"},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {

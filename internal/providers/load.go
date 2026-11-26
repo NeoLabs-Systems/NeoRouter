@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -96,6 +97,7 @@ func validateDefinition(def *Definition) []string {
 		}
 	}
 	issues = append(issues, validateMedia(def.Media)...)
+	issues = append(issues, validateModels(def.Models)...)
 	for _, dialect := range def.Live {
 		if !oneOf(dialect, LiveOpenAI, LiveRealtime, LiveGemini) {
 			add("live: Invalid enum value")
@@ -151,6 +153,28 @@ func validateMedia(media MediaSpec) []string {
 		case nil, string, bool:
 		default:
 			issues = append(issues, fmt.Sprintf("media.%s: Invalid input", entry.name))
+		}
+	}
+	return issues
+}
+
+// validateModels applies the models schema registry.js validates: the
+// documented facts are positive whole numbers, keyed by model id.
+func validateModels(models ModelsSpec) []string {
+	var issues []string
+	ids := make([]string, 0, len(models.Facts))
+	for id := range models.Facts {
+		ids = append(ids, id)
+	}
+	// Sorted so a definition with several bad facts always reports them alike.
+	sort.Strings(ids)
+	for _, id := range ids {
+		facts := models.Facts[id]
+		if facts.ContextWindow != nil && *facts.ContextWindow <= 0 {
+			issues = append(issues, fmt.Sprintf("models.facts.%s.contextWindow: Number must be greater than 0", id))
+		}
+		if facts.MaxOutput != nil && *facts.MaxOutput <= 0 {
+			issues = append(issues, fmt.Sprintf("models.facts.%s.maxOutput: Number must be greater than 0", id))
 		}
 	}
 	return issues

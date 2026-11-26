@@ -220,7 +220,7 @@ func (s *Service) toEntry(row *entryRow) Entry {
 		AccountEnabled:         row.accountEnabled != 0,
 		AccountStatus:          row.accountStatus,
 		ContextWindow:          pickInt(overrides, "contextWindow", int64PtrIfValid(row.contextWindow), int64PtrIfValid(row.mdContext)),
-		MaxOutput:              int64PtrIfValid(row.maxOutput),
+		MaxOutput:              pickInt(overrides, "maxOutput", int64PtrIfValid(row.maxOutput), nil),
 		Tools:                  pickBool(overrides, "tools", boolPtrIfValid(row.supportsTools), boolPtrIfValid(row.mdTools)),
 		Vision:                 pickBool(overrides, "vision", boolPtrIfValid(row.supportsVision), boolPtrIfValid(row.mdVision)),
 		JSON:                   boolPtrIfValid(row.supportsJSON),

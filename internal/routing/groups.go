@@ -318,7 +318,7 @@ func (s *Service) GroupStatuses(userID string, now time.Time) []*GroupStatus {
 		accounts := map[string]bool{}
 		plans := []GroupPlanStatus{}
 		for _, entry := range entries {
-			if !entry.IsPlan || !s.groupContains(group, entry) || accounts[entry.AccountID] {
+			if !entry.IsPlan || !s.Contains(group, entry) || accounts[entry.AccountID] {
 				continue
 			}
 			room := s.planRoomOf(entry, now)
@@ -342,10 +342,10 @@ func (s *Service) GroupStatuses(userID string, now time.Time) []*GroupStatus {
 	return out
 }
 
-// groupContains reports whether a model is in a group. Membership is a union:
-// an account includes all its models; model patterns can also include models
-// across accounts. Key policy still applies separately.
-func (s *Service) groupContains(group *Group, entry *Entry) bool {
+// Contains is groups.contains: whether a model is in a group. Membership is a
+// union: an account includes all its models; model patterns can also include
+// models across accounts. Key policy still applies separately.
+func (s *Service) Contains(group *Group, entry *Entry) bool {
 	if group == nil || entry == nil {
 		return false
 	}

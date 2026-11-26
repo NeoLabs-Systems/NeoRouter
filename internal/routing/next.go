@@ -145,7 +145,7 @@ func (p *RoutingPlan) Next(opts NextOptions) *Candidate {
 		choice.Entry.RoutingReason = ""
 	}
 	choice.Entry.RoutingGroup = ""
-	if p.Group != nil && p.svc.groupContains(p.Group, choice.Entry) {
+	if p.Group != nil && p.svc.Contains(p.Group, choice.Entry) {
 		choice.Entry.RoutingGroup = p.Group.Name
 	}
 	p.tried[choice.Entry.Ref] = true

@@ -60,7 +60,7 @@ func (p *RoutingPlan) Context() *PlanContext {
 // Rejection is the hard filter: a reason string when the entry cannot serve,
 // "" when it can.
 func (s *Service) Rejection(entry *Entry, ctx *PlanContext, now time.Time) string {
-	if ctx.Group != nil && (!ctx.LastResort || !allowsOutside(ctx.Alias, ctx.InitialGroup, ctx.Group)) && !s.groupContains(ctx.Group, entry) {
+	if ctx.Group != nil && (!ctx.LastResort || !allowsOutside(ctx.Alias, ctx.InitialGroup, ctx.Group)) && !s.Contains(ctx.Group, entry) {
 		return "outside_routing_group"
 	}
 	if !ctx.LastResort && ctx.Group != nil && ctx.Group.MinIntelligence != nil {
@@ -154,7 +154,7 @@ func (s *Service) Rejection(entry *Entry, ctx *PlanContext, now time.Time) strin
 	}
 	// An unknown window is not an infinite one: beyond this size only models
 	// that publish their limit are tried.
-	if entry.ContextWindow == 0 && ctx.InputTokens+reserve > unknownContextLimit {
+	if entry.ContextWindow == 0 && ctx.InputTokens+reserve > UnknownContextLimit {
 		return "context_unknown"
 	}
 	if len(ctx.Constraints.IncludeProviders) > 0 && !containsString(ctx.Constraints.IncludeProviders, entry.ProviderSlug) && !containsString(ctx.Constraints.IncludeProviders, entry.DefinitionID) {

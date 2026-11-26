@@ -313,4 +313,11 @@ var testDefinitions = map[string]Definition{
 		Billing: Billing{FreeTierAll: true},
 	},
 	"custom_openai": {ID: "custom_openai", Label: "Custom OpenAI-compatible", Category: "custom"},
+	// Kourier documents the limits its bare listing omits (models.facts in
+	// definitions.json; kourier_test.go exercises a sync with them).
+	"kourier": {
+		ID: "kourier", Label: "Kourier", Category: "plan",
+		Billing:    Billing{TrustListingFree: bp(false)},
+		ModelFacts: map[string]ModelFacts{"deepseek-v4.1-flash": {ContextWindow: ip(262144), MaxOutput: ip(16384)}},
+	},
 }

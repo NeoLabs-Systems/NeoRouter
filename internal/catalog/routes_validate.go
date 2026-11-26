@@ -111,6 +111,7 @@ func validateModelPatch(body map[string]any) (ModelUpdate, error) {
 		{key: "priceCacheWrite", kind: "number", min: ptrFloat(0)},
 		{key: "priceOut", kind: "number", min: ptrFloat(0)},
 		{key: "contextWindow", kind: "number", integer: true},
+		{key: "maxOutput", kind: "number", integer: true},
 		{key: "tools", kind: "boolean"},
 		{key: "vision", kind: "boolean"},
 		{key: "intelligence", kind: "number", min: ptrFloat(0), max: ptrFloat(1)},

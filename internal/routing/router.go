@@ -15,8 +15,12 @@ const (
 	defaultOutputTokens     = 1024
 	minOutputReserve        = 256
 	unknownCapabilityFactor = 0.85
-	unknownContextLimit     = 131072
-	relativeBlend           = 0.5
+	// UnknownContextLimit is UNKNOWN_CONTEXT_LIMIT: the window a model that
+	// publishes none is held to. Routing uses it to refuse an input that no
+	// known window could hold, and a routing group reports it for a member
+	// without a window, so that member caps the group.
+	UnknownContextLimit = 131072
+	relativeBlend       = 0.5
 	// Profiles that care about quality (intelligence weight at least this
 	// share) push candidates that are clearly weaker than the best one down
 	// hard, so a tiny model that is merely fast and reliable is not picked for
