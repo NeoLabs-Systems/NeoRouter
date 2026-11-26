@@ -487,11 +487,6 @@ func (s *ortSession) Close() {
 	}
 }
 
-// openSharedLib loads a shared library by path.
-func openSharedLib(path string) (uintptr, error) {
-	return purego.Dlopen(path, purego.RTLD_NOW|purego.RTLD_GLOBAL)
-}
-
 // modelFile finds a file in a model directory, preferring an exact name.
 func modelFile(dir string, names ...string) (string, bool) {
 	for _, name := range names {
