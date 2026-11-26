@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -376,7 +377,9 @@ func TestServicePaths(t *testing.T) {
 	if ServiceLabel != "systems.neolabs.neorouter" {
 		t.Fatalf("service label = %q", ServiceLabel)
 	}
-	if Version != "0.2.1" {
+	// The version is bumped by the release tooling (stable and -beta.N alike),
+	// so assert a sane semver rather than a literal that rots on every bump.
+	if !regexp.MustCompile(`^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$`).MatchString(Version) {
 		t.Fatalf("version = %q", Version)
 	}
 }

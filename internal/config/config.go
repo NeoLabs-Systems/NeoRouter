@@ -12,7 +12,7 @@ import (
 )
 
 // Version is the NeoRouter release version (mirrors package.json).
-const Version = "0.2.1-beta.0"
+const Version = "0.2.2-beta.1"
 
 // maxSafeInteger is Number.MAX_SAFE_INTEGER, the upper bound
 // server/config/env.js uses when no maximum is given. It appears verbatim in
