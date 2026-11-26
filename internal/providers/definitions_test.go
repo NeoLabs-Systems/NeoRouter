@@ -131,8 +131,9 @@ func TestDefinitionDataInvariants(t *testing.T) {
 // TestBaseURLOverrides follow the definition modules' process.env reads.
 func TestBaseURLOverrides(t *testing.T) {
 	env := map[string]string{
-		"NEOROUTER_NOUS_BASE_URL":  "https://nous.internal/v1",
-		"NEOROUTER_CODEX_BASE_URL": "https://codex.internal/backend",
+		"NEOROUTER_NOUS_BASE_URL":       "https://nous.internal/v1",
+		"NEOROUTER_CODEX_BASE_URL":      "https://codex.internal/backend",
+		"NEOROUTER_OPENROUTER_BASE_URL": "https://openrouter.internal/api/v1",
 	}
 	getenv := func(name string) string { return env[name] }
 	registry, err := Load(nil, getenv)
@@ -147,19 +148,35 @@ func TestBaseURLOverrides(t *testing.T) {
 	if chatgpt.BaseURL != "https://codex.internal/backend" {
 		t.Fatalf("chatgpt base URL = %q", chatgpt.BaseURL)
 	}
-	// Every other definition keeps its own base URL.
 	openrouter, _ := registry.Get("openrouter")
-	if openrouter.BaseURL != "https://openrouter.ai/api/v1" {
+	if openrouter.BaseURL != "https://openrouter.internal/api/v1" {
 		t.Fatalf("openrouter base URL = %q", openrouter.BaseURL)
 	}
-	plain, err := Load(nil, nil)
-	if err != nil {
-		t.Fatalf("load: %v", err)
+	// Every other definition keeps its own base URL.
+	groq, _ := registry.Get("groq")
+	plainGroq, _ := mustLoad(t).Get("groq")
+	if groq.BaseURL != plainGroq.BaseURL {
+		t.Fatalf("groq base URL changed to %q", groq.BaseURL)
 	}
+	plain := mustLoad(t)
 	plainNous, _ := plain.Get("nous")
 	if plainNous.BaseURL != "https://inference-api.nousresearch.com/v1" {
 		t.Fatalf("nous default base URL = %q", plainNous.BaseURL)
 	}
+	plainOpenRouter, _ := plain.Get("openrouter")
+	if plainOpenRouter.BaseURL != "https://openrouter.ai/api/v1" {
+		t.Fatalf("openrouter default base URL = %q", plainOpenRouter.BaseURL)
+	}
+}
+
+// mustLoad loads the embedded definitions with no environment overrides.
+func mustLoad(t *testing.T) *Registry {
+	t.Helper()
+	registry, err := Load(nil, nil)
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	return registry
 }
 
 // TestDefinitionValidation ports the rules of registry.js's definitionSchema

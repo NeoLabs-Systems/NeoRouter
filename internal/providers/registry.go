@@ -193,10 +193,14 @@ func (r *Registry) CreateAdapter(def Definition, deps AdapterDeps) (Adapter, err
 }
 
 // baseURLEnv are the definitions whose base URL the environment replaces, the
-// way their definition modules read process.env at load time.
+// way their definition modules read process.env at load time. OpenRouter's is
+// the same seam for its fixed API host: the PKCE sign-in validates and lists
+// the new connection's models there, so a test (or a self-hosted mirror) needs
+// to point it somewhere else.
 var baseURLEnv = map[string]string{
-	"nous":    "NEOROUTER_NOUS_BASE_URL",
-	"chatgpt": "NEOROUTER_CODEX_BASE_URL",
+	"nous":       "NEOROUTER_NOUS_BASE_URL",
+	"chatgpt":    "NEOROUTER_CODEX_BASE_URL",
+	"openrouter": "NEOROUTER_OPENROUTER_BASE_URL",
 }
 
 // applyBaseURLOverrides replaces the base URL of the definitions whose

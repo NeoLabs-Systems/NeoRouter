@@ -176,6 +176,10 @@ func (d *deps) build(ctx context.Context) error {
 	d.Accounts = accounts
 
 	oauthFlows := providers.NewOAuth(providersHTTP, nil, d.getenv)
+	// One sign-in machinery for both the routes and the adapters: Nous refresh
+	// tokens are single-use, so two instances would rotate one twice and Portal
+	// would read the reuse as theft and revoke the connection.
+	accounts.OAuth = oauthFlows
 	chatFactory := &adapters.Factory{
 		Codex:              oauthFlows,
 		PersistCodexSecret: d.persistSecret,

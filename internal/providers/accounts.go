@@ -143,6 +143,11 @@ type Service struct {
 	// SlotWatch is told when an account's traffic limits change, so routing can
 	// take a utilization snapshot around the write (slot_utilization.watch).
 	SlotWatch func(accountID string)
+	// OAuth, when set, is the shared sign-in machinery (device logins and
+	// single-use refresh tokens). The app injects the same instance the adapter
+	// factory uses so a refresh token is never rotated twice; nil builds one
+	// lazily.
+	OAuth *OAuth
 
 	mu    sync.Mutex
 	oauth *OAuth
@@ -173,10 +178,14 @@ func (s *Service) log() *slog.Logger {
 	return slog.Default()
 }
 
-// oauthFlows is the device-code sign-in machinery, built on first use.
+// oauthFlows is the device-code sign-in machinery: the injected shared instance
+// when the app supplied one, else built on first use.
 func (s *Service) oauthFlows() *OAuth {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.OAuth != nil {
+		return s.OAuth
+	}
 	if s.oauth == nil {
 		s.oauth = NewOAuth(s.HTTP, s.Now, s.Getenv)
 	}
