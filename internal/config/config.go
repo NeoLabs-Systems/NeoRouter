@@ -13,7 +13,7 @@ import (
 
 // Version is the NeoRouter release version. package.json carries the same one,
 // which the updater of Node.js installations compares before it hands over.
-const Version = "0.2.2-beta.3"
+const Version = "0.2.2-beta.4"
 
 // maxSafeInteger is the upper bound used when no maximum is given. It appears
 // verbatim in the "must be an integer between" error message.
