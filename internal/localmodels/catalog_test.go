@@ -9,6 +9,9 @@ import (
 	"testing"
 )
 
+// ggufFilePattern matches the single GGUF model file a llama.cpp entry loads.
+var ggufFilePattern = regexp.MustCompile(`\.gguf$`)
+
 // testMachine is the JS test's machine(): a 16 GB Linux server without a
 // graphics card.
 func testMachine(overrides ...func(*Machine)) Machine {
@@ -83,7 +86,7 @@ func TestCatalogIsValid(t *testing.T) {
 		if len(entry.Source.Include) != 1 {
 			t.Fatalf("%s loads exactly one model file", entry.ID)
 		}
-		if matched, _ := regexp.MatchString(`\.gguf$`, entry.Source.Include[0]); !matched {
+		if !ggufFilePattern.MatchString(entry.Source.Include[0]) {
 			t.Fatalf("%s: %s is not a GGUF file", entry.ID, entry.Source.Include[0])
 		}
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
-	"net/http"
 	"testing"
 
 	"github.com/NeoLabs-Systems/neolabs-go/dbx"
@@ -315,6 +314,3 @@ var testDefinitions = map[string]Definition{
 	},
 	"custom_openai": {ID: "custom_openai", Label: "Custom OpenAI-compatible", Category: "custom"},
 }
-
-// httpClientFor returns a client that reaches a test server.
-func httpClientFor(*testing.T) *http.Client { return &http.Client{} }

@@ -43,9 +43,6 @@ func parseObject(data []byte) (*Obj, error) {
 	return object, nil
 }
 
-// obj copies a plain map into an ordered object (keys sorted).
-func obj(m map[string]any) *Obj { return transport.FromMap(m) }
-
 // asObj is value as an ordered object, nil when it is not one.
 func asObj(value any) *Obj {
 	object, _ := value.(*Obj)

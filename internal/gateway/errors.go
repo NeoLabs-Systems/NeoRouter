@@ -143,19 +143,6 @@ func writeGatewayError(w http.ResponseWriter, status int, code, message string) 
 	httpx.WriteJSON(w, status, openAIErrorEnvelope{Error: body})
 }
 
-// writeAnthropicError is the Anthropic-shaped error for /v1/messages.
-func writeAnthropicError(w http.ResponseWriter, r *http.Request, status int, message string) {
-	kind := anthropicErrorTypes[status]
-	if kind == "" {
-		kind = "api_error"
-	}
-	httpx.WriteJSON(w, status, anthropicErrorEnvelope{
-		Type:      "error",
-		Error:     anthropicErrorBody{Type: kind, Message: message},
-		RequestID: httpserver.RequestIDFrom(r.Context()),
-	})
-}
-
 // log is the gateway's logger.
 func (s *Service) log() *slog.Logger {
 	if s.opts.Log != nil {

@@ -422,13 +422,6 @@ func (e *relayEndpoint) registerStream(streamID string, stream *endpointStream) 
 	return true
 }
 
-// streamCount is how many streams are open.
-func (e *relayEndpoint) streamCount() int {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	return len(e.streams)
-}
-
 // answerRequest is the sealed request one partner sent.
 type answerRequest struct {
 	TS      int64             `json:"ts"`

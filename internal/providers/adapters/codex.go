@@ -27,10 +27,9 @@ type codexAdapter struct {
 // codexInstructions is the backend's required instructions, fetched once and
 // remembered: the JS adapter keeps the same cache for the process.
 type codexInstructions struct {
-	mu        sync.Mutex
-	text      string
-	required  bool
-	fetchFail error
+	mu       sync.Mutex
+	text     string
+	required bool
 }
 
 // newCodex builds the ChatGPT/Codex dialect.

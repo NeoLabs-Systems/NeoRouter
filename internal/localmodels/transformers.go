@@ -65,13 +65,6 @@ func (e *TransformersEngine) Prepare(ctx context.Context, machine Machine, opts 
 	return nil
 }
 
-func (e *TransformersEngine) log() *slog.Logger {
-	if e.Log != nil {
-		return e.Log
-	}
-	return slog.Default()
-}
-
 // open loads an ONNX graph, through ONNX Runtime unless a test wired its own.
 func (e *TransformersEngine) open(path string) (Session, error) {
 	if e.Open != nil {
@@ -88,7 +81,7 @@ func (e *TransformersEngine) Start(ctx context.Context, in StartInput) (*Instanc
 	dir := in.Files.Model
 	model := &speechModel{entry: in.Entry, files: in.Files}
 	process := newInProcess()
-	cleanup := func() {}
+	var cleanup func()
 	switch in.Entry.Transformers.Task {
 	case "automatic-speech-recognition":
 		whisper, err := loadWhisperModel(dir, e.open)
@@ -266,7 +259,6 @@ func resampleBySpeed(samples []float32, speed float64) []float32 {
 type inProcess struct {
 	done   chan struct{}
 	once   sync.Once
-	exit   Exit
 	onStop func()
 }
 

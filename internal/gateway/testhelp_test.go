@@ -66,8 +66,6 @@ type fakeAdapter struct {
 	chat   func(ctx context.Context, request *Obj, call providers.Call) (*providers.ChatResult, error)
 	stream func(ctx context.Context, request *Obj, call providers.Call, yield func(*Obj) bool) error
 	calls  []string
-	// media answers one non-chat call (run_capability).
-	media func(ctx context.Context, request *Obj, call providers.Call) (*CapabilityResult, error)
 }
 
 func (a *fakeAdapter) Definition() providers.Definition {

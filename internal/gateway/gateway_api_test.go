@@ -4,7 +4,6 @@ package gateway
 // against fake adapters and a real routing service.
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
@@ -732,18 +731,4 @@ func TestUsageRowRecordsTheOutcome(t *testing.T) {
 	if inputTokens <= 0 || outputTokens != 6 || stream {
 		t.Errorf("tokens = %d/%d stream=%v", inputTokens, outputTokens, stream)
 	}
-}
-
-// unmarshalValue decodes a captured JSON value, for assertions on nested shapes.
-func unmarshalValue(t *testing.T, value any) map[string]any {
-	t.Helper()
-	data, err := json.Marshal(value)
-	if err != nil {
-		t.Fatalf("marshal: %v", err)
-	}
-	out := map[string]any{}
-	if err := json.Unmarshal(data, &out); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
-	return out
 }

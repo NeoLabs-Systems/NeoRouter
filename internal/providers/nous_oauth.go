@@ -326,13 +326,3 @@ func stringMember(value map[string]any, name string) string {
 	text, _ := value[name].(string)
 	return text
 }
-
-// firstString is the first non-empty of two string members.
-func firstString(values ...any) (string, bool) {
-	for _, value := range values {
-		if text, ok := value.(string); ok && text != "" {
-			return text, true
-		}
-	}
-	return "", false
-}

@@ -142,9 +142,6 @@ func TestFactoryChatAdaptersAreStreamers(t *testing.T) {
 		if _, ok := adapter.(providers.Streamer); !ok {
 			t.Errorf("%s: every chat dialect streams", name)
 		}
-		if _, ok := adapter.(providers.Adapter); !ok {
-			t.Errorf("%s: the adapter contract is not satisfied", name)
-		}
 	}
 }
 

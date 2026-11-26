@@ -23,12 +23,6 @@ import (
 // anthropicAPIVersion is the Messages API version the adapter sends.
 const anthropicAPIVersion = "2023-06-01"
 
-// anthropicStopTo is canonical → Anthropic finish reasons.
-var anthropicStopTo = map[string]string{
-	"stop": "end_turn", "length": "max_tokens", "tool_calls": "tool_use",
-	"function_call": "tool_use", "content_filter": "refusal",
-}
-
 // anthropicStopFrom is Anthropic → canonical finish reasons.
 var anthropicStopFrom = map[string]string{
 	"end_turn": "stop", "stop_sequence": "stop", "max_tokens": "length",

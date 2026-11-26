@@ -6,33 +6,6 @@ import (
 	"time"
 )
 
-// aaSetting is the global setting holding the Artificial Analysis API key.
-
-func (m *Metadata) artificialAnalysisDue(now time.Time) bool {
-	due := false
-	m.withView(func(v *metadataView) {
-		fetchedAt, ok := v.st.FetchedAt["artificialAnalysis"]
-		due = true
-		if ok {
-			if parsed, err := time.Parse(time.RFC3339Nano, fetchedAt); err == nil && now.Sub(parsed) < aaRefresh {
-				due = false
-			}
-		}
-		if !due {
-			return
-		}
-		for _, record := range v.st.ArtificialAnalysis {
-			if record != nil && record.ID != "" {
-				return
-			}
-		}
-		// Data from before the current API (records without an id) is
-		// replaced as soon as possible.
-		due = true
-	})
-	return due
-}
-
 // RefreshSources refreshes every metadata source and re-stores the affected
 // canonical records. It returns one status per source: "ok" or the error text.
 func (m *Metadata) RefreshSources(ctx context.Context) (map[string]string, error) {
@@ -145,9 +118,8 @@ func (m *Metadata) refreshMTEB(ctx context.Context) error {
 	if err := rows.Err(); err != nil {
 		return fmt.Errorf("catalog: mteb: %w", err)
 	}
-	previous := map[string]MTEBScore{}
 	m.mu.Lock()
-	previous = m.state.MTEB
+	previous := m.state.MTEB
 	m.mu.Unlock()
 	scores := m.mtebSource().fetchScores(ctx, ids, previous, time.Now())
 	m.mu.Lock()

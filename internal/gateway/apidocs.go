@@ -28,7 +28,7 @@ connected and falls back to another model when one fails.
 - Base URL: §{{base}}§
 - Model kinds on this server: {{kinds}}
 - This document: §GET {{origin}}/api/docs§ (Markdown)
-
+{{placeholder}}
 ## Quick start
 
 1. Get a router key (§nrt_…§): create one in the web app at §{{origin}}/app/§
@@ -426,8 +426,19 @@ Use §access_token§ as the router key against §base_url§.
 // profiles.js declares them).
 var profileAliasOrder = []string{"reliable", "cheap", "best"}
 
+// placeholderLine is the extra line a static copy of the document carries after
+// "This document", because its examples do not point at the reader's server.
+const placeholderLine = "- Examples use `{{origin}}`. Replace it with the address of your NeoRouter server.\n"
+
 // apiDocs is reference(origin): the document with this server's own values.
 func (s *Service) apiDocs(origin string) string {
+	return Reference(origin, false)
+}
+
+// Reference is the gateway reference as Markdown: server/routes/api_docs.js
+// reference(origin, {placeholder}). placeholder makes a static copy, whose
+// examples carry origin but belong to no server, say so.
+func Reference(origin string, placeholder bool) string {
 	base := origin + "/v1"
 	wsBase := "ws" + strings.TrimPrefix(origin, "http")
 	if strings.HasPrefix(origin, "https") {
@@ -459,10 +470,15 @@ func (s *Service) apiDocs(origin string) string {
 	for _, capability := range Capabilities {
 		scopes = append(scopes, capability.ID)
 	}
+	placeholderText := ""
+	if placeholder {
+		placeholderText = strings.ReplaceAll(placeholderLine, "{{origin}}", origin)
+	}
 	return strings.NewReplacer(
 		"{{base}}", base,
 		"{{wsBase}}", wsBase,
 		"{{origin}}", origin,
+		"{{placeholder}}", placeholderText,
 		"{{kinds}}", strings.Join(kinds, ", "),
 		"{{presets}}", strings.Join(inCode(presets), ", "),
 		"{{taskKinds}}", strings.Join(inCode(taskKinds), ", "),

@@ -62,6 +62,9 @@ type Service struct {
 	// RunnerCommand is the detached update runner; nil means this binary's own
 	// `update` command.
 	RunnerCommand []string
+	// RuntimeSelfUpdate reports a signed-runtime install (the manager's
+	// <home>/app store): it updates itself without a git checkout.
+	RuntimeSelfUpdate func() bool
 	// Now overrides the clock in tests.
 	Now func() time.Time
 
@@ -129,6 +132,9 @@ func (s *Service) BlockedReason() *string {
 	if DetectContainer(s.getenv()) {
 		reason := blockedContainer
 		return &reason
+	}
+	if s.RuntimeSelfUpdate != nil && s.RuntimeSelfUpdate() {
+		return nil
 	}
 	if _, err := os.Stat(filepath.Join(s.cfg().AppDir, ".git")); err != nil {
 		reason := blockedNotGit

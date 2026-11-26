@@ -17,7 +17,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NeoLabs-Systems/neolabs-go/llm/transport"
 	"github.com/NeoLabs-Systems/neorouter/internal/providers"
 )
 
@@ -137,9 +136,6 @@ func (a *baseAdapter) TranscribeTimestamps() bool { return true }
 // Accounts the adapter speaks for, for the dialects that need them.
 func (a *baseAdapter) userID() string { return a.account.UserID }
 
-// option reads one account option.
-func (a *baseAdapter) option(name string) any { return a.options[name] }
-
 // optionString reads one account option as a string.
 func (a *baseAdapter) optionString(name string) string { return a.account.OptionString(name) }
 
@@ -206,16 +202,6 @@ func (a *baseAdapter) headers(extra map[string]string) map[string]string {
 	for name, value := range a.authHeaders() {
 		headers[name] = value
 	}
-	for name, value := range extra {
-		headers[name] = value
-	}
-	return headers
-}
-
-// headersNoAuth are the headers of a call that carries its own authorization,
-// as a dialect with refreshed tokens does.
-func (a *baseAdapter) headersNoAuth(extra map[string]string) map[string]string {
-	headers := a.baseHeaders()
 	for name, value := range extra {
 		headers[name] = value
 	}
@@ -413,8 +399,3 @@ func chatContainsHTML(text string) bool {
 	lower := strings.ToLower(text)
 	return strings.Contains(lower, "<html")
 }
-
-// chatJSONBody is an insertion-ordered JSON body, the shape the JS adapters
-// build with object literals: the NeoRouter wire bodies keep the key order the
-// JS adapters produced.
-func chatJSONBody() *transport.Obj { return transport.NewObj() }

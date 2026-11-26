@@ -93,13 +93,3 @@ func toOpenRouterFact(model openRouterModel) *Fact {
 	record.Vision = &vision
 	return record
 }
-
-// toFloatOrNil keeps a decoded JSON number that a source may publish as a
-// string, null when it is missing or not finite.
-func toFloatOrNil(raw any) *float64 {
-	number, ok := finiteNumber(raw)
-	if !ok {
-		return nil
-	}
-	return number
-}

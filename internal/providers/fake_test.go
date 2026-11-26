@@ -386,11 +386,6 @@ func withBilling(mode string) func(*Input) {
 	return func(in *Input) { in.BillingMode = Optional[string]{Set: true, Value: &mode} }
 }
 
-// withBaseURL sets the endpoint of a create or update input.
-func withBaseURL(url string) func(*Input) {
-	return func(in *Input) { in.BaseURL = Optional[string]{Set: true, Value: &url} }
-}
-
 // withOption sets one account option.
 func withOption(name string, value any) func(*Input) {
 	return func(in *Input) {

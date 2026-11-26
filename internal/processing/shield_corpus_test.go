@@ -200,8 +200,9 @@ func TestScanCache(t *testing.T) {
 	engine.Scan(text, ScanOptions{Modes: DefaultModes})
 	cached := time.Since(started)
 	t.Logf("20k characters: %v new, %v cached", cold, cached)
-	// The same bound as the JavaScript test: 250 ms for 20 000 characters.
-	if cold > 250*time.Millisecond {
+	// The same bound as the JavaScript test: 250 ms for 20 000 characters
+	// (relaxed under -race; see scanbound_test.go).
+	if cold > scanColdBound {
 		t.Fatalf("cold scan took %v", cold)
 	}
 	if cached > cold {

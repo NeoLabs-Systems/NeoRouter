@@ -44,7 +44,7 @@ func TestRequestBudgetAndHeaders(t *testing.T) {
 	if budget.Requests.IntervalMs != 1000 {
 		t.Fatalf("interval = %d, want 1000", budget.Requests.IntervalMs)
 	}
-	if budget.Concurrent.Limit == nil || *budget.Concurrent.Limit != 3 || budget.Concurrent.InFlight != 0 || budget.Concurrent.Available != 3 {
+	if budget.Concurrent.Limit == nil || *budget.Concurrent.Limit != 3 || budget.Concurrent.InFlight != 0 || budget.Concurrent.Available == nil || *budget.Concurrent.Available != 3 {
 		t.Fatalf("concurrent = %+v", budget.Concurrent)
 	}
 	headers := BudgetHeaders(budget)
@@ -58,7 +58,7 @@ func TestRequestBudgetAndHeaders(t *testing.T) {
 	ownLimit := 2
 	key.ConcurrentLimit = &ownLimit
 	budget = f.svc.RequestBudgetForKey(key, now)
-	if budget.Concurrent.Limit == nil || *budget.Concurrent.Limit != 2 || budget.Concurrent.InFlight != 1 || budget.Concurrent.Available != 1 {
+	if budget.Concurrent.Limit == nil || *budget.Concurrent.Limit != 2 || budget.Concurrent.InFlight != 1 || budget.Concurrent.Available == nil || *budget.Concurrent.Available != 1 {
 		t.Fatalf("own concurrent = %+v", budget.Concurrent)
 	}
 	// With no known cap nothing is promised.
@@ -66,6 +66,9 @@ func TestRequestBudgetAndHeaders(t *testing.T) {
 	budget = f.svc.RequestBudgetForKey(testKey("balanced"), now)
 	if budget.Concurrent.Limit != nil {
 		t.Fatalf("limit = %v, want null", *budget.Concurrent.Limit)
+	}
+	if budget.Concurrent.Available != nil {
+		t.Fatalf("available = %v, want null", *budget.Concurrent.Available)
 	}
 }
 

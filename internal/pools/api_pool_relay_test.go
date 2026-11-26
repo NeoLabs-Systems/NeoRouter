@@ -143,7 +143,7 @@ func TestHostUsesTheRelayedMembersModelsAndSeesOnlySealedFrames(t *testing.T) {
 		mu.Unlock()
 		return original(frame)
 	})
-	defer conn.setDeliver(original)
+	defer func() { conn.setDeliver(original) }()
 
 	endpoint, err := relay.svc.hub.localEndpoint(ctx, relay.alex.ID, relay.poolID)
 	if err != nil {

@@ -50,18 +50,6 @@ type Tokenizer struct {
 	maxRune    int
 }
 
-// specialTokens are the token ids a Whisper graph is driven with; they are read
-// from the vocabulary so a model that names them differently still works.
-var specialTokens = map[string]int32{
-	"<|startoftranscript|>": -1,
-	"<|endoftext|>":         -1,
-	"<|transcribe|>":        -1,
-	"<|translate|>":         -1,
-	"<|notimestamps|>":      -1,
-	"<|startoflm|>":         -1,
-	"<|startofprev|>":       -1,
-}
-
 // gpt2BytesToUnicode is the byte→character table byte-level BPE vocabularies
 // use: the printable Latin range, then the remaining bytes in order.
 func gpt2BytesToUnicode() [256]rune {
@@ -136,10 +124,8 @@ func LoadTokenizer(path string) (*Tokenizer, error) {
 		}
 		token, _ := entry[0].(string)
 		score, _ := entry[1].(float64)
-		id := int32(index)
-		if existing, ok := t.vocab[token]; ok {
-			id = existing
-		} else {
+		if _, ok := t.vocab[token]; !ok {
+			id := int32(index)
 			t.vocab[token] = id
 			t.tokens[id] = token
 		}

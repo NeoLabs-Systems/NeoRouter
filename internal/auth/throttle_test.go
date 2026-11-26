@@ -14,6 +14,9 @@ import (
 // again is throttled per account, apart from signing in.
 func TestConfirmThrottlePerAccount(t *testing.T) {
 	h := newHarness(t)
+	// Freeze the throttle clock so the backoff window does not depend on how
+	// long a bcrypt compare takes (which -race makes much slower).
+	h.service.Now = func() time.Time { return time.UnixMilli(1700000000000) }
 	h.registerAdmin()
 	token, id := h.register("confirmpw")
 
@@ -96,6 +99,7 @@ func TestConfirmThrottleLocksForTheWindow(t *testing.T) {
 // wrong codes do not lock signing in.
 func TestConfirmThrottleCountsCodesApart(t *testing.T) {
 	h := newHarness(t)
+	h.service.Now = func() time.Time { return time.UnixMilli(1700000000000) }
 	h.registerAdmin()
 	token, id := h.register("confirmcode")
 

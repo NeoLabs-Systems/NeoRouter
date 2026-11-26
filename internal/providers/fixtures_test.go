@@ -167,6 +167,3 @@ func float(value float64) *float64 { return &value }
 
 // boolean returns a pointer to value.
 func boolean(value bool) *bool { return &value }
-
-// text returns a pointer to value.
-func text(value string) *string { return &value }

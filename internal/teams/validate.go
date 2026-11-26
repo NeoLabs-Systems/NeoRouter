@@ -32,8 +32,6 @@ func (v *validation) add(path []string, message string) {
 	v.issues = append(v.issues, issue{path: path, message: message})
 }
 
-func (v *validation) ok() bool { return len(v.issues) == 0 }
-
 // fieldError is one entry of flatten().fieldErrors, in first-seen order.
 type fieldError struct {
 	field    string

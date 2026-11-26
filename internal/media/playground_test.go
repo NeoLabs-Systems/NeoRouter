@@ -214,7 +214,7 @@ func TestPlaygroundVoices(t *testing.T) {
 
 	// A provider that cannot list them leaves OpenAI's names in place.
 	adapter.voicesFn = func(string) ([]providers.Voice, error) { return nil, http.ErrHandlerTimeout }
-	response, payload = env.do(t, server, "GET", "/api/v1/playground/voices?model=mock/tts-ok", nil, "")
+	_, payload = env.do(t, server, "GET", "/api/v1/playground/voices?model=mock/tts-ok", nil, "")
 	voices, _ = decodeBody(t, payload)["voices"].([]any)
 	if len(voices) != len(openAIVoices) {
 		t.Fatalf("voices = %s", payload)

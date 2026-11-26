@@ -7,6 +7,7 @@ require (
 	github.com/coder/websocket v1.8.15
 	github.com/ebitengine/purego v0.11.3
 	github.com/google/uuid v1.6.0
+	github.com/yuin/goldmark v1.8.7
 	golang.org/x/net v0.62.0
 	modernc.org/sqlite v1.63.0
 )

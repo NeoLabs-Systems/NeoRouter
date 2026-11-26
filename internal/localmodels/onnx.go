@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"sync"
 	"unsafe"
 
@@ -499,32 +498,6 @@ func modelFile(dir string, names ...string) (string, bool) {
 		candidate := filepath.Join(dir, filepath.FromSlash(name))
 		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
 			return candidate, true
-		}
-	}
-	return "", false
-}
-
-// quantisedModel is the ONNX file a model loads: the quantised weights the
-// catalog names, or the plain ones when only those exist.
-func quantisedModel(dir string) (string, bool) {
-	candidates := []string{
-		"onnx/model_quantized.onnx",
-		"onnx/encoder_model_quantized.onnx",
-		"onnx/model_q8.onnx",
-		"onnx/model.onnx",
-	}
-	for _, name := range candidates {
-		if path, ok := modelFile(dir, name); ok {
-			return path, true
-		}
-	}
-	entries, err := os.ReadDir(filepath.Join(dir, "onnx"))
-	if err != nil {
-		return "", false
-	}
-	for _, entry := range entries {
-		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".onnx") {
-			return filepath.Join(dir, "onnx", entry.Name()), true
 		}
 	}
 	return "", false

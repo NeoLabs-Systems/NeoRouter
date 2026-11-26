@@ -237,13 +237,6 @@ type Transcription struct {
 	Language string          `json:"language"`
 }
 
-// unsupportedModelError names the part of a model this build does not run.
-type unsupportedModelError struct{ name string }
-
-func (e *unsupportedModelError) Error() string {
-	return "The model " + e.name + " is not supported by this build."
-}
-
 // loadWhisperModel opens a Whisper model directory: the encoder and the merged
 // decoder graph, its tokenizer and its config.
 func loadWhisperModel(dir string, open func(string) (Session, error)) (*whisperModel, error) {

@@ -642,7 +642,7 @@ func (s *Service) statsBody(run *executeRun, plan *routing.RoutingPlan, requestI
 		}
 		var ttftValue any
 		if ttftMs != nil {
-			ttftValue = *ttftMs
+			ttftValue = math.Round(*ttftMs)
 		}
 		return newObjOf(
 			"request_id", requestID,
@@ -651,7 +651,7 @@ func (s *Service) statsBody(run *executeRun, plan *routing.RoutingPlan, requestI
 			"task", taskName,
 			"attempts", float64(*attemptsStarted),
 			"trail", tried,
-			"latency_ms", durationMs,
+			"latency_ms", math.Round(durationMs),
 			"ttft_ms", ttftValue,
 			"tokens_per_second", perSecond,
 			"free", item.entry.IsFree,

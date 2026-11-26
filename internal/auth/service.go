@@ -47,11 +47,22 @@ type Service struct {
 	// Secrets seals the second-factor secrets at rest. When nil the install's
 	// secret.key is used (see NewSecrets).
 	Secrets Secrets
+	// Now overrides the clock the confirmation throttle reads; nil means
+	// time.Now. Tests freeze it so the backoff window does not depend on how
+	// long a bcrypt compare happens to take.
+	Now func() time.Time
 
 	secretsMu  sync.Mutex
 	secretsBox Secrets
 
 	challenges challengeStore
+}
+
+func (s *Service) now() time.Time {
+	if s.Now != nil {
+		return s.Now()
+	}
+	return time.Now()
 }
 
 func (s *Service) cfg() config.Config {

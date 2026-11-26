@@ -57,18 +57,6 @@ func (c *fakeCatalog) add(entry *Entry) {
 	c.entries = append(c.entries, entry)
 }
 
-func (c *fakeCatalog) replace(entry *Entry) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	for index, existing := range c.entries {
-		if existing.Ref == entry.Ref {
-			c.entries[index] = entry
-			return
-		}
-	}
-	c.entries = append(c.entries, entry)
-}
-
 // --- quota -----------------------------------------------------------------
 
 type fakeBucket struct {
@@ -244,17 +232,6 @@ func (q *fakeQuota) effectiveLimits(scope QuotaScope) map[string]QuotaLimit {
 		out[metric] = QuotaLimit{Value: value, Source: "manual"}
 	}
 	return out
-}
-
-func (q *fakeQuota) liveState(scopeKey, metric string, now time.Time) *fakeState {
-	state, ok := q.states[scopeKey+"|"+metric]
-	if !ok {
-		return nil
-	}
-	if state.resetAt != nil && *state.resetAt <= now.UnixMilli() {
-		return nil
-	}
-	return &state
 }
 
 func (q *fakeQuota) dailyLimits(scope QuotaScope, now time.Time) QuotaDailyLimits {
@@ -489,10 +466,6 @@ func (s *fakeSettings) SetUserSetting(userID, key string, value any) error {
 	flag, _ := value.(bool)
 	s.values[userID+"|"+key] = flag
 	return nil
-}
-
-func (s *fakeSettings) set(userID, key string, value bool) {
-	_ = s.SetUserSetting(userID, key, value)
 }
 
 type fakePools struct{}

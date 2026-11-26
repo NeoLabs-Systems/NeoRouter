@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
@@ -164,14 +163,6 @@ func (s *Service) config() config.Config {
 		return config.Config{}
 	}
 	return s.Cfg()
-}
-
-// getenv reads an environment override.
-func (s *Service) getenv(name string) string {
-	if s.Getenv != nil {
-		return s.Getenv(name)
-	}
-	return os.Getenv(name)
 }
 
 // log is a logger even when none was wired.

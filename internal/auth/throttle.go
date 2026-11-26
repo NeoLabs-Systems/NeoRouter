@@ -94,7 +94,7 @@ func (s *Service) assertConfirmAllowed(ctx context.Context, q dbtx, userID strin
 // account's count. The try counts as wrong before it is checked, so parallel
 // guesses count too; a right answer takes back that kind's failures.
 func (s *Service) guardConfirm(ctx context.Context, userID, kind string, check func() (bool, error)) (bool, error) {
-	now := time.Now()
+	now := s.now()
 	if err := s.assertConfirmAllowed(ctx, s.DB.R, userID, now); err != nil {
 		return false, err
 	}

@@ -1,5 +1,8 @@
-// Command neorouter runs the NeoRouter backend server (`neorouter serve`) and,
-// in later releases, manages the local installation (`neorouter help`).
+// Command neorouter runs the NeoRouter backend server (`neorouter serve`) and
+// manages the local installation (`neorouter help`).
+//
+// The server's run loop lives here; every other command is the manager's, so a
+// single binary is all an install needs.
 package main
 
 import (
@@ -16,42 +19,27 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/NeoLabs-Systems/neolabs-go/runtimecfg"
 	"github.com/NeoLabs-Systems/neorouter/internal/app"
 	"github.com/NeoLabs-Systems/neorouter/internal/config"
 	"github.com/NeoLabs-Systems/neorouter/internal/httpserver"
+	"github.com/NeoLabs-Systems/neorouter/internal/manager"
 )
 
 func main() {
 	args := os.Args[1:]
-	cmd := ""
-	if len(args) > 0 {
-		cmd = args[0]
-	}
-	switch {
-	case cmd == "serve" || (cmd == "start" && len(args) > 1 && args[1] == "--foreground"):
-		if err := serve(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %s\n", err)
-			os.Exit(1)
-		}
-	case cmd == "version":
-		fmt.Println(config.Version)
-	case cmd == "healthcheck":
-		if err := healthcheck(); err != nil {
-			os.Exit(1)
-		}
-	case cmd == "":
-		fmt.Println("Usage: neorouter <command>")
-		fmt.Println("Commands: serve, version, healthcheck")
-	default:
-		fmt.Fprintf(os.Stderr, "Error: unknown command: %s\n", cmd)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	err := manager.Run(ctx, args, manager.Options{Serve: serve})
+	if err != nil {
+		manager.PrintError(os.Stderr, err, manager.DetailsRequested(args))
 		os.Exit(1)
 	}
 }
 
 // loadConfig reads the install's .env (without overriding the real
-// environment) and validates it, exactly like runtime/env.js plus
-// server/config/env.js do on Node start.
+// environment), validates it, exactly like runtime/env.js plus
+// server/config/env.js do on Node start, and points it at the active runtime
+// when an update has installed one.
 func loadConfig() (config.Config, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -61,17 +49,11 @@ func loadConfig() (config.Config, error) {
 	if err != nil {
 		return config.Config{}, fmt.Errorf("find working directory: %w", err)
 	}
-	prelim := config.ResolvePaths(os.Getenv, home)
-	if err := runtimecfg.LoadEnvFile(prelim.EnvFile, os.LookupEnv, os.Setenv); err != nil {
-		return config.Config{}, fmt.Errorf("load %s: %w", prelim.EnvFile, err)
-	}
-	return config.Load(os.Getenv, home, cwd)
+	return manager.LoadConfig(os.Getenv, home, cwd)
 }
 
-func serve() error {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
+// serve runs the server until the context is cancelled.
+func serve(ctx context.Context) error {
 	cfg, err := loadConfig()
 	if err != nil {
 		return err
@@ -122,37 +104,6 @@ func serve() error {
 			return err
 		}
 		log.Info("NeoRouter stopped")
-	}
-	return nil
-}
-
-// healthcheck probes GET /health on the configured port, for the service
-// manager and the container health check.
-func healthcheck() error {
-	cfg, err := loadConfig()
-	if err != nil {
-		return err
-	}
-	host := cfg.Host
-	if host == "" || host == "0.0.0.0" || host == "::" {
-		host = "127.0.0.1"
-	}
-	url := "http://" + net.JoinHostPort(host, strconv.Itoa(cfg.Port)) + "/health"
-	client := &http.Client{Timeout: 5 * time.Second}
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return err
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "NeoRouter is not healthy: %s\n", err)
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		err := fmt.Errorf("health check returned %s", resp.Status)
-		fmt.Fprintf(os.Stderr, "NeoRouter is not healthy: %s\n", err)
-		return err
 	}
 	return nil
 }

@@ -77,15 +77,6 @@ func chatField(obj *transport.Obj, name string) string {
 	return text
 }
 
-// chatHas reports whether a member is present and not null.
-func chatHas(obj *transport.Obj, name string) bool {
-	if obj == nil {
-		return false
-	}
-	value, ok := obj.Get(name)
-	return ok && value != nil
-}
-
 // chatNumber reads a member as a finite number.
 func chatNumber(obj *transport.Obj, name string) (float64, bool) {
 	if obj == nil {
@@ -191,12 +182,6 @@ func chatMessages(request *transport.Obj) []*transport.Obj {
 // bytes, as canonical.completionId makes it.
 func chatCompletionID() string { return "chatcmpl-" + chatRandomHex(12) }
 
-// chatMessageID is an Anthropic message id ("msg_").
-func chatMessageID() string { return "msg_" + chatRandomHex(12) }
-
-// chatToolUseID is an Anthropic tool-use id ("toolu_").
-func chatToolUseID() string { return "toolu_" + chatRandomHex(8) }
-
 // chatCallID is a Gemini function-call id ("call_").
 func chatCallID() string { return "call_" + chatRandomHex(8) }
 
@@ -213,9 +198,6 @@ func chatRandomHex(size int) string {
 
 // chatNowSeconds is Date.now()/1000 as the canonical `created` field carries it.
 func chatNowSeconds() int64 { return time.Now().Unix() }
-
-// chatUsage is the canonical usage block of a completion.
-func chatUsage(value any) *transport.Obj { return chatObj(value) }
 
 // chatNormalizeUsage is canonical.normalizeUsage: every provider's usage shape
 // read into the OpenAI one, with the cached tokens clamped into the prompt.

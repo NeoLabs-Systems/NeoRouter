@@ -8,7 +8,6 @@ package task
 import (
 	"encoding/json"
 	"strings"
-	"unicode"
 	"unicode/utf16"
 )
 
@@ -157,13 +156,6 @@ func firstRunes(s string, n int) string {
 	}
 	return string(runes[:n])
 }
-
-// countMatches is (text.match(pattern) || []).length for a non-global pattern:
-// how many non-overlapping occurrences there are.
-func countMatches(pattern textPattern, text string) int { return pattern.count(text) }
-
-// upperAcronym reports whether s is an ASCII acronym (used by the regexes).
-func isLetter(r rune) bool { return unicode.IsLetter(r) }
 
 // marshalOrdered writes a JSON object whose keys keep insertion order, as the
 // Node code's plain objects do.

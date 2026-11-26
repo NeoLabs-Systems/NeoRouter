@@ -328,9 +328,6 @@ func New(opts Options) *Service {
 // DB is the shared database handle.
 func (s *Service) DB() *dbx.DB { return s.opts.DB }
 
-// random is the Service's random source.
-func (s *Service) random() float64 { return s.opts.Random() }
-
 // cfg is the current configuration (JS getConfig(); read per decision so a
 // reloaded config is seen).
 func (s *Service) cfg() config.Config {

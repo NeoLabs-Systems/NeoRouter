@@ -24,16 +24,6 @@ func (p textPattern) test(s string) bool { return p.re.MatchString(s) }
 // count is (text.match(pattern) || []).length.
 func (p textPattern) count(s string) int { return len(p.re.FindAllStringIndex(s, -1)) }
 
-// findIndex is text.match(pattern)?.index: where the first match starts, -1 when
-// there is none.
-func (p textPattern) findIndex(s string) int {
-	loc := p.re.FindStringIndex(s)
-	if loc == nil {
-		return -1
-	}
-	return loc[0]
-}
-
 // wordAlt is one alternative of a words() pattern.
 type wordAlt struct {
 	whole bool // the source ended with $: the word must end there

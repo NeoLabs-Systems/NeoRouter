@@ -1,6 +1,11 @@
-// Package app constructs NeoRouter's database and HTTP handler and is the only
-// place where the domains are wired together. It mirrors the shape of the
-// NeoRecall/NeoAgent apps: Options in, Open builds everything, Close releases it.
+// Package app constructs NeoRouter's database, domain services and HTTP handler,
+// and is the only place where the domains are wired together. It mirrors the
+// shape of the NeoRecall/NeoAgent apps: Options in, Open builds everything,
+// Close releases it.
+//
+// Everything a domain needs from another one arrives here as a narrow interface
+// or a func field (CONVERSION_PLAN.md rule 2): the adapter files next to this
+// one hold those bridges.
 package app
 
 import (
@@ -9,6 +14,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -32,7 +38,8 @@ type Options struct {
 	Version      string
 }
 
-// App is one running NeoRouter instance.
+// App is one running NeoRouter instance: every domain service plus the handler
+// that serves them.
 type App struct {
 	mu     sync.RWMutex
 	cfg    config.Config
@@ -43,10 +50,18 @@ type App struct {
 	HTTPClient *http.Client
 	Version    string
 	Handler    http.Handler
+
+	// cancel ends the background work started at boot (samplers, schedulers,
+	// relays); Close calls it before releasing the services.
+	cancel   context.CancelFunc
+	shutdown func()
+
+	svc services
 }
 
 // Open loads the configuration, creates the runtime directories, opens the
-// SQLite database, applies the schema and builds the HTTP handler.
+// SQLite database, applies the schema, builds every domain and mounts the
+// routes in the order server/routes/index.js does.
 func Open(ctx context.Context, opts Options) (*App, error) {
 	getenv := opts.Getenv
 	if getenv == nil {
@@ -61,6 +76,12 @@ func Open(ctx context.Context, opts Options) (*App, error) {
 		return nil, err
 	}
 	if err := initial.Paths.Ensure(); err != nil {
+		return nil, err
+	}
+	// Provider keys are encrypted with this key; refuse to start without it
+	// (index.js masterKey()).
+	secretKey, err := ensureSecretKey(initial.Paths.SecretKey)
+	if err != nil {
 		return nil, err
 	}
 	db, err := dbx.Open(ctx, initial.Paths.Database, dbx.Options{BusyTimeout: 10 * time.Second})
@@ -86,6 +107,7 @@ func Open(ctx context.Context, opts Options) (*App, error) {
 		initial.Landing = config.LandingDir(opts.AppDir)
 	}
 
+	bootCtx, cancel := context.WithCancel(ctx)
 	a := &App{
 		cfg:        initial,
 		loader:     opts.ConfigLoader,
@@ -93,10 +115,57 @@ func Open(ctx context.Context, opts Options) (*App, error) {
 		Log:        log,
 		HTTPClient: httpClient,
 		Version:    version,
+		cancel:     cancel,
 	}
-	cfgFn := a.Config
 
-	mux := http.NewServeMux()
+	deps := &deps{
+		app:        a,
+		db:         db,
+		log:        log,
+		getenv:     getenv,
+		version:    version,
+		httpClient: httpClient,
+		secretKey:  secretKey,
+		cfg:        a.Config,
+	}
+	if err := deps.build(bootCtx); err != nil {
+		cancel()
+		_ = db.Close()
+		return nil, err
+	}
+	a.svc = deps.services
+	a.Handler = deps.handler()
+	a.shutdown = deps.shutdown
+	// The pool relay answers a relayed partner request through the same handler
+	// the HTTP server serves (relay/loopback.js setApp).
+	deps.Pools.SetLoopback(a.Handler)
+	deps.startReporting(bootCtx)
+	return a, nil
+}
+
+// buildServices is buildEverything, kept separate so Open stays readable.
+func (d *deps) handler() http.Handler {
+	cfgFn := d.cfg
+	getenv := d.getenv
+	inner := http.NewServeMux()
+	d.mountHealth(inner)
+	d.mountManagement(inner)
+	inner.Handle("/", d.analyticsHandler(httpserver.Static(httpserver.StaticOptions{
+		WebDir:     func() string { return cfgFn().WebDir },
+		LandingDir: func() string { return cfgFn().Landing },
+		WebDevURL:  func() string { return cfgFn().WebDevURL },
+	})))
+
+	// The gateway streams, so it is mounted outside the compression middleware
+	// and gets its own body limit (server/app.js).
+	root := http.NewServeMux()
+	root.Handle("/v1/", httpserver.MethodFallback(d.gatewayMux))
+	root.Handle("/", httpserver.Gzip(httpserver.MethodFallback(inner)))
+	return httpserver.RequestID(httpserver.CORS(getenv, root))
+}
+
+func (d *deps) mountHealth(mux *http.ServeMux) {
+	version := d.version
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteJSON(w, http.StatusOK, healthResponse{Status: "ok", Process: "http", Version: version})
 	})
@@ -105,8 +174,8 @@ func Open(ctx context.Context, opts Options) (*App, error) {
 	})
 	mux.HandleFunc("GET /ready", func(w http.ResponseWriter, r *http.Request) {
 		var one int
-		if err := a.DB.R.QueryRowContext(r.Context(), `SELECT 1`).Scan(&one); err != nil {
-			httpserver.WriteError(w, r, log, fmt.Errorf("app: database not ready: %w", err))
+		if err := d.db.R.QueryRowContext(r.Context(), `SELECT 1`).Scan(&one); err != nil {
+			httpserver.WriteError(w, r, d.log, fmt.Errorf("app: database not ready: %w", err))
 			return
 		}
 		httpx.WriteJSON(w, http.StatusOK, readyResponse{Status: "ready", Database: true})
@@ -114,16 +183,6 @@ func Open(ctx context.Context, opts Options) (*App, error) {
 	mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
 		httpserver.NotFound(w)
 	})
-	a.mountDomains(mux)
-
-	mux.Handle("/", httpserver.Static(httpserver.StaticOptions{
-		WebDir:     func() string { return cfgFn().WebDir },
-		LandingDir: func() string { return cfgFn().Landing },
-		WebDevURL:  func() string { return cfgFn().WebDevURL },
-	}))
-
-	a.Handler = httpserver.RequestID(httpserver.CORS(getenv, httpserver.Gzip(httpserver.MethodFallback(mux))))
-	return a, nil
 }
 
 func loadConfig(opts Options, getenv func(string) string) (config.Config, error) {
@@ -149,11 +208,6 @@ func loadConfig(opts Options, getenv func(string) string) (config.Config, error)
 	}
 }
 
-// mountDomains is where later waves register their routes on the API mux.
-func (a *App) mountDomains(mux *http.ServeMux) {
-	_ = mux
-}
-
 // Config returns the configuration the app is running with.
 func (a *App) Config() config.Config {
 	a.mu.RLock()
@@ -176,12 +230,32 @@ func (a *App) ReloadConfig() error {
 	return nil
 }
 
-// Close releases the database.
+// Close runs the shutdown sequence of server/index.js (scheduler.stop,
+// localModels.shutdown, server.close) and releases the database.
 func (a *App) Close() error {
+	if a.cancel != nil {
+		a.cancel()
+	}
+	if a.shutdown != nil {
+		a.shutdown()
+		a.shutdown = nil
+	}
 	if a.DB != nil {
 		return a.DB.Close()
 	}
 	return nil
+}
+
+// executablePath is where the running binary is, for the update runner.
+func executablePath() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+		return resolved
+	}
+	return exe
 }
 
 type healthResponse struct {

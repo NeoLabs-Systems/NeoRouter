@@ -17,7 +17,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -699,7 +698,6 @@ type relaySocket struct {
 	closed bool
 	wake   chan struct{}
 	done   chan struct{}
-	log    *slog.Logger
 }
 
 // relayWriteTimeout bounds one write to a member.

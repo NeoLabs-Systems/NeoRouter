@@ -26,11 +26,11 @@ type RequestRateBudget struct {
 
 // ConcurrentBudget is how many requests the accounts take at once. Limit is
 // nil when at least one usable account has no known cap (then nothing is
-// promised).
+// promised, and Available is nil with it).
 type ConcurrentBudget struct {
 	Limit     *int `json:"limit"`
 	InFlight  int  `json:"inFlight"`
-	Available int  `json:"available"`
+	Available *int `json:"available"`
 }
 
 // usableEntries are the models a key can reach at all.
@@ -99,13 +99,14 @@ func (s *Service) RequestBudgetForKey(key RouterKey, now time.Time) RequestBudge
 		} else {
 			providerAvailable = ownAvailable
 		}
-		out.Concurrent = ConcurrentBudget{Limit: &ownLimit, InFlight: ownInFlight, Available: providerAvailable}
+		out.Concurrent = ConcurrentBudget{Limit: &ownLimit, InFlight: ownInFlight, Available: &providerAvailable}
 		return out
 	}
 	out.Concurrent = ConcurrentBudget{InFlight: inFlight}
 	if !unknown {
 		out.Concurrent.Limit = &limit
-		out.Concurrent.Available = maxInt(0, limit-inFlight)
+		available := maxInt(0, limit-inFlight)
+		out.Concurrent.Available = &available
 	}
 	return out
 }
@@ -129,7 +130,9 @@ func BudgetHeaders(budget RequestBudget) map[string]string {
 	}
 	if budget.Concurrent.Limit != nil {
 		out["X-NeoRouter-Concurrency-Limit"] = strconv.Itoa(*budget.Concurrent.Limit)
-		out["X-NeoRouter-Concurrency-Available"] = strconv.Itoa(budget.Concurrent.Available)
+		if budget.Concurrent.Available != nil {
+			out["X-NeoRouter-Concurrency-Available"] = strconv.Itoa(*budget.Concurrent.Available)
+		}
 	}
 	return out
 }

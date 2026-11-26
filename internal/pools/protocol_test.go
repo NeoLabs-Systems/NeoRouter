@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-	"time"
 )
 
 // TestSignedEnvelopes checks that tampering, wrong keys, old messages and replays
@@ -201,10 +200,4 @@ func mustFail(t *testing.T, what string, call func() error, want string) {
 func testContext(t *testing.T) context.Context {
 	t.Helper()
 	return context.Background()
-}
-
-// fixedClock makes the service's clock standstill, so a test can reason about
-// windows.
-func fixedClock(harness *harness, at time.Time) {
-	harness.svc.SetClock(func() time.Time { return at })
 }

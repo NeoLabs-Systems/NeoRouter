@@ -3,6 +3,7 @@ package processing
 import (
 	"context"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -102,13 +103,15 @@ func TestPlaceholdersSplitAcrossChunks(t *testing.T) {
 }
 
 // fakePipeline is the model the JS test swapped in with setLibraryForTests.
+// The idle-unload timer calls Dispose from another goroutine, so the flags are
+// atomic.
 type fakePipeline struct {
-	classified bool
-	disposed   bool
+	classified atomic.Bool
+	disposed   atomic.Bool
 }
 
 func (f *fakePipeline) Classify(ctx context.Context, text string) ([]RawEntity, error) {
-	f.classified = true
+	f.classified.Store(true)
 	if strings.Contains(text, "Johanna Krause") {
 		return []RawEntity{
 			{EntityGroup: "private_person", Word: " Johanna Krause", Score: 0.98},
@@ -119,7 +122,7 @@ func (f *fakePipeline) Classify(ctx context.Context, text string) ([]RawEntity, 
 }
 
 func (f *fakePipeline) Dispose() error {
-	f.disposed = true
+	f.disposed.Store(true)
 	return nil
 }
 
@@ -151,7 +154,7 @@ func TestPrivacyFilterAddsWhatItFinds(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !on.Stats.AIDetection || !pipeline.classified {
+	if !on.Stats.AIDetection || !pipeline.classified.Load() {
 		t.Fatal("the filter runs once it is on")
 	}
 	sent := lastContent(on.Canonical)
@@ -316,10 +319,10 @@ func TestPrivacyModelIdleUnload(t *testing.T) {
 		t.Fatalf("entities %+v", items)
 	}
 	deadline := time.Now().Add(2 * time.Second)
-	for !pipeline.disposed && time.Now().Before(deadline) {
+	for !pipeline.disposed.Load() && time.Now().Before(deadline) {
 		time.Sleep(5 * time.Millisecond)
 	}
-	if !pipeline.disposed {
+	if !pipeline.disposed.Load() {
 		t.Fatal("the model was not unloaded after idling")
 	}
 	if status := service.Privacy.Status(context.Background()); status.Status != "idle" {

@@ -45,7 +45,6 @@ type chatDeps struct {
 	userID  string
 	// publicOnly makes the account one of a non-admin person.
 	publicOnly bool
-	timeout    time.Duration
 }
 
 // deps turns the test wiring into providers.AdapterDeps.

@@ -3,7 +3,6 @@ package catalog
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -231,6 +230,3 @@ func uniqueStrings(values []string) []string {
 	}
 	return result
 }
-
-// fmtFloat is used by error paths that quote a number.
-func fmtFloat(value float64) string { return fmt.Sprintf("%g", value) }

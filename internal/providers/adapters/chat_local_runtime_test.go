@@ -40,12 +40,6 @@ func (f *fakeLocalModels) speech(ctx context.Context, in LocalSpeechInput) (Loca
 	return LocalSpeechOutput{Samples: []float32{0, 0.5, -0.5}, Rate: 24000}, nil
 }
 
-func (f *fakeLocalModels) transcribe(ctx context.Context, in LocalTranscribeInput) (LocalTranscribeOutput, error) {
-	f.read = &in
-	duration := 1.5
-	return LocalTranscribeOutput{Text: "hello", Language: "en", Duration: &duration}, nil
-}
-
 // localAdapter builds the dialect for one fake service.
 func localAdapter(t *testing.T, service LocalModels) *localRuntime {
 	t.Helper()

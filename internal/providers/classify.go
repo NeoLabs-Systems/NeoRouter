@@ -57,7 +57,7 @@ func ParseRetryAfter(headers http.Header) (time.Duration, bool) {
 			return time.Duration(max(0, seconds*1000)) * time.Millisecond, true
 		}
 		if at, err := http.ParseTime(raw); err == nil {
-			return time.Duration(max(0, float64(at.Sub(time.Now()).Milliseconds()))) * time.Millisecond, true
+			return time.Duration(max(0, float64(time.Until(at).Milliseconds()))) * time.Millisecond, true
 		}
 	}
 	if ms, ok := numberFromString(strings.TrimSpace(headers.Get("retry-after-ms"))); ok && ms > 0 {

@@ -100,13 +100,6 @@ func PeriodEnd(period string, now time.Time) *int64 {
 	}
 }
 
-func deref(v *float64) float64 {
-	if v == nil {
-		return 0
-	}
-	return *v
-}
-
 // Spent is the sum of the key's ledger rows in its current budget period.
 func (s *Service) Spent(key Key, now time.Time) (float64, error) {
 	var total float64

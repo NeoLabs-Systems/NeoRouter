@@ -158,35 +158,26 @@ instead of pretending:
 
 ## Building
 
-The default build downloads the dashboard that GitHub already built for the
-branch (the `web-beta` / `web-main` release, 12 MB) instead of installing
-Flutter. That is also what an npm install does without the Flutter SDK.
+The image is a single static Go binary compiled in a `golang:1.27-trixie` stage
+(`CGO_ENABLED=0`) on a `debian:trixie-slim` runtime with `ffmpeg`, `libgomp1`
+(for local llama.cpp models) and `tini` as PID 1. The dashboard
+(`flutter_app/build/web`) travels with the checkout: CI rebuilds it on every
+Flutter change and every release commits it, so the image never downloads it.
 
 ```bash
 docker build -t neorouter .                                    # beta (default)
 docker build --build-arg NEOROUTER_CHANNEL=stable -t neorouter:stable .
-docker build --target runtime-from-source -t neorouter:src .    # dashboard from Flutter
 ```
-
-`runtime-from-source` uses the `ghcr.io/cirruslabs/flutter` image and builds
-`flutter_app` from the source — use it after changing the Flutter app, or when
-the prebuilt release is not reachable. It is slow (multi-GB base image).
 
 Build arguments:
 
 | Argument | Default | Meaning |
 | --- | --- | --- |
-| `NEOROUTER_CHANNEL` | `beta` | `beta` or `stable`: the prebuilt dashboard and the image's release channel |
-| `NEOROUTER_VERSION` | – | Tag or branch to fetch as the source instead of the build context |
-| `NEOROUTER_REPO` | upstream GitHub | Repository `NEOROUTER_VERSION` is fetched from, e.g. a fork |
-| `NEOROUTER_WEB_URL` | – | Full URL (or `file://` path) to `neorouter-web.tar.gz`, for mirrors and air-gapped builds |
-| `NODE_VERSION` | `22` | Node base image tag (must be 20 or newer) |
-| `FLUTTER_VERSION` | `3.35.5` | Flutter SDK image for `runtime-from-source` |
+| `NEOROUTER_CHANNEL` | `beta` | `beta` or `stable`: the image's default release channel (`neorouter channel` / `update`) |
 | `UID` / `GID` | `1000` | Runtime user, for bind mounts owned by somebody else |
 
-Native modules (`better-sqlite3`, `bcrypt`) are compiled in the build stage and
-verified there: a module without its binary fails the build instead of failing
-at runtime.
+The Go binary is pure Go (`modernc.org/sqlite`), so there are no native modules
+to compile or verify — the same binary runs on every platform the build targets.
 
 ## Operations
 
@@ -209,8 +200,8 @@ docker compose build --pull && docker compose up -d   # built from a checkout
 docker compose pull && docker compose up -d           # published image
 ```
 
-Pinning a version is `NEOROUTER_VERSION` at build time, or `image: …:0.1.2` for
-a published image. The volume is untouched either way. Migrations run at start
+Pinning a version is `image: …:0.1.2` for a published image, or building from a
+tagged checkout. The volume is untouched either way. Migrations run at start
 — take a backup first if the release notes mention schema changes:
 
 ```bash

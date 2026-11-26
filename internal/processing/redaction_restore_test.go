@@ -226,7 +226,9 @@ func TestSameValueSamePlaceholder(t *testing.T) {
 	fixture := loadVaultFixture(t)
 	engine := testEngine(t)
 	vault := NewVault(engine, restoreModes())
-	if vault.TokenFor("secret", fixture.Key, "ai_provider_key") != vault.TokenFor("secret", fixture.Key, "ai_provider_key") {
+	first := vault.TokenFor("secret", fixture.Key, "ai_provider_key")
+	second := vault.TokenFor("secret", fixture.Key, "ai_provider_key")
+	if first != second {
 		t.Fatal("the same value got two placeholders")
 	}
 	text := vault.RedactText("a@b.de and again a@b.de, card 4111111111111111", RedactOptions{})

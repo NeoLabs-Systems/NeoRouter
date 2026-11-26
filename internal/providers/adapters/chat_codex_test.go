@@ -19,7 +19,6 @@ type fakeCodexSignIn struct {
 	access    string
 	accountID string
 	refreshes int
-	persisted []string
 	err       error
 }
 

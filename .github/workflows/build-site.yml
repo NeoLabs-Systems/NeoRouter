@@ -1,5 +1,5 @@
 # Publishes the landing page at / and the GET /api reference at /api/
-# (scripts/build_api_docs.js) to GitHub Pages, like NeoAgent's site.
+# (cmd/neorouter-release api-docs) to GitHub Pages, like NeoAgent's site.
 name: Build Site
 
 on:
@@ -8,16 +8,13 @@ on:
       - main
     paths:
       - landing/**
-      # The reference itself: the Go gateway serves it, the page is built from
-      # the Node copy while the JavaScript tree is still in the repository.
+      # The reference itself: the Go gateway serves it and the same Go code
+      # renders the page, so this workflow needs no Node.
       - internal/gateway/**
-      - server/routes/api_docs.js
-      - server/core/capability_registry.js
-      - server/services/routing/profiles.js
-      - server/services/routing/task/**
-      - scripts/build_api_docs.js
-      - package.json
-      - package-lock.json
+      - internal/routing/**
+      - cmd/neorouter-release/**
+      - go.mod
+      - go.sum
       - .github/workflows/build-site.yml
   workflow_dispatch:
 
@@ -38,22 +35,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          node-version: 20
-          cache: npm
+          go-version: '1.27'
+          cache: true
 
       - name: Set up Pages
         uses: actions/configure-pages@v5
 
-      - name: Install dependencies
-        run: npm ci
-
       - name: Build API docs
-        run: npm run build:api-docs
+        # Writes build/api-docs/index.md and index.html from the same Go source
+        # the gateway serves, so Node and this workflow's npm install are gone.
+        run: go run ./cmd/neorouter-release api-docs --origin "$NEOROUTER_DOCS_ORIGIN" --out build/api-docs
         env:
           # Set a repository variable to show your own server in the examples.
+          # When it is unset the command falls back to
+          # https://neorouter.example.com, the placeholder the reader swaps.
           NEOROUTER_DOCS_ORIGIN: ${{ vars.NEOROUTER_DOCS_ORIGIN }}
 
       - name: Assemble site

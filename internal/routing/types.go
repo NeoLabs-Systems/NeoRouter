@@ -306,6 +306,4 @@ type Profile struct {
 
 // Time helpers: the Node code counts everywhere in milliseconds.
 
-func unixMs(t time.Time) int64 { return t.UnixMilli() }
-
 func fromMs(ms int64) time.Time { return time.UnixMilli(ms) }

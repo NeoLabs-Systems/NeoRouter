@@ -111,13 +111,6 @@ func Reliability(snapshot StatsRow, sample bool, random func() float64) float64 
 	return alpha / (alpha + beta)
 }
 
-func (s *Service) reliabilityOf(snapshot StatsRow, sample bool) float64 {
-	if !sample {
-		return Reliability(snapshot, false, nil)
-	}
-	return Reliability(snapshot, true, s.opts.Random)
-}
-
 // SpeedOf is the speed feature of a model from what was measured.
 func SpeedOf(entry *Entry, snapshot StatsRow) float64 {
 	var tps *float64
