@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:neolabs_flutter/neolabs_flutter.dart' show NeoAuthBackdrop;
+import 'package:neolabs_flutter/neolabs_flutter.dart' show
+        NeoAuthBackdrop,
+        NeoSettingsCard,
+        NeoSettingsGroup,
+        NeoSettingsHeading,
+        NeoSettingsRow;
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_spacing.dart';
@@ -877,30 +882,8 @@ class SettingsHeading extends StatelessWidget {
   final Widget? trailing;
 
   @override
-  Widget build(BuildContext context) {
-    final palette = neoRouterPaletteOf(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 0, 0, 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: <Widget>[
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(title, style: sectionTitleStyle(palette)),
-                if (description != null) ...<Widget>[
-                  const SizedBox(height: 3),
-                  Text(description!, style: TextStyle(fontSize: 13, color: palette.textSoft, height: 1.45)),
-                ],
-              ],
-            ),
-          ),
-          if (trailing != null) ...<Widget>[const SizedBox(width: 12), trailing!],
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      NeoSettingsHeading(palette: neoLabsPaletteOf(context), title: title, description: description, trailing: trailing);
 }
 
 /// Rows on a single card, split by hairlines.
@@ -910,22 +893,10 @@ class SettingsCardList extends StatelessWidget {
   final List<Widget> children;
 
   @override
-  Widget build(BuildContext context) {
-    final palette = neoRouterPaletteOf(context);
-    return AppCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          for (var i = 0; i < children.length; i++) ...<Widget>[if (i > 0) Divider(height: 1, thickness: 1, color: palette.border), children[i]],
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => NeoSettingsCard(palette: neoLabsPaletteOf(context), children: children);
 }
 
-/// One setting: label and help on the left, its control on the right. On a
-/// narrow screen the control moves under the label.
+/// One setting: label and help on the left, its control on the right.
 class SettingsRow extends StatelessWidget {
   const SettingsRow({super.key, required this.label, this.description, this.control});
 
@@ -934,48 +905,8 @@ class SettingsRow extends StatelessWidget {
   final Widget? control;
 
   @override
-  Widget build(BuildContext context) {
-    final palette = neoRouterPaletteOf(context);
-    final text = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(
-          label,
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: palette.text),
-        ),
-        if (description != null) ...<Widget>[
-          const SizedBox(height: 3),
-          Text(description!, style: TextStyle(fontSize: 13, color: palette.textSoft, height: 1.45)),
-        ],
-      ],
-    );
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final control = this.control;
-          if (control == null) return text;
-          if (constraints.maxWidth < 560) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                text,
-                const SizedBox(height: 12),
-                Align(alignment: Alignment.centerLeft, child: control),
-              ],
-            );
-          }
-          return Row(
-            children: <Widget>[
-              Expanded(child: text),
-              const SizedBox(width: 24),
-              control,
-            ],
-          );
-        },
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      NeoSettingsRow(palette: neoLabsPaletteOf(context), label: label, description: description, control: control);
 }
 
 /// A titled block of rows on one card with the standard gap below.
@@ -988,18 +919,13 @@ class SettingsGroup extends StatelessWidget {
   final List<Widget> children;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          SettingsHeading(title: title, description: description, trailing: trailing),
-          if (children.isNotEmpty) SettingsCardList(children: children),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => NeoSettingsGroup(
+    palette: neoLabsPaletteOf(context),
+    title: title,
+    description: description,
+    trailing: trailing,
+    children: children,
+  );
 }
 
 /// A selectable card with a title and a one-line explanation.

@@ -1,5 +1,5 @@
-github.com/NeoLabs-Systems/neolabs-go v0.3.5-0.20261126101449-656ccb218105 h1:iGI7gfwii02f5lyiGWBfLjL4dCQRH7SCqunE/SKXjQQ=
-github.com/NeoLabs-Systems/neolabs-go v0.3.5-0.20261126101449-656ccb218105/go.mod h1:0buWNj1NgQRg0mo1wWdDq+MJf8FTwDlYZnwd+jjDNqA=
+github.com/NeoLabs-Systems/neolabs-go v0.3.5-0.20261126160922-341f2eb7e11e h1:zlPLq7YHMEDmWtR38JEYp4phG7A74oFRve13hbIw5rY=
+github.com/NeoLabs-Systems/neolabs-go v0.3.5-0.20261126160922-341f2eb7e11e/go.mod h1:UQ/g/IMzOtDWsAWArhz0FTVXvFAdyml3t2sz8h0Ufwg=
 github.com/coder/websocket v1.8.15 h1:6B2JPeOGlpff2Uz6vOEH1Vzpi0iUz20A+lPVhPHtNUA=
 github.com/coder/websocket v1.8.15/go.mod h1:NX3SzP+inril6yawo5CQXx8+fk145lPDC6pumgx0mVg=
 github.com/dustin/go-humanize v1.1.0 h1:dbKTrvD0klcbBV/h4AWJdMuZogJACoMlvWIWZ5b2xWg=

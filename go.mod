@@ -3,7 +3,7 @@ module github.com/NeoLabs-Systems/neorouter
 go 1.27
 
 require (
-	github.com/NeoLabs-Systems/neolabs-go v0.3.5-0.20261126101449-656ccb218105
+	github.com/NeoLabs-Systems/neolabs-go v0.3.5-0.20261126160922-341f2eb7e11e
 	github.com/coder/websocket v1.8.15
 	github.com/ebitengine/purego v0.11.3
 	github.com/fxamacker/cbor/v2 v2.9.4

@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:neolabs_flutter/neolabs_flutter.dart'
+    show NeoUpdateBanner, NeoUpdateController, NeoUpdateSettings;
 import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/gen/app_localizations.dart';
@@ -11,6 +13,7 @@ import 'main_controller.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
+import 'src/page_reload.dart';
 import 'src/backend_client.dart';
 import 'src/models.dart';
 
@@ -85,7 +88,7 @@ class _AdminScreenState extends State<AdminScreen> {
   bool _refreshing = false;
   String? _error;
 
-  late final UpdateWatcher _updates = UpdateWatcher(widget.controller.api);
+  late final NeoUpdateController _updates = updateController(widget.controller.api);
 
   @override
   void initState() {
@@ -180,7 +183,12 @@ class _AdminScreenState extends State<AdminScreen> {
       padding: pagePadding(context),
       children: <Widget>[
         ScreenHeader(title: t.navAdmin, description: t.adminDescription),
-        UpdateBanner(watcher: _updates),
+        NeoUpdateBanner(
+          palette: neoLabsPaletteOf(context),
+          controller: _updates,
+          strings: updateStrings(AppL10n.of(context)),
+          onReload: reloadPage,
+        ),
         TextField(
           controller: _search,
           onChanged: (_) => setState(() {}),
@@ -280,7 +288,11 @@ class _AdminScreenState extends State<AdminScreen> {
                 SettingsRow(label: t.capabilitiesLabel, control: Text(capabilities, style: TextStyle(color: palette.textSoft, fontSize: 13))),
               ],
             ),
-            UpdateSettings(watcher: _updates),
+            NeoUpdateSettings(
+              palette: neoLabsPaletteOf(context),
+              controller: _updates,
+              strings: updateStrings(AppL10n.of(context)),
+            ),
             SettingsGroup(
               title: t.privacyModelTitle,
               description: t.privacyModelHint,
