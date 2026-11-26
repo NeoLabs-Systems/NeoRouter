@@ -100,6 +100,9 @@ type PrivacyModel struct {
 	pipe     Pipeline
 	loading  chan struct{}
 	idle     *time.Timer
+	// off is set while the filter is switched off, so a load that is still
+	// running cannot bring it back.
+	off bool
 }
 
 // NewPrivacyModel builds the filter in its starting state ("off").
@@ -171,7 +174,11 @@ func (m *PrivacyModel) SetEnabled(ctx context.Context, value bool) (PrivacyStatu
 	}
 	if value {
 		m.mu.Lock()
+		m.off = false
 		loaded := m.pipe != nil
+		if m.loading != nil {
+			m.status = "loading"
+		}
 		m.mu.Unlock()
 		if !loaded {
 			go func() {
@@ -208,6 +215,10 @@ func (m *PrivacyModel) Resume(ctx context.Context) {
 // load downloads (the first time) and loads the model; one load at a time.
 func (m *PrivacyModel) load(ctx context.Context) (Pipeline, error) {
 	m.mu.Lock()
+	if m.off {
+		m.mu.Unlock()
+		return nil, ErrPrivacyLoad
+	}
 	if m.pipe != nil {
 		pipe := m.pipe
 		m.mu.Unlock()
@@ -246,12 +257,16 @@ func (m *PrivacyModel) load(ctx context.Context) (Pipeline, error) {
 	}
 	pipe, err := loader(ctx, func(fraction float64) {
 		m.mu.Lock()
-		m.status = "downloading"
-		value := fraction
-		m.progress = &value
+		if !m.off {
+			m.status = "downloading"
+			value := fraction
+			m.progress = &value
+		}
 		m.mu.Unlock()
 	})
-	m.finishLoad(pipe, err, done)
+	if !m.finishLoad(pipe, err, done) {
+		return nil, ErrPrivacyLoad
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -261,8 +276,21 @@ func (m *PrivacyModel) load(ctx context.Context) (Pipeline, error) {
 // ErrPrivacyLoad is returned when a concurrent load failed and nothing is loaded.
 var ErrPrivacyLoad = errors.New("processing: the privacy filter is not loaded")
 
-func (m *PrivacyModel) finishLoad(pipe Pipeline, err error, done chan struct{}) {
+// finishLoad records how a load ended. It reports false when the filter was
+// switched off meanwhile: the result is dropped and the model freed.
+func (m *PrivacyModel) finishLoad(pipe Pipeline, err error, done chan struct{}) bool {
 	m.mu.Lock()
+	if m.off {
+		m.loading = nil
+		close(done)
+		m.mu.Unlock()
+		if err == nil && pipe != nil {
+			if derr := pipe.Dispose(); derr != nil {
+				m.log().Debug("Privacy filter dispose", "error", derr)
+			}
+		}
+		return false
+	}
 	if err != nil {
 		m.status = "error"
 		message := err.Error()
@@ -278,10 +306,11 @@ func (m *PrivacyModel) finishLoad(pipe Pipeline, err error, done chan struct{}) 
 	m.mu.Unlock()
 	if err != nil {
 		m.log().Warn("Privacy filter could not load", "error", err)
-		return
+		return true
 	}
 	m.log().Info("Privacy filter loaded")
 	m.touch()
+	return true
 }
 
 // unload frees the model and leaves the filter in the given state.
@@ -295,6 +324,10 @@ func (m *PrivacyModel) unload(status string) {
 	m.pipe = nil
 	m.status = status
 	m.progress = nil
+	if status == "off" {
+		m.off = true
+		m.errText = nil
+	}
 	m.mu.Unlock()
 	if pipe != nil {
 		if err := pipe.Dispose(); err != nil {
@@ -548,6 +581,7 @@ func (m *PrivacyModel) SetLoader(loader Loader) {
 	m.pipe = nil
 	m.loading = nil
 	m.status = "off"
+	m.off = false
 	m.progress = nil
 	m.errText = nil
 	m.Load = loader

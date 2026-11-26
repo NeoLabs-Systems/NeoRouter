@@ -153,13 +153,13 @@ func TestPrivacyModelResumeAndFailedLoad(t *testing.T) {
 	}
 	// On: resume goes to idle and tries to load (the model is not installed here,
 	// so the load fails and is recorded).
+	service.Privacy.SetLoader(func(ctx context.Context, progress func(float64)) (Pipeline, error) {
+		return nil, errPrivacyNotInstalled
+	})
 	if _, err := service.Privacy.SetEnabled(context.Background(), true); err != nil {
 		t.Fatal(err)
 	}
 	defer service.Privacy.SetEnabled(context.Background(), false)
-	service.Privacy.SetLoader(func(ctx context.Context, progress func(float64)) (Pipeline, error) {
-		return nil, errPrivacyNotInstalled
-	})
 	if _, err := service.Privacy.Detect(context.Background(), "some text to classify"); err == nil {
 		t.Fatal("a failing load is an error")
 	}
@@ -173,6 +173,34 @@ func TestPrivacyModelResumeAndFailedLoad(t *testing.T) {
 	}
 	if status := service.Privacy.Status(context.Background()); status.Status != "off" {
 		t.Fatalf("status after turning it off: %s", status.Status)
+	}
+}
+
+// Switching off while the model is still loading has to stay off, whatever the
+// load ends with.
+func TestPrivacyModelSwitchedOffWhileLoading(t *testing.T) {
+	service, _ := testService(t)
+	entered, release := make(chan struct{}), make(chan struct{})
+	service.Privacy.SetLoader(func(ctx context.Context, progress func(float64)) (Pipeline, error) {
+		close(entered)
+		<-release
+		progress(0.5)
+		return nil, errPrivacyNotInstalled
+	})
+	if _, err := service.Privacy.SetEnabled(context.Background(), true); err != nil {
+		t.Fatal(err)
+	}
+	<-entered
+	service.Privacy.mu.Lock()
+	done := service.Privacy.loading
+	service.Privacy.mu.Unlock()
+	if _, err := service.Privacy.SetEnabled(context.Background(), false); err != nil {
+		t.Fatal(err)
+	}
+	close(release)
+	<-done
+	if status := service.Privacy.Status(context.Background()); status.Status != "off" || status.Error != nil || status.Progress != nil {
+		t.Fatalf("status after the late load: %+v", status)
 	}
 }
 
