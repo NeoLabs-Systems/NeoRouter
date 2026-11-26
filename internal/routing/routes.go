@@ -48,9 +48,13 @@ func (s *Service) Routes(mux *http.ServeMux, deps RouteDeps) {
 
 	handle("GET /api/v1/routing/groups", permissionView, func(w http.ResponseWriter, r *http.Request, ownerID, _ string) {
 		now := time.Now()
+		groups := s.GroupStatuses(ownerID, now)
+		if groups == nil {
+			groups = []*GroupStatus{}
+		}
 		httpx.WriteJSON(w, http.StatusOK, struct {
 			Groups []*GroupStatus `json:"groups"`
-		}{Groups: s.GroupStatuses(ownerID, now)})
+		}{Groups: groups})
 	})
 	handle("POST /api/v1/routing/groups", permissionEdit, func(w http.ResponseWriter, r *http.Request, ownerID, _ string) {
 		var input GroupInput

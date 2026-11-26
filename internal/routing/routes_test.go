@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -126,6 +127,20 @@ func TestRoutingProfileRoutes(t *testing.T) {
 	response, _ = callJSON(t, "DELETE", server.URL+"/api/v1/routing/profiles/"+id, nil)
 	if response.StatusCode != 404 {
 		t.Fatalf("DELETE missing profile = %d, want 404", response.StatusCode)
+	}
+}
+
+// TestRoutingGroupsEmptyIsArray pins the wire shape the dashboard casts to a
+// List: with no groups the field is [], never null (a nil Go slice marshals to
+// null and would throw in the UI).
+func TestRoutingGroupsEmptyIsArray(t *testing.T) {
+	_, server := newRoutesServer(t)
+	response, payload := callJSON(t, "GET", server.URL+"/api/v1/routing/groups", nil)
+	if response.StatusCode != 200 {
+		t.Fatalf("GET groups = %d %s", response.StatusCode, payload)
+	}
+	if !strings.Contains(string(payload), `"groups":[]`) {
+		t.Fatalf("empty groups must serialize as [], got %s", payload)
 	}
 }
 
