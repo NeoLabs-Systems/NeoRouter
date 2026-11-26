@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/NeoLabs-Systems/neorouter/internal/config"
 )
 
 // fakeProxy is the SOCKS pool: it records what the HTTP layer sent it and
@@ -198,6 +200,34 @@ func TestRequestSetsJSONContentType(t *testing.T) {
 	}
 	if seen != "application/vnd.custom+json" {
 		t.Fatalf("content type = %q", seen)
+	}
+}
+
+// TestDefaultUserAgentIsNotTheGoBot: Cloudflare-fronted providers (Nous Portal)
+// answer Go's default "Go-http-client/1.1" with a 403 challenge page, so every
+// upstream call carries an honest product UA unless the caller set one.
+func TestDefaultUserAgentIsNotTheGoBot(t *testing.T) {
+	var seen string
+	url := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		seen = r.Header.Get("User-Agent")
+		_, _ = w.Write([]byte(`{}`))
+	})
+	client := NewClient(Options{})
+	if _, err := client.Request(context.Background(), url, Request{}); err != nil {
+		t.Fatalf("request: %v", err)
+	}
+	if seen != "NeoRouter/"+config.Version {
+		t.Fatalf("default user agent = %q", seen)
+	}
+
+	// A caller's own UA (a definition quirk) wins.
+	headers := http.Header{}
+	headers.Set("User-Agent", "quirk/1.0")
+	if _, err := client.Request(context.Background(), url, Request{Headers: headers}); err != nil {
+		t.Fatalf("request: %v", err)
+	}
+	if seen != "quirk/1.0" {
+		t.Fatalf("caller user agent = %q", seen)
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/NeoLabs-Systems/neolabs-go/ssrf"
+	"github.com/NeoLabs-Systems/neorouter/internal/config"
 )
 
 // Proxy is the SOCKS outbound pool (services/proxies in JS): a configured
@@ -217,6 +218,12 @@ func (c *Client) prepare(ctx context.Context, rawURL string, req Request) (*http
 		return nil, nil, NewError(KindBadRequest, "The provider URL is not valid: "+err.Error(), ErrorOptions{})
 	}
 	prepared.Header = headers
+	// Go's default "Go-http-client/1.1" (and an absent UA) is challenged by
+	// Cloudflare-fronted providers (Nous Portal answers a 403 HTML page). Send an
+	// honest product UA unless the caller or a definition quirk set one.
+	if prepared.Header.Get("User-Agent") == "" {
+		prepared.Header.Set("User-Agent", "NeoRouter/"+config.Version)
+	}
 	if body != nil {
 		prepared.GetBody = func() (io.ReadCloser, error) {
 			return io.NopCloser(bytes.NewReader(body)), nil
