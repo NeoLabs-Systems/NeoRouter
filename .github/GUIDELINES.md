@@ -50,6 +50,10 @@ scripts/               l10n string source and data pipelines
 
 ## Core Principles
 
+- **Assume another machine.** NeoRouter usually runs on a different server; logs a
+  user supplies may not match files on this computer.
+- **One visual language.** Reuse NeoLabs design tokens, auth UX, landing structure
+  and backend conventions.
 - **No duplication.** Search the domain package, `internal/`, and `neolabs-go`
   before adding a helper. Reuse what exists.
 - **No hardcoded models.** Behaviour comes from definitions, metadata and measurements.
@@ -103,6 +107,9 @@ scripts/               l10n string source and data pipelines
   `neolabs-go/llm` clients and `ssrf`-guarded transports.
 - Upstream failures are typed provider errors with a `Kind`; routing reacts to
   kinds, never to raw status codes.
+- A new provider is an entry in `internal/providers/definitions.json` (keep the
+  registry tests in step); a new capability (search, image, audio, video) is a new
+  adapter registered through the gateway capability registry.
 - Routing must stay data-driven: metadata sources, measured stats and provider
   definitions. Centralize thresholds in `internal/config` (env-backed).
 - "Free" means 100 % free. Never classify an unknown price as free.

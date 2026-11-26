@@ -10,7 +10,7 @@ on:
       - Dockerfile
       - .dockerignore
       - docker/**
-      - docker-compose.yml
+      - compose.yaml
       - .github/workflows/docker.yml
   workflow_dispatch:
 

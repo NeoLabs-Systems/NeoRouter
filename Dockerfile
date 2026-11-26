@@ -62,7 +62,7 @@ RUN apt-get update \
 WORKDIR /app
 
 COPY --from=go-builder /out/neorouter /usr/local/bin/neorouter
-COPY LICENSE NOTICE ./
+COPY LICENSE ./
 # The documented defaults (`neorouter install` seeds an install's .env from it).
 COPY .env.example ./
 COPY landing ./landing

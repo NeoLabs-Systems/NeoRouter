@@ -134,7 +134,7 @@ All state lives in one volume. Upgrading an older setup, ports, reverse proxies 
 | Start | Understand | Extend |
 | --- | --- | --- |
 | [Configuration](docs/configuration.md) | [Routing](docs/routing.md) | [Providers](docs/providers.md) |
-| [Docker](docs/docker.md) | [Security](SECURITY.md) | [Contributing](CONTRIBUTING.md) |
+| [Docker](docs/docker.md) | [Security](SECURITY.md) | [Contributing](.github/CONTRIBUTING.md) |
 | [CLI](#%EF%B8%8F-cli) | [Anonymous statistics](docs/analytics.md) | |
 
 ## 🛠️ CLI
@@ -151,5 +151,20 @@ All state lives in one volume. Upgrading an older setup, ports, reverse proxies 
 ## 📄 License
 
 [AGPL-3.0-only](LICENSE).
+
+The privacy shield embeds data from others:
+[gitleaks](https://github.com/gitleaks/gitleaks) rules (MIT, © 2019 Zachary Rice);
+first names from the
+[Berlin name lists](https://github.com/berlin/haeufige-vornamen-berlin) (BerlinOnline
+GmbH, from LABO data, [CC BY 3.0 DE](https://creativecommons.org/licenses/by/3.0/de/),
+reduced to names) and the US Census Bureau (public domain), which also supplies the
+last names; word lists from
+[FrequencyWords](https://github.com/hermitdave/FrequencyWords) by Hermit Dave
+([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); the derived lists
+carry the same licence); and the
+[BIP-39 wordlist](https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt)
+(MIT). Benchmark scores come from [OpenRouter](https://openrouter.ai)
+([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)), combined with other
+sources and rescaled.
 
 <p align="center"><sub>Made with ❤️ by <a href="https://github.com/neooriginal">Neo</a> · <a href="https://github.com/NeoLabs-Systems">NeoLabs Systems</a></sub></p>

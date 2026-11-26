@@ -8,7 +8,7 @@
 // The shield is data-driven: the rule packs, categories, word lists and texts in
 // shield/data are committed. The word lists come from the US census, Berlin's
 // name lists, FrequencyWords and the BIP-39 list, and the secret rules from
-// gitleaks (see NOTICE).
+// gitleaks (credits in the README).
 //
 // # Rule patterns
 //

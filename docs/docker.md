@@ -37,7 +37,7 @@ git checkout v1.2.3 && docker compose up -d --build                        # one
 ```
 
 `NEOROUTER_CHANNEL` (`stable` by default) only sets the release channel the image
-reports. Compose also reads it from a `.env` file next to `docker-compose.yml`.
+reports. Compose also reads it from a `.env` file next to `compose.yaml`.
 
 Or skip the build and use a published image,
 `ghcr.io/neolabs-systems/neorouter`:

@@ -9,8 +9,8 @@ cd flutter_app && flutter run -d chrome --dart-define NEOROUTER_API_BASE=http://
 ```
 
 The backend is Go 1.27 (`cmd/neorouter`, `internal/`); the dashboard is Flutter
-web. See `GUIDELINES.md` for the package layout and conventions, and
-`AGENTS.md` for the product rules.
+web. See [GUIDELINES.md](GUIDELINES.md) for the package layout, conventions and
+product rules.
 
 ## Tests
 

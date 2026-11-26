@@ -1,16 +1,33 @@
 # Security Policy
 
-## Reporting a vulnerability
+## Supported Versions
 
-Please report security issues privately via GitHub Security Advisories on
-the NeoRouter repository, or by email to the NeoLabs maintainers. Do not open
-public issues for vulnerabilities.
+Security fixes are applied to the latest stable release and, when affected, the
+current beta line. Older releases should be updated before a report is
+validated.
+
+## Report a Vulnerability Privately
+
+Do not open a public issue for a suspected vulnerability.
+
+Use GitHub's
+[private vulnerability reporting](https://github.com/NeoLabs-Systems/NeoRouter/security/advisories/new)
+to send the report to the maintainer.
 
 Include:
 
-- A description of the issue and its impact.
-- Steps to reproduce or a proof of concept.
-- The affected component (gateway `/v1`, management API `/api/v1`, CLI, Flutter client).
+- The affected version or commit.
+- The affected component (gateway, management API, CLI or dashboard).
+- Reproduction steps or a minimal proof of concept.
+- The impact you observed.
+- Any known mitigations.
+
+Do not include live credentials, personal data, or access to a production
+system. Use test accounts and redact logs.
+
+The maintainer will confirm receipt, investigate the report, coordinate a fix,
+and credit the reporter when requested and appropriate. Please allow time for a
+release before publishing technical details.
 
 ## Scope
 
