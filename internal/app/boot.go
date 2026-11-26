@@ -77,6 +77,9 @@ func (d *deps) mountAPI(mux *http.ServeMux) {
 	})
 	d.Usage.Routes(mux)
 	d.Media.PlaygroundRoutes(mux)
+	// The playground chat is a gateway handler but a management endpoint: it
+	// needs the session and the space, so it mounts here, not at the root.
+	mux.Handle("POST /api/v1/playground/chat", httpserver.Gzip(d.gatewayMux))
 	d.Processing.Routes(mux)
 	d.mountAdmin(mux)
 	// Anything else under /api/v1 is the management 404 (error_handler.js
@@ -265,12 +268,11 @@ func (d *deps) mountGateway(mux *http.ServeMux) {
 	})
 }
 
-// mountGatewayMounts sends the gateway's own management paths (the playground
-// chat and the Markdown reference) to that same mux from the root, since it is
-// otherwise only reachable under /v1.
+// mountGatewayMounts sends the gateway's public reference paths to that same
+// mux from the root, since it is otherwise only reachable under /v1. The
+// playground chat is session-scoped and mounts in mountAPI instead.
 func (d *deps) mountGatewayMounts(mux *http.ServeMux) {
 	inner := d.gatewayMux
-	mux.Handle("/api/v1/playground/chat", httpserver.Gzip(inner))
 	mux.Handle("/api/docs", httpserver.Gzip(inner))
 	mux.Handle("/api", httpserver.Gzip(inner))
 }
