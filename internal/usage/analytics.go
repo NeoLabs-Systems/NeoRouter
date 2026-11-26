@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"time"
@@ -33,8 +34,8 @@ type Group struct {
 // accum is a group still being summed.
 type accum struct {
 	Group
-	latencies []int64
-	ttfts     []int64
+	latencies timings
+	ttfts     timings
 }
 
 // AnalyticsSeries is one bucket of the activity series.
@@ -153,17 +154,15 @@ func (a *accum) addRow(row *requestRow) {
 		a.Fallbacks++
 	}
 	if row.Status == "success" && row.LatencyMS.Valid {
-		a.latencies = append(a.latencies, row.LatencyMS.Int64)
+		a.latencies.add(row.LatencyMS.Int64)
 	}
 	if row.TTFTMS.Valid {
-		a.ttfts = append(a.ttfts, row.TTFTMS.Int64)
+		a.ttfts.add(row.TTFTMS.Int64)
 	}
 }
 
-// finish sorts the timings and works out the rates.
+// finish works out the rates and the percentiles.
 func (a *accum) finish() Group {
-	sort.Slice(a.latencies, func(i, j int) bool { return a.latencies[i] < a.latencies[j] })
-	sort.Slice(a.ttfts, func(i, j int) bool { return a.ttfts[i] < a.ttfts[j] })
 	group := a.Group
 	if a.Successes > 0 {
 		rate := float64(a.CacheHits) / float64(a.Successes)
@@ -173,9 +172,9 @@ func (a *accum) finish() Group {
 		rate := float64(a.Successes) / float64(a.Requests)
 		group.SuccessRate = &rate
 	}
-	group.LatencyP50 = percentile(a.latencies, 0.5)
-	group.LatencyP95 = percentile(a.latencies, 0.95)
-	group.TTFTP50 = percentile(a.ttfts, 0.5)
+	group.LatencyP50 = a.latencies.percentile(0.5)
+	group.LatencyP95 = a.latencies.percentile(0.95)
+	group.TTFTP50 = a.ttfts.percentile(0.5)
 	return group
 }
 
@@ -265,9 +264,23 @@ func (g *grouper) top(limit int, average bool) []ProviderRow {
 	return out
 }
 
+// largeRead is how many requests make a breakdown's working memory worth
+// handing back to the system at once.
+const largeRead = 100_000
+
 // AnalyticsOf is the activity breakdown of a person over a range. keyIds limits
 // the numbers to a few router keys; an empty list means all of them.
 func (s *Service) AnalyticsOf(userID, rangeName string, now time.Time, keyIDs []string) (*Analytics, error) {
+	analytics, err := s.analyticsOf(userID, rangeName, now, keyIDs)
+	if err == nil && analytics.Totals.Requests >= largeRead {
+		// Left to itself the runtime keeps these pages for a long while on a
+		// quiet server.
+		debug.FreeOSMemory()
+	}
+	return analytics, err
+}
+
+func (s *Service) analyticsOf(userID, rangeName string, now time.Time, keyIDs []string) (*Analytics, error) {
 	ctx := context.Background()
 	since := rangeStart(rangeName, now)
 	bucketMS := int64(86_400_000)

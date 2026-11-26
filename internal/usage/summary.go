@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"math"
 	"time"
 )
 
@@ -261,13 +260,4 @@ func nullString(v sql.NullString) *string {
 	}
 	out := v.String
 	return &out
-}
-
-// percentile is the value at p of an ascending slice, nil when it is empty.
-func percentile(values []int64, p float64) *int64 {
-	if len(values) == 0 {
-		return nil
-	}
-	index := int(math.Min(float64(len(values)-1), math.Floor(p*float64(len(values)))))
-	return &values[index]
 }
