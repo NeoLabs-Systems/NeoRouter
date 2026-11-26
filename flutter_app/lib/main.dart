@@ -6,6 +6,7 @@ import 'main_auth.dart';
 import 'main_boot.dart';
 import 'main_connect.dart';
 import 'main_controller.dart';
+import 'main_qr_approve.dart';
 import 'main_shell.dart';
 import 'main_theme.dart';
 
@@ -57,7 +58,11 @@ class _NeoRouterAppState extends State<NeoRouterApp> {
         home: _controller.bootstrapping
             ? const BootScreen()
             : _controller.hasUser
-                ? (_controller.pendingConnect != null ? ConnectAppScreen(controller: _controller) : NeoRouterShell(controller: _controller))
+                ? (_controller.pendingQrApproval != null
+                    ? QrApproveScreen(controller: _controller)
+                    : _controller.pendingConnect != null
+                        ? ConnectAppScreen(controller: _controller)
+                        : NeoRouterShell(controller: _controller))
                 : NeoRouterAuthScreen(controller: _controller),
       ),
     );

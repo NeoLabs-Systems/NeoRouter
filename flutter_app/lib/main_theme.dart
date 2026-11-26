@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:neolabs_flutter/neolabs_flutter.dart' show NeoLabsPalette;
 
 import 'main_spacing.dart';
 
@@ -126,6 +127,37 @@ NeoRouterPalette neoRouterPaletteFor(Brightness brightness) =>
 
 NeoRouterPalette neoRouterPaletteOf(BuildContext context) =>
     neoRouterPaletteFor(Theme.of(context).brightness);
+
+/// NeoRouter's tokens seen through the shared neolabs_flutter palette, so the
+/// widgets the library owns (sidebar rows, settings shell) paint with NeoRouter's
+/// exact colors. Only the tokens those widgets read are mapped; the rest carry
+/// NeoRouter's nearest equivalent.
+NeoLabsPalette neoLabsPaletteFor(Brightness brightness) =>
+    _neoLabsPalette(neoRouterPaletteFor(brightness));
+
+/// The library palette for the ambient theme brightness.
+NeoLabsPalette neoLabsPaletteOf(BuildContext context) =>
+    neoLabsPaletteFor(Theme.of(context).brightness);
+
+NeoLabsPalette _neoLabsPalette(NeoRouterPalette palette) => NeoLabsPalette(
+  bgPrimary: palette.scaffold,
+  bgSecondary: palette.surface,
+  bgTertiary: palette.surfaceRaised,
+  bgCard: palette.surface,
+  textPrimary: palette.text,
+  textSecondary: palette.textSoft,
+  textMuted: palette.textMuted,
+  accent: palette.accent,
+  accentHover: palette.accentStrong,
+  accentAlt: palette.secondary,
+  accentMuted: palette.accentSoft,
+  border: palette.border,
+  borderLight: palette.borderStrong,
+  success: palette.success,
+  warning: palette.warning,
+  danger: palette.error,
+  info: palette.info,
+);
 
 /// Small label over a group of fields: muted, not colored.
 TextStyle sectionEyebrowStyle(NeoRouterPalette palette) => TextStyle(

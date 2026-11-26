@@ -1,8 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:neolabs_flutter/neolabs_flutter.dart' show NeoAuthClient;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'src/auth/address_bar.dart';
+import 'src/auth/auth_transport.dart';
+import 'src/auth/qr_link.dart';
+import 'src/auth/webauthn_client.dart';
 import 'src/backend_client.dart';
 import 'src/models.dart';
 import 'src/router_api.dart';
@@ -27,7 +32,9 @@ const Map<AppPage, String> pagePermissions = <AppPage, String>{
 /// Single root state object. Pages own their page-local data and talk to the
 /// API through [api]; the controller holds session, navigation and prefs.
 class NeoRouterController extends ChangeNotifier {
-  NeoRouterController({BackendClient? client}) : client = client ?? BackendClient();
+  NeoRouterController({BackendClient? client, WebAuthnClient? webAuthn})
+    : client = client ?? BackendClient(),
+      webAuthn = webAuthn ?? createWebAuthnClient();
 
   static const String _tokenKey = 'neorouter.session';
   static const String _themeKey = 'neorouter.theme';
@@ -41,10 +48,25 @@ class NeoRouterController extends ChangeNotifier {
 
   final BackendClient client;
   late final RouterApi api = RouterApi(client);
+  late final NeoAuthClient auth = NeoAuthClient(neoAuthPost(client));
+  final WebAuthnClient webAuthn;
 
   bool bootstrapping = true;
   bool loading = false;
   String? authError;
+
+  /// The server's error code behind [authError], for wording of our own.
+  String? authErrorCode;
+
+  /// What the server offers on the sign-in screen; false until it answered.
+  bool authOptionsLoaded = false;
+  bool passwordResetAvailable = false;
+
+  /// A scanned sign-in code waiting for this account to approve or decline it.
+  QrApprovalLink? pendingQrApproval;
+
+  /// The account of a passkey sign-in that also needs a 2FA code.
+  String? _passkeyAccount;
   bool registrationOpen = false;
   bool bootstrapRegistration = false;
   AppUser? user;
@@ -85,7 +107,7 @@ class NeoRouterController extends ChangeNotifier {
   String? twoFactorChallenge;
 
   bool get hasUser => user != null;
-  bool get awaitingTwoFactor => twoFactorChallenge != null;
+  bool get awaitingTwoFactor => twoFactorChallenge != null || _passkeyAccount != null;
 
   bool get inSharedSpace => spaceOwnerId != null;
   TeamUser? get spaceOwner => inSharedSpace ? team?.owner : null;
@@ -142,7 +164,7 @@ class NeoRouterController extends ChangeNotifier {
       try {
         user = await api.me();
         // Independent calls go out together: start-up waits for the slowest, not for all in a row.
-        await Future.wait(<Future<void>>[_loadInfo(), _restoreSpace(prefs.getString(_spaceKey)).then((_) => refreshPool()), refreshRegistration()]);
+        await Future.wait(<Future<void>>[_loadInfo(), _restoreSpace(prefs.getString(_spaceKey)).then((_) => refreshPool()), refreshAuthOptions()]);
       } on ApiException {
         client.setToken(null);
         await prefs.remove(_tokenKey);
@@ -156,7 +178,8 @@ class NeoRouterController extends ChangeNotifier {
     _readInviteLink();
     _readPoolLink();
     _readConnectLink();
-    if (user == null) await refreshRegistration();
+    pendingQrApproval = QrApprovalLink.from(Uri.base);
+    if (user == null) await refreshAuthOptions();
     // A page a link opened is where a reload should land, too.
     if (user != null) prefs.setString(_pageKey, page.name);
     bootstrapping = false;
@@ -274,14 +297,25 @@ class NeoRouterController extends ChangeNotifier {
     oauthError = null;
   }
 
-  Future<void> refreshRegistration() async {
+  Future<void> refreshAuthOptions() async {
     try {
-      final status = await api.registrationStatus();
-      registrationOpen = status['open'] == true;
-      bootstrapRegistration = status['bootstrap'] == true;
+      final options = await api.authOptions();
+      registrationOpen = options['registration'] == true;
+      bootstrapRegistration = options['bootstrap'] == true;
+      passwordResetAvailable = options['passwordReset'] == true;
+      authOptionsLoaded = true;
     } catch (_) {
       registrationOpen = false;
+      passwordResetAvailable = false;
+      authOptionsLoaded = false;
     }
+    notifyListeners();
+  }
+
+  void finishQrApproval() {
+    pendingQrApproval = null;
+    replaceAddress(QrApprovalLink.strip(Uri.base));
+    notifyListeners();
   }
 
   Future<void> _loadInfo() async {
@@ -291,6 +325,23 @@ class NeoRouterController extends ChangeNotifier {
       endpoint = null;
     }
   }
+
+  /// Signs this screen in with an approved QR code.
+  Future<bool> claimQrLogin(Future<Map<String, dynamic>> Function() claim) => _authAction(() async {
+        await _completeSession(await claim());
+      });
+
+  Future<bool> signInWithPasskey(String account, {String? code}) => _authAction(() async {
+        final request = await api.passkeyLoginOptions(account);
+        final response = await webAuthn.getAssertion(Map<String, dynamic>.from(request['options'] as Map));
+        try {
+          await _completeSession(await api.passkeyLogin(request['challengeId'] as String, response, code));
+          _passkeyAccount = null;
+        } on ApiException catch (error) {
+          if (error.code != 'TWO_FACTOR_REQUIRED') rethrow;
+          _passkeyAccount = account;
+        }
+      });
 
   Future<void> _completeSession(Map<String, dynamic> result) async {
     final session = Map<String, dynamic>.from(result['session'] as Map);
@@ -314,14 +365,21 @@ class NeoRouterController extends ChangeNotifier {
         await _completeSession(result);
       });
 
-  Future<bool> completeTwoFactor(String code) => _authAction(() async {
-        await _completeSession(await api.loginTwoFactor(twoFactorChallenge!, code));
-        twoFactorChallenge = null;
-      });
+  Future<bool> completeTwoFactor(String code) {
+    // A passkey challenge works once, so the code goes with a second ceremony.
+    final passkey = _passkeyAccount;
+    if (passkey != null) return signInWithPasskey(passkey, code: code);
+    return _authAction(() async {
+      await _completeSession(await api.loginTwoFactor(twoFactorChallenge!, code));
+      twoFactorChallenge = null;
+    });
+  }
 
   void cancelTwoFactor() {
     twoFactorChallenge = null;
+    _passkeyAccount = null;
     authError = null;
+    authErrorCode = null;
     notifyListeners();
   }
 
@@ -332,12 +390,18 @@ class NeoRouterController extends ChangeNotifier {
   Future<bool> _authAction(Future<void> Function() action) async {
     loading = true;
     authError = null;
+    authErrorCode = null;
     notifyListeners();
     try {
       await action();
       return true;
     } on ApiException catch (error) {
       authError = error.message;
+      authErrorCode = error.code;
+      return false;
+    } on WebAuthnException catch (error) {
+      // Dismissing the browser's prompt is not an error.
+      if (!error.cancelled) authError = error.message;
       return false;
     } catch (_) {
       authError = 'The server could not be reached.';
@@ -350,20 +414,32 @@ class NeoRouterController extends ChangeNotifier {
 
   void showAuthError(String message) {
     authError = message;
+    authErrorCode = null;
     notifyListeners();
+  }
+
+  /// Ends every session of this account, this one included. Throws when the
+  /// server did not do it, so nobody is left believing the others are gone.
+  Future<void> logoutEverywhere() async {
+    await api.logoutAll();
+    await _clearSession();
   }
 
   Future<void> logout() async {
     try {
       await api.logout();
     } catch (_) {}
+    await _clearSession();
+  }
+
+  Future<void> _clearSession() async {
     client.setToken(null);
     (await SharedPreferences.getInstance()).remove(_tokenKey);
     user = null;
     team = null;
     pools = null;
     _setSpace(null);
-    await refreshRegistration();
+    await refreshAuthOptions();
     notifyListeners();
   }
 

@@ -103,7 +103,7 @@ of successful requests with cache hits for each provider.
 This uses upstream prompt caches. NeoRouter never stores prompts or responses in
 a local response cache.
 
-## Pipeline (`server/services/routing/router.js`)
+## Pipeline (`internal/routing/router.go`)
 
 1. **Request profile** — estimated input tokens, needed capabilities (tools,
    vision, JSON), complexity (length, code, tools).
@@ -143,7 +143,7 @@ silently switch protection off for known allowances. High-priority keys bypass
 pacing, while hard limits and key budgets still apply.
 Flat-rate slots and pay-per-use sources are not metered allowances.
 
-## Learning (`learning.js`, `stats_store.js`)
+## Learning (`learning.go`, `stats.go`)
 
 | Error kind | Effect |
 |---|---|
@@ -160,8 +160,8 @@ Outcome counts decay with a 24 h half-life, penalties with a 5 min half-life.
 
 One connection may cost a single request two failed attempts, then the others
 get a turn. After 30 failures in a row without a success, a whole connection
-rests for 5 minutes, doubling up to an hour (`account_health.js`). While at least
-30 % of a user's recent requests go unanswered (`capacity.js`), requests wait
+rests for 5 minutes, doubling up to an hour (`health.go`). While at least
+30 % of a user's recent requests go unanswered (`capacity.go`), requests wait
 5 seconds instead of 45 for a model to free up (high-priority keys still wait in
 full) and at most one hedge runs per request. A client sending the same conversation again within
 3 minutes of an answer counts as a bad rating of that answer; only a hash of the
@@ -176,7 +176,7 @@ so silent or failing providers are replaced transparently.
 
 ## Intelligence
 
-`server/services/catalog/metadata_service.js` combines models.dev and
+`internal/catalog/metadata_refresh.go` combines models.dev and
 OpenRouter (prices, context, capabilities, release dates), OpenRouter's daily
 benchmark leaderboard (GPQA Diamond and tau2-bench airline, the newest 90 days;
 CC BY 4.0) and, if an admin configured a key, Artificial Analysis (benchmark
@@ -195,7 +195,7 @@ recency and reasoning support. Users can override it per model.
 
 Embeddings, images, speech, transcription, System One (moderation), video
 and web search use the same plan, learning, quotas and budgets
-(`server/capabilities/shared/run_capability.js`); only the adapter method and
+(`internal/gateway/run_capability.go`); only the adapter method and
 the price unit differ. Endpoints follow the OpenAI API: `/v1/embeddings`,
 `/v1/images/generations`, `/v1/audio/speech`, `/v1/audio/transcriptions`
 (and `/translations`), `/v1/moderations`, `/v1/videos` and `/v1/search`. `GET
@@ -207,19 +207,19 @@ the price unit differ. Endpoints follow the OpenAI API: `/v1/embeddings`,
 - **Transcription:** subtitles (`srt`, `vtt`, `verbose_json`) prefer models
   that return timestamps.
 - **System One:** guard models answer in their own formats (a probability,
-  `unsafe\nS9`, JSON verdicts); `server/capabilities/media/system_one.js` maps
+  `unsafe\nS9`, JSON verdicts); `internal/media/systemone.go` maps
   them to OpenAI moderation results. `check` picks `safety` (default),
   `prompt_injection` or `topic` (with a `policy`).
 - **Video:** jobs stay bound to the provider that accepted them and are polled
   on `GET /v1/videos/:id`.
 - **Web search:** each search engine is one `search` model
-  (`server/providers/definitions/search.js`). Chat requests that ask for
+  (`internal/providers/definitions.json`). Chat requests that ask for
   built-in search (`web_search_options`, OpenRouter's `plugins: [{ id: 'web' }]`
   or a `:online` model, a Responses `web_search` tool, an Anthropic
   `web_search_*` tool) get a `web_search` function; NeoRouter runs its calls
   through the search engines (up to 5 per request, `max_uses` up to 20, domain
   filters honoured) and loops until the model answers
-  (`server/capabilities/chat/web_search.js`). Without a search engine the
+  (`internal/gateway/websearch.go`). Without a search engine the
   request runs as before. Queries pass the privacy shield again first.
 - **Quality:** image, speech and video models are scored by Artificial
   Analysis arena ELO; other kinds by size and age within their kind.
@@ -231,9 +231,9 @@ the price unit differ. Endpoints follow the OpenAI API: `/v1/embeddings`,
 
 Each account's copy of a model is its own candidate with its own stats,
 cooldowns and quota pool. Copies of the same model compete only on health,
-allowance left and free capacity (`spreadAcrossAccounts` in `router.js`), so
+allowance left and free capacity (`spreadAcrossAccounts` in `rank.go`), so
 accounts wear evenly without changing which model wins. Concurrency limits are
-learned (`concurrency.js`): a 429 while several requests run on an account sets
+learned (`concurrency.go`): a 429 while several requests run on an account sets
 its limit below that count, steady success at the limit probes one higher, and
 learned limits fade after an hour. An account at its limit is skipped
 (`account_busy`) and chat requests wait briefly if every copy is busy.
@@ -242,7 +242,7 @@ learned limits fade after an hour. An account at its limit is skipped
 
 Each key or connected app is `high`, `normal` (default) or `low`. Priority only
 counts when capacity runs short: a request that has to wait for a model or
-account announces it (`routing/priority.js`), and requests of a lower priority
+account announces it (`routing/priority.go`), and requests of a lower priority
 leave those alone (`held_for_priority`) until it has been served. It never
 changes which model a key may use or how models are scored, and it does not
 stop requests already running. A held request waits at most the normal queue
@@ -250,7 +250,7 @@ window (`NEOROUTER_ROUTING_QUEUE_WAIT_MS`).
 
 ## Budget pacing
 
-A key with a daily or monthly budget is paced (`services/budget/pacing.js`):
+A key with a daily or monthly budget is paced (`internal/budget/pacing.go`):
 the spend so far plus the recent rate (this period blended with the last week)
 forecasts the spend at the reset. Over pace, the cost weight grows (up to 4×) and
 paid models whose typical request would take far more than its fair share of
@@ -263,7 +263,7 @@ models win. One-time budgets only get the per-request share. Responses carry
 An account can be a prepaid plan (`prepaid` 1) or a plan followed by pay per
 use (`prepaid` 2); `billing_mode` stays `paid`. Plan models cost nothing extra,
 so they do not draw from key budgets and free-only keys may use them, but they
-are never hedged (that would spend the allowance twice). `routing/plans.js`
+are never hedged (that would spend the allowance twice). `routing/plans.go`
 reads the allowance from the provider's quota probe (`plan_requests`, or
 percentage windows `plan_5h` / `plan_week`), subtracts requests sent since the
 probe and uses the tightest window: a mild preference while there is room

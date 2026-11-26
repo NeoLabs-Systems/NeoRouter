@@ -166,8 +166,110 @@ class AppL10nDe extends AppL10n {
   String get forgotPasswordTitle => 'Passwort zurücksetzen';
 
   @override
-  String get forgotPasswordBody =>
-      'Ein Administrator kann es auf dem Server zurücksetzen mit: neorouter reset-password <benutzer> <neues-passwort>';
+  String get forgotPasswordDescription =>
+      'Gib deinen Benutzernamen oder deine E-Mail ein. Wenn es das Konto gibt, schicken wir ihm einen Link für ein neues Passwort.';
+
+  @override
+  String get forgotPasswordMissing =>
+      'Gib deinen Benutzernamen oder deine E-Mail ein.';
+
+  @override
+  String get forgotPasswordSubmit => 'Link senden';
+
+  @override
+  String get forgotPasswordSent =>
+      'Wenn es das Konto gibt, ist ein Link unterwegs.';
+
+  @override
+  String get showPassword => 'Passwort anzeigen';
+
+  @override
+  String get hidePassword => 'Passwort verbergen';
+
+  @override
+  String get passwordRules =>
+      'Mindestens 12 Zeichen. Ohne deinen Namen oder deine E-Mail, gängige Wörter und Folgen wie 1234.';
+
+  @override
+  String get passkeySignIn => 'Mit Passkey anmelden';
+
+  @override
+  String get passkeysTitle => 'Passkeys';
+
+  @override
+  String get passkeysHint =>
+      'Melde dich mit Fingerabdruck, Gesicht oder Sicherheitsschlüssel statt mit dem Passwort an.';
+
+  @override
+  String get passkeysUnsupported =>
+      'Für neue Passkeys braucht es einen passenden Browser über HTTPS oder auf localhost.';
+
+  @override
+  String get passkeyAdd => 'Passkey hinzufügen';
+
+  @override
+  String get passkeyName => 'Name';
+
+  @override
+  String get passkeyRename => 'Umbenennen';
+
+  @override
+  String get passkeyRemoveTitle => 'Passkey löschen';
+
+  @override
+  String passkeyRemoveConfirm(String name) {
+    return 'Mit „$name“ kann man sich dann nicht mehr anmelden.';
+  }
+
+  @override
+  String get passkeyNeverUsed => 'Noch nicht benutzt';
+
+  @override
+  String passkeyLastUsed(String date) {
+    return 'Zuletzt benutzt am $date';
+  }
+
+  @override
+  String get qrSignIn => 'Mit dem Handy anmelden';
+
+  @override
+  String get qrSignInHint =>
+      'Mit einem Handy scannen, das bei diesem NeoRouter angemeldet ist, und dort bestätigen.';
+
+  @override
+  String qrSignInScanned(String device) {
+    return 'Gescannt. Bestätige auf $device.';
+  }
+
+  @override
+  String get qrSignInDeclined => 'Die Anmeldung wurde abgelehnt.';
+
+  @override
+  String get qrSignInNewCode => 'Neuer Code';
+
+  @override
+  String get qrApproveTitle => 'Dieses Gerät anmelden?';
+
+  @override
+  String qrApproveWarning(String username) {
+    return 'Es bekommt vollen Zugriff auf dein Konto „$username“. Bestätige nur, wenn du das selbst gestartet hast.';
+  }
+
+  @override
+  String get qrApproveAction => 'Bestätigen';
+
+  @override
+  String get qrApproveDone => 'Bestätigt. Das andere Gerät meldet sich an.';
+
+  @override
+  String get qrApproveDeclined => 'Abgelehnt. Es wurde nichts angemeldet.';
+
+  @override
+  String get logoutAll => 'Überall abmelden';
+
+  @override
+  String get logoutAllHint =>
+      'Beendet alle Sitzungen deines Kontos, auch diese.';
 
   @override
   String get passwordsDontMatch => 'Die Passwörter stimmen nicht überein.';
@@ -1525,7 +1627,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get passwordHint =>
-      'Mindestens 12 Zeichen. Danach wirst du abgemeldet.';
+      'Mindestens 12 Zeichen, ohne deinen Namen, gängige Wörter oder Folgen. Danach wirst du abgemeldet.';
 
   @override
   String get signOutHint => 'In diesem Browser von NeoRouter abmelden.';
@@ -1672,7 +1774,8 @@ class AppL10nDe extends AppL10n {
       'Zu viele falsche Versuche. Warte ein paar Minuten und versuche es dann noch einmal.';
 
   @override
-  String get accountWrongCode => 'Der Code ist ungültig.';
+  String get accountWrongCode =>
+      'Der Code hat nicht funktioniert. Jeder Code gilt einmal, warte auf den nächsten.';
 
   @override
   String get twoFactorTitle => 'Zwei-Faktor-Authentifizierung';

@@ -167,8 +167,109 @@ class AppL10nEn extends AppL10n {
   String get forgotPasswordTitle => 'Reset password';
 
   @override
-  String get forgotPasswordBody =>
-      'An administrator can reset it on the server with: neorouter reset-password <user> <new-password>';
+  String get forgotPasswordDescription =>
+      'Enter your username or email. If the account exists, we send it a link to set a new password.';
+
+  @override
+  String get forgotPasswordMissing => 'Enter your username or email.';
+
+  @override
+  String get forgotPasswordSubmit => 'Send link';
+
+  @override
+  String get forgotPasswordSent =>
+      'If the account exists, a reset link is on its way.';
+
+  @override
+  String get showPassword => 'Show password';
+
+  @override
+  String get hidePassword => 'Hide password';
+
+  @override
+  String get passwordRules =>
+      'At least 12 characters. Avoid your name or email, common words and sequences like 1234.';
+
+  @override
+  String get passkeySignIn => 'Sign in with a passkey';
+
+  @override
+  String get passkeysTitle => 'Passkeys';
+
+  @override
+  String get passkeysHint =>
+      'Sign in with your fingerprint, face or a security key instead of your password.';
+
+  @override
+  String get passkeysUnsupported =>
+      'Adding a passkey needs a browser that supports it, over HTTPS or on localhost.';
+
+  @override
+  String get passkeyAdd => 'Add passkey';
+
+  @override
+  String get passkeyName => 'Name';
+
+  @override
+  String get passkeyRename => 'Rename';
+
+  @override
+  String get passkeyRemoveTitle => 'Delete passkey';
+
+  @override
+  String passkeyRemoveConfirm(String name) {
+    return '“$name” can no longer be used to sign in.';
+  }
+
+  @override
+  String get passkeyNeverUsed => 'Not used yet';
+
+  @override
+  String passkeyLastUsed(String date) {
+    return 'Last used $date';
+  }
+
+  @override
+  String get qrSignIn => 'Sign in with your phone';
+
+  @override
+  String get qrSignInHint =>
+      'Scan with a phone that is signed in to this NeoRouter, then approve there.';
+
+  @override
+  String qrSignInScanned(String device) {
+    return 'Scanned. Confirm on $device.';
+  }
+
+  @override
+  String get qrSignInDeclined => 'The sign-in was declined.';
+
+  @override
+  String get qrSignInNewCode => 'New code';
+
+  @override
+  String get qrApproveTitle => 'Sign in this device?';
+
+  @override
+  String qrApproveWarning(String username) {
+    return 'It gets full access to your account “$username”. Only approve if you started this yourself.';
+  }
+
+  @override
+  String get qrApproveAction => 'Approve';
+
+  @override
+  String get qrApproveDone => 'Approved. The other device is signing in.';
+
+  @override
+  String get qrApproveDeclined => 'Declined. Nothing was signed in.';
+
+  @override
+  String get logoutAll => 'Sign out everywhere';
+
+  @override
+  String get logoutAllHint =>
+      'Ends every session of your account, including this one.';
 
   @override
   String get passwordsDontMatch => 'Passwords do not match.';
@@ -1513,7 +1614,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get passwordHint =>
-      'At least 12 characters. You will be signed out afterwards.';
+      'At least 12 characters, without your name, common words or sequences. You will be signed out afterwards.';
 
   @override
   String get signOutHint => 'Sign out of NeoRouter in this browser.';
@@ -1658,7 +1759,8 @@ class AppL10nEn extends AppL10n {
       'Too many wrong tries. Wait a few minutes and try again.';
 
   @override
-  String get accountWrongCode => 'The code is not valid.';
+  String get accountWrongCode =>
+      'That code did not work. A code works once, so wait for the next one.';
 
   @override
   String get twoFactorTitle => 'Two-factor authentication';

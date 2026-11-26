@@ -16,7 +16,10 @@ Include:
 
 In scope:
 
-- Authentication or authorization bypass (sessions, router keys, admin routes).
+- Authentication or authorization bypass (sessions, passkeys, QR sign-in,
+  password reset, router keys, admin routes).
+- Getting an install to accept an update or download that was not signed by the
+  release key.
 - Access to another user's provider accounts, keys, catalog or request logs.
 - Disclosure of provider API keys (they are stored AES-256-GCM encrypted with
   `~/.neorouter/data/secret.key`) or router key secrets (stored only as SHA-256 hashes).
@@ -27,6 +30,7 @@ In scope:
 ## Design notes
 
 - NeoRouter never stores prompts or completions. Request logs contain metadata only.
-- Provider accounts are strictly private per user; there is no sharing.
+- Provider accounts belong to one user; their keys are never shown to anyone.
+- Updates are verified against an Ed25519 key built into the binary.
 - Custom base URLs are user-supplied by design. Run NeoRouter on a network
   where that is acceptable, or restrict egress at the network level.

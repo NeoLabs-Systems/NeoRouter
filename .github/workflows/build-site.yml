@@ -1,0 +1,75 @@
+# Publishes the landing page at / and the GET /api reference at /api/
+# (cmd/neorouter-release api-docs) to GitHub Pages, like NeoAgent's site.
+name: Build Site
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - landing/**
+      # The reference itself: the Go gateway serves it and the same Go code
+      # renders the page, so this workflow needs no Node.
+      - internal/gateway/**
+      - internal/routing/**
+      - cmd/neorouter-release/**
+      - go.mod
+      - go.sum
+      - .github/workflows/build-site.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: NeoLabs-Systems/neolabs-go/.github/actions/setup-go@1cd3668653c972a8c10cffcf52be95638bba74f8
+
+      - name: Set up Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build API docs
+        # Writes build/api-docs/index.md and index.html from the same Go source
+        # the gateway serves.
+        run: go run ./cmd/neorouter-release api-docs --origin "$NEOROUTER_DOCS_ORIGIN" --out build/api-docs
+        env:
+          # Set a repository variable to show your own server in the examples.
+          # When it is unset the command falls back to
+          # https://neorouter.example.com, the placeholder the reader swaps.
+          NEOROUTER_DOCS_ORIGIN: ${{ vars.NEOROUTER_DOCS_ORIGIN }}
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp -r landing/* _site/
+          cp -r build/api-docs _site/api
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy site
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

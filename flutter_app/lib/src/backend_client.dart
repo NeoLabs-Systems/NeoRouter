@@ -15,7 +15,11 @@ class ApiException implements Exception {
 }
 
 class BackendClient {
-  BackendClient({String? baseUrl}) : _baseUrl = _normalize(baseUrl ?? defaultBaseUrl);
+  BackendClient({String? baseUrl, http.Client? httpClient})
+    : _baseUrl = _normalize(baseUrl ?? defaultBaseUrl),
+      _http = httpClient ?? http.Client();
+
+  final http.Client _http;
 
   static const String configuredBaseUrl = String.fromEnvironment('NEOROUTER_API_BASE');
 
@@ -91,6 +95,7 @@ class BackendClient {
     String path, {
     Object? body,
     bool decode = true,
+    Duration? timeout,
   }) async {
     final uri = _uri(path);
     final encoded = body == null || body is List<int> ? null : jsonEncode(body);
@@ -98,19 +103,20 @@ class BackendClient {
     late final http.Response response;
     switch (method) {
       case 'GET':
-        response = await http.get(uri, headers: headers);
+        response = await _http.get(uri, headers: headers);
       case 'POST':
-        response = body is List<int>
-            ? await http.post(uri, headers: _headers(json: false)..['Content-Type'] = 'application/octet-stream', body: body)
-            : await http.post(uri, headers: headers, body: encoded);
+        final request = body is List<int>
+            ? _http.post(uri, headers: _headers(json: false)..['Content-Type'] = 'application/octet-stream', body: body)
+            : _http.post(uri, headers: headers, body: encoded);
+        response = await (timeout == null ? request : request.timeout(timeout));
       case 'PUT':
         response = body is List<int>
-            ? await http.put(uri, headers: _headers(json: false)..['Content-Type'] = 'application/octet-stream', body: body)
-            : await http.put(uri, headers: headers, body: encoded);
+            ? await _http.put(uri, headers: _headers(json: false)..['Content-Type'] = 'application/octet-stream', body: body)
+            : await _http.put(uri, headers: headers, body: encoded);
       case 'PATCH':
-        response = await http.patch(uri, headers: headers, body: encoded);
+        response = await _http.patch(uri, headers: headers, body: encoded);
       case 'DELETE':
-        response = await http.delete(uri, headers: headers, body: encoded);
+        response = await _http.delete(uri, headers: headers, body: encoded);
       default:
         throw ArgumentError.value(method, 'method');
     }
@@ -132,8 +138,15 @@ class BackendClient {
     return jsonDecode(utf8.decode(response.bodyBytes));
   }
 
-  Future<Map<String, dynamic>> post(String path, [Object? body]) async {
-    return Map<String, dynamic>.from(await _send('POST', path, body: body) as Map);
+  Future<Map<String, dynamic>> post(String path, [Object? body]) async => _object(await _send('POST', path, body: body));
+
+  /// A POST the server may hold open, given up after [timeout].
+  Future<Map<String, dynamic>> postHeld(String path, Object body, Duration timeout) async =>
+      _object(await _send('POST', path, body: body, timeout: timeout));
+
+  static Map<String, dynamic> _object(dynamic result) {
+    // A 204 answer carries no body.
+    return result is Map ? Map<String, dynamic>.from(result) : <String, dynamic>{};
   }
 
   Future<Map<String, dynamic>> get(String path) async {

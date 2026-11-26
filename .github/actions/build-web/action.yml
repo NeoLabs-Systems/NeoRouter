@@ -1,0 +1,29 @@
+name: Build web client
+description: >
+  Builds the Flutter web client into flutter_app/build/web (served at /app/) and
+  verifies the bundle is a complete Flutter build. Requires Flutter set up first.
+
+runs:
+  using: composite
+  steps:
+    - name: Build bundled web client
+      shell: bash
+      working-directory: flutter_app
+      run: |
+        set -euo pipefail
+        flutter pub get
+        # The full icon font keeps its glyphs stable across releases, so a cached
+        # font from an older build never shows blank icons.
+        flutter build web --release --no-tree-shake-icons --base-href /app/
+
+    - name: Verify the web bundle
+      shell: bash
+      working-directory: flutter_app
+      run: |
+        set -euo pipefail
+        test -s build/web/index.html
+        test -s build/web/main.dart.js
+        if ! ls build/web/assets >/dev/null 2>&1; then
+          echo "::error::The web bundle has no assets directory."
+          exit 1
+        fi

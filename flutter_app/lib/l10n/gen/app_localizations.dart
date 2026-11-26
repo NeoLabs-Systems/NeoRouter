@@ -409,11 +409,185 @@ abstract class AppL10n {
   /// **'Reset password'**
   String get forgotPasswordTitle;
 
-  /// No description provided for @forgotPasswordBody.
+  /// No description provided for @forgotPasswordDescription.
   ///
   /// In en, this message translates to:
-  /// **'An administrator can reset it on the server with: neorouter reset-password <user> <new-password>'**
-  String get forgotPasswordBody;
+  /// **'Enter your username or email. If the account exists, we send it a link to set a new password.'**
+  String get forgotPasswordDescription;
+
+  /// No description provided for @forgotPasswordMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your username or email.'**
+  String get forgotPasswordMissing;
+
+  /// No description provided for @forgotPasswordSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Send link'**
+  String get forgotPasswordSubmit;
+
+  /// No description provided for @forgotPasswordSent.
+  ///
+  /// In en, this message translates to:
+  /// **'If the account exists, a reset link is on its way.'**
+  String get forgotPasswordSent;
+
+  /// No description provided for @showPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get showPassword;
+
+  /// No description provided for @hidePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get hidePassword;
+
+  /// No description provided for @passwordRules.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 12 characters. Avoid your name or email, common words and sequences like 1234.'**
+  String get passwordRules;
+
+  /// No description provided for @passkeySignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with a passkey'**
+  String get passkeySignIn;
+
+  /// No description provided for @passkeysTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Passkeys'**
+  String get passkeysTitle;
+
+  /// No description provided for @passkeysHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with your fingerprint, face or a security key instead of your password.'**
+  String get passkeysHint;
+
+  /// No description provided for @passkeysUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding a passkey needs a browser that supports it, over HTTPS or on localhost.'**
+  String get passkeysUnsupported;
+
+  /// No description provided for @passkeyAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add passkey'**
+  String get passkeyAdd;
+
+  /// No description provided for @passkeyName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get passkeyName;
+
+  /// No description provided for @passkeyRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get passkeyRename;
+
+  /// No description provided for @passkeyRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete passkey'**
+  String get passkeyRemoveTitle;
+
+  /// No description provided for @passkeyRemoveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” can no longer be used to sign in.'**
+  String passkeyRemoveConfirm(String name);
+
+  /// No description provided for @passkeyNeverUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used yet'**
+  String get passkeyNeverUsed;
+
+  /// No description provided for @passkeyLastUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Last used {date}'**
+  String passkeyLastUsed(String date);
+
+  /// No description provided for @qrSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with your phone'**
+  String get qrSignIn;
+
+  /// No description provided for @qrSignInHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan with a phone that is signed in to this NeoRouter, then approve there.'**
+  String get qrSignInHint;
+
+  /// No description provided for @qrSignInScanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanned. Confirm on {device}.'**
+  String qrSignInScanned(String device);
+
+  /// No description provided for @qrSignInDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'The sign-in was declined.'**
+  String get qrSignInDeclined;
+
+  /// No description provided for @qrSignInNewCode.
+  ///
+  /// In en, this message translates to:
+  /// **'New code'**
+  String get qrSignInNewCode;
+
+  /// No description provided for @qrApproveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in this device?'**
+  String get qrApproveTitle;
+
+  /// No description provided for @qrApproveWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'It gets full access to your account “{username}”. Only approve if you started this yourself.'**
+  String qrApproveWarning(String username);
+
+  /// No description provided for @qrApproveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get qrApproveAction;
+
+  /// No description provided for @qrApproveDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved. The other device is signing in.'**
+  String get qrApproveDone;
+
+  /// No description provided for @qrApproveDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined. Nothing was signed in.'**
+  String get qrApproveDeclined;
+
+  /// No description provided for @logoutAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out everywhere'**
+  String get logoutAll;
+
+  /// No description provided for @logoutAllHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends every session of your account, including this one.'**
+  String get logoutAllHint;
 
   /// No description provided for @passwordsDontMatch.
   ///
@@ -2752,7 +2926,7 @@ abstract class AppL10n {
   /// No description provided for @passwordHint.
   ///
   /// In en, this message translates to:
-  /// **'At least 12 characters. You will be signed out afterwards.'**
+  /// **'At least 12 characters, without your name, common words or sequences. You will be signed out afterwards.'**
   String get passwordHint;
 
   /// No description provided for @signOutHint.
@@ -3010,7 +3184,7 @@ abstract class AppL10n {
   /// No description provided for @accountWrongCode.
   ///
   /// In en, this message translates to:
-  /// **'The code is not valid.'**
+  /// **'That code did not work. A code works once, so wait for the next one.'**
   String get accountWrongCode;
 
   /// No description provided for @twoFactorTitle.

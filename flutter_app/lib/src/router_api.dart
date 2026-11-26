@@ -12,7 +12,24 @@ class RouterApi {
   static const String _base = '/api/v1';
 
   // ---- auth ---------------------------------------------------------------
-  Future<Map<String, dynamic>> registrationStatus() => client.get('$_base/auth/registration');
+  Future<Map<String, dynamic>> authOptions() => client.get('$_base/auth/options');
+  Future<void> logoutAll() => client.post('$_base/auth/logout-all');
+  // Passkeys and security keys.
+  Future<Map<String, dynamic>> passkeyLoginOptions(String account) =>
+      client.post('$_base/auth/webauthn/options', <String, Object>{if (account.isNotEmpty) 'account': account});
+  Future<Map<String, dynamic>> passkeyLogin(String challengeId, Map<String, dynamic> response, [String? code]) =>
+      client.post('$_base/auth/webauthn/verify', <String, Object>{'challengeId': challengeId, 'response': response, if (code != null) 'twoFactorCode': code});
+  Future<List<Map<String, dynamic>>> passkeys() async => _credentials(await client.get('$_base/settings/security-keys'));
+  Future<Map<String, dynamic>> passkeyCreateOptions(String currentPassword) =>
+      client.post('$_base/settings/security-keys/options', <String, Object>{'currentPassword': currentPassword});
+  Future<List<Map<String, dynamic>>> addPasskey(String challengeId, Map<String, dynamic> response, String label) async => _credentials(
+    await client.post('$_base/settings/security-keys', <String, Object>{'challengeId': challengeId, 'response': response, if (label.isNotEmpty) 'label': label}),
+  );
+  Future<List<Map<String, dynamic>>> renamePasskey(int id, String label) async =>
+      _credentials(await client.putJson('$_base/settings/security-keys/$id', <String, Object>{'label': label}));
+  Future<List<Map<String, dynamic>>> removePasskey(int id) async => _credentials(await client.deleteJson('$_base/settings/security-keys/$id'));
+  static List<Map<String, dynamic>> _credentials(Map<String, dynamic> payload) =>
+      (payload['credentials'] as List? ?? const <Object>[]).map((item) => Map<String, dynamic>.from(item as Map)).toList();
   Future<Map<String, dynamic>> login(String account, String password) =>
       client.post('$_base/auth/login', <String, Object>{'account': account, 'password': password});
   Future<Map<String, dynamic>> register(String username, String email, String password) =>

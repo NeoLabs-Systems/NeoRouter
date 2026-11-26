@@ -1,0 +1,121 @@
+{
+ "benign": [
+  "function add(a, b) {\n  return a + b;\n}\nconst total = items.reduce((sum, item) => sum + item.price, 0);",
+  "commit 9fceb02d0ae598e95dc970b74767f19372d61af8\nAuthor: build bot\nDate: Tue Oct 28 14:02:11 2026 +0100\n\n    Fix the release script",
+  "request id 3f2b8c1e-9d4a-4f6b-8e2a-1c7d5b9a0e3f took 120 ms",
+  "sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "The meeting is on 12.03.2026 at 14:30, room 4.12.",
+  "Upgrade from version 2.14.3 to 3.0.1 before 2026-12-01.",
+  "Total: 1.234,56 EUR, paid 99,90 € and 15 % discount. Order 4711-0815.",
+  "Colors: #ff8800, #00ccaa and rgb(12, 34, 56).",
+  "Max Bescheid geben, dass die Tabelle morgen fertig ist.",
+  "Ich habe heute Paul getroffen und wir haben über den Urlaub gesprochen.",
+  "Hallo Anna, wie geht es dir? Liebe Grüße",
+  "Will you mark the rose as done? Grace period ends in May.",
+  "Im Jahr 2026 haben wir 1500 Einheiten verkauft, Kapitel 3 erklärt warum.",
+  "Der Platz 3 ging an Team Blau, Platz 4 an Team Rot.",
+  "Error code 5003 occurred on line 42, port 8080.",
+  "The topic is passwords in general and how to store them safely.",
+  "Set API_KEY=${API_KEY} and TOKEN=<your-token> in .env.example.",
+  "Weights 0.1234, 0.5678 and 0.9012 sum up.",
+  "Listen on 127.0.0.1:3000 and 0.0.0.0.",
+  "std::vector<int> values; values.push_back(10);",
+  "Bitte die Rechnung bis Freitag bezahlen und den Vertrag unterschreiben."
+ ],
+ "letter": {
+  "text": "Sehr geehrte Frau Schneider,\nmein Name ist Jonas Becker, geb. 14.07.1988, wohnhaft Lindenstraße 12, 50674 Köln.\nMeine Steuer-ID ist 86 095 742 719, die USt-IdNr. DE136695976.\nRufen Sie mich unter +49 170 1234567 an.\nÜberweisen Sie bitte auf DE89 3704 0044 0532 0130 00.\nMein Auto (Kennzeichen K-JB 1234) steht bei 50.9375, 6.9603 laut GPS.\nViele Grüße\nJonas Becker",
+  "redacted": "Sehr geehrte Frau [LASTNAME_1],\nmein Name ist Jonas [LASTNAME_2], geb. [BIRTHDATE_1], wohnhaft [ADDRESS_1].\nMeine Steuer-ID ist [ID_1], die USt-IdNr. [ID_2].\nRufen Sie mich unter [PHONE_1] an.\nÜberweisen Sie bitte auf [IBAN_1].\nMein Auto (Kennzeichen [VEHICLE_1]) steht bei [LOCATION_1] laut GPS.\nViele Grüße\nJonas [LASTNAME_2]",
+  "counts": [
+   "address",
+   "birthdate",
+   "iban",
+   "id",
+   "location",
+   "person",
+   "phone",
+   "vehicle"
+  ],
+  "findings": [
+   {
+    "token": "[LASTNAME_1]",
+    "category": "person",
+    "label": {
+     "en": "Last name",
+     "de": "Nachname"
+    }
+   },
+   {
+    "token": "[LASTNAME_2]",
+    "category": "person",
+    "label": {
+     "en": "Last name",
+     "de": "Nachname"
+    }
+   },
+   {
+    "token": "[BIRTHDATE_1]",
+    "category": "birthdate",
+    "label": {
+     "en": "Date of birth",
+     "de": "Geburtsdatum"
+    }
+   },
+   {
+    "token": "[ADDRESS_1]",
+    "category": "address",
+    "label": {
+     "en": "Postal address",
+     "de": "Postanschrift"
+    }
+   },
+   {
+    "token": "[ID_1]",
+    "category": "id",
+    "label": {
+     "en": "German tax ID",
+     "de": "Steuer-ID"
+    }
+   },
+   {
+    "token": "[ID_2]",
+    "category": "id",
+    "label": {
+     "en": "German VAT ID",
+     "de": "USt-IdNr."
+    }
+   },
+   {
+    "token": "[PHONE_1]",
+    "category": "phone",
+    "label": {
+     "en": "Phone number",
+     "de": "Telefonnummer"
+    }
+   },
+   {
+    "token": "[IBAN_1]",
+    "category": "iban",
+    "label": {
+     "en": "IBAN",
+     "de": "IBAN"
+    }
+   },
+   {
+    "token": "[VEHICLE_1]",
+    "category": "vehicle",
+    "label": {
+     "en": "Number plate",
+     "de": "Kfz-Kennzeichen"
+    }
+   },
+   {
+    "token": "[LOCATION_1]",
+    "category": "location",
+    "label": {
+     "en": "GPS coordinates",
+     "de": "GPS-Koordinaten"
+    }
+   }
+  ]
+ }
+}

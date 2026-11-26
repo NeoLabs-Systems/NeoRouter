@@ -7,6 +7,10 @@ environment:
   sdk: ^3.9.2
 
 dependencies:
+  neolabs_flutter:
+    git:
+      url: https://github.com/NeoLabs-Systems/neolabs-flutter.git
+      ref: 306551391c74b06baef27e7007d84a5c55e09d0b
   flutter:
     sdk: flutter
   flutter_localizations:

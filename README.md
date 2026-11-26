@@ -13,8 +13,9 @@
 
 <p align="center">
   <a href="https://github.com/NeoLabs-Systems/NeoRouter/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/NeoLabs-Systems/NeoRouter?style=flat-square&label=release&color=111827"></a>
+  <a href="https://github.com/NeoLabs-Systems/NeoRouter/actions/workflows/ci.yml"><img alt="CI status on beta" src="https://img.shields.io/github/actions/workflow/status/NeoLabs-Systems/NeoRouter/ci.yml?branch=beta&style=flat-square&label=CI"></a>
   <a href="LICENSE"><img alt="AGPL-3.0 license" src="https://img.shields.io/badge/license-AGPL--3.0-a855f7?style=flat-square"></a>
-  <a href="https://nodejs.org"><img alt="Node.js 20 or newer" src="https://img.shields.io/badge/node-20%2B-5fa04e?style=flat-square&logo=nodedotjs&logoColor=white"></a>
+  <a href="https://go.dev"><img alt="Go 1.27 single binary" src="https://img.shields.io/badge/go-1.27-00ADD8?style=flat-square&logo=go&logoColor=white"></a>
   <a href="https://neolabs-systems.github.io/NeoRouter/api/"><img alt="API docs: OpenAI and Anthropic compatible" src="https://img.shields.io/badge/API%20docs-OpenAI%20%C2%B7%20Anthropic%20%C2%B7%20Responses-e3b655?style=flat-square"></a>
 </p>
 
@@ -53,15 +54,11 @@ https://github.com/user-attachments/assets/f42be679-1e12-4cb1-9c00-d0f3c15bf403
 bash <(curl -fsSL https://raw.githubusercontent.com/NeoLabs-Systems/NeoRouter/main/install.sh)
 ```
 
-or with npm:
+For macOS and Linux (x64 and arm64). It downloads the `neorouter` binary from the latest release, checks it and sets up the background service; the web app comes inside the signed release, so there is nothing else to install. On Windows, download `neorouter-cli-windows-x64.exe` from the [latest release](https://github.com/NeoLabs-Systems/NeoRouter/releases/latest) and run it with `install`.
 
-```bash
-npm i -g --allow-git=root --allow-scripts=bcrypt,better-sqlite3,onnxruntime-node,protobufjs github:NeoLabs-Systems/NeoRouter && neorouter install
-```
+The installer follows the stable channel. For beta, prefix the command with `NEOROUTER_RELEASE_CHANNEL=beta`, or switch later with `neorouter channel beta`. On fish, wrap the command: `bash -c 'bash <(curl -fsSL https://raw.githubusercontent.com/NeoLabs-Systems/NeoRouter/main/install.sh)'`.
 
-On fish, wrap the first command: `bash -c 'bash <(curl -fsSL https://raw.githubusercontent.com/NeoLabs-Systems/NeoRouter/main/install.sh)'`. Afterwards the `neorouter` command works in a new terminal (`neorouter update`, `neorouter doctor`, …); if your shell does not pick up `~/.local/bin` yet, the installer prints the one line to add it.
-
-You need Node.js 20+ and git. The web app comes prebuilt; if it cannot be downloaded, the installer sets up Flutter for you and builds it.
+**Coming from the Node.js version?** Run `neorouter update`, or the installer again. Your data in `~/.neorouter` is backed up first and kept: accounts, router keys and provider keys carry over.
 
 Then open **http://localhost:4600/app**. The first account you create becomes the administrator. Add a provider, create a router key, and point any OpenAI or Anthropic SDK at `http://localhost:4600/v1`.
 
@@ -78,6 +75,10 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
 
 ## ✨ What it does
 
+<p align="center">
+  <img src="docs/images/routing.gif" alt="The live dashboard: requests from your apps flowing through NeoRouter to providers" width="800">
+</p>
+
 <table>
   <tr>
     <td width="33%" valign="top"><b>🔑 Keys checked on the spot</b><br>Every key is validated, encrypted and its models imported automatically. OpenRouter connects with one click.</td>
@@ -92,7 +93,7 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
   <tr>
     <td valign="top"><b>🎟️ Router keys</b><br>Free-only, paid or both. USD budgets per day, month or total, RPM limits and model allow-lists.</td>
     <td valign="top"><b>🔀 Three APIs</b><br>OpenAI Chat Completions, Anthropic Messages and OpenAI Responses, with streaming, tools and vision.</td>
-    <td valign="top"><b>👥 Multi-user</b><br>Provider keys stay private per account, with optional authenticator 2FA. Only request metadata is logged, never prompts.</td>
+    <td valign="top"><b>👥 Multi-user</b><br>Provider keys stay private per account, with passkeys, QR sign-in and optional authenticator 2FA. Only request metadata is logged, never prompts.</td>
   </tr>
   <tr>
     <td valign="top"><b>🛡️ Privacy shield</b><br>Emails, IBANs, cards, secrets, your own terms and (optionally AI-detected) names become placeholders; answers get the real values back.</td>
@@ -119,16 +120,28 @@ ANTHROPIC_BASE_URL=http://localhost:4600 ANTHROPIC_AUTH_TOKEN=nrt_… claude
 
 **Providers:** Groq, Google Gemini, Deepgram, ElevenLabs, Cerebras, Mistral, OpenRouter, NVIDIA NIM, Cloudflare, Cohere, Z.ai, SiliconFlow, Hugging Face, Ollama Cloud, Kilo, OpenAI, Anthropic, xAI, DeepSeek, Together, Fireworks, DeepInfra, Nous, local Ollama and LM Studio, and any OpenAI- or Anthropic-compatible endpoint.
 
+## 🐳 Docker
+
+```bash
+git clone --branch main https://github.com/NeoLabs-Systems/NeoRouter.git && cd NeoRouter
+docker compose up -d --build
+```
+
+All state lives in one volume. Upgrading an older setup, ports, reverse proxies and published images: [docs/docker.md](docs/docker.md).
+
 ## 📚 Docs
 
 | Start | Understand | Extend |
 | --- | --- | --- |
 | [Configuration](docs/configuration.md) | [Routing](docs/routing.md) | [Providers](docs/providers.md) |
-| [CLI](#-cli) | [Security](SECURITY.md) | [Contributing](CONTRIBUTING.md) |
+| [Docker](docs/docker.md) | [Security](SECURITY.md) | [Contributing](CONTRIBUTING.md) |
+| [CLI](#%EF%B8%8F-cli) | [Anonymous statistics](docs/analytics.md) | |
 
 ## 🛠️ CLI
 
-`neorouter install · start · stop · restart · status · doctor · logs · backup · update · env · reset-password · reset-2fa · providers import · rebuild-web · version`
+`neorouter install · start · stop · restart · status · doctor · repair · logs · update · channel · backup [list] · restore · env · reset-password · reset-2fa · providers import · uninstall · version`
+
+`neorouter update --check` and `--notes` show what is new without installing anything. `neorouter help --all` lists every command.
 
 ## 🧪 Project status
 

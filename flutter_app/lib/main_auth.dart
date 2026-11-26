@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:neolabs_flutter/neolabs_flutter.dart' show NeoCredentialField, NeoCredentialFields, NeoForgotPasswordDialog;
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
+import 'main_qr_signin.dart';
 import 'main_shared.dart';
 import 'main_spacing.dart';
 import 'main_theme.dart';
+import 'src/backend_client.dart';
 
 class NeoRouterAuthScreen extends StatefulWidget {
   const NeoRouterAuthScreen({super.key, required this.controller});
@@ -22,7 +25,13 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final TextEditingController _codeController = TextEditingController();
+  final FocusNode _usernameFocus = FocusNode();
+  final FocusNode _emailFocus = FocusNode();
+  final FocusNode _passwordFocus = FocusNode();
+  final FocusNode _confirmFocus = FocusNode();
   late bool _registerMode = widget.controller.bootstrapRegistration;
+  bool _obscure = true;
+  bool _showQr = false;
 
   @override
   void dispose() {
@@ -31,33 +40,112 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
     _emailController.dispose();
     _confirmPasswordController.dispose();
     _codeController.dispose();
+    _usernameFocus.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    _confirmFocus.dispose();
     super.dispose();
   }
 
   Future<void> _showForgotPasswordDialog() async {
     final t = AppL10n.of(context);
+    final controller = widget.controller;
+    final palette = neoRouterPaletteOf(context);
+    final messenger = ScaffoldMessenger.of(context);
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(t.forgotPasswordTitle),
-        content: SizedBox(
-          width: 420,
-          child: SelectableText(
-            t.forgotPasswordBody,
-            style: TextStyle(
-              color: neoRouterPaletteOf(context).textSoft,
-              height: 1.45,
-            ),
-          ),
-        ),
-        actions: <Widget>[
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(t.close),
-          ),
-        ],
+      builder: (_) => NeoForgotPasswordDialog(
+        initialAccount: _usernameController.text.trim(),
+        title: t.forgotPasswordTitle,
+        description: t.forgotPasswordDescription,
+        accountLabel: t.usernameOrEmail,
+        emptyError: t.forgotPasswordMissing,
+        cancelLabel: t.cancel,
+        submitLabel: t.forgotPasswordSubmit,
+        onSubmit: (account) async {
+          String? failure;
+          try {
+            await controller.auth.forgotPassword(controller.client.baseUrl, account);
+          } on ApiException catch (error) {
+            failure = error.message;
+          } catch (_) {
+            failure = t.serverUnreachable;
+          }
+          messenger.showSnackBar(SnackBar(content: Text(failure ?? t.forgotPasswordSent)));
+          return failure == null;
+        },
+        errorBuilder: (message) => InlineError(message: message),
+        backgroundColor: palette.surface,
+        textColor: palette.textSoft,
       ),
     );
+  }
+
+  Widget _credentials(NeoRouterController controller, AppL10n t) {
+    final palette = neoRouterPaletteOf(context);
+    String label(NeoCredentialField field) => switch (field) {
+      NeoCredentialField.username => _registerMode ? t.username : t.usernameOrEmail,
+      NeoCredentialField.email => t.email,
+      NeoCredentialField.password => t.password,
+      NeoCredentialField.confirmPassword => t.confirmPassword,
+    };
+    return NeoCredentialFields(
+      register: _registerMode,
+      username: _usernameController,
+      email: _emailController,
+      password: _passwordController,
+      confirmPassword: _confirmPasswordController,
+      usernameFocus: _usernameFocus,
+      emailFocus: _emailFocus,
+      passwordFocus: _passwordFocus,
+      confirmPasswordFocus: _confirmFocus,
+      obscurePassword: _obscure,
+      onChanged: (_) {},
+      onSubmit: _submit,
+      decoration: (field, suffix) => InputDecoration(labelText: label(field), suffixIcon: suffix),
+      // The labels float inside the fields, so a field is its own labelled row.
+      labeledField: (_, field, trailing) =>
+          trailing == null ? field : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[field, trailing]),
+      usernameLabel: t.username,
+      usernameOrEmailLabel: t.usernameOrEmail,
+      emailLabel: t.email,
+      passwordLabel: t.password,
+      confirmPasswordLabel: t.confirmPassword,
+      passwordToggle: IconButton(
+        tooltip: _obscure ? t.showPassword : t.hidePassword,
+        onPressed: () => setState(() => _obscure = !_obscure),
+        icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, size: 18),
+      ),
+      passwordStrength: Text(t.passwordRules, style: TextStyle(color: palette.textMuted, fontSize: 12, height: 1.4)),
+      forgotPassword: controller.passwordResetAvailable
+          ? Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(onPressed: controller.loading ? null : _showForgotPasswordDialog, child: Text(t.forgotPassword)),
+            )
+          : null,
+    );
+  }
+
+  /// Passkey and phone sign-in, once the server said what it offers.
+  List<Widget> _otherWays(NeoRouterController controller, AppL10n t) {
+    if (!controller.authOptionsLoaded || _registerMode) return const <Widget>[];
+    return <Widget>[
+      if (controller.webAuthn.isSupported) ...<Widget>[
+        const SizedBox(height: AppSpacing.sm),
+        OutlinedButton.icon(
+          onPressed: controller.loading ? null : () => controller.signInWithPasskey(_usernameController.text.trim()),
+          icon: const Icon(Icons.key_rounded, size: 16),
+          label: Text(t.passkeySignIn),
+        ),
+      ],
+      const SizedBox(height: AppSpacing.sm),
+      OutlinedButton.icon(
+        onPressed: () => setState(() => _showQr = !_showQr),
+        icon: const Icon(Icons.qr_code_rounded, size: 16),
+        label: Text(t.qrSignIn),
+      ),
+      if (_showQr) ...<Widget>[const SizedBox(height: AppSpacing.md), QrSignInPanel(controller: controller)],
+    ];
   }
 
   Future<void> _submit() async {
@@ -106,7 +194,7 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
       ),
       if (controller.authError != null) ...<Widget>[
         const SizedBox(height: AppSpacing.sm),
-        InlineError(message: controller.authError!),
+        InlineError(message: controller.authErrorCode == 'INVALID_TWO_FACTOR' ? t.accountWrongCode : controller.authError!),
       ],
       const SizedBox(height: AppSpacing.lg),
       FilledButton(
@@ -197,56 +285,7 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
                                 if (controller.awaitingTwoFactor)
                                   ..._twoFactorFields(controller, t)
                                 else ...<Widget>[
-                                TextField(
-                                  controller: _usernameController,
-                                  autofillHints: const <String>[
-                                    AutofillHints.username,
-                                  ],
-                                  decoration: InputDecoration(
-                                    labelText: _registerMode
-                                        ? t.username
-                                        : t.usernameOrEmail,
-                                  ),
-                                ),
-                                if (_registerMode) ...<Widget>[
-                                  const SizedBox(height: AppSpacing.sm),
-                                  TextField(
-                                    controller: _emailController,
-                                    keyboardType: TextInputType.emailAddress,
-                                    autofillHints: const <String>[
-                                      AutofillHints.email,
-                                    ],
-                                    decoration: InputDecoration(
-                                      labelText: t.email,
-                                    ),
-                                  ),
-                                ],
-                                const SizedBox(height: AppSpacing.sm),
-                                TextField(
-                                  controller: _passwordController,
-                                  obscureText: true,
-                                  autofillHints: <String>[
-                                    _registerMode
-                                        ? AutofillHints.newPassword
-                                        : AutofillHints.password,
-                                  ],
-                                  onSubmitted: (_) =>
-                                      _registerMode ? null : _submit(),
-                                  decoration: InputDecoration(
-                                    labelText: t.password,
-                                  ),
-                                ),
-                                if (_registerMode) ...<Widget>[
-                                  const SizedBox(height: AppSpacing.sm),
-                                  TextField(
-                                    controller: _confirmPasswordController,
-                                    obscureText: true,
-                                    onSubmitted: (_) => _submit(),
-                                    decoration: InputDecoration(
-                                      labelText: t.confirmPassword,
-                                    ),
-                                  ),
-                                ],
+                                _credentials(controller, t),
                                 if (controller.authError != null) ...<Widget>[
                                   const SizedBox(height: AppSpacing.sm),
                                   InlineError(message: controller.authError!),
@@ -269,44 +308,20 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
                                               : t.signIn,
                                         ),
                                 ),
+                                ..._otherWays(controller, t),
                                 if (!bootstrap) ...<Widget>[
                                   const SizedBox(height: AppSpacing.sm),
-                                  Wrap(
-                                    alignment: WrapAlignment.spaceBetween,
-                                    crossAxisAlignment:
-                                        WrapCrossAlignment.center,
-                                    children: <Widget>[
-                                      TextButton(
-                                        onPressed: controller.loading
-                                            ? null
-                                            : () {
-                                                if (!_registerMode &&
-                                                    !controller
-                                                        .registrationOpen) {
-                                                  controller.showAuthError(
-                                                    t.registrationClosed,
-                                                  );
-                                                  return;
-                                                }
-                                                setState(
-                                                  () => _registerMode =
-                                                      !_registerMode,
-                                                );
-                                              },
-                                        child: Text(
-                                          _registerMode
-                                              ? t.toLogin
-                                              : t.toRegister,
-                                        ),
-                                      ),
-                                      if (!_registerMode)
-                                        TextButton(
-                                          onPressed: controller.loading
-                                              ? null
-                                              : _showForgotPasswordDialog,
-                                          child: Text(t.forgotPassword),
-                                        ),
-                                    ],
+                                  TextButton(
+                                    onPressed: controller.loading
+                                        ? null
+                                        : () {
+                                            if (!_registerMode && !controller.registrationOpen) {
+                                              controller.showAuthError(t.registrationClosed);
+                                              return;
+                                            }
+                                            setState(() => _registerMode = !_registerMode);
+                                          },
+                                    child: Text(_registerMode ? t.toLogin : t.toRegister),
                                   ),
                                 ],
                                 ],

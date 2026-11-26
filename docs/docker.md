@@ -27,30 +27,55 @@ docker run -d --name neorouter \
 
 ## Choosing the version
 
-`beta` is the default channel (the project's own default: `beta` is the
-development branch, `main` is stable). The channel picks the code **and** the
-matching prebuilt dashboard, so the two cannot drift apart.
+`main` is the stable branch, `beta` the development branch. The image is built
+from whatever you have checked out:
 
 ```bash
-NEOROUTER_CHANNEL=beta   docker compose up -d --build   # beta branch (default)
-NEOROUTER_CHANNEL=stable docker compose up -d --build   # main branch
-NEOROUTER_VERSION=v0.1.2 docker compose up -d --build   # an exact tag or branch
+git switch main && docker compose up -d --build                            # stable
+git switch beta && NEOROUTER_CHANNEL=beta docker compose up -d --build     # beta
+git checkout v1.2.3 && docker compose up -d --build                        # one release
 ```
 
-Put those in a `.env` file next to `docker-compose.yml` to keep them; Compose
-reads that file automatically. With plain `docker build`:
+`NEOROUTER_CHANNEL` (`stable` by default) only sets the release channel the image
+reports. Compose also reads it from a `.env` file next to `docker-compose.yml`.
+
+Or skip the build and use a published image,
+`ghcr.io/neolabs-systems/neorouter`:
+
+| Tag | Follows |
+| --- | --- |
+| `latest`, `main` | The newest stable release |
+| `beta` | The newest release, beta or stable |
+| `1.2.3`, `1.2` | That version |
+
+## Upgrading from the Node.js image
+
+Keep your volume (or bind mount): the path stays `/data`, the user stays uid
+1000, and the database, `secret.key` and `/data/.env` are used as they are. The
+database is upgraded on the first start, after a snapshot is saved in
+`/data/backups`. The Node.js image cannot read what the new server writes, so for
+a clean way back **copy the volume before you upgrade**:
 
 ```bash
-docker build --build-arg NEOROUTER_CHANNEL=stable -t neorouter:stable .
-docker build --build-arg NEOROUTER_VERSION=v0.1.2 -t neorouter:0.1.2 .
+docker compose stop
+docker run --rm --volumes-from neorouter -v "$PWD:/backup" debian:trixie-slim \
+  tar -czf /backup/neorouter-data.tar.gz -C /data .
 ```
 
-`NEOROUTER_VERSION` takes a tag or any branch name and fetches it from
-`NEOROUTER_REPO` (default `https://github.com/NeoLabs-Systems/NeoRouter.git`),
-which is how an image is built for a version other than the working tree. For a
-fork, either clone the fork and build the context, or set
-`NEOROUTER_REPO` to it. Inside the container
-`NEOROUTER_RELEASE_CHANNEL` reports the channel the image was built from.
+Going back to the old image means restoring that copy into an empty volume
+first.
+
+Then update the checkout and run `docker compose up -d --build`. An existing
+compose file keeps working; these parts of it are now out of date:
+
+| In an older setup | Now |
+| --- | --- |
+| `NEOROUTER_VERSION` | Removed and ignored. Check out the tag, or use a published image tag. |
+| `target: runtime` or `runtime-from-source` | Both still accepted and identical. Remove the line. |
+| `NODE_VERSION`, `FLUTTER_VERSION`, `NEOROUTER_WEB_URL`, `web-archive` context | Ignored: nothing is downloaded or compiled but the server. |
+| `healthcheck` running `node -e …` | Still answered. Use `test: ["CMD", "neorouter", "healthcheck"]`. |
+| Commands running `node` or `npm` | Gone. Use the `neorouter` command. |
+| Channel `beta` by default | `stable` by default. |
 
 ## The `/data` volume
 
@@ -63,7 +88,7 @@ Everything the process writes is under `/data` (image default
 | `/data/data/secret.key` | AES-256-GCM key for provider API keys |
 | `/data/data/models/` | Privacy-filter weights, when that feature is enabled |
 | `/data/.env` | Configuration, seeded on first start from `docker/env.example` |
-| `/data/logs/`, `/data/backups/` | Log files and pre-update backups |
+| `/data/logs/`, `/data/backups/` | Log files and backups |
 
 Losing the volume means provider keys can no longer be decrypted: back it up
 rather than recreating it. `neorouter backup` writes into `/data/backups`.
@@ -137,11 +162,21 @@ docker compose exec neorouter neorouter reset-password admin 'a-long-password'
 docker compose exec neorouter neorouter reset-2fa admin
 docker compose exec neorouter neorouter providers import ./providers.json --user admin
 docker compose exec neorouter neorouter backup
+docker compose exec neorouter neorouter backup list
 docker compose logs -f
 ```
 
 `neorouter providers import` reads a file path, so copy it in first
 (`docker cp providers.json neorouter:/tmp/`).
+
+`restore` replaces the data, so stop the server first and run it in a one-off
+container:
+
+```bash
+docker compose stop
+docker compose run --rm neorouter restore <backup>
+docker compose up -d
+```
 
 Inside a container the lifecycle commands defer to the container runtime
 instead of pretending:
@@ -158,39 +193,25 @@ instead of pretending:
 
 ## Building
 
-The default build downloads the dashboard that GitHub already built for the
-branch (the `web-beta` / `web-main` release, 12 MB) instead of installing
-Flutter. That is also what an npm install does without the Flutter SDK.
+The server is compiled in a `golang:1.27-trixie` stage into one static binary
+(`CGO_ENABLED=0`, pure-Go SQLite) and runs on `debian:trixie-slim` with
+`ffmpeg`, `libgomp1` (for local llama.cpp models) and `tini` as PID 1. The
+dashboard (`flutter_app/build/web`) is copied from the checkout: releases build
+and commit it, so the image never downloads it. If you changed the Flutter app,
+or your checkout has no bundle yet, build it first:
 
 ```bash
-docker build -t neorouter .                                    # beta (default)
-docker build --build-arg NEOROUTER_CHANNEL=stable -t neorouter:stable .
-docker build --target runtime-from-source -t neorouter:src .    # dashboard from Flutter
+cd flutter_app && flutter build web --release --no-tree-shake-icons --base-href /app/
 ```
 
-`runtime-from-source` uses the `ghcr.io/cirruslabs/flutter` image and builds
-`flutter_app` from the source — use it after changing the Flutter app, or when
-the prebuilt release is not reachable. It is slow (multi-GB base image).
-
-Build arguments:
-
-| Argument | Default | Meaning |
+| Build argument | Default | Meaning |
 | --- | --- | --- |
-| `NEOROUTER_CHANNEL` | `beta` | `beta` or `stable`: the prebuilt dashboard and the image's release channel |
-| `NEOROUTER_VERSION` | – | Tag or branch to fetch as the source instead of the build context |
-| `NEOROUTER_REPO` | upstream GitHub | Repository `NEOROUTER_VERSION` is fetched from, e.g. a fork |
-| `NEOROUTER_WEB_URL` | – | Full URL (or `file://` path) to `neorouter-web.tar.gz`, for mirrors and air-gapped builds |
-| `NODE_VERSION` | `22` | Node base image tag (must be 20 or newer) |
-| `FLUTTER_VERSION` | `3.35.5` | Flutter SDK image for `runtime-from-source` |
+| `NEOROUTER_CHANNEL` | `stable` | `stable` or `beta`: the release channel the image reports |
 | `UID` / `GID` | `1000` | Runtime user, for bind mounts owned by somebody else |
-
-Native modules (`better-sqlite3`, `bcrypt`) are compiled in the build stage and
-verified there: a module without its binary fails the build instead of failing
-at runtime.
 
 ## Operations
 
-- **Healthcheck**: `GET /health` every 30 s, 40 s grace period. Compose
+- **Healthcheck**: `neorouter healthcheck` (calls `GET /health`) every 30 s, 60 s grace period. Compose
   `depends_on: condition: service_healthy` waits for it.
 - **Shutdown**: `tini` is PID 1, so `SIGTERM` reaches the server, which closes
   the HTTP server and the scheduler cleanly. Allow ~20 s
@@ -205,13 +226,12 @@ at runtime.
 ## Updating
 
 ```bash
-docker compose build --pull && docker compose up -d   # built from a checkout
+git pull && docker compose up -d --build              # built from a checkout
 docker compose pull && docker compose up -d           # published image
 ```
 
-Pinning a version is `NEOROUTER_VERSION` at build time, or `image: …:0.1.2` for
-a published image. The volume is untouched either way. Migrations run at start
-— take a backup first if the release notes mention schema changes:
+The volume is untouched either way. Database changes run at start and cannot be
+undone by an older image, so take a backup before you update:
 
 ```bash
 docker compose exec neorouter neorouter backup

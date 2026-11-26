@@ -1,0 +1,64 @@
+name: Update Shared Modules
+
+# Keeps NeoRouter on the newest shared NeoLabs code: the neolabs-go beta branch and the latest neolabs-flutter commit on main. Any change is
+# committed to beta and triggers Release Beta explicitly.
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: update-shared-modules
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Update neolabs-go and neolabs-flutter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: beta
+
+      - name: Set up Go
+        uses: NeoLabs-Systems/neolabs-go/.github/actions/setup-go@1cd3668653c972a8c10cffcf52be95638bba74f8
+
+      - name: Set up Flutter
+        uses: NeoLabs-Systems/neolabs-go/.github/actions/setup-flutter@1cd3668653c972a8c10cffcf52be95638bba74f8
+
+      - name: Update modules
+        env:
+          GOWORK: 'off'
+        run: |
+          go get github.com/NeoLabs-Systems/neolabs-go@beta
+          go mod tidy
+          (cd flutter_app && flutter pub upgrade neolabs_flutter)
+
+      - name: Check the build
+        env:
+          GOWORK: 'off'
+        run: |
+          go build ./...
+          go vet ./...
+          (cd flutter_app && flutter analyze --no-pub)
+
+      - name: Commit and start the beta release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet; then
+            echo "Shared modules are current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add go.mod go.sum flutter_app/pubspec.lock
+          git commit -m "chore(deps): update shared NeoLabs modules"
+          git push origin HEAD:beta
+          gh workflow run release-beta.yml --ref beta

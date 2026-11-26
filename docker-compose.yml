@@ -7,29 +7,20 @@
 # Then open http://localhost:4600/app — the first account you create is the
 # administrator. Point OpenAI/Anthropic clients at http://localhost:4600/v1.
 #
-# The version is chosen with NEOROUTER_CHANNEL or NEOROUTER_VERSION, in the
-# shell or in a .env file next to this one:
+# The image builds from this checkout: the Go server is compiled in it and the
+# dashboard (flutter_app/build/web) travels with the checkout, so the Flutter SDK
+# is not needed. Check out `main` for stable or `beta` for beta;
+# NEOROUTER_CHANNEL only sets the release channel the image reports:
 #
-#   NEOROUTER_CHANNEL=beta docker compose up -d --build    # beta branch
-#   NEOROUTER_CHANNEL=stable docker compose up -d --build  # main branch
-#   NEOROUTER_VERSION=v0.1.0 docker compose up -d --build  # an exact tag
-#
-# With neither set, the image is built from this checkout as it is.
+#   git switch beta && NEOROUTER_CHANNEL=beta docker compose up -d --build
 
 services:
   neorouter:
     build:
       context: .
       dockerfile: Dockerfile
-      # Set to "runtime-from-source" to build the dashboard with Flutter from
-      # this checkout instead of downloading the prebuilt web client.
-      target: runtime
       args:
-        # beta is the project's default channel; set NEOROUTER_CHANNEL=stable
-        # or NEOROUTER_VERSION=<tag> to build something else.
-        NEOROUTER_CHANNEL: ${NEOROUTER_CHANNEL:-beta}
-        NEOROUTER_VERSION: ${NEOROUTER_VERSION:-}
-        NODE_VERSION: "22"
+        NEOROUTER_CHANNEL: ${NEOROUTER_CHANNEL:-stable}
     # Or use a published image instead of building:
     # image: ghcr.io/neolabs-systems/neorouter:latest
     container_name: neorouter
@@ -55,14 +46,10 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
-      test:
-        - CMD
-        - node
-        - -e
-        - "fetch('http://127.0.0.1:' + (process.env.NEOROUTER_PORT || 4600) + '/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      test: ["CMD", "neorouter", "healthcheck"]
       interval: 30s
       timeout: 5s
-      start_period: 40s
+      start_period: 60s
       retries: 3
     # The scheduler, key checks and model sync run in this one process; a
     # clean SIGTERM closes the server and the database.

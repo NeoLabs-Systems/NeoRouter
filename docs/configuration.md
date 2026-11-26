@@ -1,6 +1,6 @@
 # Configuration
 
-NeoRouter reads `~/.neorouter/.env` (created by `neorouter setup`) and the
+NeoRouter reads `~/.neorouter/.env` (created by `neorouter install`) and the
 process environment. Change values with `neorouter env set KEY value`.
 
 ## Server
@@ -17,7 +17,28 @@ process environment. Change values with `neorouter env set KEY value`.
 | `NEOROUTER_ALLOWED_ORIGINS` | – | Extra CORS origins (comma separated); loopback is always allowed. |
 | `NEOROUTER_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error`. |
 | `NEOROUTER_SESSION_TTL_MS` | 30 days | Dashboard session lifetime. |
+| `NEOROUTER_RELEASE_CHANNEL` | `stable` | Release channel `neorouter update` follows (`stable` or `beta`). Set it with `neorouter channel`. |
+| `NEOROUTER_DATABASE_PATH` | `data/neorouter.sqlite3` | Location of the database. |
+| `NEOROUTER_MAX_BODY_BYTES` | 32 MiB | Largest request body accepted. |
 | `NEOROUTER_WEB_DEV_URL` | – | Development only: redirect `/app` to a running `flutter run -d web-server`. |
+
+## Email
+
+Optional. With an SMTP server, a sender and a public address set, the sign-in
+page offers **Forgot password?**. Without them, an admin resets a password with
+`neorouter reset-password`.
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `NEOROUTER_EMAIL_SMTP_HOST` | – | SMTP server. |
+| `NEOROUTER_EMAIL_FROM` | – | Sender address. |
+| `NEOROUTER_EMAIL_PUBLIC_URL` | `NEOROUTER_PUBLIC_URL` | Address used for links in mails. |
+| `NEOROUTER_EMAIL_SMTP_PORT` | `587` | Port `465` uses implicit TLS. |
+| `NEOROUTER_EMAIL_SMTP_USER` / `NEOROUTER_EMAIL_SMTP_PASS` | – | SMTP sign-in. |
+| `NEOROUTER_EMAIL_REPLY_TO` | – | Reply address. |
+
+Passkeys and security keys need the app to be opened over HTTPS or on
+`localhost`.
 
 ## Router key expiration
 

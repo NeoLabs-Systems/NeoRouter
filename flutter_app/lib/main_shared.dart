@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:neolabs_flutter/neolabs_flutter.dart' show NeoAuthBackdrop;
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_spacing.dart';
@@ -28,7 +29,7 @@ class AuthBackdrop extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => AmbientBackdrop(child: child);
+  Widget build(BuildContext context) => NeoAuthBackdrop(palette: neoLabsPaletteOf(context), child: child);
 }
 
 /// A short fade-in for content that appears after loading.

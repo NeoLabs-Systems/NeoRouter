@@ -52,7 +52,64 @@
   "toLogin": "Already have an account? Sign in",
   "forgotPassword": "Forgot password?",
   "forgotPasswordTitle": "Reset password",
-  "forgotPasswordBody": "An administrator can reset it on the server with: neorouter reset-password <user> <new-password>",
+  "forgotPasswordDescription": "Enter your username or email. If the account exists, we send it a link to set a new password.",
+  "forgotPasswordMissing": "Enter your username or email.",
+  "forgotPasswordSubmit": "Send link",
+  "forgotPasswordSent": "If the account exists, a reset link is on its way.",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "passwordRules": "At least 12 characters. Avoid your name or email, common words and sequences like 1234.",
+  "passkeySignIn": "Sign in with a passkey",
+  "passkeysTitle": "Passkeys",
+  "passkeysHint": "Sign in with your fingerprint, face or a security key instead of your password.",
+  "passkeysUnsupported": "Adding a passkey needs a browser that supports it, over HTTPS or on localhost.",
+  "passkeyAdd": "Add passkey",
+  "passkeyName": "Name",
+  "passkeyRename": "Rename",
+  "passkeyRemoveTitle": "Delete passkey",
+  "passkeyRemoveConfirm": "“{name}” can no longer be used to sign in.",
+  "@passkeyRemoveConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "passkeyNeverUsed": "Not used yet",
+  "passkeyLastUsed": "Last used {date}",
+  "@passkeyLastUsed": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "qrSignIn": "Sign in with your phone",
+  "qrSignInHint": "Scan with a phone that is signed in to this NeoRouter, then approve there.",
+  "qrSignInScanned": "Scanned. Confirm on {device}.",
+  "@qrSignInScanned": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "qrSignInDeclined": "The sign-in was declined.",
+  "qrSignInNewCode": "New code",
+  "qrApproveTitle": "Sign in this device?",
+  "qrApproveWarning": "It gets full access to your account “{username}”. Only approve if you started this yourself.",
+  "@qrApproveWarning": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "qrApproveAction": "Approve",
+  "qrApproveDone": "Approved. The other device is signing in.",
+  "qrApproveDeclined": "Declined. Nothing was signed in.",
+  "logoutAll": "Sign out everywhere",
+  "logoutAllHint": "Ends every session of your account, including this one.",
   "passwordsDontMatch": "Passwords do not match.",
   "passwordTooShort": "Use a password with at least 12 characters.",
   "registrationClosed": "Registration is closed. Ask an administrator to open it.",
@@ -862,7 +919,7 @@
   "themeLabel": "Theme",
   "themeHint": "Follows your device unless you pick one.",
   "languageHint": "Only the dashboard. The gateway is language-neutral.",
-  "passwordHint": "At least 12 characters. You will be signed out afterwards.",
+  "passwordHint": "At least 12 characters, without your name, common words or sequences. You will be signed out afterwards.",
   "signOutHint": "Sign out of NeoRouter in this browser.",
   "appearance": "Appearance",
   "themeSystem": "System",
@@ -929,7 +986,7 @@
   "accountLastAdmin": "You are the only admin. Make someone else an admin first.",
   "accountWrongPassword": "The password is not correct.",
   "accountTooManyTries": "Too many wrong tries. Wait a few minutes and try again.",
-  "accountWrongCode": "The code is not valid.",
+  "accountWrongCode": "That code did not work. A code works once, so wait for the next one.",
   "twoFactorTitle": "Two-factor authentication",
   "twoFactorOn": "2FA on",
   "twoFactorOff": "2FA off",
