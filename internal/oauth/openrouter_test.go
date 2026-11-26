@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 // openRouterUpstream is a fake OpenRouter token endpoint.
@@ -118,10 +119,22 @@ func TestOpenRouterConnectionStoresTheKey(t *testing.T) {
 		t.Errorf("synced = %v", env.catalog.synced)
 	}
 
-	// The state works once: a second callback has expired.
+	// A browser can reach the callback twice (link prefetch, refresh, back). The
+	// code is exchanged once and the repeat replays the same redirect, not an
+	// expired-link error.
 	again := env.get("", "/api/v1/oauth/openrouter/callback/"+state+"?code=one-time-code")
-	if again.Code != http.StatusBadRequest || !strings.Contains(again.Body.String(), `"code":"OAUTH_EXPIRED"`) {
-		t.Errorf("status = %d, body %s", again.Code, again.Body)
+	if again.Code != http.StatusFound || again.Header().Get("Location") != finished.Header().Get("Location") {
+		t.Errorf("repeat callback = %d %s, want the same redirect %s", again.Code, again.Body, finished.Header().Get("Location"))
+	}
+	if len(env.accounts.accounts) != 1 {
+		t.Errorf("the code was exchanged again: accounts = %d", len(env.accounts.accounts))
+	}
+
+	// Once the flow's window passes, the link really is expired.
+	env.now = env.now.Add(openRouterFlowTTL + time.Minute)
+	expired := env.get("", "/api/v1/oauth/openrouter/callback/"+state+"?code=one-time-code")
+	if expired.Code != http.StatusBadRequest || !strings.Contains(expired.Body.String(), `"code":"OAUTH_EXPIRED"`) {
+		t.Errorf("status = %d, body %s", expired.Code, expired.Body)
 	}
 }
 

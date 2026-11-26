@@ -35,6 +35,10 @@ type openRouterFlow struct {
 	createdBy string
 	verifier  string
 	returnTo  string
+	// result is the dashboard redirect once the callback has been answered. A
+	// browser can reach the callback twice (link prefetch, refresh, back); the
+	// code is exchanged once and a repeat hit replays this same outcome.
+	result    string
 	expiresAt time.Time
 }
 
@@ -110,6 +114,7 @@ func (s *Service) StartOpenRouter(start OpenRouterStart) (string, error) {
 		expiresAt: now.Add(openRouterFlowTTL),
 	}
 	s.mu.Unlock()
+	s.log.Info("OpenRouter sign-in link issued", "state", state, "user", start.UserID)
 
 	callback := strings.TrimRight(start.Origin, "/") + "/api/v1/oauth/openrouter/callback/" + state
 	return s.openRouterAuth + "?callback_url=" + encodeURIComponent(callback) +
@@ -117,32 +122,48 @@ func (s *Service) StartOpenRouter(start OpenRouterStart) (string, error) {
 }
 
 // CompleteOpenRouter finishes the flow and returns where the browser goes next:
-// the dashboard, carrying oauth_status=connected or oauth_error.
+// the dashboard, carrying oauth_status=connected or oauth_error. The one-time
+// code is exchanged once; a repeat callback (link prefetch, refresh, back)
+// replays the same outcome instead of reporting the link expired.
 func (s *Service) CompleteOpenRouter(ctx context.Context, state, code string) (string, error) {
 	now := s.now()
 	s.mu.Lock()
 	s.pruneFlows(now)
 	flow, ok := s.flows[state]
-	delete(s.flows, state)
 	s.mu.Unlock()
+	s.log.Info("OpenRouter callback", "state", state, "known", ok)
 
 	if !ok {
 		return "", httpserver.New(http.StatusBadRequest, "OAUTH_EXPIRED", "This sign-in link expired. Start the connection again.")
 	}
+	if flow.result != "" {
+		return flow.result, nil
+	}
+
+	var target string
+	var err error
 	if code == "" {
-		return s.withResult(flow.returnTo, "oauth", "openrouter", "oauth_error", "cancelled")
-	}
-	accountID, err := s.exchangeOpenRouter(ctx, flow, code)
-	if err != nil {
-		s.log.Warn("OpenRouter connection failed", "error", err)
-		return s.withResult(flow.returnTo, "oauth", "openrouter", "oauth_error", shortMessage(err.Error()))
-	}
-	if s.catalog != nil {
-		if err := s.catalog.SyncAccount(ctx, accountID); err != nil {
-			s.log.Warn("Initial model sync failed", "error", err)
+		target, err = s.withResult(flow.returnTo, "oauth", "openrouter", "oauth_error", "cancelled")
+	} else if accountID, exchangeErr := s.exchangeOpenRouter(ctx, flow, code); exchangeErr != nil {
+		s.log.Warn("OpenRouter connection failed", "error", exchangeErr)
+		target, err = s.withResult(flow.returnTo, "oauth", "openrouter", "oauth_error", shortMessage(exchangeErr.Error()))
+	} else {
+		if s.catalog != nil {
+			if syncErr := s.catalog.SyncAccount(ctx, accountID); syncErr != nil {
+				s.log.Warn("Initial model sync failed", "error", syncErr)
+			}
 		}
+		target, err = s.withResult(flow.returnTo, "oauth", "openrouter", "oauth_status", "connected")
 	}
-	return s.withResult(flow.returnTo, "oauth", "openrouter", "oauth_status", "connected")
+	if err != nil {
+		return "", err
+	}
+	s.mu.Lock()
+	if still, ok := s.flows[state]; ok {
+		still.result = target
+	}
+	s.mu.Unlock()
+	return target, nil
 }
 
 // exchangeOpenRouter swaps the one-time code for an API key and stores it as an
