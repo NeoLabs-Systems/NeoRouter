@@ -10,6 +10,10 @@ import 'main_spacing.dart';
 import 'main_theme.dart';
 import 'src/backend_client.dart';
 
+/// Off while there is no NeoRouter phone app to scan with: the sign-in screen
+/// then leaves the code out, and so never asks the server for one.
+const bool showQrSignIn = false;
+
 /// The code above the password form that a signed-in phone approves. It asks
 /// for a code and polls only while the code is on screen and the page visible.
 class QrSignInPanel extends StatefulWidget {

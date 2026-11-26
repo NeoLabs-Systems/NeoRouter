@@ -73,7 +73,10 @@ void main() {
     await tester.pumpWidget(_app(NeoRouterAuthScreen(controller: controller)));
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Sign in with a passkey'), findsOneWidget);
-    expect(find.text('Sign in with your phone'), findsOneWidget);
+    // The phone code is hidden: no card, no divider and no request for one.
+    expect(find.text('Sign in with your phone'), findsNothing);
+    expect(find.text('or use your password'), findsNothing);
+    expect(calls.where((call) => call.contains('qr-login')), isEmpty);
     await tester.ensureVisible(find.text('Forgot password?'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Forgot password?'));

@@ -172,7 +172,8 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
         : Text(label),
   );
 
-  /// Heading, phone sign-in, password form, then the other ways in.
+  /// Heading, password form, then the other ways in; the phone code sits above
+  /// the form when it is shown.
   Widget _signInContent(NeoRouterController controller, AppL10n t) {
     final palette = neoLabsPaletteOf(context);
     final twoFactor = controller.awaitingTwoFactor;
@@ -200,7 +201,7 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
           const SizedBox(height: 20),
           InlineError(message: twoFactor && controller.authErrorCode == 'INVALID_TWO_FACTOR' ? t.accountWrongCode : error),
         ],
-        if (offersOtherWays) ...<Widget>[
+        if (showQrSignIn && offersOtherWays) ...<Widget>[
           const SizedBox(height: 26),
           QrSignInPanel(controller: controller),
           const SizedBox(height: 22),
