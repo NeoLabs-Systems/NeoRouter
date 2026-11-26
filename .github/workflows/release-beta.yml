@@ -15,7 +15,10 @@ permissions:
 
 concurrency:
   group: release-beta-${{ github.ref }}
-  cancel-in-progress: ${{ github.actor != 'github-actions[bot]' }}
+  # A push waits for the running release instead of cancelling it half way. A
+  # release that has not tagged yet stops itself when beta has moved on, and the
+  # waiting run releases the newer commit.
+  cancel-in-progress: false
 
 jobs:
   preflight:
