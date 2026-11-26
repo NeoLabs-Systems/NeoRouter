@@ -136,7 +136,7 @@ func TestUpdateInstallsAndActivatesTheNewRuntime(t *testing.T) {
 	if err != nil {
 		t.Fatalf("update: %v", err)
 	}
-	for _, want := range []string{"Updating NeoRouter", "0.2.1 → 0.3.0", "NeoRouter 0.3.0 is ready", "Your settings, keys and usage were kept."} {
+	for _, want := range []string{"Updating NeoRouter", config.Version + " → 0.3.0", "NeoRouter 0.3.0 is ready", "Your settings, keys and usage were kept."} {
 		if !strings.Contains(out, want) {
 			t.Errorf("update is missing %q:\n%s", want, out)
 		}
@@ -164,12 +164,12 @@ func TestUpdateInstallsAndActivatesTheNewRuntime(t *testing.T) {
 
 func TestUpdateSaysWhenItIsAlreadyCurrent(t *testing.T) {
 	keys := newKeypair(t)
-	s, _ := updatable(t, "0.2.1", keys)
+	s, _ := updatable(t, config.Version, keys)
 	out, err := runCLI(t, s, "update")
 	if err != nil {
 		t.Fatalf("update: %v", err)
 	}
-	if !strings.Contains(out, "You have the latest version (0.2.1)") {
+	if !strings.Contains(out, "You have the latest version ("+config.Version+")") {
 		t.Errorf("update printed %q", out)
 	}
 	cfg := s.config(t)
