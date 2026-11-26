@@ -64,6 +64,7 @@ func (d *deps) mountAPI(mux *http.ServeMux) {
 	d.mountCatalog(mux)
 	d.Keys.Routes(mux)
 	d.Apps.Routes(mux)
+	d.OAuth.ManagementRoutes(mux)
 	d.Routing.Routes(mux, routing.RouteDeps{
 		Owner: func(r *http.Request) (ownerID, actorID string) {
 			space, _ := teams.SpaceFromContext(r.Context())

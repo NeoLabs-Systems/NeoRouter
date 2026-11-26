@@ -56,6 +56,7 @@ func newOAuthEnv(t *testing.T) *oauthEnv {
 	})
 	env.mux = http.NewServeMux()
 	env.svc.Routes(env.mux)
+	env.svc.ManagementRoutes(env.mux)
 	return env
 }
 

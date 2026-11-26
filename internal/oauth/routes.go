@@ -17,8 +17,9 @@ import (
 const maxOAuthBody = 16 << 10
 
 // Routes registers the OAuth endpoints apps talk to (server/routes/connect.js,
-// mounted at the root of server/app.js) and the dashboard endpoints
-// (server/routes/oauth.js).
+// mounted at the root of server/app.js) and the OpenRouter browser callback,
+// which a redirect reaches with no session header. The session-guarded
+// dashboard endpoints are ManagementRoutes, mounted behind requireSession.
 func (s *Service) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /.well-known/oauth-authorization-server", s.metadataRoute)
 	mux.HandleFunc("GET /oauth/authorize", s.authorizeRoute)
@@ -28,6 +29,12 @@ func (s *Service) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("OPTIONS /oauth/token", s.preflight)
 
 	mux.HandleFunc("GET /api/v1/oauth/openrouter/callback/{state}", s.openRouterCallbackRoute)
+}
+
+// ManagementRoutes registers the dashboard OAuth endpoints (server/routes/
+// oauth.js), which require a session and a permission. They must be mounted
+// behind the session middleware so the caller is in the request context.
+func (s *Service) ManagementRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /api/v1/oauth/openrouter/start", s.guarded("providers.manage", s.startOpenRouterRoute))
 	mux.Handle("GET /api/v1/oauth/apps/requests/{reference}", s.guarded("keys.create", s.describeRoute))
 	mux.Handle("POST /api/v1/oauth/apps/requests/{reference}/approve", s.guarded("keys.create", s.approveRoute))
