@@ -96,6 +96,17 @@
   },
   "qrSignInDeclined": "The sign-in was declined.",
   "qrSignInNewCode": "New code",
+  "qrShowCode": "Show the code",
+  "qrWaitingForCode": "Getting a code…",
+  "qrRefreshesIn": "New code in {seconds} s",
+  "@qrRefreshesIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "orUsePassword": "or use your password",
   "qrApproveTitle": "Sign in this device?",
   "qrApproveWarning": "It gets full access to your account “{username}”. Only approve if you started this yourself.",
   "@qrApproveWarning": {

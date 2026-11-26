@@ -248,6 +248,20 @@ class AppL10nEn extends AppL10n {
   String get qrSignInNewCode => 'New code';
 
   @override
+  String get qrShowCode => 'Show the code';
+
+  @override
+  String get qrWaitingForCode => 'Getting a code…';
+
+  @override
+  String qrRefreshesIn(String seconds) {
+    return 'New code in $seconds s';
+  }
+
+  @override
+  String get orUsePassword => 'or use your password';
+
+  @override
   String get qrApproveTitle => 'Sign in this device?';
 
   @override

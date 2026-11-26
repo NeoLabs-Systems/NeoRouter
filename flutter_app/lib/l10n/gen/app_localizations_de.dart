@@ -123,11 +123,11 @@ class AppL10nDe extends AppL10n {
   String get authBootstrapTitle => 'NeoRouter einrichten';
 
   @override
-  String get authLoginSubtitle => 'Melde dich an, um fortzufahren.';
+  String get authLoginSubtitle => 'Melden Sie sich an, um fortzufahren.';
 
   @override
   String get authRegisterSubtitle =>
-      'Self-hosted. Deine Provider-Keys bleiben auf deinem Server.';
+      'Self-hosted. Ihre Provider-Keys bleiben auf Ihrem Server.';
 
   @override
   String get authBootstrapSubtitle => 'Das erste Konto wird Administrator.';
@@ -167,11 +167,11 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get forgotPasswordDescription =>
-      'Gib deinen Benutzernamen oder deine E-Mail ein. Wenn es das Konto gibt, schicken wir ihm einen Link für ein neues Passwort.';
+      'Geben Sie Ihren Benutzernamen oder Ihre E-Mail ein. Wenn es das Konto gibt, schicken wir ihm einen Link für ein neues Passwort.';
 
   @override
   String get forgotPasswordMissing =>
-      'Gib deinen Benutzernamen oder deine E-Mail ein.';
+      'Geben Sie Ihren Benutzernamen oder Ihre E-Mail ein.';
 
   @override
   String get forgotPasswordSubmit => 'Link senden';
@@ -188,7 +188,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get passwordRules =>
-      'Mindestens 12 Zeichen. Ohne deinen Namen oder deine E-Mail, gängige Wörter und Folgen wie 1234.';
+      'Mindestens 12 Zeichen. Ohne Ihren Namen oder Ihre E-Mail, gängige Wörter und Folgen wie 1234.';
 
   @override
   String get passkeySignIn => 'Mit Passkey anmelden';
@@ -198,7 +198,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get passkeysHint =>
-      'Melde dich mit Fingerabdruck, Gesicht oder Sicherheitsschlüssel statt mit dem Passwort an.';
+      'Melden Sie sich mit Fingerabdruck, Gesicht oder Sicherheitsschlüssel statt mit dem Passwort an.';
 
   @override
   String get passkeysUnsupported =>
@@ -238,7 +238,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String qrSignInScanned(String device) {
-    return 'Gescannt. Bestätige auf $device.';
+    return 'Gescannt. Bestätigen Sie auf $device.';
   }
 
   @override
@@ -248,11 +248,25 @@ class AppL10nDe extends AppL10n {
   String get qrSignInNewCode => 'Neuer Code';
 
   @override
+  String get qrShowCode => 'Code anzeigen';
+
+  @override
+  String get qrWaitingForCode => 'Code wird geholt…';
+
+  @override
+  String qrRefreshesIn(String seconds) {
+    return 'Neuer Code in $seconds s';
+  }
+
+  @override
+  String get orUsePassword => 'oder mit Passwort';
+
+  @override
   String get qrApproveTitle => 'Dieses Gerät anmelden?';
 
   @override
   String qrApproveWarning(String username) {
-    return 'Es bekommt vollen Zugriff auf dein Konto „$username“. Bestätige nur, wenn du das selbst gestartet hast.';
+    return 'Es bekommt vollen Zugriff auf Ihr Konto „$username“. Bestätigen Sie nur, wenn Sie das selbst gestartet haben.';
   }
 
   @override
@@ -269,18 +283,18 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get logoutAllHint =>
-      'Beendet alle Sitzungen deines Kontos, auch diese.';
+      'Beendet alle Sitzungen Ihres Kontos, auch diese.';
 
   @override
   String get passwordsDontMatch => 'Die Passwörter stimmen nicht überein.';
 
   @override
   String get passwordTooShort =>
-      'Verwende ein Passwort mit mindestens 12 Zeichen.';
+      'Verwenden Sie ein Passwort mit mindestens 12 Zeichen.';
 
   @override
   String get registrationClosed =>
-      'Die Registrierung ist geschlossen. Bitte einen Administrator, sie zu öffnen.';
+      'Die Registrierung ist geschlossen. Bitten Sie einen Administrator, sie zu öffnen.';
 
   @override
   String get dashboardEyebrow => 'Überblick';
@@ -323,10 +337,10 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get noTrafficMessage =>
-      'Sobald deine Apps Anfragen senden, siehst du hier wie viele, wie schnell und welche Modelle geantwortet haben.';
+      'Sobald Ihre Apps Anfragen senden, sehen Sie hier wie viele, wie schnell und welche Modelle geantwortet haben.';
 
   @override
-  String get endpointTitle => 'Dein Endpoint';
+  String get endpointTitle => 'Ihr Endpoint';
 
   @override
   String get endpointHint =>
@@ -351,7 +365,7 @@ class AppL10nDe extends AppL10n {
   String get homeAllGood => 'Alles läuft rund';
 
   @override
-  String get homeNeedsAttention => 'Ein Provider braucht deine Aufmerksamkeit';
+  String get homeNeedsAttention => 'Ein Provider braucht Ihre Aufmerksamkeit';
 
   @override
   String homeHealthyOf(String healthy, String total) {
@@ -369,7 +383,7 @@ class AppL10nDe extends AppL10n {
   String get homeFix => 'Beheben';
 
   @override
-  String get homeAttentionTitle => 'Braucht deine Aufmerksamkeit';
+  String get homeAttentionTitle => 'Braucht Ihre Aufmerksamkeit';
 
   @override
   String get homeAttentionHint =>
@@ -383,11 +397,11 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get homeConnectHint =>
-      'Funktioniert mit jedem OpenAI- oder Anthropic-SDK. Frag nach „auto“ und NeoRouter wählt das Modell.';
+      'Funktioniert mit jedem OpenAI- oder Anthropic-SDK. Fragen Sie nach „auto“ und NeoRouter wählt das Modell.';
 
   @override
   String homeKeyHint(String name, String prefix) {
-    return 'Nutze einen Router-Key, z. B. $name ($prefix…).';
+    return 'Nutzen Sie einen Router-Key, z. B. $name ($prefix…).';
   }
 
   @override
@@ -401,7 +415,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get homeNoRequests =>
-      'Noch keine Anfragen. Sende deine erste Nachricht im Playground.';
+      'Noch keine Anfragen. Senden Sie Ihre erste Nachricht im Playground.';
 
   @override
   String homeQuotaLeft(String percent) {
@@ -470,7 +484,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get kindPlanHint =>
-      'Nutzen das Kontingent von Plänen, die du schon bezahlst, z. B. ChatGPT.';
+      'Nutzen das Kontingent von Plänen, die Sie schon bezahlen, z. B. ChatGPT.';
 
   @override
   String get kindPaid => 'Bezahl-Modelle';
@@ -489,7 +503,7 @@ class AppL10nDe extends AppL10n {
   String get kindPaidShort => 'Bezahlt';
 
   @override
-  String get pickOneKind => 'Wähle mindestens eine Art von Modellen.';
+  String get pickOneKind => 'Wählen Sie mindestens eine Art von Modellen.';
 
   @override
   String get spendingLimitPer => 'pro';
@@ -510,19 +524,19 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get chatgptSignInHint =>
-      'NeoRouter zeigt einen Code. Gib ihn auf der OpenAI-Seite mit dem Konto ein, das deinen ChatGPT-Plan hat.';
+      'NeoRouter zeigt einen Code. Geben Sie ihn auf der OpenAI-Seite mit dem Konto ein, das Ihren ChatGPT-Plan hat.';
 
   @override
-  String get chatgptEnterCode => 'Gib diesen Code bei OpenAI ein';
+  String get chatgptEnterCode => 'Geben Sie diesen Code bei OpenAI ein';
 
   @override
   String get chatgptOpenPage => 'OpenAI-Seite öffnen';
 
   @override
-  String get chatgptWaiting => 'Warte auf deine Bestätigung…';
+  String get chatgptWaiting => 'Warten auf Ihre Bestätigung…';
 
   @override
-  String get chatgptExpired => 'Der Code ist abgelaufen. Starte neu.';
+  String get chatgptExpired => 'Der Code ist abgelaufen. Starten Sie neu.';
 
   @override
   String get chatgptConnected => 'ChatGPT verbunden';
@@ -535,19 +549,19 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get nousSignInHint =>
-      'NeoRouter zeigt einen Code. Gib ihn im Nous Portal ein, damit es dein Abo und deine Credits nutzen darf.';
+      'NeoRouter zeigt einen Code. Geben Sie ihn im Nous Portal ein, damit es Ihr Abo und Ihre Credits nutzen darf.';
 
   @override
-  String get nousEnterCode => 'Gib diesen Code im Nous Portal ein';
+  String get nousEnterCode => 'Geben Sie diesen Code im Nous Portal ein';
 
   @override
   String get nousOpenPage => 'Nous Portal öffnen';
 
   @override
-  String get nousWaiting => 'Warte auf deine Bestätigung…';
+  String get nousWaiting => 'Warten auf Ihre Bestätigung…';
 
   @override
-  String get nousExpired => 'Der Code ist abgelaufen. Starte neu.';
+  String get nousExpired => 'Der Code ist abgelaufen. Starten Sie neu.';
 
   @override
   String get nousConnected => 'Nous Portal verbunden';
@@ -592,7 +606,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get billingFreeWarning =>
-      'Wähle den Gratis-Tarif nur, wenn bei diesem Anbieter keine Zahlungsmethode hinterlegt ist. NeoRouter prüft das, wo möglich.';
+      'Wählen Sie den Gratis-Tarif nur, wenn bei diesem Anbieter keine Zahlungsmethode hinterlegt ist. NeoRouter prüft das, wo möglich.';
 
   @override
   String get billingAlwaysFreeNote =>
@@ -660,7 +674,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String removeProviderConfirm(String name) {
-    return '$name entfernen? Seine Modelle werden nicht mehr genutzt. Du kannst die Verbindung jederzeit neu hinzufügen.';
+    return '$name entfernen? Seine Modelle werden nicht mehr genutzt. Sie können die Verbindung jederzeit neu hinzufügen.';
   }
 
   @override
@@ -681,7 +695,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get noProvidersMessage =>
-      'Verbinde einen KI-Anbieter und NeoRouter importiert alle seine Modelle.';
+      'Verbinden Sie einen KI-Anbieter und NeoRouter importiert alle seine Modelle.';
 
   @override
   String quotaProbeResult(String metric, String remaining) {
@@ -699,7 +713,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get modelsDescription =>
-      'Alles, was deine Verbindungen anbieten. NeoRouter lernt, wie klug, schnell und zuverlässig jedes Modell ist, und wählt das beste für dich.';
+      'Alles, was Ihre Verbindungen anbieten. NeoRouter lernt, wie klug, schnell und zuverlässig jedes Modell ist, und wählt das beste für Sie.';
 
   @override
   String get searchModels => 'Modelle suchen…';
@@ -760,10 +774,10 @@ class AppL10nDe extends AppL10n {
   String get reasoning => 'Reasoning';
 
   @override
-  String get freeReasonManualFree => 'Von dir als gratis markiert';
+  String get freeReasonManualFree => 'Von Ihnen als gratis markiert';
 
   @override
-  String get freeReasonManualPaid => 'Von dir als bezahlt markiert';
+  String get freeReasonManualPaid => 'Von Ihnen als bezahlt markiert';
 
   @override
   String get freeReasonProviderFreeModel => 'Gratis-Modell dieses Providers';
@@ -878,7 +892,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get noModelsMessage =>
-      'Probiere einen anderen Filter oder verbinde einen weiteren Anbieter.';
+      'Probieren Sie einen anderen Filter oder verbinden Sie einen weiteren Anbieter.';
 
   @override
   String modelsShown(String count) {
@@ -893,7 +907,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get keysDescription =>
-      'Mit Keys nutzen deine Apps NeoRouter. Lege pro Key fest, ob er bezahlte Modelle nutzen darf und wie viel er ausgeben darf.';
+      'Mit Keys nutzen Ihre Apps NeoRouter. Legen Sie pro Key fest, ob er bezahlte Modelle nutzen darf und wie viel er ausgeben darf.';
 
   @override
   String get createKey => 'Key erstellen';
@@ -954,11 +968,11 @@ class AppL10nDe extends AppL10n {
   String get defaultProfile => 'Routing-Stil für „auto“';
 
   @override
-  String get keySecretTitle => 'Kopiere deinen neuen Key';
+  String get keySecretTitle => 'Kopieren Sie Ihren neuen Key';
 
   @override
   String get keySecretBody =>
-      'Aus Sicherheitsgründen wird er nur einmal angezeigt. Füge ihn in deiner App dort ein, wo nach einem API-Key gefragt wird.';
+      'Aus Sicherheitsgründen wird er nur einmal angezeigt. Fügen Sie ihn in Ihrer App dort ein, wo nach einem API-Key gefragt wird.';
 
   @override
   String get revoke => 'Widerrufen';
@@ -996,7 +1010,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get noKeysMessage =>
-      'Erstelle einen Key und füge ihn in jede App ein, die mit OpenAI oder Claude funktioniert.';
+      'Erstellen Sie einen Key und fügen Sie ihn in jede App ein, die mit OpenAI oder Claude funktioniert.';
 
   @override
   String deleteKeyConfirm(String name) {
@@ -1011,7 +1025,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get routingDescription =>
-      'Fragt eine App nach „auto“, wählt NeoRouter für jede Anfrage das Modell. Bestimme, was dir am wichtigsten ist.';
+      'Fragt eine App nach „auto“, wählt NeoRouter für jede Anfrage das Modell. Bestimmen Sie, was Ihnen am wichtigsten ist.';
 
   @override
   String get presetBalanced => 'Ausgewogen';
@@ -1048,7 +1062,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String profileUsage(String id) {
-    return 'Nutze es als Modell „auto:$id“ oder als Standard eines Keys.';
+    return 'Nutzen Sie es als Modell „auto:$id“ oder als Standard eines Keys.';
   }
 
   @override
@@ -1229,7 +1243,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get noLogsMessage =>
-      'Requests erscheinen hier, sobald deine Apps den Endpoint aufrufen.';
+      'Requests erscheinen hier, sobald Ihre Apps den Endpoint aufrufen.';
 
   @override
   String get playgroundEyebrow => 'Test';
@@ -1239,7 +1253,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get playgroundDescription =>
-      'Chatte über den echten Router mit einem deiner Keys.';
+      'Chatten Sie über den echten Router mit einem Ihrer Keys.';
 
   @override
   String get selectKey => 'API-Key';
@@ -1266,20 +1280,20 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get playgroundNeedsKey =>
-      'Erstelle zuerst einen API-Key – der Playground nutzt ihn genau wie deine Apps.';
+      'Erstellen Sie zuerst einen API-Key – der Playground nutzt ihn genau wie Ihre Apps.';
 
   @override
   String get settingsTitle => 'Einstellungen';
 
   @override
-  String get settingsScopeYou => 'Du';
+  String get settingsScopeYou => 'Sie';
 
   @override
   String get settingsScopeServer => 'Dieser Server';
 
   @override
   String get settingsAccountDescription =>
-      'Dein Name, deine E-Mail und dein Passwort.';
+      'Ihr Name, Ihre E-Mail und Ihr Passwort.';
 
   @override
   String get settingsAppearanceDescription =>
@@ -1297,7 +1311,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get smoothHint =>
-      'Gratis- und gemessene Abo-Kontingente folgen beobachteten Restmengen, Reset-Zeiten und deinem erlernten Bedarf. Müssen alle passenden Quellen Kontingent sparen, warten Anfragen oder erhalten eine Wiederholungszeit.';
+      'Gratis- und gemessene Abo-Kontingente folgen beobachteten Restmengen, Reset-Zeiten und Ihrem erlernten Bedarf. Müssen alle passenden Quellen Kontingent sparen, warten Anfragen oder erhalten eine Wiederholungszeit.';
 
   @override
   String get smoothSwitch => 'Limits bis zum Zurücksetzen verteilen';
@@ -1312,7 +1326,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get smoothLearning =>
-      'NeoRouter lernt noch, wie du es nutzt. Das schaltet sich frei, sobald genug Daten da sind.';
+      'NeoRouter lernt noch, wie Sie es nutzen. Das schaltet sich frei, sobald genug Daten da sind.';
 
   @override
   String get smoothPausedLearning =>
@@ -1354,7 +1368,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get smoothHowDaily =>
-      'Tageslimits: Restmenge und echte Reset-Zeit berücksichtigen und Kapazität für deine üblichen Nutzungszeiten reservieren. Token-Schätzungen enthalten erlernte Ausgabelängen.';
+      'Tageslimits: Restmenge und echte Reset-Zeit berücksichtigen und Kapazität für Ihre üblichen Nutzungszeiten reservieren. Token-Schätzungen enthalten erlernte Ausgabelängen.';
 
   @override
   String get smoothHowPlans =>
@@ -1366,7 +1380,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get caIntro =>
-      'Wähl deine App, und NeoRouter zeigt dir genau, was du einfügen musst, und prüft dann, ob es klappt.';
+      'Wählen Sie Ihre App, und NeoRouter zeigt Ihnen genau, was Sie einfügen müssen, und prüft dann, ob es klappt.';
 
   @override
   String get caStepApp => 'App';
@@ -1451,14 +1465,14 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get caOpenHint =>
-      'Container und andere Geräte erreichen es noch nicht. Wenn du es öffnest, kommen sie herein; jede Anfrage braucht weiterhin einen NeoRouter-Key.';
+      'Container und andere Geräte erreichen es noch nicht. Wenn Sie es öffnen, kommen sie herein; jede Anfrage braucht weiterhin einen NeoRouter-Key.';
 
   @override
   String get caOpenButton => 'Container und Geräte hereinlassen';
 
   @override
   String get caOpenAskAdmin =>
-      'Bitte einen Admin dieses NeoRouters, Container und Geräte hereinzulassen (Einstellungen → Apps verbinden).';
+      'Bitten Sie einen Admin dieses NeoRouters, Container und Geräte hereinzulassen (Einstellungen → Apps verbinden).';
 
   @override
   String get caRestarting => 'NeoRouter startet neu, um das zu übernehmen …';
@@ -1469,11 +1483,11 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get caRestartManual =>
-      'Gespeichert. Starte NeoRouter einmal neu, um es zu übernehmen:';
+      'Gespeichert. Starten Sie NeoRouter einmal neu, um es zu übernehmen:';
 
   @override
   String get caPublicUrlHint =>
-      'NeoRouter hat noch keine Internetadresse. Stell es hinter eine Domain (zum Beispiel mit einem Reverse Proxy oder Tunnel) und setze NEOROUTER_PUBLIC_URL darauf.';
+      'NeoRouter hat noch keine Internetadresse. Stellen Sie es hinter eine Domain (zum Beispiel mit einem Reverse Proxy oder Tunnel) und setzen Sie NEOROUTER_PUBLIC_URL darauf.';
 
   @override
   String get caDockerLinuxHint =>
@@ -1501,7 +1515,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get caKeyCreateHint =>
-      'Ein eigener Key, damit du seine Nutzung siehst und ihn einzeln abschalten kannst.';
+      'Ein eigener Key, damit Sie seine Nutzung sehen und ihn einzeln abschalten können.';
 
   @override
   String get caKeyCreated =>
@@ -1512,7 +1526,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get caKeyExistingHint =>
-      'Setz deinen nrt_-Key unten dort ein, wo nrt_… steht.';
+      'Setzen Sie Ihren nrt_-Key unten dort ein, wo nrt_… steht.';
 
   @override
   String get caModelTitle => 'Modell';
@@ -1537,12 +1551,12 @@ class AppL10nDe extends AppL10n {
 
   @override
   String caWaiting(String app) {
-    return 'Warte auf die erste Anfrage von $app …';
+    return 'Warten auf die erste Anfrage von $app …';
   }
 
   @override
   String caWaitingHint(String app) {
-    return 'Schick in $app eine Nachricht; das hier aktualisiert sich von selbst.';
+    return 'Senden Sie in $app eine Nachricht; das hier aktualisiert sich von selbst.';
   }
 
   @override
@@ -1562,7 +1576,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String caSeenHint(String app) {
-    return 'Der Key funktioniert. Schick in $app eine Nachricht, um eine echte Antwort zu testen.';
+    return 'Der Key funktioniert. Senden Sie in $app eine Nachricht, um eine echte Antwort zu testen.';
   }
 
   @override
@@ -1577,11 +1591,11 @@ class AppL10nDe extends AppL10n {
 
   @override
   String caDidYouMean(String app) {
-    return 'Meintest du eines davon? Kopier es in $app oder nimm „auto“.';
+    return 'Meinten Sie eines davon? Kopieren Sie es in $app oder nehmen Sie „auto“.';
   }
 
   @override
-  String get caNothingYet => 'Noch nichts angekommen. Prüfe:';
+  String get caNothingYet => 'Noch nichts angekommen. Prüfen Sie, ob:';
 
   @override
   String get caCheckAddress => 'die Adresse genau die von oben ist, mit /v1';
@@ -1592,7 +1606,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String caCheckDocker(String app) {
-    return 'du „In Docker auf diesem Computer“ gewählt hast, falls $app in Docker läuft';
+    return 'Sie „In Docker auf diesem Computer“ gewählt haben, falls $app in Docker läuft';
   }
 
   @override
@@ -1619,7 +1633,7 @@ class AppL10nDe extends AppL10n {
   String get themeLabel => 'Design';
 
   @override
-  String get themeHint => 'Folgt deinem Gerät, solange du nichts auswählst.';
+  String get themeHint => 'Folgt Ihrem Gerät, solange Sie nichts auswählen.';
 
   @override
   String get languageHint =>
@@ -1627,7 +1641,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get passwordHint =>
-      'Mindestens 12 Zeichen, ohne deinen Namen, gängige Wörter oder Folgen. Danach wirst du abgemeldet.';
+      'Mindestens 12 Zeichen, ohne Ihren Namen, gängige Wörter oder Folgen. Danach werden Sie abgemeldet.';
 
   @override
   String get signOutHint => 'In diesem Browser von NeoRouter abmelden.';
@@ -1666,7 +1680,7 @@ class AppL10nDe extends AppL10n {
   String get securityTitle => 'Sicherheit';
 
   @override
-  String get accountDataTitle => 'Deine Daten';
+  String get accountDataTitle => 'Ihre Daten';
 
   @override
   String get accountExportTitle => 'Kontodaten exportieren';
@@ -1683,15 +1697,15 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get accountKeysHint =>
-      'Die Schlüssel deiner Verbindungen im Klartext, als eigene Datei. Braucht die Zwei-Faktor-Anmeldung.';
+      'Die Schlüssel Ihrer Verbindungen im Klartext, als eigene Datei. Braucht die Zwei-Faktor-Anmeldung.';
 
   @override
   String get accountKeysNeedTwoFactor =>
-      'Schalte zuerst unter Sicherheit die Zwei-Faktor-Anmeldung ein. Die Schlüssel verlassen den Server im Klartext, darum braucht das mehr als dein Passwort.';
+      'Schalten Sie zuerst unter Sicherheit die Zwei-Faktor-Anmeldung ein. Die Schlüssel verlassen den Server im Klartext, darum braucht das mehr als Ihr Passwort.';
 
   @override
   String get accountKeysWarning =>
-      'Wer diese Datei hat, kann deine Anbieter auf deine Kosten nutzen. Bewahre sie sicher auf und lösche sie, wenn du sie nicht mehr brauchst.';
+      'Wer diese Datei hat, kann Ihre Anbieter auf Ihre Kosten nutzen. Bewahren Sie sie sicher auf und löschen Sie sie, wenn Sie sie nicht mehr brauchen.';
 
   @override
   String get accountImportTitle => 'API-Schlüssel importieren';
@@ -1739,43 +1753,43 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get accountDeleteHint =>
-      'Löscht dein Konto mit allen Verbindungen, Schlüsseln, Einstellungen und dem Verlauf. Deine Pools erfahren, dass du gegangen bist. Das lässt sich nicht rückgängig machen.';
+      'Löscht Ihr Konto mit allen Verbindungen, Schlüsseln, Einstellungen und dem Verlauf. Ihre Pools erfahren, dass Sie gegangen sind. Das lässt sich nicht rückgängig machen.';
 
   @override
   String get accountDelete => 'Konto löschen';
 
   @override
   String get accountDeleteConfirm =>
-      'Alles in diesem Konto wird endgültig gelöscht. Exportiere vorher deine Daten, wenn du sie behalten willst.';
+      'Alles in diesem Konto wird endgültig gelöscht. Exportieren Sie vorher Ihre Daten, wenn Sie sie behalten wollen.';
 
   @override
-  String get accountDeleted => 'Dein Konto wurde gelöscht.';
+  String get accountDeleted => 'Ihr Konto wurde gelöscht.';
 
   @override
   String get accountConfirmPassword =>
-      'Gib dein Passwort ein, um fortzufahren.';
+      'Geben Sie Ihr Passwort ein, um fortzufahren.';
 
   @override
   String get accountConfirmPasswordCode =>
-      'Gib dein Passwort und einen Code aus deiner Authenticator-App ein.';
+      'Geben Sie Ihr Passwort und einen Code aus Ihrer Authenticator-App ein.';
 
   @override
   String get accountExported => 'Heruntergeladen.';
 
   @override
   String get accountLastAdmin =>
-      'Du bist der einzige Admin. Mach zuerst jemand anderen zum Admin.';
+      'Sie sind der einzige Admin. Machen Sie zuerst jemand anderen zum Admin.';
 
   @override
   String get accountWrongPassword => 'Das Passwort stimmt nicht.';
 
   @override
   String get accountTooManyTries =>
-      'Zu viele falsche Versuche. Warte ein paar Minuten und versuche es dann noch einmal.';
+      'Zu viele falsche Versuche. Warten Sie ein paar Minuten und versuchen Sie es dann noch einmal.';
 
   @override
   String get accountWrongCode =>
-      'Der Code hat nicht funktioniert. Jeder Code gilt einmal, warte auf den nächsten.';
+      'Der Code hat nicht funktioniert. Jeder Code gilt einmal, warten Sie auf den nächsten.';
 
   @override
   String get twoFactorTitle => 'Zwei-Faktor-Authentifizierung';
@@ -1806,14 +1820,14 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get twoFactorPasswordPrompt =>
-      'Bestätige dein Passwort, um die Zwei-Faktor-Authentifizierung einzurichten.';
+      'Bestätigen Sie Ihr Passwort, um die Zwei-Faktor-Authentifizierung einzurichten.';
 
   @override
   String get twoFactorContinue => 'Weiter';
 
   @override
   String get twoFactorScanHint =>
-      'Scanne den QR-Code mit einer Authenticator-App (1Password, Google Authenticator, Authy, …) oder gib den Schlüssel von Hand ein. Danach den 6-stelligen Code eintragen.';
+      'Scannen Sie den QR-Code mit einer Authenticator-App (1Password, Google Authenticator, Authy, …) oder geben Sie den Schlüssel von Hand ein. Danach tragen Sie den 6-stelligen Code ein.';
 
   @override
   String get twoFactorManualKey => 'Einrichtungsschlüssel';
@@ -1834,18 +1848,18 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get twoFactorCodesHint =>
-      'Bewahre diese Wiederherstellungscodes sicher auf. Jeder funktioniert einmal, falls du deinen Authenticator verlierst. Sie werden nur jetzt angezeigt.';
+      'Bewahren Sie diese Wiederherstellungscodes sicher auf. Jeder funktioniert einmal, falls Sie Ihren Authenticator verlieren. Sie werden nur jetzt angezeigt.';
 
   @override
   String get twoFactorCodesSaved => 'Gespeichert';
 
   @override
   String get twoFactorDisablePrompt =>
-      'Gib dein Passwort und einen aktuellen Code ein, um die Zwei-Faktor-Authentifizierung abzuschalten.';
+      'Geben Sie Ihr Passwort und einen aktuellen Code ein, um die Zwei-Faktor-Authentifizierung abzuschalten.';
 
   @override
   String get twoFactorNewCodesPrompt =>
-      'Neue Codes ersetzen alle alten. Gib dein Passwort und einen aktuellen Code ein.';
+      'Neue Codes ersetzen alle alten. Geben Sie Ihr Passwort und einen aktuellen Code ein.';
 
   @override
   String get twoFactorDisabledNotice =>
@@ -1859,7 +1873,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get twoFactorLoginSubtitle =>
-      'Gib den Code aus deiner Authenticator-App ein.';
+      'Geben Sie den Code aus Ihrer Authenticator-App ein.';
 
   @override
   String get currentPassword => 'Aktuelles Passwort';
@@ -1874,7 +1888,8 @@ class AppL10nDe extends AppL10n {
   String get connectApps => 'Apps verbinden';
 
   @override
-  String get connectAppsHint => 'Ersetze nrt_… durch einen deiner Router-Keys.';
+  String get connectAppsHint =>
+      'Ersetzen Sie nrt_… durch einen Ihrer Router-Keys.';
 
   @override
   String get registrationOpenLabel => 'Neue Registrierungen erlauben';
@@ -1893,7 +1908,7 @@ class AppL10nDe extends AppL10n {
   String get roleUser => 'Benutzer';
 
   @override
-  String get you => 'du';
+  String get you => 'Sie';
 
   @override
   String get disableUser => 'Deaktivieren';
@@ -2138,7 +2153,7 @@ class AppL10nDe extends AppL10n {
   String get updateNeverChecked => 'Noch nicht geprüft';
 
   @override
-  String get updateUpToDate => 'Du hast die neueste Version';
+  String get updateUpToDate => 'Sie haben die neueste Version';
 
   @override
   String get updateCheckFailed =>
@@ -2149,14 +2164,14 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get updateContainerHint =>
-      'Aktualisiere das Image statt des Codes darin. Daten auf dem Volume bleiben erhalten.';
+      'Aktualisieren Sie das Image statt des Codes darin. Daten auf dem Volume bleiben erhalten.';
 
   @override
   String get updateNotGitTitle => 'Kann sich nicht selbst aktualisieren';
 
   @override
   String get updateNotGitHint =>
-      'Diese Installation stammt nicht aus Git. Führe neorouter update im Terminal aus.';
+      'Diese Installation stammt nicht aus Git. Führen Sie neorouter update im Terminal aus.';
 
   @override
   String get updateDetails => 'Details des letzten Updates';
@@ -2168,7 +2183,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String updateReadySubtitle(String current, String channel) {
-    return 'Du hast $current · Kanal $channel';
+    return 'Sie haben $current · Kanal $channel';
   }
 
   @override
@@ -2184,14 +2199,14 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get updateConfirmMessage =>
-      'NeoRouter sichert deine Daten, installiert die neue Version und startet neu. Das dauert ein paar Minuten. Schlägt etwas fehl, kehrt es zur aktuellen Version zurück.';
+      'NeoRouter sichert Ihre Daten, installiert die neue Version und startet neu. Das dauert ein paar Minuten. Schlägt etwas fehl, kehrt es zur aktuellen Version zurück.';
 
   @override
   String get updatingTitle => 'NeoRouter wird aktualisiert';
 
   @override
   String updatingToTitle(String version) {
-    return 'Aktualisiere auf $version';
+    return 'Aktualisierung auf $version';
   }
 
   @override
@@ -2199,7 +2214,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get updateHandsOff =>
-      'Du musst nichts tun. Diese Seite verbindet sich von selbst wieder, sobald NeoRouter zurück ist.';
+      'Sie müssen nichts tun. Diese Seite verbindet sich von selbst wieder, sobald NeoRouter zurück ist.';
 
   @override
   String updateDoneTitle(String version) {
@@ -2236,7 +2251,7 @@ class AppL10nDe extends AppL10n {
   String get settingsScopeAppHint => 'Gilt für diesen Browser';
 
   @override
-  String get settingsScopeYouHint => 'In deinem Konto gespeichert';
+  String get settingsScopeYouHint => 'In Ihrem Konto gespeichert';
 
   @override
   String get settingsSavedOnSubmit => 'Wird beim Speichern übernommen';
@@ -2305,7 +2320,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get capSearchHint =>
-      'Finden aktuelle Seiten im Web, für dich und als Werkzeug für Chat-Modelle.';
+      'Finden aktuelle Seiten im Web, für Sie und als Werkzeug für Chat-Modelle.';
 
   @override
   String get capTranscriptionHint =>
@@ -2319,7 +2334,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get capLiveHint =>
-      'Sprich in Echtzeit: Das Modell hört zu und antwortet mit eigener Stimme.';
+      'Sprechen Sie in Echtzeit: Das Modell hört zu und antwortet mit eigener Stimme.';
 
   @override
   String get capModerationHint =>
@@ -2331,7 +2346,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String capComingSoon(String count) {
-    return 'NeoRouter hat bereits $count dieser Modelle in deinen Verbindungen gefunden und wird sie in einem kommenden Update routen.';
+    return 'NeoRouter hat bereits $count dieser Modelle in Ihren Verbindungen gefunden und wird sie in einem kommenden Update routen.';
   }
 
   @override
@@ -2359,15 +2374,16 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get homeStatusIssue =>
-      '1 Verbindung braucht deine Aufmerksamkeit. Anfragen laufen solange über die anderen.';
+      '1 Verbindung braucht Ihre Aufmerksamkeit. Anfragen laufen solange über die anderen.';
 
   @override
   String homeStatusIssues(String count) {
-    return '$count Verbindungen brauchen deine Aufmerksamkeit. Anfragen laufen solange über die anderen.';
+    return '$count Verbindungen brauchen Ihre Aufmerksamkeit. Anfragen laufen solange über die anderen.';
   }
 
   @override
-  String get homeStatusEmpty => 'Verbinde einen KI-Anbieter, um loszulegen.';
+  String get homeStatusEmpty =>
+      'Verbinden Sie einen KI-Anbieter, um loszulegen.';
 
   @override
   String get homeLast7Days => 'Letzte 7 Tage';
@@ -2401,11 +2417,11 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
-  String get homeUseTitle => 'NeoRouter in deinen Apps nutzen';
+  String get homeUseTitle => 'NeoRouter in Ihren Apps nutzen';
 
   @override
   String get homeUseBody =>
-      'Trage diese Adresse und einen deiner API-Keys in jede App ein, die mit OpenAI oder Claude funktioniert.';
+      'Tragen Sie diese Adresse und einen Ihrer API-Keys in jede App ein, die mit OpenAI oder Claude funktioniert.';
 
   @override
   String get homeGetKey => 'API-Key holen';
@@ -2429,20 +2445,20 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get setupStep1Body =>
-      'Füge einen Key von Groq, Google, OpenRouter oder einem anderen Anbieter hinzu. NeoRouter findet alle Modelle.';
+      'Fügen Sie einen Key von Groq, Google, OpenRouter oder einem anderen Anbieter hinzu. NeoRouter findet alle Modelle.';
 
   @override
   String get setupStep2Title => 'API-Key erstellen';
 
   @override
   String get setupStep2Body =>
-      'Ein Key für deine Apps, optional nur für Gratis-Modelle oder mit Budget.';
+      'Ein Key für Ihre Apps, optional nur für Gratis-Modelle oder mit Budget.';
 
   @override
   String get setupStep3Title => 'Erste Nachricht senden';
 
   @override
-  String get setupStep3Body => 'Probiere es im Playground aus.';
+  String get setupStep3Body => 'Probieren Sie es im Playground aus.';
 
   @override
   String get setupStart => 'Los';
@@ -2467,12 +2483,12 @@ class AppL10nDe extends AppL10n {
 
   @override
   String problemCapacity(String failed, String requests) {
-    return '$failed von $requests sind am letzten Tag fehlgeschlagen. Deine Verbindungen kommen nicht hinterher: Verbinde mehr oder sende weniger.';
+    return '$failed von $requests sind am letzten Tag fehlgeschlagen. Ihre Verbindungen kommen nicht hinterher: Verbinden Sie mehr oder senden Sie weniger.';
   }
 
   @override
   String get problemKeyRejected =>
-      'Der Anbieter hat den Key abgelehnt. Aktualisiere ihn, um die Verbindung wieder zu nutzen.';
+      'Der Anbieter hat den Key abgelehnt. Aktualisieren Sie ihn, um die Verbindung wieder zu nutzen.';
 
   @override
   String requestFailed(String reason) {
@@ -2494,7 +2510,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get activityDescription =>
-      'Was deine Apps angefragt haben und wie NeoRouter geantwortet hat. Gespeichert werden nur Metadaten – nie deine Nachrichten.';
+      'Was Ihre Apps angefragt haben und wie NeoRouter geantwortet hat. Gespeichert werden nur Metadaten – nie Ihre Nachrichten.';
 
   @override
   String get tabOverview => 'Überblick';
@@ -2516,7 +2532,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get learnedEmptyMessage =>
-      'NeoRouter lernt aus jeder Antwort. Schick ein paar Anfragen und sieh zu, wie sich das hier füllt.';
+      'NeoRouter lernt aus jeder Antwort. Senden Sie ein paar Anfragen und sehen Sie zu, wie sich das hier füllt.';
 
   @override
   String get learnedExperience => 'Erfahrung';
@@ -2567,7 +2583,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get learnedMapHelp =>
-      'Jedes Modell, das du gerade nutzen kannst, mit einer Punktzahl von 100 je Art von Arbeit: zuerst Benchmarks, dann deine Bewertungen, gemessenes Tempo und Zuverlässigkeit. Mit dem Regler gewichtest du sie anders. Der Preis zählt nicht mit.';
+      'Jedes Modell, das Sie gerade nutzen können, mit einer Punktzahl von 100 je Art von Arbeit: zuerst Benchmarks, dann Ihre Bewertungen, gemessenes Tempo und Zuverlässigkeit. Mit dem Regler gewichten Sie sie anders. Der Preis zählt nicht mit.';
 
   @override
   String get learnedSources =>
@@ -2582,7 +2598,7 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
-  String get learnedTuneTitle => 'Am besten für das, was du brauchst';
+  String get learnedTuneTitle => 'Am besten für das, was Sie brauchen';
 
   @override
   String get learnedTuneFast => 'Tempo';
@@ -2612,7 +2628,7 @@ class AppL10nDe extends AppL10n {
   String get learnedLegendEstimated => '~ teils geschätzt, kein Benchmark';
 
   @override
-  String get learnedLegendFails => 'Scheitert bei dir oft';
+  String get learnedLegendFails => 'Scheitert bei Ihnen oft';
 
   @override
   String learnedCellScore(String value) {
@@ -2833,7 +2849,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get discoveryFreeHint =>
-      'Bestätigte OpenRouter-Angebote zum Nullpreis. Anbieter-Freikontingente hängen von deinen verbundenen Konten ab.';
+      'Bestätigte OpenRouter-Angebote zum Nullpreis. Anbieter-Freikontingente hängen von Ihren verbundenen Konten ab.';
 
   @override
   String get discoveryFreeOnly => 'Nur bestätigt kostenlos';
@@ -2849,7 +2865,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get discoveryCompareHint =>
-      'Wähle bis zu zwei Modelle aus der Rangliste. Beide müssen derselben Modellart angehören.';
+      'Wählen Sie bis zu zwei Modelle aus der Rangliste. Beide müssen derselben Modellart angehören.';
 
   @override
   String discoverySelectCompare(String name) {
@@ -2863,7 +2879,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get discoveryCompareLimit =>
-      'Entferne zuerst eine Auswahl oder wähle dieselbe Modellart.';
+      'Entfernen Sie zuerst eine Auswahl oder wählen Sie dieselbe Modellart.';
 
   @override
   String get discoveryChartScore => 'Bewertung';
@@ -2900,7 +2916,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get discoveryEmptyHint =>
-      'Ergebnisse erscheinen, sobald Metadatenquellen gesammelt wurden. Falls Quellen bereits verfügbar sind, ändere Suche oder Filter.';
+      'Ergebnisse erscheinen, sobald Metadatenquellen gesammelt wurden. Falls Quellen bereits verfügbar sind, ändern Sie Suche oder Filter.';
 
   @override
   String get discoveryPrevious => 'Vorherige Seite';
@@ -2959,7 +2975,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get logsPrivacyHint =>
-      'NeoRouter speichert nie, was du oder das Modell geschrieben habt – nur welches Modell geantwortet hat, wie schnell und was es gekostet hat.';
+      'NeoRouter speichert nie, was Sie oder das Modell geschrieben haben – nur welches Modell geantwortet hat, wie schnell und was es gekostet hat.';
 
   @override
   String get detailRequested => 'Angefragt';
@@ -3037,7 +3053,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get chooseProviderHint =>
-      'Wähle den Dienst, für den du einen Key hast. Anbieter mit „Gratis-Modelle“ kannst du ohne Bezahlung nutzen.';
+      'Wählen Sie den Dienst, für den Sie einen Key haben. Anbieter mit „Gratis-Modelle“ können Sie ohne Bezahlung nutzen.';
 
   @override
   String getKeyAt(String name) {
@@ -3077,7 +3093,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get billingOptionPaidHint =>
-      'Jede Anfrage an ein bezahltes Modell wird abgerechnet und zählt gegen die Budgets deiner API-Keys.';
+      'Jede Anfrage an ein bezahltes Modell wird abgerechnet und zählt gegen die Budgets Ihrer API-Keys.';
 
   @override
   String get accountPrepaidPlan => 'Vorausbezahlter Plan';
@@ -3102,7 +3118,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get billingPaidHint =>
-      'Anfragen an kostenpflichtige Modelle rechnet der Anbieter ab; sie zählen gegen das Budget deiner API-Keys.';
+      'Anfragen an kostenpflichtige Modelle rechnet der Anbieter ab; sie zählen gegen das Budget Ihrer API-Keys.';
 
   @override
   String get testConnection => 'Verbindung testen';
@@ -3114,7 +3130,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get limitsDescription =>
-      'Die Limits jedes Anbieters und was vom heutigen Kontingent übrig ist. Zum Ändern öffne das Menü der Verbindung im Tab Anbieter.';
+      'Die Limits jedes Anbieters und was vom heutigen Kontingent übrig ist. Zum Ändern öffnen Sie das Menü der Verbindung im Tab Anbieter.';
 
   @override
   String get limitRenewed => 'erneuert, zählt ab der nächsten Anfrage neu';
@@ -3141,18 +3157,18 @@ class AppL10nDe extends AppL10n {
   String get limitsSectionTitle => 'Limits';
 
   @override
-  String get limitsInvalid => 'Gib eine ganze Zahl ab 1 ein.';
+  String get limitsInvalid => 'Geben Sie eine ganze Zahl ab 1 ein.';
 
   @override
   String get providerLimitsChooseConnection =>
-      'Wähle die Verbindung, die du bearbeiten möchtest.';
+      'Wählen Sie die Verbindung, die Sie bearbeiten möchten.';
 
   @override
   String get trafficLimitsTitle => 'Anfragelimits';
 
   @override
   String get providerTrafficLimitsHint =>
-      'Gilt für alle Modelle dieser Verbindung. Trage ein Limit ein, um NeoRouters Schätzung zu überschreiben, oder lass das Feld für automatische Limits leer. Einschränkungen des Anbieters gelten weiterhin.';
+      'Gilt für alle Modelle dieser Verbindung. Tragen Sie ein Limit ein, um NeoRouters Schätzung zu überschreiben, oder lassen Sie das Feld für automatische Limits leer. Einschränkungen des Anbieters gelten weiterhin.';
 
   @override
   String get keyTrafficLimitsHint =>
@@ -3181,7 +3197,7 @@ class AppL10nDe extends AppL10n {
   String get limitSourceLearned => 'aus den Antworten gelernt';
 
   @override
-  String get limitSourceManual => 'von dir gesetzt';
+  String get limitSourceManual => 'von Ihnen gesetzt';
 
   @override
   String limitsPerModelTitle(String count) {
@@ -3263,7 +3279,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get keysFooter =>
-      'Gib jeder App einen eigenen Key. Gerät einer in falsche Hände, widerrufe ihn – deine anderen Apps laufen weiter.';
+      'Geben Sie jeder App einen eigenen Key. Gerät einer in falsche Hände, widerrufen Sie ihn – Ihre anderen Apps laufen weiter.';
 
   @override
   String get presetBalancedHint =>
@@ -3292,14 +3308,14 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get stylesHint =>
-      'Nutze einen Stil über seinen Modellnamen, z. B. „auto:fast“, oder wähle ihn pro API-Key.';
+      'Nutzen Sie einen Stil über seinen Modellnamen, z. B. „auto:fast“, oder wählen Sie ihn pro API-Key.';
 
   @override
   String get customStylesTitle => 'Eigene Stile';
 
   @override
   String get customStylesHint =>
-      'Lege selbst fest, wie wichtig Qualität, Tempo, Zuverlässigkeit und Kosten sind.';
+      'Legen Sie selbst fest, wie wichtig Qualität, Tempo, Zuverlässigkeit und Kosten sind.';
 
   @override
   String get createStyle => 'Neuer Stil';
@@ -3311,11 +3327,11 @@ class AppL10nDe extends AppL10n {
   String get weightsTitle => 'Was zählt';
 
   @override
-  String get previewDefaultPrompt => 'Erkläre Quicksort in zwei Sätzen.';
+  String get previewDefaultPrompt => 'Erklären Sie Quicksort in zwei Sätzen.';
 
   @override
   String get previewNone =>
-      'Gerade passt kein Modell. Verbinde einen Anbieter oder schalte „Nur Gratis-Modelle“ aus.';
+      'Gerade passt kein Modell. Verbinden Sie einen Anbieter oder schalten Sie „Nur Gratis-Modelle“ aus.';
 
   @override
   String previewSkipped(String count) {
@@ -3326,23 +3342,23 @@ class AppL10nDe extends AppL10n {
   String get previewMostLikely => 'am wahrscheinlichsten';
 
   @override
-  String get playgroundEmptyTitle => 'Was möchtest du ausprobieren?';
+  String get playgroundEmptyTitle => 'Was möchten Sie ausprobieren?';
 
   @override
   String get playgroundEmptyHint =>
-      'Nachrichten laufen mit deinem Key über den echten Router – du siehst, welches Modell antwortet und wie schnell.';
+      'Nachrichten laufen mit Ihrem Key über den echten Router – Sie sehen, welches Modell antwortet und wie schnell.';
 
   @override
   String get suggestion1 =>
-      'Erkläre in zwei Sätzen, wie ein Regenbogen entsteht';
+      'Erklären Sie in zwei Sätzen, wie ein Regenbogen entsteht';
 
   @override
   String get suggestion2 =>
-      'Schreibe eine freundliche Erinnerung an ein Team-Meeting';
+      'Schreiben Sie eine freundliche Erinnerung an ein Team-Meeting';
 
   @override
   String get suggestion3 =>
-      'Gib mir drei Ideen fürs Abendessen mit Kichererbsen';
+      'Geben Sie mir drei Ideen fürs Abendessen mit Kichererbsen';
 
   @override
   String get newChat => 'Neuer Chat';
@@ -3361,7 +3377,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get systemPromptHint =>
-      'Optional: wie sich der Assistent verhalten soll, z. B. „Antworte kurz und auf Deutsch.“';
+      'Optional: wie sich der Assistent verhalten soll, z. B. „Antworten Sie kurz und auf Deutsch.“';
 
   @override
   String get thinking => 'Denkt nach…';
@@ -3385,7 +3401,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get capRouterHint =>
-      'Dienste wie OpenRouter Auto oder Jev Router, die selbst ein Modell wählen. NeoRouter übernimmt das Routing für dich, daher werden sie nur aufgelistet.';
+      'Dienste wie OpenRouter Auto oder Jev Router, die selbst ein Modell wählen. NeoRouter übernimmt das Routing für Sie, daher werden sie nur aufgelistet.';
 
   @override
   String get metricSaved => 'Gespart mit Gratis-Modellen';
@@ -3403,10 +3419,10 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get styleUseHint =>
-      'Frage in jeder App nach diesem Modellnamen oder wähle den Stil für einen API-Key.';
+      'Fragen Sie in jeder App nach diesem Modellnamen oder wählen Sie den Stil für einen API-Key.';
 
   @override
-  String get styleUseRow => 'Modellname für deine Apps';
+  String get styleUseRow => 'Modellname für Ihre Apps';
 
   @override
   String get styleWeightsHint =>
@@ -3428,7 +3444,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get freeModeLockedExplain =>
-      'Dieser API-Key ist auf „Nur Gratis-Modelle“ gestellt und bleibt daher immer gratis. Für bezahlte Modelle wähle einen anderen Key oder ändere diesen unter API-Keys.';
+      'Dieser API-Key ist auf „Nur Gratis-Modelle“ gestellt und bleibt daher immer gratis. Für bezahlte Modelle wählen Sie einen anderen Key oder ändern Sie diesen unter API-Keys.';
 
   @override
   String get navProcessing => 'Datenschutz & Kompression';
@@ -3438,7 +3454,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get processingDescription =>
-      'Was mit jeder Anfrage passiert, bevor sie deinen Server verlässt: private Daten vor Anbietern verbergen und Prompts verkleinern.';
+      'Was mit jeder Anfrage passiert, bevor sie Ihren Server verlässt: private Daten vor Anbietern verbergen und Prompts verkleinern.';
 
   @override
   String get privacyShield => 'Datenschutzschild';
@@ -3462,7 +3478,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get privacyHowItWorks =>
-      'Private Werte werden durch Platzhalter wie [EMAIL_1] ersetzt, bevor eine Anfrage deinen Server verlässt. Die KI sieht nur den Platzhalter, NeoRouter setzt den echten Wert in die Antwort wieder ein.';
+      'Private Werte werden durch Platzhalter wie [EMAIL_1] ersetzt, bevor eine Anfrage Ihren Server verlässt. Die KI sieht nur den Platzhalter, NeoRouter setzt den echten Wert in die Antwort wieder ein.';
 
   @override
   String get privacyEnable => 'Private Daten verbergen';
@@ -3553,10 +3569,10 @@ class AppL10nDe extends AppL10n {
   String get catVehicleHint => 'Kennzeichen und Fahrgestellnummern.';
 
   @override
-  String get catCustom => 'Deine privaten Begriffe';
+  String get catCustom => 'Ihre privaten Begriffe';
 
   @override
-  String get catCustomHint => 'Die Begriffe, die du unten einträgst.';
+  String get catCustomHint => 'Die Begriffe, die Sie unten eintragen.';
 
   @override
   String get catPerson => 'Nachnamen';
@@ -3586,11 +3602,11 @@ class AppL10nDe extends AppL10n {
       'Steuer-ID, USt-IdNr., Ausweise, Pässe, Sozial- und Krankenversicherungsnummern aus Deutschland, Europa, Großbritannien und den USA.';
 
   @override
-  String get privacyTermsTitle => 'Deine privaten Begriffe';
+  String get privacyTermsTitle => 'Ihre privaten Begriffe';
 
   @override
   String get privacyTermsHint =>
-      'Namen, deine Firma, deine Straße – alles, was nie bei einem Anbieter ankommen soll. Ein Begriff pro Zeile.';
+      'Namen, Ihre Firma, Ihre Straße – alles, was nie bei einem Anbieter ankommen soll. Ein Begriff pro Zeile.';
 
   @override
   String get privacyTermsPlaceholder =>
@@ -3601,7 +3617,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get privacyAllowHint =>
-      'Werte, die immer rausgehen dürfen, einer pro Zeile. Beginne mit @, um eine ganze Mail-Domain freizugeben, z. B. die deiner Firma.';
+      'Werte, die immer rausgehen dürfen, einer pro Zeile. Beginnen Sie mit @, um eine ganze Mail-Domain freizugeben, z. B. die Ihrer Firma.';
 
   @override
   String get privacyAllowPlaceholder => '@acme.example\nsupport@acme.example';
@@ -3611,7 +3627,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get privacyAiHint =>
-      'Alles oben wird auf deinem Server in rund einer Millisekunde gefunden, ohne KI. OpenAIs Datenschutzfilter, ebenfalls auf diesem Server, kann zusätzlich jede neue Nachricht lesen und Namen, Adressen und das finden, was die Regeln übersehen.';
+      'Alles oben wird auf Ihrem Server in rund einer Millisekunde gefunden, ohne KI. OpenAIs Datenschutzfilter, ebenfalls auf diesem Server, kann zusätzlich jede neue Nachricht lesen und Namen, Adressen und das finden, was die Regeln übersehen.';
 
   @override
   String get privacyAiEnable => 'Zusätzlich per KI suchen';
@@ -3622,11 +3638,11 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get privacyTryHint =>
-      'Füge einen Text ein und sieh genau, was ein Anbieter bekäme. Es wird nichts an ein Modell gesendet (außer der KI-Erkennung, falls aktiv).';
+      'Fügen Sie einen Text ein und sehen Sie genau, was ein Anbieter bekäme. Es wird nichts an ein Modell gesendet (außer der KI-Erkennung, falls aktiv).';
 
   @override
   String get privacyTrySample =>
-      'Hallo, ich bin Anna Schmidt, geb. 14.07.1988, wohnhaft Lindenstraße 12, 50674 Köln. Bitte schick die Rechnung an anna.schmidt@example.de und ruf mich unter +49 170 1234567 an. Meine IBAN ist DE89 3704 0044 0532 0130 00, meine Steuer-ID 86 095 742 719, das Server-Passwort: hunter2pw.';
+      'Hallo, ich bin Anna Schmidt, geb. 14.07.1988, wohnhaft Lindenstraße 12, 50674 Köln. Bitte schicken Sie die Rechnung an anna.schmidt@example.de und rufen Sie mich unter +49 170 1234567 an. Meine IBAN ist DE89 3704 0044 0532 0130 00, meine Steuer-ID 86 095 742 719, das Server-Passwort: hunter2pw.';
 
   @override
   String privacyTryResult(String count) {
@@ -3640,7 +3656,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get privacyFootnote =>
-      'Verborgene Werte verlassen nie deinen Server und werden nie gespeichert; die Zuordnung existiert nur während einer Anfrage. Die Erkennung ist ein starkes Sicherheitsnetz, aber keine Garantie – halte sehr sensible Daten aus Prompts heraus.';
+      'Verborgene Werte verlassen nie Ihren Server und werden nie gespeichert; die Zuordnung existiert nur während einer Anfrage. Die Erkennung ist ein starkes Sicherheitsnetz, aber keine Garantie – halten Sie sehr sensible Daten aus Prompts heraus.';
 
   @override
   String get compressionSaved => 'Gesparte Tokens';
@@ -3660,7 +3676,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get levelOffHint =>
-      'Anfragen gehen genau so raus, wie deine App sie geschrieben hat.';
+      'Anfragen gehen genau so raus, wie Ihre App sie geschrieben hat.';
 
   @override
   String get levelLossless => 'Verlustfrei';
@@ -3681,7 +3697,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get levelAggressiveHint =>
-      'Ausgewogen und dazu: ältere Tool-Ausgaben werden ausgeblendet und ältere lange Nachrichten gekürzt. Studien zeigen: Agents bleiben ähnlich genau bei halben Kosten. Deine letzte Nachricht wird nie gekürzt.';
+      'Ausgewogen und dazu: ältere Tool-Ausgaben werden ausgeblendet und ältere lange Nachrichten gekürzt. Studien zeigen: Agents bleiben ähnlich genau bei halben Kosten. Ihre letzte Nachricht wird nie gekürzt.';
 
   @override
   String get compressionEngines => 'Schritte';
@@ -3778,7 +3794,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get compressionTryHint =>
-      'Füge einen langen Text oder ein Log ein und sieh, wie viel die aktuelle Stufe spart.';
+      'Fügen Sie einen langen Text oder ein Log ein und sehen Sie, wie viel die aktuelle Stufe spart.';
 
   @override
   String compressionTryResult(String before, String after) {
@@ -3811,11 +3827,11 @@ class AppL10nDe extends AppL10n {
 
   @override
   String pgPinned(String model) {
-    return 'Dieser Key nutzt für Embeddings jetzt immer $model, damit deine Vektoren vergleichbar bleiben.';
+    return 'Dieser Key nutzt für Embeddings jetzt immer $model, damit Ihre Vektoren vergleichbar bleiben.';
   }
 
   @override
-  String get pgImageHint => 'Beschreibe das Bild, das du möchtest.';
+  String get pgImageHint => 'Beschreiben Sie das Bild, das Sie möchten.';
 
   @override
   String get pgImageRun => 'Bild erstellen';
@@ -3824,7 +3840,7 @@ class AppL10nDe extends AppL10n {
   String get pgSize => 'Größe';
 
   @override
-  String get pgSpeechHint => 'Schreibe, was vorgelesen werden soll.';
+  String get pgSpeechHint => 'Schreiben Sie, was vorgelesen werden soll.';
 
   @override
   String get pgSpeechRun => 'Vorlesen';
@@ -3846,7 +3862,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get pgTranscribeHint =>
-      'Wähle eine Aufnahme (bis 25 MB) und NeoRouter macht Text daraus.';
+      'Wählen Sie eine Aufnahme (bis 25 MB) und NeoRouter macht Text daraus.';
 
   @override
   String get pgChooseFile => 'Audiodatei wählen';
@@ -3862,7 +3878,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get pgCheckHint =>
-      'Füge eine Nachricht ein. Ein System-One-Modell entscheidet in Sekundenbruchteilen, ob sie unbedenklich ist.';
+      'Fügen Sie eine Nachricht ein. Ein System-One-Modell entscheidet in Sekundenbruchteilen, ob sie unbedenklich ist.';
 
   @override
   String get pgCheckRun => 'Prüfen';
@@ -3881,7 +3897,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get pgVideoHint =>
-      'Beschreibe eine kurze Szene. Videos dauern einige Minuten und sind nie gratis.';
+      'Beschreiben Sie eine kurze Szene. Videos dauern einige Minuten und sind nie gratis.';
 
   @override
   String get pgVideoRun => 'Video erstellen';
@@ -3898,7 +3914,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get pgNoModels =>
-      'Noch keine deiner Verbindungen bietet diese Art von Modell an.';
+      'Noch keine Ihrer Verbindungen bietet diese Art von Modell an.';
 
   @override
   String get pgAddProvider => 'Anbieter hinzufügen';
@@ -3923,7 +3939,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get pgSearchHint =>
-      'Durchsuche das Web mit deinen Suchmaschinen. Chat-Modelle nutzen dieselben, wenn eine Anfrage die Websuche einschaltet.';
+      'Durchsuchen Sie das Web mit Ihren Suchmaschinen. Chat-Modelle nutzen dieselben, wenn eine Anfrage die Websuche einschaltet.';
 
   @override
   String get pgSearchRun => 'Suchen';
@@ -3950,31 +3966,31 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get teamDescription =>
-      'Lass andere beim Verwalten deines NeoRouter helfen. Du legst pro Person fest, was sie sehen und ändern darf. Alles, was sie anlegen, gehört weiter dir.';
+      'Lassen Sie andere beim Verwalten Ihres NeoRouter helfen. Sie legen pro Person fest, was sie sehen und ändern darf. Alles, was sie anlegen, gehört weiter Ihnen.';
 
   @override
   String get inviteSomeone => 'Jemanden einladen';
 
   @override
-  String get teamMembersTitle => 'Personen in deinem Team';
+  String get teamMembersTitle => 'Personen in Ihrem Team';
 
   @override
   String get teamMembersHint =>
-      'Sie arbeiten in deinem Bereich mit den Rechten, die du ihnen gibst.';
+      'Diese Personen arbeiten in Ihrem Bereich mit den Rechten, die Sie ihnen geben.';
 
   @override
   String get noMembersTitle => 'Noch niemand dabei';
 
   @override
   String get noMembersMessage =>
-      'Erstelle einen Einladungslink und schick ihn der Person. Sie braucht ein Konto auf diesem Server.';
+      'Erstellen Sie einen Einladungslink und senden Sie ihn der Person. Sie braucht ein Konto auf diesem Server.';
 
   @override
   String get inviteLinksTitle => 'Offene Einladungslinks';
 
   @override
   String get inviteLinksHint =>
-      'Wer einen offenen Link hat, kann beitreten. Widerrufe Links, die du nicht mehr brauchst.';
+      'Wer einen offenen Link hat, kann beitreten. Widerrufen Sie Links, die Sie nicht mehr benötigen.';
 
   @override
   String get joinTeamTitle => 'Team einer anderen Person';
@@ -3984,22 +4000,22 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get joinTeamHint =>
-      'Tritt bei, um beim NeoRouter dieser Person mitzuhelfen. Dein eigener Bereich bleibt, wie er ist.';
+      'Treten Sie bei, um beim NeoRouter dieser Person mitzuhelfen. Ihr eigener Bereich bleibt, wie er ist.';
 
   @override
   String get useInviteLink => 'Einladungslink nutzen';
 
   @override
   String memberOfTitle(String name) {
-    return 'Du bist im Team von $name';
+    return 'Sie sind im Team von $name';
   }
 
   @override
   String get memberOfHint =>
-      'Wechsle in der Seitenleiste den Bereich, um dort zu arbeiten.';
+      'Wechseln Sie in der Seitenleiste den Bereich, um dort zu arbeiten.';
 
   @override
-  String get youMay => 'Du darfst';
+  String get youMay => 'Sie dürfen';
 
   @override
   String openSpaceOf(String name) {
@@ -4011,7 +4027,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String leaveTeamConfirm(String name) {
-    return 'Team von $name verlassen? Du verlierst den Zugriff, bis du wieder eingeladen wirst. Was du dort angelegt hast, bleibt.';
+    return 'Team von $name verlassen? Sie verlieren den Zugriff, bis Sie wieder eingeladen werden. Was Sie dort angelegt haben, bleibt.';
   }
 
   @override
@@ -4110,7 +4126,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get inviteLinkBody =>
-      'Schick diesen Link der Person. Er wird nur jetzt angezeigt; du kannst ihn jederzeit widerrufen.';
+      'Senden Sie diesen Link der Person. Er wird nur jetzt angezeigt; Sie können ihn jederzeit widerrufen.';
 
   @override
   String get inviteUntitled => 'Einladungslink';
@@ -4135,7 +4151,7 @@ class AppL10nDe extends AppL10n {
   String get inviteLinkField => 'Einladungslink';
 
   @override
-  String get inviteLinkFieldHint => 'Füge den erhaltenen Link ein';
+  String get inviteLinkFieldHint => 'Fügen Sie den erhaltenen Link ein';
 
   @override
   String get inviteCheck => 'Link prüfen';
@@ -4147,7 +4163,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get invitePreviewHint =>
-      'Du kannst dann in diesem Bereich mit diesen Rechten arbeiten:';
+      'Sie können dann in diesem Bereich mit diesen Rechten arbeiten:';
 
   @override
   String get joinTeam => 'Team beitreten';
@@ -4197,14 +4213,14 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get poolDescription =>
-      'Teile Gratis-Kapazität mit Freunden, die einen eigenen NeoRouter betreiben. Niemand gibt Schlüssel heraus: Jede Anfrage läuft auf dem Server dessen, der teilt.';
+      'Teilen Sie Gratis-Kapazität mit Freunden, die einen eigenen NeoRouter betreiben. Niemand gibt Schlüssel heraus: Jede Anfrage läuft auf dem Server dessen, der teilt.';
 
   @override
   String get poolEmptyTitle => 'Noch in keinem Pool';
 
   @override
   String get poolEmptyMessage =>
-      'Starte einen und lade andere ein, oder tritt mit einem Link bei, den du bekommen hast.';
+      'Starten Sie einen und laden Sie andere ein, oder treten Sie mit einem Link bei, den Sie bekommen haben.';
 
   @override
   String get poolCreate => 'Pool starten';
@@ -4214,11 +4230,11 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get poolTrustNotice =>
-      'Anfragen über den Pool laufen auf dem Server eines Partners. NeoRouter speichert dort keine Inhalte und blendet Geheimnisse vorher aus. Wer den Server betreibt, könnte Inhalte aber technisch sehen. Teile nur mit Menschen, denen du vertraust.';
+      'Anfragen über den Pool laufen auf dem Server eines Partners. NeoRouter speichert dort keine Inhalte und blendet Geheimnisse vorher aus. Wer den Server betreibt, könnte Inhalte aber technisch sehen. Teilen Sie nur mit Menschen, denen Sie vertrauen.';
 
   @override
   String get poolTosNotice =>
-      'Manche Anbieter erlauben nicht, Gratis-Zugang mit anderen zu teilen. Prüfe ihre Bedingungen, bevor du eine Verbindung teilst.';
+      'Manche Anbieter erlauben nicht, Gratis-Zugang mit anderen zu teilen. Prüfen Sie ihre Bedingungen, bevor Sie eine Verbindung teilen.';
 
   @override
   String get poolInvite => 'Einladen';
@@ -4228,7 +4244,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get poolInviteBody =>
-      'Schick diesen Link oder den fertigen Text unten an jemanden mit eigenem NeoRouter. Der Link öffnet eine Seite, die zum eigenen NeoRouter führt, um dort beizutreten. Er funktioniert einmal und läuft nach 7 Tagen ab.';
+      'Senden Sie diesen Link oder den fertigen Text unten an jemanden mit eigenem NeoRouter. Der Link öffnet eine Seite, die zum eigenen NeoRouter führt, um dort beizutreten. Er funktioniert einmal und läuft nach 7 Tagen ab.';
 
   @override
   String get poolStateOnline => 'Online';
@@ -4249,10 +4265,10 @@ class AppL10nDe extends AppL10n {
   String get poolBalanceBalanced => 'Ausgewogen';
 
   @override
-  String get poolBalanceGiving => 'Du gibst mehr';
+  String get poolBalanceGiving => 'Sie geben mehr';
 
   @override
-  String get poolBalanceTaking => 'Du nimmst mehr';
+  String get poolBalanceTaking => 'Sie nehmen mehr';
 
   @override
   String get poolPausePartner => 'Diesen Partner pausieren';
@@ -4269,11 +4285,11 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
-  String get poolShareTitle => 'Was du teilst';
+  String get poolShareTitle => 'Was Sie teilen';
 
   @override
   String get poolShareHint =>
-      'Gratis-Modelle der Verbindungen, die du auswählst; über ⋯ legst du pro Verbindung fest, ob auch Abo- oder bezahlte Modelle geteilt werden. Deine eigenen Anfragen gehen immer vor.';
+      'Gratis-Modelle der Verbindungen, die Sie auswählen; über ⋯ legen Sie pro Verbindung fest, ob auch Abo- oder bezahlte Modelle geteilt werden. Ihre eigenen Anfragen gehen immer vor.';
 
   @override
   String get classificationTitle => 'Gratis oder bezahlt';
@@ -4289,17 +4305,17 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get classificationHint =>
-      'Automatisch nutzt, was NeoRouter für jedes Modell ermittelt hat. Leg es selbst fest, wenn das nicht stimmt; eine Einstellung an einem einzelnen Modell geht weiter vor.';
+      'Automatisch nutzt, was NeoRouter für jedes Modell ermittelt hat. Legen Sie es selbst fest, wenn das nicht stimmt; eine Einstellung an einem einzelnen Modell geht weiter vor.';
 
   @override
   String get classificationFreeWarning =>
-      'Nur wenn diese Verbindung dich nie etwas kostet: Jedes Modell gilt dann als gratis, auch für Keys, die nur Gratis-Modelle nutzen dürfen.';
+      'Nur wenn diese Verbindung Sie nie etwas kostet: Jedes Modell gilt dann als gratis, auch für Keys, die nur Gratis-Modelle nutzen dürfen.';
 
   @override
-  String get poolActivityGiven => 'Was Partner von dir genutzt haben';
+  String get poolActivityGiven => 'Was Partner von Ihnen genutzt haben';
 
   @override
-  String get poolActivityTaken => 'Was du von Partnern genutzt hast';
+  String get poolActivityTaken => 'Was Sie von Partnern genutzt haben';
 
   @override
   String get poolActivityGivenMetric => 'Gegeben';
@@ -4308,7 +4324,7 @@ class AppL10nDe extends AppL10n {
   String get poolActivityTakenMetric => 'Genommen';
 
   @override
-  String get poolActivityCost => 'Hat dich gekostet';
+  String get poolActivityCost => 'Hat Sie gekostet';
 
   @override
   String get poolActivityCostCaption => 'durch geteilte Bezahl-Modelle';
@@ -4321,7 +4337,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get poolActivityEmpty =>
-      'Sobald Partner deine Verbindungen nutzen oder du ihre, erscheint es hier. Gespeichert werden nur Zahlen, nie Inhalte.';
+      'Sobald Partner Ihre Verbindungen nutzen oder Sie ihre, erscheint es hier. Gespeichert werden nur Zahlen, nie Inhalte.';
 
   @override
   String poolRankingLine(String requests, String tokens) {
@@ -4341,17 +4357,17 @@ class AppL10nDe extends AppL10n {
       'Partner nutzen zuerst Gratis-Modelle, dann Abo-, dann bezahlte Modelle.';
 
   @override
-  String get poolKindFreeHint => 'Kosten dich nie etwas.';
+  String get poolKindFreeHint => 'Kosten Sie nie etwas.';
 
   @override
   String get poolKindPlanHint =>
-      'Verbrauchen die Limits deines Abos. Viele Abos erlauben kein Teilen.';
+      'Verbrauchen die Limits Ihres Abos. Viele Abos erlauben kein Teilen.';
 
   @override
-  String get poolKindPaidBilled => 'Werden dir nach Verbrauch berechnet.';
+  String get poolKindPaidBilled => 'Werden Ihnen nach Verbrauch berechnet.';
 
   @override
-  String get poolKindPaidBalance => 'Verbrauchen dein Guthaben.';
+  String get poolKindPaidBalance => 'Verbrauchen Ihr Guthaben.';
 
   @override
   String get poolKindNone => 'Diese Verbindung hat keine.';
@@ -4376,7 +4392,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String poolPlanConfirmBody(String pool) {
-    return 'Partner in $pool können dann auch dieses Abo nutzen, wenn kein Gratis-Modell passt. Das verbraucht die Limits deines Abos, und viele Abos erlauben kein Teilen. Deine Tageslimits für Partner gelten weiter.';
+    return 'Partner in $pool können dann auch dieses Abo nutzen, wenn kein Gratis-Modell passt. Das verbraucht die Limits Ihres Abos, und viele Abos erlauben kein Teilen. Ihre Tageslimits für Partner gelten weiter.';
   }
 
   @override
@@ -4387,7 +4403,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get modelsPoolHint =>
-      'Was deine Pool-Partner mit dir teilen. Nur Keys mit Pool-Zugang nutzen diese Modelle, und sie kosten dich nichts.';
+      'Was Ihre Pool-Partner mit Ihnen teilen. Nur Keys mit Pool-Zugang nutzen diese Modelle, und sie kosten Sie nichts.';
 
   @override
   String poolViaPartner(String name) {
@@ -4401,12 +4417,12 @@ class AppL10nDe extends AppL10n {
 
   @override
   String poolPaidConfirmBilled(String pool) {
-    return 'Partner in $pool können dann die bezahlten Modelle dieser Verbindung nutzen. Das kostet dich echtes Geld, abgerechnet vom Anbieter. Deine Tageslimits für Partner gelten weiter.';
+    return 'Partner in $pool können dann die bezahlten Modelle dieser Verbindung nutzen. Das kostet Sie echtes Geld, abgerechnet vom Anbieter. Ihre Tageslimits für Partner gelten weiter.';
   }
 
   @override
   String poolPaidConfirmPrepaid(String pool) {
-    return 'Partner in $pool können dann die bezahlten Modelle dieser Verbindung nutzen. Das verbraucht dein Guthaben. Deine Tageslimits für Partner gelten weiter.';
+    return 'Partner in $pool können dann die bezahlten Modelle dieser Verbindung nutzen. Das verbraucht Ihr Guthaben. Ihre Tageslimits für Partner gelten weiter.';
   }
 
   @override
@@ -4414,7 +4430,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get poolShareNone =>
-      'Noch keine deiner Verbindungen hat Gratis-Modelle.';
+      'Noch keine Ihrer Verbindungen hat Gratis-Modelle.';
 
   @override
   String poolFreeModels(String count) {
@@ -4426,7 +4442,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get poolLimitsAutoHint =>
-      'Automatisch und fair: Jeder Partner bekommt gleich viel; wer dir mehr gibt, bekommt bis zu dreimal so viel, wer nur nimmt, die Hälfte. Von jeder Verbindung bleibt dir, was du an dem Tag sonst noch brauchst, nach deiner letzten Woche; den Rest nutzen Partner.';
+      'Automatisch und fair: Jeder Partner bekommt gleich viel; wer Ihnen mehr gibt, bekommt bis zu dreimal so viel, wer nur nimmt, die Hälfte. Von jeder Verbindung bleibt Ihnen, was Sie an dem Tag sonst noch brauchen, nach Ihrer letzten Woche; den Rest nutzen Partner.';
 
   @override
   String poolPartnerCaps(String requests, String tokens, String concurrent) {
@@ -4442,7 +4458,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get poolLimitsAdvancedHint =>
-      'Leer lassen heißt automatisch. Ein Wert, den du setzt, gilt für jeden Partner in diesem Pool, egal wie viel er gibt.';
+      'Leer lassen heißt automatisch. Ein Wert, den Sie setzen, gilt für jeden Partner in diesem Pool, egal wie viel er gibt.';
 
   @override
   String get poolLimitAutomatic => 'Automatisch';
@@ -4457,11 +4473,11 @@ class AppL10nDe extends AppL10n {
   String get poolLimitConcurrent => 'Anfragen gleichzeitig';
 
   @override
-  String get poolLimitReserve => 'Für dich reserviert (%)';
+  String get poolLimitReserve => 'Für Sie reserviert (%)';
 
   @override
   String get poolLimitReserveHint =>
-      'Leer: so viel, wie du heute sonst noch brauchst, nach deiner letzten Woche. Eine Zahl hält diesen Anteil jedes Kontingents frei.';
+      'Leer: so viel, wie Sie heute sonst noch brauchen, nach Ihrer letzten Woche. Eine Zahl hält diesen Anteil jedes Kontingents frei.';
 
   @override
   String get poolLeave => 'Pool verlassen';
@@ -4471,12 +4487,12 @@ class AppL10nDe extends AppL10n {
 
   @override
   String poolLeaveConfirm(String name) {
-    return '$name verlassen? Partner verlieren sofort den Zugang zu deinen Verbindungen und du zu ihren.';
+    return '$name verlassen? Partner verlieren sofort den Zugang zu Ihren Verbindungen und Sie zu ihren.';
   }
 
   @override
   String poolCloseConfirm(String name) {
-    return '$name schließen? Als Gastgeber beendest du den Pool damit für alle.';
+    return '$name schließen? Als Gastgeber beenden Sie den Pool damit für alle.';
   }
 
   @override
@@ -4486,7 +4502,7 @@ class AppL10nDe extends AppL10n {
   String get poolNameLabel => 'Name des Pools';
 
   @override
-  String get poolSelfNameLabel => 'Dein Name im Pool';
+  String get poolSelfNameLabel => 'Ihr Name im Pool';
 
   @override
   String get poolSelfNameHint => 'Partner sehen diesen Namen.';
@@ -4518,7 +4534,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get keyPoolHint =>
-      'Nutzt auch Gratis-Modelle von Partnern, vor allem wenn deine ausgelastet sind.';
+      'Nutzt auch Gratis-Modelle von Partnern, vor allem wenn Ihre ausgelastet sind.';
 
   @override
   String get keyPoolChip => 'Pool';
@@ -4531,16 +4547,16 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get settingsKeepSensitiveHint =>
-      'Anfragen mit Passwörtern, Schlüsseln, Karten- oder Ausweisnummern oder den Daten vieler Personen bleiben auf deinen eigenen Verbindungen. Eindeutige Fälle werden erkannt, nicht jedes Geheimnis.';
+      'Anfragen mit Passwörtern, Schlüsseln, Karten- oder Ausweisnummern oder den Daten vieler Personen bleiben auf Ihren eigenen Verbindungen. Eindeutige Fälle werden erkannt, nicht jedes Geheimnis.';
 
   @override
-  String get homePoolPaused => 'Gerade pausiert: du nutzt und gibst nichts.';
+  String get homePoolPaused => 'Gerade pausiert: Sie nutzen und geben nichts.';
 
   @override
   String get keptPrivateTag => 'Privat gehalten';
 
   @override
-  String get poolHostYou => 'du bist Gastgeber';
+  String get poolHostYou => 'Sie sind Gastgeber';
 
   @override
   String poolPartnersCount(String count, String online) {
@@ -4592,7 +4608,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String poolInviteText(String host, String pool, String link) {
-    return 'Hallo! $host lädt dich in den NeoRouter-Pool „$pool“ ein, in dem unsere NeoRouter KI-Kapazität teilen. Öffne diesen Link und gib die Adresse deines eigenen NeoRouter ein: $link\n(Er funktioniert einmal und läuft nach 7 Tagen ab.)';
+    return 'Hallo! $host lädt Sie in den NeoRouter-Pool „$pool“ ein, in dem unsere NeoRouter KI-Kapazität teilen. Öffnen Sie diesen Link und geben Sie die Adresse Ihres eigenen NeoRouter ein: $link\n(Er funktioniert einmal und läuft nach 7 Tagen ab.)';
   }
 
   @override
@@ -4650,10 +4666,10 @@ class AppL10nDe extends AppL10n {
   String get costSummaryFreeModels => 'Einige Modelle sind gratis';
 
   @override
-  String get costSummaryPlan => 'Ein Abo, das du schon bezahlst';
+  String get costSummaryPlan => 'Ein Abo, das Sie schon bezahlen';
 
   @override
-  String get costSummaryPayg => 'Du zahlst, was du nutzt';
+  String get costSummaryPayg => 'Sie zahlen, was Sie nutzen';
 
   @override
   String costChecked(String date) {
@@ -4693,17 +4709,17 @@ class AppL10nDe extends AppL10n {
   }
 
   @override
-  String get poolAlreadyMember => 'Du bist schon in diesem Pool.';
+  String get poolAlreadyMember => 'Sie sind schon in diesem Pool.';
 
   @override
   String get poolLoadFailed => 'Pools konnten nicht geladen werden.';
 
   @override
   String get networkDescription =>
-      'Teile Gratis-Kapazität mit anderen NeoRouter-Instanzen und lass Personen beim Verwalten helfen.';
+      'Teilen Sie Gratis-Kapazität mit anderen NeoRouter-Instanzen und lassen Sie Personen beim Verwalten helfen.';
 
   @override
-  String get statBalance => 'Deine Bilanz';
+  String get statBalance => 'Ihre Bilanz';
 
   @override
   String get statModels => 'Geteilte Modelle';
@@ -4723,7 +4739,7 @@ class AppL10nDe extends AppL10n {
   String get balanceTheyGive => 'Gibt mehr';
 
   @override
-  String get panelEditSharing => 'Was du teilst ändern';
+  String get panelEditSharing => 'Was Sie teilen ändern';
 
   @override
   String get panelBalance => 'Bilanz diese Woche';
@@ -4741,12 +4757,12 @@ class AppL10nDe extends AppL10n {
 
   @override
   String panelSharesPartner(String models, String percent) {
-    return 'Teilt $models Modelle mit dir, für dich gratis, $percent % der Modelle in diesem Pool.';
+    return 'Teilt $models Modelle mit Ihnen, für Sie gratis, $percent % der Modelle in diesem Pool.';
   }
 
   @override
   String panelSharesYou(String connections, String models, String percent) {
-    return 'Du teilst $connections Verbindungen mit $models Modellen, $percent % der Modelle in diesem Pool.';
+    return 'Sie teilen $connections Verbindungen mit $models Modellen, $percent % der Modelle in diesem Pool.';
   }
 
   @override
@@ -4761,7 +4777,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String poolMemberYou(String name) {
-    return '$name (du)';
+    return '$name (Sie)';
   }
 
   @override
@@ -4804,22 +4820,22 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get poolRelayHint =>
-      'Mitglieder ohne öffentliche Adresse nehmen über deinen NeoRouter teil. Ihre Anfragen laufen über deine Internetleitung, Ende-zu-Ende verschlüsselt, du kannst sie also nicht lesen.';
+      'Mitglieder ohne öffentliche Adresse nehmen über Ihren NeoRouter teil. Ihre Anfragen laufen über Ihre Internetleitung, Ende-zu-Ende verschlüsselt, Sie können sie also nicht lesen.';
 
   @override
-  String get poolRelaySelfLabel => 'Wie du teilnimmst';
+  String get poolRelaySelfLabel => 'Wie Sie teilnehmen';
 
   @override
   String get poolRelaySelfVia =>
-      'Über den Gastgeber: dein NeoRouter braucht keine öffentliche Adresse. Anfragen laufen verschlüsselt über den Gastgeber, er kann sie nicht lesen.';
+      'Über den Gastgeber: Ihr NeoRouter braucht keine öffentliche Adresse. Anfragen laufen verschlüsselt über den Gastgeber, er kann sie nicht lesen.';
 
   @override
   String get poolRelaySelfDirect =>
-      'Direkt, über die eigene Adresse deines NeoRouter.';
+      'Direkt, über die eigene Adresse Ihres NeoRouter.';
 
   @override
   String get poolLeaveHint =>
-      'Partner verlieren sofort den Zugang zu deinen Verbindungen und du zu ihren.';
+      'Partner verlieren sofort den Zugang zu Ihren Verbindungen und Sie zu ihren.';
 
   @override
   String get poolCloseHint => 'Beendet den Pool für alle Partner.';
@@ -4936,7 +4952,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String homeCapacityCaption(String hour, String providers) {
-    return 'So viel könnten deine Gratis-Modelle im Dauerbetrieb verarbeiten: etwa $hour Tokens pro Stunde, nach den Nutzungslimits von $providers Anbietern.';
+    return 'So viel könnten Ihre Gratis-Modelle im Dauerbetrieb verarbeiten: etwa $hour Tokens pro Stunde, nach den Nutzungslimits von $providers Anbietern.';
   }
 
   @override
@@ -4956,13 +4972,13 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get homeCapacityNone =>
-      'Für keines deiner Gratis-Modelle ist bisher ein Tageslimit bekannt, daher gibt es keine Tagessumme.';
+      'Für keines Ihrer Gratis-Modelle ist bisher ein Tageslimit bekannt, daher gibt es keine Tagessumme.';
 
   @override
   String get keyLimitsTitle => 'Limits';
 
   @override
-  String get keyNoLimitHint => 'Lass ein Feld leer für kein Limit.';
+  String get keyNoLimitHint => 'Lassen Sie ein Feld leer für kein Limit.';
 
   @override
   String get keyRateLimit => 'Rate-Limit';
@@ -5120,7 +5136,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String connectSubtitle(String name) {
-    return '$name möchte einen eigenen Key für deinen NeoRouter. Du bestimmst, was die App nutzen darf, und kannst sie jederzeit unter API-Keys trennen.';
+    return '$name möchte einen eigenen Key für Ihren NeoRouter. Sie bestimmen, was die App nutzen darf, und können sie jederzeit unter API-Keys trennen.';
   }
 
   @override
@@ -5130,7 +5146,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get connectInsecure =>
-      'Diese Adresse ist nicht verschlüsselt. Fahre nur fort, wenn es dein eigenes Gerät oder Netzwerk ist.';
+      'Diese Adresse ist nicht verschlüsselt. Fahren Sie nur fort, wenn es Ihr eigenes Gerät oder Netzwerk ist.';
 
   @override
   String get connectDeviceHint =>
@@ -5155,7 +5171,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get connectCodeSubtitle =>
-      'Gib den Code ein, den die App dir anzeigt.';
+      'Geben Sie den Code ein, den die App Ihnen anzeigt.';
 
   @override
   String get connectCodeField => 'Code';
@@ -5170,7 +5186,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get connectDoneBody =>
-      'Du kannst zur App zurückkehren. Um sie später zu trennen, widerrufe ihren Key unter API-Keys.';
+      'Sie können zur App zurückkehren. Um sie später zu trennen, widerrufen Sie ihren Key unter API-Keys.';
 
   @override
   String get connectDeniedTitle => 'Abgelehnt';
@@ -5188,14 +5204,14 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get connectNoPermission =>
-      'Der Team-Inhaber erlaubt dir hier keine Keys. Wechsle in deinen eigenen Bereich, um die App zu verbinden.';
+      'Der Team-Inhaber erlaubt Ihnen hier keine Keys. Wechseln Sie in Ihren eigenen Bereich, um die App zu verbinden.';
 
   @override
   String get connectedAppsTitle => 'Verbundene Apps';
 
   @override
   String get connectedAppsHint =>
-      'Apps, die sich mit NeoRouter angemeldet haben. Widerrufe eine, um sie zu trennen.';
+      'Apps, die sich mit NeoRouter angemeldet haben. Widerrufen Sie eine, um sie zu trennen.';
 
   @override
   String connectedVia(String host) {
@@ -5210,10 +5226,10 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get keyKindsHint =>
-      'Schalte aus, was dieser Key nie nutzen soll, z. B. Textmodelle für eine Sprach-App.';
+      'Schalten Sie aus, was dieser Key nie nutzen soll, z. B. Textmodelle für eine Sprach-App.';
 
   @override
-  String get keyKindsNone => 'Wähle mindestens eine Art.';
+  String get keyKindsNone => 'Wählen Sie mindestens eine Art.';
 
   @override
   String get pickModelAllKinds => 'Alle Arten';
@@ -5225,7 +5241,7 @@ class AppL10nDe extends AppL10n {
   String get liveQuiet => 'Gerade kein Verkehr';
 
   @override
-  String get liveWaiting => 'Warte auf die erste Anfrage';
+  String get liveWaiting => 'Warten auf die erste Anfrage';
 
   @override
   String get liveWaitingChip => 'wartet auf ein freies Modell';
@@ -5239,13 +5255,13 @@ class AppL10nDe extends AppL10n {
   String get liveLoading => 'Lädt …';
 
   @override
-  String get liveLoadingTraffic => 'lade deine Anfragen …';
+  String get liveLoadingTraffic => 'Ihre Anfragen werden geladen …';
 
   @override
   String get liveOther => 'Andere';
 
   @override
-  String get liveYourApp => 'Deine App';
+  String get liveYourApp => 'Ihre App';
 
   @override
   String get liveAddProvider => 'Verbindung hinzufügen';
@@ -5388,7 +5404,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get modelsAny =>
-      'Jedes Modell. Wähle welche aus, um es darauf zu beschränken.';
+      'Jedes Modell. Wählen Sie welche aus, um es darauf zu beschränken.';
 
   @override
   String get modelsClear => 'Leeren';
@@ -5472,11 +5488,11 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get pgNoFreeModels =>
-      'Du hast dafür kein Gratis-Modell, deshalb findet „Nur gratis“ hier nichts.';
+      'Sie haben dafür kein Gratis-Modell, deshalb findet „Nur gratis“ hier nichts.';
 
   @override
   String get pgNoFreeModelsLocked =>
-      'Du hast dafür kein Gratis-Modell, und dieser Key erlaubt nur Gratis-Modelle.';
+      'Sie haben dafür kein Gratis-Modell, und dieser Key erlaubt nur Gratis-Modelle.';
 
   @override
   String get pgAllowPaid => 'Bezahlte Modelle erlauben';
@@ -5489,11 +5505,11 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get pgProblemNoFreeBody =>
-      'Deine Gratis-Modelle dafür sind ausgelastet, über ihren Limits oder fehlen. Erlaube bezahlte Modelle oder versuch es in einer Minute noch mal.';
+      'Ihre Gratis-Modelle dafür sind ausgelastet, über ihren Limits oder fehlen. Erlauben Sie bezahlte Modelle oder versuchen Sie es in einer Minute noch mal.';
 
   @override
   String get pgProblemNoFreeBodyLocked =>
-      'Dieser Key erlaubt nur Gratis-Modelle, und gerade konnte keins das übernehmen. Verbinde dafür einen Gratis-Anbieter oder nimm einen Key, der bezahlte Modelle nutzen darf.';
+      'Dieser Key erlaubt nur Gratis-Modelle, und gerade konnte keins das übernehmen. Verbinden Sie dafür einen Gratis-Anbieter oder nehmen Sie einen Key, der bezahlte Modelle nutzen darf.';
 
   @override
   String get pgProblemNoModelTitle => 'Gerade kann kein Modell das übernehmen';
@@ -5527,7 +5543,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get pgDecideHint =>
-      'Beschreibe eine Situation, stell eine Frage und nenne die Optionen. Ein System-One-Modell wählt in Sekundenbruchteilen eine aus und sagt, wie sicher es ist.';
+      'Beschreiben Sie eine Situation, stellen Sie eine Frage und nennen Sie die Optionen. Ein System-One-Modell wählt in Sekundenbruchteilen eine aus und sagt, wie sicher es ist.';
 
   @override
   String get pgDecideRun => 'Entscheiden';
@@ -5558,14 +5574,14 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get capWeatherHint =>
-      'Aktuelles Wetter und Vorhersagen für jeden Ort, von den Wetterdiensten, die du verbindest.';
+      'Aktuelles Wetter und Vorhersagen für jeden Ort, von den Wetterdiensten, die Sie verbinden.';
 
   @override
   String get unitCall => 'pro Abruf';
 
   @override
   String get pgWeatherHint =>
-      'Frag das Wetter für einen Ortsnamen oder Koordinaten wie 52.52, 13.41 ab. Die Antwort sieht gleich aus, egal welcher Dienst antwortet.';
+      'Fragen Sie das Wetter für einen Ortsnamen oder Koordinaten wie 52.52, 13.41 ab. Die Antwort sieht gleich aus, egal welcher Dienst antwortet.';
 
   @override
   String get pgWeatherRun => 'Wetter abrufen';
@@ -5588,7 +5604,7 @@ class AppL10nDe extends AppL10n {
   String get priorityTitle => 'Priorität';
 
   @override
-  String get priorityMenuHeading => 'Wenn deine Modelle ausgelastet sind';
+  String get priorityMenuHeading => 'Wenn Ihre Modelle ausgelastet sind';
 
   @override
   String get priorityHigh => 'Hoch';
@@ -5622,7 +5638,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get lmIntro =>
-      'Lass KI-Modelle auf diesem Server laufen. NeoRouter zeigt, was passt, lädt es herunter, hält es am Laufen und behebt Probleme selbst.';
+      'Lassen Sie KI-Modelle auf diesem Server laufen. NeoRouter zeigt, was passt, lädt es herunter, hält es am Laufen und behebt Probleme selbst.';
 
   @override
   String get lmThisServer => 'Dieser Server';
@@ -5679,11 +5695,11 @@ class AppL10nDe extends AppL10n {
       'Text-, Sicherheits- und Embedding-Modelle brauchen macOS oder Linux. Sprach- und Transkriptionsmodelle laufen hier.';
 
   @override
-  String get lmInstalledTitle => 'Deine Modelle';
+  String get lmInstalledTitle => 'Ihre Modelle';
 
   @override
   String get lmInstalledEmpty =>
-      'Noch keine Modelle. Wähle unten eins aus: NeoRouter lädt es herunter und startet es für dich.';
+      'Noch keine Modelle. Wählen Sie unten eins aus: NeoRouter lädt es herunter und startet es für Sie.';
 
   @override
   String get lmRunning => 'Läuft';
@@ -5731,7 +5747,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get lmProblemMemory =>
-      'Nicht genug freier Speicher: stoppe zuerst ein anderes Modell.';
+      'Nicht genug freier Speicher: stoppen Sie zuerst ein anderes Modell.';
 
   @override
   String get lmProblemDisk => 'Nicht genug freier Speicherplatz.';
@@ -5750,7 +5766,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get lmProblemDownload =>
-      'Prüfe die Internetverbindung und versuche es erneut.';
+      'Prüfen Sie die Internetverbindung und versuchen Sie es erneut.';
 
   @override
   String get lmRepair => 'Reparieren';
@@ -5768,7 +5784,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get lmRemoveConfirm =>
-      'Die Dateien werden von diesem Server gelöscht. Du kannst es jederzeit wieder installieren.';
+      'Die Dateien werden von diesem Server gelöscht. Sie können es jederzeit wieder installieren.';
 
   @override
   String get lmAccessTitle => 'Wer sie nutzen darf';
@@ -5862,7 +5878,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String lmInstallConfirm(String size) {
-    return 'NeoRouter lädt etwa $size herunter und startet das Modell, sobald es bereit ist. Du kannst in der Zwischenzeit weiterarbeiten.';
+    return 'NeoRouter lädt etwa $size herunter und startet das Modell, sobald es bereit ist. Sie können in der Zwischenzeit weiterarbeiten.';
   }
 
   @override
@@ -5960,7 +5976,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get routingGroupsDescription =>
-      'Nutze einen Modellnamen für mehrere Abos.';
+      'Nutzen Sie einen Modellnamen für mehrere Abos.';
 
   @override
   String routingGroupOptionHelp(String option) {
@@ -5969,19 +5985,19 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get routingGroupFallbackHelp =>
-      'Wähle eine Ausweichgruppe. Wenn kein Modell in dieser Gruppe die Anfrage annehmen kann, kann NeoRouter die Ausweichgruppe versuchen.';
+      'Wählen Sie eine Ausweichgruppe. Wenn kein Modell in dieser Gruppe die Anfrage annehmen kann, kann NeoRouter die Ausweichgruppe versuchen.';
 
   @override
   String get routingGroupOutsideHelp =>
-      'Erlaube NeoRouter, im Notfall auch Verbindungen außerhalb der ausgewählten Gruppen zu versuchen. Die Berechtigungen und Ausgaberegeln deines Schlüssels gelten weiterhin.';
+      'Erlauben Sie NeoRouter, im Notfall auch Verbindungen außerhalb der ausgewählten Gruppen zu versuchen. Die Berechtigungen und Ausgaberegeln Ihres Schlüssels gelten weiterhin.';
 
   @override
   String get routingGroupsHelpSwitch =>
-      'Wähle zum Beispiel zwei Abos und lege eines unter „Zuerst verwenden“ fest. NeoRouter kann das andere nutzen, wenn das erste ausgelastet ist oder sein Limit erreicht hat.';
+      'Wählen Sie zum Beispiel zwei Abos und legen Sie eines unter „Zuerst verwenden“ fest. NeoRouter kann das andere nutzen, wenn das erste ausgelastet ist oder sein Limit erreicht hat.';
 
   @override
   String get routingGroupsHelpSubagents =>
-      'Wähle „Gleiche Gruppe“, um diese Verbindungen zu teilen, oder wähle eine andere Gruppe für die Helfer deiner App. Deine App muss Anfragen von Subagenten getrennt senden. Die Anleitung findest du nach dem Speichern unter „In App nutzen“.';
+      'Wählen Sie „Gleiche Gruppe“, um diese Verbindungen zu teilen, oder wählen Sie eine andere Gruppe für die Helfer Ihrer App. Ihre App muss Anfragen von Subagenten getrennt senden. Die Anleitung finden Sie nach dem Speichern unter „In App nutzen“.';
 
   @override
   String get routingGroupsEmptyTitle => 'Noch keine Routing-Gruppen';
@@ -6008,7 +6024,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get routingGroupAccountsHint =>
-      'Wähle die Abos und Verbindungen für diese Gruppe.';
+      'Wählen Sie die Abos und Verbindungen für diese Gruppe.';
 
   @override
   String get routingGroupOtherAccounts => 'Weitere Konten';
@@ -6069,7 +6085,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get routingGroupsEmpty =>
-      'Noch keine Gruppen. Eine Gruppe schickt eine Art von Arbeit, etwa die Helfer eines Agenten, an die Tarife deiner Wahl.';
+      'Noch keine Gruppen. Eine Gruppe schickt eine Art von Arbeit, etwa die Helfer eines Agenten, an die Tarife Ihrer Wahl.';
 
   @override
   String get routingGroupNameHint =>
@@ -6081,7 +6097,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get routingGroupMembersMissing =>
-      'Wähle mindestens ein Konto oder Modellmuster.';
+      'Wählen Sie mindestens ein Konto oder Modellmuster.';
 
   @override
   String get routingGroupDeleteTitle => 'Diese Gruppe löschen?';
@@ -6132,15 +6148,16 @@ class AppL10nDe extends AppL10n {
   String get routingGroupUseInApp => 'In App nutzen';
 
   @override
-  String get routingGroupAppModel => 'Gib dies in deiner App als Modell ein.';
+  String get routingGroupAppModel =>
+      'Geben Sie dies in Ihrer App als Modell ein.';
 
   @override
   String get routingGroupAppSubagent =>
-      'Wenn deine App ein eigenes Modell für Subagenten unterstützt:';
+      'Wenn Ihre App ein eigenes Modell für Subagenten unterstützt:';
 
   @override
   String get routingGroupAppSubagentHeader =>
-      'Für denselben Modellnamen sende X-NeoRouter-Workload: subagent bei Anfragen von Subagenten.';
+      'Für denselben Modellnamen senden Sie X-NeoRouter-Workload: subagent bei Anfragen von Subagenten.';
 
   @override
   String get routingGroupPreviewSubagent =>
@@ -6253,7 +6270,7 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get keyExpiryHint =>
-      'Ab dem gewählten Zeitpunkt nimmt dieser Key keine neuen Anfragen mehr an. Zeiten werden in deiner lokalen Zeitzone angezeigt.';
+      'Ab dem gewählten Zeitpunkt nimmt dieser Key keine neuen Anfragen mehr an. Zeiten werden in Ihrer lokalen Zeitzone angezeigt.';
 
   @override
   String get keyExpiryNever => 'Kein Ablaufdatum';
@@ -6287,11 +6304,11 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get keyExpiryInvalid =>
-      'Wähle ein Datum und eine Uhrzeit in der Zukunft.';
+      'Wählen Sie ein Datum und eine Uhrzeit in der Zukunft.';
 
   @override
   String get keyExpiryRenewHint =>
-      'Wähle ein zukünftiges Ablaufdatum oder keinen Ablauf, um diesen Key wieder zu verwenden. Sein Geheimnis bleibt gleich.';
+      'Wählen Sie ein zukünftiges Ablaufdatum oder keinen Ablauf, um diesen Key wieder zu verwenden. Sein Geheimnis bleibt gleich.';
 
   @override
   String get keyExpiryRenewSave =>
@@ -6310,13 +6327,14 @@ class AppL10nDe extends AppL10n {
 
   @override
   String get noActiveKeysHint =>
-      'Erstelle einen Key oder verlängere unten einen abgelaufenen Key.';
+      'Erstellen Sie einen Key oder verlängern Sie unten einen abgelaufenen Key.';
 
   @override
   String get proxyChooseFile => 'Text- oder CSV-Datei laden';
 
   @override
-  String get proxyFileError => 'Wähle eine UTF-8-Textdatei kleiner als 1 MB.';
+  String get proxyFileError =>
+      'Wählen Sie eine UTF-8-Textdatei kleiner als 1 MB.';
 
   @override
   String proxyDeleteConfirm(String endpoint) {
@@ -6385,7 +6403,8 @@ class AppL10nDe extends AppL10n {
       'Tests senden GET ohne Anbieter-Zugangsdaten. Jede HTTP-Antwort des Ziels bestätigt die Verbindung.';
 
   @override
-  String get proxyEmpty => 'Keine Proxys konfiguriert. Importiere eine Liste.';
+  String get proxyEmpty =>
+      'Keine Proxys konfiguriert. Importieren Sie eine Liste.';
 
   @override
   String get proxyCooling => 'Pause nach einem Verbindungsfehler';

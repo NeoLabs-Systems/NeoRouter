@@ -1,5 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:neolabs_flutter/neolabs_flutter.dart' show NeoCredentialField, NeoCredentialFields, NeoForgotPasswordDialog;
+import 'package:neolabs_flutter/neolabs_flutter.dart'
+    show
+        NeoAuthCard,
+        NeoAuthHeading,
+        NeoAuthPage,
+        NeoCredentialField,
+        NeoCredentialFields,
+        NeoForgotPasswordDialog,
+        NeoLabeledField,
+        NeoLabsPalette,
+        NeoOrDivider,
+        neoAuthInputDecoration,
+        neoAuthLinkStyle;
 
 import 'l10n/gen/app_localizations.dart';
 import 'main_controller.dart';
@@ -31,7 +43,6 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
   final FocusNode _confirmFocus = FocusNode();
   late bool _registerMode = widget.controller.bootstrapRegistration;
   bool _obscure = true;
-  bool _showQr = false;
 
   @override
   void dispose() {
@@ -81,14 +92,11 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
     );
   }
 
+  Widget _labeled(NeoLabsPalette palette, String label, Widget field, [Widget? trailing]) =>
+      NeoLabeledField(palette: palette, label: label, field: field, trailing: trailing);
+
   Widget _credentials(NeoRouterController controller, AppL10n t) {
-    final palette = neoRouterPaletteOf(context);
-    String label(NeoCredentialField field) => switch (field) {
-      NeoCredentialField.username => _registerMode ? t.username : t.usernameOrEmail,
-      NeoCredentialField.email => t.email,
-      NeoCredentialField.password => t.password,
-      NeoCredentialField.confirmPassword => t.confirmPassword,
-    };
+    final palette = neoLabsPaletteOf(context);
     return NeoCredentialFields(
       register: _registerMode,
       username: _usernameController,
@@ -102,10 +110,8 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
       obscurePassword: _obscure,
       onChanged: (_) {},
       onSubmit: _submit,
-      decoration: (field, suffix) => InputDecoration(labelText: label(field), suffixIcon: suffix),
-      // The labels float inside the fields, so a field is its own labelled row.
-      labeledField: (_, field, trailing) =>
-          trailing == null ? field : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[field, trailing]),
+      decoration: (NeoCredentialField field, suffix) => neoAuthInputDecoration(palette, suffixIcon: suffix),
+      labeledField: (label, field, trailing) => _labeled(palette, label, field, trailing),
       usernameLabel: t.username,
       usernameOrEmailLabel: t.usernameOrEmail,
       emailLabel: t.email,
@@ -118,34 +124,13 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
       ),
       passwordStrength: Text(t.passwordRules, style: TextStyle(color: palette.textMuted, fontSize: 12, height: 1.4)),
       forgotPassword: controller.passwordResetAvailable
-          ? Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(onPressed: controller.loading ? null : _showForgotPasswordDialog, child: Text(t.forgotPassword)),
+          ? TextButton(
+              onPressed: controller.loading ? null : _showForgotPasswordDialog,
+              style: neoAuthLinkStyle(),
+              child: Text(t.forgotPassword),
             )
           : null,
     );
-  }
-
-  /// Passkey and phone sign-in, once the server said what it offers.
-  List<Widget> _otherWays(NeoRouterController controller, AppL10n t) {
-    if (!controller.authOptionsLoaded || _registerMode) return const <Widget>[];
-    return <Widget>[
-      if (controller.webAuthn.isSupported) ...<Widget>[
-        const SizedBox(height: AppSpacing.sm),
-        OutlinedButton.icon(
-          onPressed: controller.loading ? null : () => controller.signInWithPasskey(_usernameController.text.trim()),
-          icon: const Icon(Icons.key_rounded, size: 16),
-          label: Text(t.passkeySignIn),
-        ),
-      ],
-      const SizedBox(height: AppSpacing.sm),
-      OutlinedButton.icon(
-        onPressed: () => setState(() => _showQr = !_showQr),
-        icon: const Icon(Icons.qr_code_rounded, size: 16),
-        label: Text(t.qrSignIn),
-      ),
-      if (_showQr) ...<Widget>[const SizedBox(height: AppSpacing.md), QrSignInPanel(controller: controller)],
-    ];
   }
 
   Future<void> _submit() async {
@@ -179,165 +164,126 @@ class _NeoRouterAuthScreenState extends State<NeoRouterAuthScreen> {
     if (!ok) _codeController.clear();
   }
 
-  List<Widget> _twoFactorFields(NeoRouterController controller, AppL10n t) {
-    return <Widget>[
-      TextField(
-        controller: _codeController,
-        autofocus: true,
-        keyboardType: TextInputType.visiblePassword,
-        autofillHints: const <String>[AutofillHints.oneTimeCode],
-        onSubmitted: (_) => _submitCode(),
-        decoration: InputDecoration(
-          labelText: t.twoFactorCode,
-          helperText: t.twoFactorCodeHint,
+  Widget _primaryButton(NeoRouterController controller, String label, VoidCallback onPressed) => FilledButton(
+    onPressed: controller.loading ? null : onPressed,
+    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+    child: controller.loading
+        ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+        : Text(label),
+  );
+
+  /// Heading, phone sign-in, password form, then the other ways in.
+  Widget _signInContent(NeoRouterController controller, AppL10n t) {
+    final palette = neoLabsPaletteOf(context);
+    final twoFactor = controller.awaitingTwoFactor;
+    final bootstrap = controller.bootstrapRegistration;
+    final offersOtherWays = controller.authOptionsLoaded && !_registerMode && !twoFactor;
+    final error = controller.authError;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        NeoAuthHeading(
+          palette: palette,
+          title: twoFactor
+              ? t.twoFactorLoginTitle
+              : bootstrap
+              ? t.authBootstrapTitle
+              : (_registerMode ? t.authCreate : t.authWelcome),
+          subtitle: twoFactor
+              ? t.twoFactorLoginSubtitle
+              : bootstrap
+              ? t.authBootstrapSubtitle
+              : (_registerMode ? t.authRegisterSubtitle : t.authLoginSubtitle),
         ),
-      ),
-      if (controller.authError != null) ...<Widget>[
-        const SizedBox(height: AppSpacing.sm),
-        InlineError(message: controller.authErrorCode == 'INVALID_TWO_FACTOR' ? t.accountWrongCode : controller.authError!),
+        if (error != null) ...<Widget>[
+          const SizedBox(height: 20),
+          InlineError(message: twoFactor && controller.authErrorCode == 'INVALID_TWO_FACTOR' ? t.accountWrongCode : error),
+        ],
+        if (offersOtherWays) ...<Widget>[
+          const SizedBox(height: 26),
+          QrSignInPanel(controller: controller),
+          const SizedBox(height: 22),
+          NeoOrDivider(palette: palette, label: t.orUsePassword),
+          const SizedBox(height: 16),
+        ] else
+          const SizedBox(height: 24),
+        AutofillGroup(
+          child: twoFactor
+              ? _labeled(
+                  palette,
+                  t.twoFactorCode,
+                  TextField(
+                    controller: _codeController,
+                    autofocus: true,
+                    keyboardType: TextInputType.visiblePassword,
+                    autofillHints: const <String>[AutofillHints.oneTimeCode],
+                    onSubmitted: (_) => _submitCode(),
+                    decoration: neoAuthInputDecoration(palette).copyWith(helperText: t.twoFactorCodeHint),
+                  ),
+                )
+              : _credentials(controller, t),
+        ),
+        const SizedBox(height: 20),
+        twoFactor
+            ? _primaryButton(controller, t.twoFactorVerify, _submitCode)
+            : _primaryButton(controller, _registerMode ? t.createAccount : t.signIn, _submit),
+        if (twoFactor) ...<Widget>[
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: controller.loading
+                ? null
+                : () {
+                    _codeController.clear();
+                    controller.cancelTwoFactor();
+                  },
+            child: Text(t.twoFactorBack),
+          ),
+        ] else if (offersOtherWays && controller.webAuthn.isSupported) ...<Widget>[
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: controller.loading ? null : () => controller.signInWithPasskey(_usernameController.text.trim()),
+            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46)),
+            icon: const Icon(Icons.key_rounded, size: 18),
+            label: Text(t.passkeySignIn),
+          ),
+        ],
       ],
-      const SizedBox(height: AppSpacing.lg),
-      FilledButton(
-        onPressed: controller.loading ? null : _submitCode,
-        child: controller.loading
-            ? const SizedBox.square(
-                dimension: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Text(t.twoFactorVerify),
-      ),
-      const SizedBox(height: AppSpacing.sm),
-      TextButton(
-        onPressed: controller.loading
-            ? null
-            : () {
-                _codeController.clear();
-                controller.cancelTwoFactor();
-              },
-        child: Text(t.twoFactorBack),
-      ),
-    ];
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final palette = neoRouterPaletteOf(context);
     final controller = widget.controller;
     final t = AppL10n.of(context);
-    final bootstrap = controller.bootstrapRegistration;
-    final twoFactor = controller.awaitingTwoFactor;
-    final title = twoFactor
-        ? t.twoFactorLoginTitle
-        : bootstrap
-        ? t.authBootstrapTitle
-        : (_registerMode ? t.authCreate : t.authWelcome);
-    final subtitle = twoFactor
-        ? t.twoFactorLoginSubtitle
-        : bootstrap
-        ? t.authBootstrapSubtitle
-        : (_registerMode ? t.authRegisterSubtitle : t.authLoginSubtitle);
-
-    return AuthBackdrop(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, viewportConstraints) {
-              return SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: viewportConstraints.maxHeight,
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.all(
-                      viewportConstraints.maxWidth < AppBreakpoints.mobile
-                          ? 14
-                          : 24,
-                    ),
-                    child: Center(
-                      child: EntranceMotion(
-                        child: GlassSurface(
-                          width: 420,
-                          padding: const EdgeInsets.all(AppSpacing.xl),
-                          child: AutofillGroup(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: <Widget>[
-                                const Center(
-                                  child: BrandLockup(
-                                    logoSize: 44,
-                                    showName: false,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.md),
-                                Text(
-                                  title,
-                                  style: displayTitleStyle(palette, size: 24),
-                                ),
-                                const SizedBox(height: AppSpacing.sm),
-                                Text(
-                                  subtitle,
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: palette.textSoft),
-                                ),
-                                const SizedBox(height: AppSpacing.lg),
-                                if (controller.awaitingTwoFactor)
-                                  ..._twoFactorFields(controller, t)
-                                else ...<Widget>[
-                                _credentials(controller, t),
-                                if (controller.authError != null) ...<Widget>[
-                                  const SizedBox(height: AppSpacing.sm),
-                                  InlineError(message: controller.authError!),
-                                ],
-                                const SizedBox(height: AppSpacing.lg),
-                                FilledButton(
-                                  onPressed: controller.loading
-                                      ? null
-                                      : _submit,
-                                  child: controller.loading
-                                      ? const SizedBox.square(
-                                          dimension: 16,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : Text(
-                                          _registerMode
-                                              ? t.createAccount
-                                              : t.signIn,
-                                        ),
-                                ),
-                                ..._otherWays(controller, t),
-                                if (!bootstrap) ...<Widget>[
-                                  const SizedBox(height: AppSpacing.sm),
-                                  TextButton(
-                                    onPressed: controller.loading
-                                        ? null
-                                        : () {
-                                            if (!_registerMode && !controller.registrationOpen) {
-                                              controller.showAuthError(t.registrationClosed);
-                                              return;
-                                            }
-                                            setState(() => _registerMode = !_registerMode);
-                                          },
-                                    child: Text(_registerMode ? t.toLogin : t.toRegister),
-                                  ),
-                                ],
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
+    final palette = neoLabsPaletteOf(context);
+    final compact = MediaQuery.sizeOf(context).width < AppBreakpoints.mobile;
+    return NeoAuthPage(
+      palette: palette,
+      compact: compact,
+      children: <Widget>[
+        NeoAuthCard(
+          palette: palette,
+          compact: compact,
+          mark: const BrandLockup(logoSize: 76, showName: false),
+          child: _signInContent(controller, t),
         ),
-      ),
+        if (!controller.awaitingTwoFactor && !controller.bootstrapRegistration) ...<Widget>[
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: controller.loading
+                ? null
+                : () {
+                    if (!_registerMode && !controller.registrationOpen) {
+                      controller.showAuthError(t.registrationClosed);
+                      return;
+                    }
+                    setState(() => _registerMode = !_registerMode);
+                  },
+            child: Text(_registerMode ? t.toLogin : t.toRegister),
+          ),
+        ],
+      ],
     );
   }
 }

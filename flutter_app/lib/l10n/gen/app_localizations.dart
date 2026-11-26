@@ -547,6 +547,30 @@ abstract class AppL10n {
   /// **'New code'**
   String get qrSignInNewCode;
 
+  /// No description provided for @qrShowCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the code'**
+  String get qrShowCode;
+
+  /// No description provided for @qrWaitingForCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting a code…'**
+  String get qrWaitingForCode;
+
+  /// No description provided for @qrRefreshesIn.
+  ///
+  /// In en, this message translates to:
+  /// **'New code in {seconds} s'**
+  String qrRefreshesIn(String seconds);
+
+  /// No description provided for @orUsePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'or use your password'**
+  String get orUsePassword;
+
   /// No description provided for @qrApproveTitle.
   ///
   /// In en, this message translates to:

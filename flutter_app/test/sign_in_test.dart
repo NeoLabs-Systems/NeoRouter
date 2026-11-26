@@ -74,6 +74,8 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Sign in with a passkey'), findsOneWidget);
     expect(find.text('Sign in with your phone'), findsOneWidget);
+    await tester.ensureVisible(find.text('Forgot password?'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Forgot password?'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'anna');
