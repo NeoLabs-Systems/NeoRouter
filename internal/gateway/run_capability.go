@@ -142,7 +142,8 @@ func (s *Service) RunCapability(run *CapabilityRun) (*CapabilityResult, *routing
 			if run.W != nil {
 				run.W.Header().Set("Retry-After", jsString(float64(result.RetryAfterSeconds)))
 			}
-			err := httpserver.New(http.StatusTooManyRequests, "KEY_RATE_LIMITED", "This router key exceeded its requests-per-minute limit.")
+			err := httpserver.New(http.StatusTooManyRequests, "KEY_RATE_LIMITED", "This router key exceeded its requests-per-minute limit.",
+				map[string]any{"retryAfterSeconds": result.RetryAfterSeconds})
 			err.RetryAfter = result.RetryAfterSeconds
 			return nil, nil, err
 		}
@@ -265,7 +266,7 @@ func (s *Service) RunCapability(run *CapabilityRun) (*CapabilityResult, *routing
 	nextChoice := func() *routing.Candidate {
 		defer plan.LeaveQueue()
 		for {
-			if choice := plan.Next(routing.NextOptions{Filter: supported}); choice != nil {
+			if choice := plan.Next(routing.NextOptions{Filter: supported, Sample: true}); choice != nil {
 				return choice
 			}
 			now := time.Now()
@@ -438,7 +439,7 @@ func (s *Service) RunCapability(run *CapabilityRun) (*CapabilityResult, *routing
 		}
 		message := "The model \"" + run.RequestedModel + "\" " + why + "."
 		finish(usageFields{status: "error", httpStatus: http.StatusForbidden, errorCode: "MODEL_NOT_ALLOWED", errorMessage: message})
-		return nil, nil, httpserver.New(http.StatusForbidden, "MODEL_NOT_ALLOWED", message, rejected)
+		return nil, nil, httpserver.New(http.StatusForbidden, "MODEL_NOT_ALLOWED", message, map[string]any{"rejected": rejected})
 	}
 	status := http.StatusBadGateway
 	if len(trail) == 0 {

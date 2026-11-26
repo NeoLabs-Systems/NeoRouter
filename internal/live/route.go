@@ -89,7 +89,7 @@ func (s *session) tryNext() {
 		if attempts >= maxAttempts || closed {
 			break
 		}
-		choice := plan.Next(routing.NextOptions{Filter: s.supported})
+		choice := plan.Next(routing.NextOptions{Filter: s.supported, Sample: true})
 		if choice == nil {
 			break
 		}

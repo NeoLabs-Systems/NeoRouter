@@ -819,7 +819,7 @@ func (run *executeRun) run(translator Translator) error {
 
 	startNext := func(filter func(*routing.Entry) bool) bool {
 		for attemptsStarted < config.Routing.MaxAttempts && time.Since(startedAt) < totalBudget && clientCtx.Err() == nil {
-			choice := plan.Next(routing.NextOptions{Filter: filter})
+			choice := plan.Next(routing.NextOptions{Filter: filter, Sample: true})
 			if choice == nil {
 				return false
 			}
@@ -1043,12 +1043,12 @@ finished:
 		}
 		message := "The model \"" + requestedModel + "\" " + why + "."
 		finish(usageFields{status: "error", httpStatus: http.StatusForbidden, errorCode: "MODEL_NOT_ALLOWED", errorMessage: message})
-		return httpserver.New(http.StatusForbidden, "MODEL_NOT_ALLOWED", message, rejected)
+		return httpserver.New(http.StatusForbidden, "MODEL_NOT_ALLOWED", message, map[string]any{"rejected": rejected})
 	}
 	if len(trail) == 0 && len(reasons) > 0 && allContextOrPermanent(reasons) {
 		message := "The request (~" + jsString(float64(inputTokens)) + " tokens) is larger than the context window of every model available to this key."
 		finish(usageFields{status: "error", httpStatus: http.StatusBadRequest, errorCode: "CONTEXT_TOO_LARGE", errorMessage: message})
-		return httpserver.New(http.StatusBadRequest, "CONTEXT_TOO_LARGE", message, rejected)
+		return httpserver.New(http.StatusBadRequest, "CONTEXT_TOO_LARGE", message, map[string]any{"rejected": rejected})
 	}
 	status := http.StatusBadGateway
 	code := "ALL_ATTEMPTS_FAILED"

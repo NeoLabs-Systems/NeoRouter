@@ -256,6 +256,7 @@ func (d *deps) build(ctx context.Context) error {
 	// ---- pools -----------------------------------------------------------
 	poolsSvc := pools.New(d.db)
 	poolsSvc.Log = d.log
+	poolsSvc.Cfg = cfg
 	poolsSvc.Seal = sealer.Seal
 	poolsSvc.Unseal = sealer.Open
 	poolsSvc.Peers = providersHTTP

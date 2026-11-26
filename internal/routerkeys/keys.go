@@ -429,7 +429,9 @@ func (k *Keys) Create(userID string, in Input, createdBy string, app *App) (*Pub
 		id, userID, *in.Name.Value, prefixHex, passhash.DigestToken(secret), kinds.Mode,
 		valueOr(in.BudgetUSD.Value, nil), stringOr(in.BudgetPeriod.Value, "total"),
 		valueOr(in.RPMLimit.Value, nil), valueOr(in.ConcurrentLimit.Value, nil), allowedModels,
-		stringOr(in.Profile.Value, "balanced"), valueOr(in.ExpiresAt.Value, nil), createdBy,
+		stringOr(in.Profile.Value, "balanced"), valueOr(in.ExpiresAt.Value, nil),
+		// A key the server issues itself (pool partners) was created by nobody.
+		sql.NullString{String: createdBy, Valid: createdBy != ""},
 		boolToInt(kinds.AllowFree), boolToInt(kinds.AllowPlan), appName, appOrigin, appScopes,
 		valueOr(in.TokenLimit.Value, nil), tokenPeriod, priority, valueOr(in.MaxPricePerMillion.Value, nil), poolAccess); err != nil {
 		return nil, "", fmt.Errorf("routerkeys: create key: %w", err)

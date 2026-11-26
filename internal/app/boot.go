@@ -90,8 +90,8 @@ func (d *deps) mountAPI(mux *http.ServeMux) {
 // mountCatalog mounts the models and model-preset routes with their cross-domain
 // numbers.
 func (d *deps) mountCatalog(mux *http.ServeMux) {
-	cache := newRefCache()
-	d.refCache = cache
+	// The cache routing already reads: a second one would leave its scores bare.
+	cache := d.refCache
 	routes := &catalog.Routes{
 		Svc: d.Catalog,
 		Log: d.log,

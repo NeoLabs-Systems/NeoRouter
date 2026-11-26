@@ -133,6 +133,8 @@ func (a *fakeAdapter) callCount() int {
 // --- fixture ---------------------------------------------------------------
 
 type fixture struct {
+	// draw replaces the router's random number when set.
+	draw        *float64
 	t           *testing.T
 	db          *dbx.DB
 	cfg         config.Config
@@ -193,8 +195,13 @@ func newFixture(t *testing.T, overrides map[string]string) *fixture {
 		DB:      db,
 		Cfg:     func() config.Config { return f.cfg },
 		Catalog: f.catalog,
-		Random:  func() float64 { return 0.5 },
-		Budget:  priceOnlyBudget{},
+		Random: func() float64 {
+			if f.draw != nil {
+				return *f.draw
+			}
+			return 0.5
+		},
+		Budget: priceOnlyBudget{},
 		// internal/app satisfies this in the real wiring; the fixture delegates
 		// to the same router-key service.
 		Keys: f,

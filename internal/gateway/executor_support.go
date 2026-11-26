@@ -70,7 +70,8 @@ func (s *Service) consumeRPM(run *executeRun) error {
 	}
 	if !result.Allowed {
 		run.w.Header().Set("Retry-After", jsString(float64(result.RetryAfterSeconds)))
-		err := httpserver.New(http.StatusTooManyRequests, "KEY_RATE_LIMITED", "This router key exceeded its requests-per-minute limit.")
+		err := httpserver.New(http.StatusTooManyRequests, "KEY_RATE_LIMITED", "This router key exceeded its requests-per-minute limit.",
+			map[string]any{"retryAfterSeconds": result.RetryAfterSeconds})
 		err.RetryAfter = result.RetryAfterSeconds
 		return err
 	}

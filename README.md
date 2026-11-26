@@ -58,7 +58,7 @@ For macOS and Linux (x64 and arm64). It downloads the `neorouter` binary from th
 
 The installer follows the stable channel. For beta, prefix the command with `NEOROUTER_RELEASE_CHANNEL=beta`, or switch later with `neorouter channel beta`. On fish, wrap the command: `bash -c 'bash <(curl -fsSL https://raw.githubusercontent.com/NeoLabs-Systems/NeoRouter/main/install.sh)'`.
 
-**Coming from the Node.js version?** Run `neorouter update`, or the installer again. Your data in `~/.neorouter` is backed up first and kept: accounts, router keys and provider keys carry over.
+**Coming from the Node.js version?** Run `neorouter update`, or the installer again. Your data in `~/.neorouter` is backed up first and kept: accounts, router keys and provider keys carry over. Going back to Node.js needs that backup: Node cannot read what the new server writes, so restore it with `neorouter restore <backup>` (`neorouter backup list` shows the names) before starting the old version.
 
 Then open **http://localhost:4600/app**. The first account you create becomes the administrator. Add a provider, create a router key, and point any OpenAI or Anthropic SDK at `http://localhost:4600/v1`.
 
