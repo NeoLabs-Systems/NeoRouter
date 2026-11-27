@@ -22,47 +22,18 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-    <defs>
-      <linearGradient id="nb-tile" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#7A5A2E"></stop>
-        <stop offset="100%" stop-color="#2E5A52"></stop>
-      </linearGradient>
-      <radialGradient id="nb-shine" cx="26%" cy="14%" r="72%">
-        <stop offset="0%" stop-color="#fff" stop-opacity="0.22"></stop>
-        <stop offset="100%" stop-color="#fff" stop-opacity="0"></stop>
-      </radialGradient>
-      <radialGradient id="nb-core" cx="38%" cy="32%" r="75%">
-        <stop offset="0%" stop-color="#fffdf6"></stop>
-        <stop offset="48%" stop-color="#eee3cc"></stop>
-        <stop offset="100%" stop-color="#b5a888"></stop>
-      </radialGradient>
-      <radialGradient id="nb-node" cx="36%" cy="30%" r="80%">
-        <stop offset="0%" stop-color="#f8dca8"></stop>
-        <stop offset="52%" stop-color="#d3a85f"></stop>
-        <stop offset="100%" stop-color="#9b6f2f"></stop>
-      </radialGradient>
-      <linearGradient id="nb-tube" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#fffaf0"></stop>
-        <stop offset="52%" stop-color="#efe7d6"></stop>
-        <stop offset="100%" stop-color="#cabf9f"></stop>
-      </linearGradient>
-    </defs>
-  </svg>
-
   <header class="nav" data-nav>
     <div class="nav-inner">
       <a class="brand" href="#top" aria-label="NeoRouter home">
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 100 100">
-            <rect width="100" height="100" rx="22.5" fill="url(#nb-tile)"></rect>
-            <rect width="100" height="100" rx="22.5" fill="url(#nb-shine)"></rect>
-            <g fill="none" stroke="url(#nb-tube)" stroke-linecap="round">
-              <circle cx="50" cy="50" r="17" stroke-width="5" stroke-dasharray="78 29" stroke-opacity=".92"></circle>
-              <circle cx="50" cy="50" r="30" stroke-width="5" stroke-dasharray="150 39" stroke-opacity=".8"></circle>
+            <rect width="100" height="100" rx="22.5" fill="#5a5a40"></rect>
+            <g fill="none" stroke="#ecefe5" stroke-width="5" stroke-linecap="round">
+              <circle cx="50" cy="50" r="17" stroke-dasharray="78 29" transform="rotate(-35 50 50)"></circle>
+              <circle cx="50" cy="50" r="30" stroke-dasharray="150 39" transform="rotate(70 50 50)"></circle>
             </g>
-            <circle cx="50" cy="50" r="7" fill="url(#nb-core)"></circle>
-            <circle cx="50" cy="20" r="5.6" fill="url(#nb-node)"></circle>
+            <circle cx="50" cy="50" r="7" fill="#ecefe5"></circle>
+            <circle cx="50" cy="20" r="5.6" fill="#e1b052"></circle>
           </svg>
         </span>
         NeoRouter
@@ -237,14 +208,13 @@
           <a class="brand" href="#top">
             <span class="brand-mark" aria-hidden="true">
               <svg viewBox="0 0 100 100">
-                <rect width="100" height="100" rx="22.5" fill="url(#nb-tile)"></rect>
-                <rect width="100" height="100" rx="22.5" fill="url(#nb-shine)"></rect>
-                <g fill="none" stroke="url(#nb-tube)" stroke-linecap="round">
-                  <circle cx="50" cy="50" r="17" stroke-width="5" stroke-dasharray="78 29" stroke-opacity=".92"></circle>
-                  <circle cx="50" cy="50" r="30" stroke-width="5" stroke-dasharray="150 39" stroke-opacity=".8"></circle>
+                <rect width="100" height="100" rx="22.5" fill="#5a5a40"></rect>
+                <g fill="none" stroke="#ecefe5" stroke-width="5" stroke-linecap="round">
+                  <circle cx="50" cy="50" r="17" stroke-dasharray="78 29" transform="rotate(-35 50 50)"></circle>
+                  <circle cx="50" cy="50" r="30" stroke-dasharray="150 39" transform="rotate(70 50 50)"></circle>
                 </g>
-                <circle cx="50" cy="50" r="7" fill="url(#nb-core)"></circle>
-                <circle cx="50" cy="20" r="5.6" fill="url(#nb-node)"></circle>
+                <circle cx="50" cy="50" r="7" fill="#ecefe5"></circle>
+                <circle cx="50" cy="20" r="5.6" fill="#e1b052"></circle>
               </svg>
             </span>
             NeoRouter
