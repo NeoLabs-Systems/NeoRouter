@@ -1,7 +1,7 @@
 {
   "name": "neorouter-handover",
   "private": true,
-  "version": "0.2.2-beta.7",
+  "version": "0.2.2-beta.8",
   "description": "Not a Node.js package. Lets the Node.js updater of older NeoRouter installations hand over to the Go binary (scripts/node-handover.sh); version must equal internal/config/config.go Version, and the name must stay different from neorouter so a global update leaves the old install in place.",
   "license": "AGPL-3.0-only",
   "scripts": {
