@@ -250,10 +250,11 @@ func insertAccount(ctx context.Context, db *dbx.DB, registry *providers.Registry
 	}
 	billing, prepaid := storedBillingFor(definition, entry.BillingMode)
 	_, err = db.W.ExecContext(ctx, `INSERT INTO provider_accounts
-		(id, user_id, definition_id, slug, label, base_url, secret_encrypted, options_json, billing_mode, status, status_message, last_validated_at, created_by_user_id, prepaid)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'), ?, ?)`,
+		(id, user_id, definition_id, slug, label, base_url, secret_encrypted, options_json, billing_mode, status, status_message, last_validated_at, created_by_user_id, prepaid, private_allowed)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'), ?, ?,
+			COALESCE((SELECT role = 'admin' FROM users WHERE id = ?), 0))`,
 		cli.NewUUID(), userID, definition.ID, slug, label, nullable(baseURL), nullable(sealed), string(encoded),
-		string(billing), "unknown", nil, userID, prepaid)
+		string(billing), "unknown", nil, userID, prepaid, userID)
 	if err != nil {
 		return fmt.Errorf("store account: %w", err)
 	}

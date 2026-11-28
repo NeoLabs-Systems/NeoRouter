@@ -39,11 +39,11 @@ func BaselineVersion() int {
 // Node-era migrations, already part of baseline.sql and therefore no-ops here;
 // real Go migrations are appended after them.
 func Steps() []dbx.Step {
-	steps := make([]dbx.Step, BaselineVersion(), BaselineVersion()+1)
+	steps := make([]dbx.Step, BaselineVersion(), BaselineVersion()+2)
 	for i := range steps {
 		steps[i] = func(context.Context, *sql.Tx) error { return nil }
 	}
-	return append(steps, sharedSignIn)
+	return append(steps, sharedSignIn, providerPrivateAllowed)
 }
 
 // sharedSignIn (step 42) adds the tables of the shared NeoLabs sign-in packages
@@ -125,6 +125,30 @@ CREATE TABLE user_qr_login_challenges (
 `)
 	if err != nil {
 		return fmt.Errorf("schema: shared sign-in: %w", err)
+	}
+	return nil
+}
+
+// providerPrivateAllowed (step 43) records on each connection whether it may
+// reach local and private addresses, decided when its destination was set.
+// Before, that was worked out on every call from the space owner's role alone,
+// so a member of the instance admin's team could point a connection of the
+// admin's space at a host that redirects or rebinds inwards.
+//
+// Existing connections keep working where nothing says a member set them up:
+// a connection in an admin's space is allowed when it has no recorded creator
+// (it predates created_by_user_id, or came from the CLI or a pool link) or an
+// admin created it. A connection a non-admin created stays public-only. Who
+// last changed a base URL was never recorded, so that cannot be told apart.
+func providerPrivateAllowed(ctx context.Context, tx *sql.Tx) error {
+	_, err := tx.ExecContext(ctx, `
+ALTER TABLE provider_accounts ADD COLUMN private_allowed INTEGER NOT NULL DEFAULT 0;
+UPDATE provider_accounts SET private_allowed = 1
+	WHERE user_id IN (SELECT id FROM users WHERE role = 'admin')
+	AND (created_by_user_id IS NULL OR created_by_user_id IN (SELECT id FROM users WHERE role = 'admin'));
+`)
+	if err != nil {
+		return fmt.Errorf("schema: provider private access: %w", err)
 	}
 	return nil
 }

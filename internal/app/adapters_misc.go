@@ -304,6 +304,10 @@ func (p poolPeerAccounts) Validate(ctx context.Context, accountID string) error 
 	return err
 }
 
+// PublicOnly is the address rule of pool traffic. Pool routes only work in the
+// caller's own space, so the person acting is the owner: the admin's own pools
+// may reach a private network, nobody else's. The partner's connection itself
+// stores that decision when it is added (AddPoolPeer, a nil actor).
 func (p poolPeerAccounts) PublicOnly(ctx context.Context, userID string) bool {
 	return p.accounts.PublicOnly(ctx, userID, nil)
 }

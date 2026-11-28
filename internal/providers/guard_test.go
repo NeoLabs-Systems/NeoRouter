@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net"
 	"net/http"
+	"net/http/httptest"
 	"net/netip"
+	"strings"
 	"testing"
 	"time"
 )
@@ -48,5 +51,54 @@ func TestPublicOnlyCallsCannotBeRebound(t *testing.T) {
 	}
 	if reached {
 		t.Fatal("a local server was reached")
+	}
+}
+
+// A public-only call that starts on a public host is refused when it is
+// redirected to a private address, by IP or by a name that resolves inwards,
+// and the private server is never reached.
+func TestPublicOnlyRedirectsCannotReachPrivateAddresses(t *testing.T) {
+	inner := false
+	internal := newTestServer(t, func(http.ResponseWriter, *http.Request) { inner = true })
+	_, port, _ := net.SplitHostPort(strings.TrimPrefix(internal, "http://"))
+	for _, target := range []string{
+		internal + "/latest/meta-data",
+		"http://169.254.169.254/latest/meta-data",
+		"http://metadata.test:" + port + "/latest/meta-data",
+	} {
+		reached := false
+		start := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			reached = true
+			http.Redirect(w, r, target, http.StatusFound)
+		}))
+		t.Cleanup(start.Close)
+		// The public host is the start server, whatever the dial-time guard
+		// would make of 127.0.0.1.
+		public := &http.Client{Transport: &http.Transport{
+			DialContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
+				return (&net.Dialer{}).DialContext(ctx, network, start.Listener.Addr().String())
+			},
+		}}
+		client := NewClient(Options{
+			Public: public,
+			Resolve: func(_ context.Context, host string) ([]netip.Addr, error) {
+				if host == "metadata.test" {
+					return []netip.Addr{netip.MustParseAddr("127.0.0.1")}, nil
+				}
+				return []netip.Addr{netip.MustParseAddr("93.184.216.34")}, nil
+			},
+			Timeout: time.Minute,
+		})
+		_, err := client.Do(context.Background(), "http://api.public.test/v1/models", Request{PublicOnly: true})
+		if !reached {
+			t.Fatalf("%s: the public start was not reached: %v", target, err)
+		}
+		var refused *ProviderError
+		if !errors.As(err, &refused) || refused.Message != privateRefusal().Message {
+			t.Fatalf("%s: err = %v", target, err)
+		}
+	}
+	if inner {
+		t.Fatal("a private server was reached through a redirect")
 	}
 }

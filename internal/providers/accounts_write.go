@@ -50,7 +50,8 @@ func (s *Service) Create(ctx context.Context, userID string, in Input, createdBy
 	}
 	billingMode, prepaid := StoredBilling(requested)
 
-	restricted := s.PublicOnly(ctx, userID, actor)
+	privateAllowed := s.mayReachPrivate(ctx, userID, actor)
+	restricted := s.publicOnlyFor(ctx, userID, privateAllowed)
 	if err := s.assertDestination(ctx, baseURL, restricted); err != nil {
 		return Created{}, err
 	}
@@ -103,10 +104,10 @@ func (s *Service) Create(ctx context.Context, userID string, in Input, createdBy
 		status = "healthy"
 	}
 	if _, err := s.DB.W.ExecContext(ctx, `INSERT INTO provider_accounts
-		(id, user_id, definition_id, slug, label, base_url, secret_encrypted, options_json, billing_mode, status, status_message, last_validated_at, created_by_user_id, prepaid)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'), ?, ?)`,
+		(id, user_id, definition_id, slug, label, base_url, secret_encrypted, options_json, billing_mode, status, status_message, last_validated_at, created_by_user_id, prepaid, private_allowed)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'), ?, ?, ?)`,
 		id, userID, definition.ID, slug, label, nullableEmpty(baseURL), sealed, string(optionsJSON), string(billingMode),
-		status, nullableString(result.Message), nullableEmpty(createdBy), prepaid); err != nil {
+		status, nullableString(result.Message), nullableEmpty(createdBy), prepaid, boolInt(privateAllowed)); err != nil {
 		return Created{}, fmt.Errorf("providers: create account: %w", err)
 	}
 	if value := stringField(in.Classification); value != "" && value != "auto" {
@@ -230,12 +231,19 @@ func (s *Service) Update(ctx context.Context, userID, accountID string, in Input
 	if err := assertSlotPlan(definition, options); err != nil {
 		return PublicAccount{}, err
 	}
+	// Private access goes with the destination: a new base URL may reach a
+	// private network only when whoever sets it may (a member who moves an
+	// admin's connection makes it public-only).
+	privateAllowed := row.PrivateAllowed
+	if baseURL != runtime.BaseURL {
+		privateAllowed = s.mayReachPrivate(ctx, userID, actor)
+	}
+	restricted := s.publicOnlyFor(ctx, userID, privateAllowed)
 	credentialsChanged := in.Secret.Set || in.BaseURL.Set || in.Options.Set
 	if credentialsChanged {
 		if err := validateInput(definition, secret, baseURL, options); err != nil {
 			return PublicAccount{}, err
 		}
-		restricted := s.PublicOnly(ctx, userID, actor)
 		if err := s.assertDestination(ctx, baseURL, restricted); err != nil {
 			return PublicAccount{}, err
 		}
@@ -311,11 +319,11 @@ func (s *Service) Update(ctx context.Context, userID, accountID string, in Input
 	resetBilling := credentialsChanged || modeChanged
 	resetStatus := credentialsChanged || (in.Enabled.Set && enabled && row.Status == "disabled")
 	if _, err := s.DB.W.ExecContext(ctx, `UPDATE provider_accounts SET label = ?, base_url = ?, secret_encrypted = ?, options_json = ?, billing_mode = ?,
-		enabled = ?, auth_failures = CASE WHEN ? THEN 0 ELSE auth_failures END,
+		enabled = ?, private_allowed = ?, auth_failures = CASE WHEN ? THEN 0 ELSE auth_failures END,
 		billing_state = CASE WHEN ? THEN 'unknown' ELSE billing_state END,
 		status = CASE WHEN ? THEN 'unknown' ELSE status END WHERE id = ?`,
 		label, nullableEmpty(baseURL), sealed, string(optionsJSON), billingMode,
-		boolInt(enabled), boolInt(resetFailures), boolInt(resetBilling), boolInt(resetStatus), accountID); err != nil {
+		boolInt(enabled), boolInt(privateAllowed), boolInt(resetFailures), boolInt(resetBilling), boolInt(resetStatus), accountID); err != nil {
 		return PublicAccount{}, fmt.Errorf("providers: update account: %w", err)
 	}
 	if in.BillingMode.Set {
@@ -399,17 +407,32 @@ func (s *Service) SetLimits(ctx context.Context, accountID string, patch map[str
 	return nil
 }
 
-// PublicOnly reports whether a connection may reach local and private
-// addresses only for the instance admin: the acting user and the space owner
-// both count, so a member of the admin's team cannot use them either.
+// PublicOnly reports whether a destination set now, by actor in ownerID's
+// space, is limited to public hosts. Calls on a stored connection use the
+// decision stored with it instead (publicOnlyFor with Row.PrivateAllowed).
 func (s *Service) PublicOnly(ctx context.Context, ownerID string, actor *Actor) bool {
+	return s.publicOnlyFor(ctx, ownerID, s.mayReachPrivate(ctx, ownerID, actor))
+}
+
+// mayReachPrivate reports whether whoever sets a destination now may point it
+// at a local or private address: only the instance admin, in their own space.
+// A member of the admin's team may not, whatever the space. A nil actor is a
+// trusted local caller (the CLI, a pool link) acting for the owner.
+func (s *Service) mayReachPrivate(ctx context.Context, ownerID string, actor *Actor) bool {
+	if actor != nil && (actor.Role != "admin" || !actor.IsOwner) {
+		return false
+	}
+	return s.IsAdmin(ctx, ownerID)
+}
+
+// publicOnlyFor is the address rule of a connection whose destination was set
+// with privateAllowed: private addresses stay for the instance admin's own
+// space, so an owner who is no longer admin loses them too.
+func (s *Service) publicOnlyFor(ctx context.Context, ownerID string, privateAllowed bool) bool {
 	if s.config().AllowPrivateProviderURLs {
 		return false
 	}
-	if actor != nil && actor.Role != "admin" {
-		return true
-	}
-	return !s.IsAdmin(ctx, ownerID)
+	return !privateAllowed || !s.IsAdmin(ctx, ownerID)
 }
 
 // IsAdmin reports whether an account is an administrator of this instance.

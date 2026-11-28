@@ -38,23 +38,26 @@ type Row struct {
 	Classification   *string
 	OverflowPolicy   string
 	SlotWaitMS       *int64
+	// PrivateAllowed says the destination was set by someone who may reach
+	// local and private addresses (see mayReachPrivate).
+	PrivateAllowed bool
 }
 
 // rowColumns is every stored column, in the order scanRow reads them.
 const rowColumns = `id, user_id, definition_id, slug, label, base_url, secret_encrypted, options_json, billing_mode,
 	enabled, status, status_message, auth_failures, last_validated_at, last_synced_at, created_at, billing_state,
-	billing_message, billing_checked_at, created_by_user_id, prepaid, pool_share, classification, overflow_policy, slot_wait_ms`
+	billing_message, billing_checked_at, created_by_user_id, prepaid, pool_share, classification, overflow_policy, slot_wait_ms, private_allowed`
 
 // scanRow reads one row through a Scan function.
 func scanRow(scan func(...any) error) (Row, error) {
 	var row Row
-	var enabled, prepaid, poolShare, authFailures int
+	var enabled, prepaid, poolShare, authFailures, privateAllowed int
 	err := scan(
 		&row.ID, &row.UserID, &row.DefinitionID, &row.Slug, &row.Label, &row.BaseURL, &row.SecretEncrypted,
 		&row.OptionsJSON, &row.BillingMode, &enabled, &row.Status, &row.StatusMessage, &authFailures,
 		&row.LastValidatedAt, &row.LastSyncedAt, &row.CreatedAt, &row.BillingState, &row.BillingMessage,
 		&row.BillingCheckedAt, &row.CreatedByUserID, &prepaid, &poolShare, &row.Classification,
-		&row.OverflowPolicy, &row.SlotWaitMS,
+		&row.OverflowPolicy, &row.SlotWaitMS, &privateAllowed,
 	)
 	if err != nil {
 		return Row{}, err
@@ -63,6 +66,7 @@ func scanRow(scan func(...any) error) (Row, error) {
 	row.Prepaid = prepaid
 	row.PoolShare = poolShare
 	row.AuthFailures = authFailures
+	row.PrivateAllowed = privateAllowed != 0
 	return row, nil
 }
 
@@ -107,7 +111,7 @@ func (s *Service) runtimeOf(ctx context.Context, row Row) (*Runtime, error) {
 			BaseURL:      baseURL,
 			Secret:       secret,
 			Options:      options,
-			PublicOnly:   s.PublicOnly(ctx, row.UserID, nil),
+			PublicOnly:   s.publicOnlyFor(ctx, row.UserID, row.PrivateAllowed),
 		},
 		Slug:        row.Slug,
 		Label:       row.Label,

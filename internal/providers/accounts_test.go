@@ -675,3 +675,142 @@ func TestModelsPathOnBaseURL(t *testing.T) {
 		}
 	}
 }
+
+// privateOff is a service where only the instance admin may reach private
+// addresses.
+func privateOff(t *testing.T) *Service {
+	t.Helper()
+	service, _ := testServiceWith(t, func(service *Service) {
+		service.Cfg = func() config.Config {
+			cfg := testConfig()
+			cfg.AllowPrivateProviderURLs = false
+			return cfg
+		}
+	})
+	return service
+}
+
+// publicOnlyAtRequest is what an adapter of the stored connection is told.
+func publicOnlyAtRequest(t *testing.T, service *Service, accountID string) bool {
+	t.Helper()
+	runtime, err := service.Runtime(context.Background(), accountID)
+	if err != nil || runtime == nil {
+		t.Fatalf("Runtime: %v", err)
+	}
+	return runtime.PublicOnly
+}
+
+// A member of the admin's team who adds a connection in the admin's space adds
+// a public-only one: its calls cannot be redirected or rebound inwards later.
+func TestMemberConnectionInAdminSpaceIsPublicOnly(t *testing.T) {
+	service := privateOff(t)
+	member := &Actor{Role: "user", IsOwner: false}
+	definition := "custom_openai"
+	created, err := service.Create(context.Background(), "admin", Input{
+		DefinitionID: Optional[string]{Set: true, Value: &definition},
+		BaseURL:      Optional[string]{Set: true, Value: strPtr("http://93.184.216.34/v1")},
+		Secret:       Optional[string]{Set: true, Value: strPtr("member-key")},
+	}, "member", member)
+	if err != nil {
+		t.Fatalf("member create: %v", err)
+	}
+	if accountRow(t, service, created.Account.ID).PrivateAllowed {
+		t.Fatal("a member's connection was stored with private access")
+	}
+	if !publicOnlyAtRequest(t, service, created.Account.ID) {
+		t.Fatal("a member's connection in the admin's space may reach private addresses")
+	}
+	// An admin acting in another admin's space is not its owner either.
+	other, err := service.Create(context.Background(), "admin", Input{
+		DefinitionID: Optional[string]{Set: true, Value: &definition},
+		BaseURL:      Optional[string]{Set: true, Value: strPtr("http://93.184.216.34/v2")},
+		Secret:       Optional[string]{Set: true, Value: strPtr("k")},
+	}, "member", &Actor{Role: "admin", IsOwner: false})
+	if err != nil {
+		t.Fatalf("visiting admin create: %v", err)
+	}
+	if !publicOnlyAtRequest(t, service, other.Account.ID) {
+		t.Fatal("a visiting admin's connection may reach private addresses")
+	}
+}
+
+// The admin's own local provider keeps reaching the private network, through
+// edits by members that leave its address alone.
+func TestAdminLocalConnectionStaysPrivate(t *testing.T) {
+	service := privateOff(t)
+	owner := &Actor{Role: "admin", IsOwner: true}
+	definition := "custom_openai"
+	created, err := service.Create(context.Background(), "admin", Input{
+		DefinitionID: Optional[string]{Set: true, Value: &definition},
+		BaseURL:      Optional[string]{Set: true, Value: strPtr("http://127.0.0.1:9/v1")},
+		Secret:       Optional[string]{Set: true, Value: strPtr("local-key")},
+	}, "admin", owner)
+	if err != nil {
+		t.Fatalf("admin create: %v", err)
+	}
+	if publicOnlyAtRequest(t, service, created.Account.ID) {
+		t.Fatal("the admin's local connection became public-only")
+	}
+	// A member renames it and types the key again; the address is unchanged.
+	member := &Actor{Role: "user", IsOwner: false}
+	if _, err := service.Update(context.Background(), "admin", created.Account.ID, Input{
+		Label:   Optional[string]{Set: true, Value: strPtr("Ollama")},
+		BaseURL: Optional[string]{Set: true, Value: strPtr("http://127.0.0.1:9/v1")},
+		Secret:  Optional[string]{Set: true, Value: strPtr("local-key-2")},
+	}, member); err != nil {
+		t.Fatalf("member edit: %v", err)
+	}
+	if publicOnlyAtRequest(t, service, created.Account.ID) {
+		t.Fatal("a member's edit that kept the address made it public-only")
+	}
+	// The admin stops being admin: their space loses private addresses.
+	if _, err := service.DB.W.ExecContext(context.Background(), `UPDATE users SET role = 'user' WHERE id = 'admin'`); err != nil {
+		t.Fatal(err)
+	}
+	if !publicOnlyAtRequest(t, service, created.Account.ID) {
+		t.Fatal("a former admin's connection may still reach private addresses")
+	}
+}
+
+// A member who moves an admin's connection to another host makes it
+// public-only, and cannot move it to a private one.
+func TestMemberMovingAdminConnectionMakesItPublicOnly(t *testing.T) {
+	service := privateOff(t)
+	definition := "custom_openai"
+	created, err := service.Create(context.Background(), "admin", Input{
+		DefinitionID: Optional[string]{Set: true, Value: &definition},
+		BaseURL:      Optional[string]{Set: true, Value: strPtr("http://127.0.0.1:9/v1")},
+		Secret:       Optional[string]{Set: true, Value: strPtr("local-key")},
+	}, "admin", &Actor{Role: "admin", IsOwner: true})
+	if err != nil {
+		t.Fatalf("admin create: %v", err)
+	}
+	member := &Actor{Role: "user", IsOwner: false}
+	if _, err := service.Update(context.Background(), "admin", created.Account.ID, Input{
+		BaseURL: Optional[string]{Set: true, Value: strPtr("http://127.0.0.1:8/v1")},
+		Secret:  Optional[string]{Set: true, Value: strPtr("typed")},
+	}, member); err == nil || errorCode(t, err) != "PRIVATE_ADDRESS" {
+		t.Fatalf("member move to a private address: %v", err)
+	}
+	if _, err := service.Update(context.Background(), "admin", created.Account.ID, Input{
+		BaseURL: Optional[string]{Set: true, Value: strPtr("http://93.184.216.34/v1")},
+		Secret:  Optional[string]{Set: true, Value: strPtr("typed")},
+	}, member); err != nil {
+		t.Fatalf("member move: %v", err)
+	}
+	if accountRow(t, service, created.Account.ID).PrivateAllowed {
+		t.Fatal("the moved connection kept private access")
+	}
+	if !publicOnlyAtRequest(t, service, created.Account.ID) {
+		t.Fatal("a connection a member moved may reach private addresses")
+	}
+	// Moving it back home is the admin's call.
+	if _, err := service.Update(context.Background(), "admin", created.Account.ID, Input{
+		BaseURL: Optional[string]{Set: true, Value: strPtr("http://127.0.0.1:9/v1")},
+	}, &Actor{Role: "admin", IsOwner: true}); err != nil {
+		t.Fatalf("admin move back: %v", err)
+	}
+	if publicOnlyAtRequest(t, service, created.Account.ID) {
+		t.Fatal("the admin's move back did not restore private access")
+	}
+}

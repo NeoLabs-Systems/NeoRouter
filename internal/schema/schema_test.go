@@ -38,8 +38,8 @@ func TestEnsureFreshAndIdempotent(t *testing.T) {
 	if want := len(Steps()); uv != want {
 		t.Fatalf("user_version = %d, want %d", uv, want)
 	}
-	if uv != 42 || BaselineVersion() != 41 {
-		t.Fatalf("baseline version = %d (steps %d), want 41 and 42", BaselineVersion(), uv)
+	if uv != 43 || BaselineVersion() != 41 {
+		t.Fatalf("baseline version = %d (steps %d), want 41 and 43", BaselineVersion(), uv)
 	}
 	for _, table := range []string{"users", "user_sessions", "schema_migrations", "settings"} {
 		var name string
@@ -84,8 +84,8 @@ func TestEnsureLegacyNodeDatabase(t *testing.T) {
 	if err := legacy.R.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&uv); err != nil {
 		t.Fatal(err)
 	}
-	if uv != 42 {
-		t.Fatalf("user_version = %d after sync, want 42", uv)
+	if uv != 43 {
+		t.Fatalf("user_version = %d after sync, want 43", uv)
 	}
 	if err := Verify(ctx, legacy.R); err != nil {
 		t.Fatalf("Verify after sync: %v", err)
@@ -186,5 +186,42 @@ func TestEnsureMovesLiveSessions(t *testing.T) {
 	if count != 1 || sid != "digest-live" || id != "live" || user != "u1" || ip != "127.0.0.1" ||
 		agent != "node" || expire != "2999-01-01T00:00:00.000Z" || old != 0 {
 		t.Fatalf("moved %d: %q %q %q %q %q %q, old rows %d", count, sid, id, user, ip, agent, expire, old)
+	}
+}
+
+// TestPrivateAllowedMigration: existing connections keep private access only in
+// an admin's space and when no non-admin is recorded as their creator.
+func TestPrivateAllowedMigration(t *testing.T) {
+	ctx := context.Background()
+	db := openDB(t, filepath.Join(t.TempDir(), "neorouter.sqlite3"))
+	if err := applyBaseline(ctx, db.W); err != nil {
+		t.Fatalf("baseline: %v", err)
+	}
+	if _, err := db.W.ExecContext(ctx, `
+INSERT INTO users (id, username, email, password_hash, role) VALUES
+	('admin', 'admin', 'admin@example.test', 'x', 'admin'),
+	('admin2', 'admin2', 'admin2@example.test', 'x', 'admin'),
+	('member', 'member', 'member@example.test', 'x', 'user');
+INSERT INTO provider_accounts (id, user_id, definition_id, slug, label, billing_mode, created_by_user_id) VALUES
+	('legacy', 'admin', 'custom_openai', 'a', 'A', 'paid', NULL),
+	('own', 'admin', 'custom_openai', 'b', 'B', 'paid', 'admin'),
+	('co-admin', 'admin', 'custom_openai', 'c', 'C', 'paid', 'admin2'),
+	('by-member', 'admin', 'custom_openai', 'd', 'D', 'paid', 'member'),
+	('member-space', 'member', 'custom_openai', 'e', 'E', 'paid', NULL);
+`); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	if err := Ensure(ctx, db.W); err != nil {
+		t.Fatalf("Ensure: %v", err)
+	}
+	want := map[string]int{"legacy": 1, "own": 1, "co-admin": 1, "by-member": 0, "member-space": 0}
+	for id, expected := range want {
+		var got int
+		if err := db.R.QueryRowContext(ctx, `SELECT private_allowed FROM provider_accounts WHERE id = ?`, id).Scan(&got); err != nil {
+			t.Fatalf("%s: %v", id, err)
+		}
+		if got != expected {
+			t.Fatalf("%s: private_allowed = %d, want %d", id, got, expected)
+		}
 	}
 }
